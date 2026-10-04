@@ -38,7 +38,7 @@ export function MagicLinkForm({
       // The sign-in hook explains why an email can't be used.
       setError(
         error.status === 429
-          ? "Too many sign-in emails just now. Try again in a few minutes."
+          ? "The sign-in email limit for this hour has been reached. Try again in an hour."
           : error.message || "Couldn’t send the link. Try again.",
       );
       return;
