@@ -2,12 +2,32 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/toast";
-import { coverUrl } from "@/lib/covers";
 import { createClient } from "@/lib/supabase/client";
 
-/** Photo picker: shrinks the image in the browser, uploads it, and submits its path. */
-export function CoverField({ name = "cover_path", initial }: { name?: string; initial?: string | null }) {
+const publicUrl = (bucket: string, path: string) =>
+  `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+
+/**
+ * Photo picker: shrinks the image in the browser, uploads it to a public
+ * bucket, and submits its path. A photo hosted elsewhere (`initialUrl`) shows
+ * until it's replaced; `keepName` submits "1" while that photo is kept.
+ */
+export function CoverField({
+  name = "cover_path",
+  initial,
+  bucket = "covers",
+  initialUrl,
+  keepName,
+}: {
+  name?: string;
+  initial?: string | null;
+  bucket?: string;
+  initialUrl?: string | null;
+  keepName?: string;
+}) {
   const [cover, setCover] = useState(initial ?? "");
+  const [external, setExternal] = useState(initialUrl ?? "");
+  const src = cover ? publicUrl(bucket, cover) : external;
   const [busy, setBusy] = useState(false);
   const toast = useToast();
 
@@ -17,7 +37,7 @@ export function CoverField({ name = "cover_path", initial }: { name?: string; in
       const blob = await resizeImage(file, 1800);
       const path = `${crypto.randomUUID()}.jpg`;
       const { error } = await createClient()
-        .storage.from("covers")
+        .storage.from(bucket)
         .upload(path, blob, { contentType: "image/jpeg" });
       if (error) throw error;
       setCover(path);
@@ -30,19 +50,27 @@ export function CoverField({ name = "cover_path", initial }: { name?: string; in
   return (
     <div className="cover-ed">
       <input type="hidden" name={name} value={cover} />
-      {cover ? (
+      {keepName && <input type="hidden" name={keepName} value={external ? "1" : ""} />}
+      {src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={coverUrl(cover) ?? ""} alt="" />
+        <img src={src} alt="" />
       ) : (
         <div className="ph">No photo</div>
       )}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <label className="btn" style={{ cursor: "pointer" }}>
-          {busy ? "Uploading…" : cover ? "Replace" : "Add photo"}
+          {busy ? "Uploading…" : src ? "Replace" : "Add photo"}
           <input type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
         </label>
-        {cover && (
-          <button type="button" className="btn ghost" onClick={() => setCover("")}>
+        {src && (
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => {
+              setCover("");
+              setExternal("");
+            }}
+          >
             Remove
           </button>
         )}

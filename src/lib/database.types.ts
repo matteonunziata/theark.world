@@ -31,6 +31,17 @@ export type Database = {
   };
   public: {
     Tables: {
+      business_lines: Table<
+        {
+          active: boolean;
+          color: string;
+          created_at: string;
+          id: string;
+          name: string;
+          position: number;
+        },
+        "name"
+      >;
       cities: Table<
         {
           active: boolean;
@@ -213,6 +224,47 @@ export type Database = {
           },
         ]
       >;
+      finance_entries: Table<
+        {
+          amount: number;
+          business_line_id: string | null;
+          category: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          description: string | null;
+          doc_kind: string | null;
+          due_date: string | null;
+          entry_date: string;
+          file_name: string | null;
+          file_path: string | null;
+          id: string;
+          kind: string;
+          method: string | null;
+          paid_on: string | null;
+          party: string | null;
+          reference: string | null;
+          status: string;
+          updated_at: string;
+        },
+        "amount" | "kind",
+        [
+          {
+            foreignKeyName: "finance_entries_business_line_id_fkey";
+            columns: ["business_line_id"];
+            isOneToOne: false;
+            referencedRelation: "business_lines";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "finance_entries_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "team_members";
+            referencedColumns: ["id"];
+          },
+        ]
+      >;
       finance_months: Table<
         {
           ap: number | null;
@@ -341,14 +393,22 @@ export type Database = {
           category: string;
           created_at: string;
           description: string | null;
+          external_id: string | null;
           id: string;
+          image_path: string | null;
+          image_url: string | null;
           low_at: number;
           member_price: number | null;
           name: string;
+          online: boolean | null;
           price: number;
+          product_group: string | null;
           stock: number;
+          track_stock: boolean;
           unit: string | null;
           updated_at: string;
+          variant: string | null;
+          web_url: string | null;
         },
         "name" | "price"
       >;

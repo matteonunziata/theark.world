@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { CoverField } from "@/components/cover-field";
 import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
 import { useToast } from "@/components/toast";
 import type { Tables } from "@/lib/database.types";
-import { CATEGORIES, fmtMoney, lowState } from "@/lib/shop";
-import { recordStock, saveProduct } from "./actions";
+import { CATEGORIES, fmtMoney, lowState, productImage } from "@/lib/shop";
+import { recordStock, saveProduct, syncFromWebsite } from "./actions";
 
 type Product = Tables<"products">;
 type Move = { id: string; product_id: string; type: string; delta: number; created_at: string };
@@ -25,8 +26,20 @@ export function ShopView({
   const [cat, setCat] = useState("");
   const [lowOnly, setLowOnly] = useState(false);
   const drawer = useDrawer<Product>();
+  const [syncing, startSync] = useTransition();
+  const toast = useToast();
+  const sync = () =>
+    startSync(async () => {
+      const r = await syncFromWebsite();
+      toast(r.ok ? (r.message ?? "") : (r.error ?? ""));
+    });
   const low = products.filter((p) => lowState(p));
-  const value = products.reduce((n, p) => n + Number(p.stock) * Number(p.price), 0);
+  const counted = products.filter((p) => p.track_stock);
+  const value = counted.reduce((n, p) => n + Number(p.stock) * Number(p.price), 0);
+  const categories = [
+    ...CATEGORIES,
+    ...new Set(products.map((p) => p.category).filter((c) => !CATEGORIES.includes(c))),
+  ];
   const needle = q.trim().toLowerCase();
   const list = products.filter(
     (p) =>
@@ -39,8 +52,9 @@ export function ShopView({
     <>
       <div className="stats" style={{ marginBottom: 18 }}>
         <div className="stat"><b>{products.length}</b><span>Products</span></div>
+        <div className="stat"><b>{products.filter((p) => p.online).length}</b><span>Available online</span></div>
         <div className="stat"><b>{low.length}</b><span>Low or out of stock</span></div>
-        <div className="stat"><b>{fmtMoney(value, currency)}</b><span>Stock at retail value</span></div>
+        <div className="stat"><b>{fmtMoney(value, currency)}</b><span>Counted stock at retail</span></div>
       </div>
       {low.length > 0 && (
         <div className="alert" role="status">
@@ -62,7 +76,7 @@ export function ShopView({
         <input className="field-in search" type="search" placeholder="Search products" aria-label="Search products" value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="field-in" aria-label="Category" value={cat} onChange={(e) => setCat(e.target.value)}>
           <option value="">All categories</option>
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <option key={c}>{c}</option>
           ))}
         </select>
@@ -71,9 +85,14 @@ export function ShopView({
           Low stock only
         </label>
         {canEdit && (
-          <button type="button" className="btn primary" style={{ marginLeft: "auto" }} onClick={drawer.openNew}>
-            Add product
-          </button>
+          <span style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <button type="button" className="btn" onClick={sync} disabled={syncing} title="Pull new products and prices from thearkfarm.shop">
+              {syncing ? "Syncing…" : "Sync from website"}
+            </button>
+            <button type="button" className="btn primary" onClick={drawer.openNew}>
+              Add product
+            </button>
+          </span>
         )}
       </div>
       {!products.length ? (
@@ -104,9 +123,20 @@ export function ShopView({
             const ls = lowState(p);
             return (
               <button type="button" className="row srow" key={p.id} onClick={() => drawer.openItem(p)}>
-                <span className="who" style={{ display: "block" }}>
-                  <b>{p.name}</b>
-                  <span className="muted" style={{ fontSize: 13 }}>{p.unit ? `per ${p.unit}` : ""}</span>
+                <span className="who prod">
+                  {productImage(p) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={productImage(p)!} alt="" loading="lazy" />
+                  ) : (
+                    <span className="ph" aria-hidden="true" />
+                  )}
+                  <span>
+                    <b>{p.product_group ?? p.name}</b>
+                    <span className="muted" style={{ fontSize: 13 }}>
+                      {[p.variant, p.unit ? `per ${p.unit}` : null].filter(Boolean).join(" · ")}
+                      {p.online === false && <span className="tag-sm out" style={{ marginLeft: 8 }}>sold out online</span>}
+                    </span>
+                  </span>
                 </span>
                 <span className="c-cat muted">{p.category}</span>
                 <span className="c-price">
@@ -121,8 +151,14 @@ export function ShopView({
                   )}
                 </span>
                 <span className={`stock ${ls}`}>
-                  {Number(p.stock)} {p.unit ?? ""}
-                  {ls === "out" ? " · out" : ls === "low" ? " · low" : ""}
+                  {p.track_stock ? (
+                    <>
+                      {Number(p.stock)} {p.unit ?? ""}
+                      {ls === "out" ? " · out" : ls === "low" ? " · low" : ""}
+                    </>
+                  ) : (
+                    <span className="muted">Not counted</span>
+                  )}
                 </span>
                 <span className="muted" style={{ fontSize: 13 }}>{canEdit ? "Edit" : "View"}</span>
               </button>
@@ -156,6 +192,7 @@ function ProductDrawer({
   onClose: () => void;
 }) {
   const [qty, setQty] = useState("1");
+  const [track, setTrack] = useState(p?.track_stock ?? true);
   const [pending, start] = useTransition();
   const toast = useToast();
   const quick = (type: "sale" | "restock") =>
@@ -189,13 +226,23 @@ function ProductDrawer({
       <fieldset disabled={!canEdit} style={{ border: 0, padding: 0, margin: 0 }}>
         {p && <input type="hidden" name="id" value={p.id} />}
         <div className="fld">
+          <span className="lbl">Photo</span>
+          <CoverField
+            name="image_path"
+            bucket="products"
+            initial={p?.image_path}
+            initialUrl={p?.image_url}
+            keepName="image_url_keep"
+          />
+        </div>
+        <div className="fld">
           <label htmlFor="p-name">Product</label>
           <input id="p-name" name="name" defaultValue={p?.name} required placeholder="e.g. Cherry tomatoes" />
         </div>
         <div className="grid2">
           <div className="fld">
             <label htmlFor="p-cat">Category</label>
-            <select id="p-cat" name="category" defaultValue={p?.category ?? "Vegetables"}>
+            <select id="p-cat" name="category" defaultValue={p?.category ?? "Fruit & vegetables"}>
               {CATEGORIES.map((c) => (
                 <option key={c}>{c}</option>
               ))}
@@ -203,7 +250,7 @@ function ProductDrawer({
           </div>
           <div className="fld">
             <label htmlFor="p-unit">Sold per</label>
-            <input id="p-unit" name="unit" defaultValue={p?.unit ?? "kg"} placeholder="kg, bunch, dozen, jar" />
+            <input id="p-unit" name="unit" defaultValue={p?.unit ?? ""} placeholder="kg, bunch, jar, bottle" />
           </div>
         </div>
         <div className="grid2">
@@ -216,7 +263,11 @@ function ProductDrawer({
             <input id="p-mprice" name="member_price" type="number" min={0} step="any" defaultValue={p?.member_price ?? ""} placeholder="Same as price" />
           </div>
         </div>
-        <div className="grid2">
+        <label className="check" style={{ marginBottom: 12 }}>
+          <input type="checkbox" name="track_stock" checked={track} onChange={(e) => setTrack(e.target.checked)} />
+          Count stock for this product
+        </label>
+        <div className="grid2" hidden={!track}>
           <div className="fld">
             <label htmlFor="p-stock">In stock now</label>
             <input id="p-stock" name="stock" type="number" min={0} step="any" defaultValue={p?.stock ?? 0} />
@@ -227,13 +278,22 @@ function ProductDrawer({
           </div>
         </div>
         <div className="fld">
-          <label htmlFor="p-desc">Notes</label>
-          <textarea id="p-desc" name="description" defaultValue={p?.description ?? ""} placeholder="Supplier, harvest rhythm, anything the shop team should know" />
+          <label htmlFor="p-desc">Description</label>
+          <textarea id="p-desc" name="description" defaultValue={p?.description ?? ""} placeholder="What it is, how it’s made, anything the shop team should know" />
         </div>
+        {p?.web_url && (
+          <p className="muted" style={{ fontSize: 13, margin: "0 0 12px" }}>
+            On the online shop:{" "}
+            <a href={p.web_url} target="_blank" rel="noreferrer">
+              {p.web_url.replace("https://", "")}
+            </a>
+            {p.online === false && " (sold out there)"}
+          </p>
+        )}
       </fieldset>
       {p && (
         <>
-          {canEdit && (
+          {canEdit && p.track_stock && (
             <>
               <div className="subhead">Quick stock change</div>
               <div className="grid2" style={{ alignItems: "end" }}>

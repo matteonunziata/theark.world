@@ -104,3 +104,9 @@ dialog.drawer form{display:flex;flex-direction:column;height:100%}
 .wallet-btn{display:inline-flex;align-items:center;justify-content:center;margin-top:14px;background:#000;color:#fff;border-radius:10px;padding:10px 18px;font-weight:600;text-decoration:none}
 .city-card{padding-top:0;overflow:hidden}
 .city-card .city-img{height:120px;margin:0 -18px 14px;background:linear-gradient(135deg,var(--canopy),var(--sea));background-size:cover;background-position:center}
+
+/* Farm shop: product thumbnails */
+.fld .lbl{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.who.prod{display:flex;align-items:center;gap:12px;text-align:left}
+.who.prod img,.who.prod .ph{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:var(--surface-2)}
+.who.prod > span{display:flex;flex-direction:column}
