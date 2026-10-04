@@ -61,3 +61,14 @@ dialog.drawer form{display:flex;flex-direction:column;height:100%}
 .chk{grid-template-columns:minmax(200px,1.6fr) 1.4fr 1fr auto}
 .chk .acts{display:flex;gap:6px;justify-content:flex-end}
 @media (max-width: 860px){.chk{grid-template-columns:1fr auto}.chk .c-c2,.chk .c-t{display:none}}
+
+/* farm shop */
+.srow{grid-template-columns:minmax(200px,2fr) 1fr 1fr 1fr 60px}
+.stock{font-weight:600;font-size:14px}
+.stock.low{color:var(--clay)}.stock.out{color:var(--danger)}
+.alert{background:color-mix(in srgb,var(--clay) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--clay) 35%,transparent);border-radius:14px;padding:14px 18px;margin-bottom:16px;font-size:14px}
+.alert ul{margin:6px 0 0;padding-left:18px}
+.adj{display:flex;gap:8px;flex-wrap:wrap}
+.ledger .n{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
+.ledger .n:first-child{border-top:0}
+@media (max-width: 860px){.srow{grid-template-columns:1fr auto}.srow .c-cat,.srow .c-price,.srow > span:last-child{display:none}}

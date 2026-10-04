@@ -1,7 +1,10 @@
-import { Planned } from "@/components/planned";
-import { requireStaff } from "@/lib/auth";
+import type { Metadata } from "next";
+import { todayIn } from "@/lib/dates";
+import { loadTasks } from "./data";
+import { TasksView } from "./tasks-view";
 
-export default async function Page() {
-  await requireStaff("operations");
-  return <Planned module="operations" />;
+export const metadata: Metadata = { title: "Operations" };
+
+export default async function OpsBoard() {
+  return <TasksView view="board" today={todayIn()} {...await loadTasks()} />;
 }
