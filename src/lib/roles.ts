@@ -32,6 +32,7 @@ export type ModuleKey =
   | "dashboard"
   | "crm"
   | "estate"
+  | "hospitality"
   | "memberships"
   | "events"
   | "gate"
@@ -60,8 +61,12 @@ export const MODULES: {
     name: "Real estate",
     href: "/estate",
     roles: ["admin", "lead", "sales"],
-    planned:
-      "Lots and their status, buyers and owners, residents, and gate access for everyone on-site.",
+  },
+  {
+    key: "hospitality",
+    name: "Hospitality",
+    href: "/hospitality",
+    roles: ["admin", "lead", "sales"],
   },
   {
     key: "memberships",

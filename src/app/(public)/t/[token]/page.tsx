@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { AddToCalendar } from "@/components/add-to-calendar";
+import { GateFlash } from "@/components/gate-flash";
 import { PortalHead } from "@/components/portal-head";
+import { SaveImageButton } from "@/components/save-image";
 import { getViewer } from "@/lib/auth";
-import { fmtDate, timeRange } from "@/lib/dates";
+import { fmtDate, fmtTime, timeRange } from "@/lib/dates";
 import { siteUrl, ticketCode, ticketUrl } from "@/lib/email";
 import { kindName, money } from "@/lib/schedule";
 import { walletEnabled } from "@/lib/wallet";
@@ -15,6 +17,7 @@ export const metadata: Metadata = { title: "Ticket", robots: { index: false } };
 const STATE: Record<string, [string, string]> = {
   valid: ["ok", "Valid today"],
   upcoming: ["soon", "Valid on the day"],
+  early: ["soon", "Too early"],
   used: ["used", "Checked in"],
   expired: ["bad", "Expired"],
   cancelled: ["bad", "Session cancelled"],
@@ -40,6 +43,7 @@ export default async function TicketPage({ params }: PageProps<"/t/[token]">) {
     return (
       <>
         {head}
+        {staff && <GateFlash ok={false} title="Not a valid ticket" detail="This code isn’t on any booking." />}
         <div className="p-body">
           <div className="ticket">
             <span className="state bad">Not valid</span>
@@ -54,10 +58,31 @@ export default async function TicketPage({ params }: PageProps<"/t/[token]">) {
   const url = ticketUrl(await siteUrl(), token);
   const svg = await QRCode.toString(url, { type: "svg", margin: 0 });
   const [cls, label] = STATE[t.state] ?? ["bad", "Not valid"];
+  const tz = org?.timezone ?? "America/Costa_Rica";
+  const day = fmtDate(t.session_date, { weekday: "long", month: "long", day: "numeric" });
+  // Why the gate is (or isn't) letting this ticket through.
+  const why: Record<string, string> = {
+    valid: `${t.title}, ${timeRange(t) || "today"}`,
+    early: `Entry opens at ${fmtTime(t.gate_opens)}, an hour before ${t.title} starts.`,
+    upcoming: `This ticket is for ${day}.`,
+    expired: `This ticket was for ${day}.`,
+    used: t.checked_in_at
+      ? `Already checked in at ${new Date(t.checked_in_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: tz })}.`
+      : "Already checked in.",
+    cancelled: "This session was cancelled.",
+  };
 
   return (
     <>
       {head}
+      {t.can_check_in && (
+        <GateFlash
+          ok={t.state === "valid"}
+          title={t.state === "valid" ? `Valid · ${t.holder.split(/\s+/)[0]}` : (t.state === "used" ? "Already used" : label)}
+          detail={`${t.holder} · ${why[t.state] ?? ""}`}
+          action={t.state === "valid" ? <CheckInButton token={token} className="gf-btn" /> : undefined}
+        />
+      )}
       <div className="p-body">
         <div className="ticket">
           <span className="ptype">
@@ -91,16 +116,24 @@ export default async function TicketPage({ params }: PageProps<"/t/[token]">) {
                 })}`
               : label}
           </span>
+          {t.state === "early" && (
+            <p className="muted" style={{ fontSize: 13.5, margin: "10px 0 0" }}>
+              Entry opens at {fmtTime(t.gate_opens)}, an hour before the start.
+            </p>
+          )}
           <div className="acts">
             {t.can_check_in && t.state === "valid" && <CheckInButton token={token} />}
+            {(t.state === "valid" || t.state === "upcoming" || t.state === "early") && (
+              <SaveImageButton href={`/t/${token}/image.png`} filename="ARK ticket.png" />
+            )}
             <CopyTicketLink url={url} />
           </div>
-          {walletEnabled() && (t.state === "valid" || t.state === "upcoming") && (
+          {walletEnabled() && (t.state === "valid" || t.state === "upcoming" || t.state === "early") && (
             <a className="wallet-btn" href={`/t/${token}/wallet.pkpass`}>
               Add to Apple Wallet
             </a>
           )}
-          {(t.state === "valid" || t.state === "upcoming") && (
+          {(t.state === "valid" || t.state === "upcoming" || t.state === "early") && (
             <AddToCalendar
               icsHref={`/t/${token}/calendar.ics`}
               event={{
@@ -115,8 +148,8 @@ export default async function TicketPage({ params }: PageProps<"/t/[token]">) {
             />
           )}
           <p className="gate-note" style={{ marginTop: 16 }}>
-            Security scans the code with any phone camera. It opens this page
-            and shows whether the ticket is valid.
+            Security scans the code with any phone camera. It works on the day
+            of the session, from an hour before it starts.
           </p>
         </div>
         <p style={{ textAlign: "center", marginTop: 18 }}>

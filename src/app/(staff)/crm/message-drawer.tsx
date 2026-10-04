@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Drawer } from "@/components/drawer";
 import { useToast } from "@/components/toast";
 import { CHANNELS, merge, waLink } from "@/lib/crm";
 import type { Step } from "@/lib/sequences";
-import { markSent } from "./actions";
+import { markSent, sendStep } from "./actions";
 import type { Contact } from "./contact-drawer";
 
 export type Enrollment = {
@@ -44,6 +45,7 @@ export function MessageDrawer({
       ? `mailto:${c.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
       : "";
   const toast = useToast();
+  const [sending, setSending] = useState(false);
 
   return (
     <Drawer
@@ -100,6 +102,22 @@ export function MessageDrawer({
           <a className="btn" href={link} target="_blank" rel="noopener noreferrer">
             Open in {wa ? "WhatsApp" : "email"}
           </a>
+        )}
+        {!wa && c.email && (
+          <button
+            type="button"
+            className="btn primary"
+            disabled={sending}
+            onClick={async () => {
+              setSending(true);
+              const r = await sendStep(e.id, st.position);
+              setSending(false);
+              toast(r.ok ? (r.message ?? "Sent") : (r.error ?? "Couldn’t send"));
+              if (r.ok) onClose();
+            }}
+          >
+            {sending ? "Sending…" : "Send in ARK template"}
+          </button>
         )}
       </div>
     </Drawer>

@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
 import { fmtDate } from "@/lib/dates";
-import { firstName, schoolPhoto } from "@/lib/school";
+import { firstName, type ScheduleEntry, schoolPhoto } from "@/lib/school";
+import { FamilySchedule } from "./family-schedule";
 
 export const metadata: Metadata = {
   title: "Arkadia",
@@ -18,6 +19,8 @@ type Page = {
   photo_path: string | null;
   about: string | null;
   updates: { id: string; body: string; photo_path: string | null; created_at: string; author: string | null }[];
+  schedule: ScheduleEntry[];
+  today: string;
 };
 
 /** What a family sees: the profile and the updates teachers chose to share. */
@@ -47,6 +50,7 @@ export default async function FamilyPage({ params }: PageProps<"/family/[token]"
         {s.group_name && <p className="grp">{s.group_name}</p>}
         {s.about && <p className="about">{s.about}</p>}
       </section>
+      {s.schedule.length > 0 && <FamilySchedule entries={s.schedule} today={s.today} first={first} />}
       <section className="family-feed" aria-label={`Updates about ${first}`}>
         <h2>From school</h2>
         {s.updates.length ? (

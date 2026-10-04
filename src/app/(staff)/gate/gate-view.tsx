@@ -17,7 +17,14 @@ type Row = {
   ticket: { name: string; price: number } | null;
 };
 
-export function GateView({ rows }: { rows: Row[] }) {
+/** "17:00:00" minus an hour, as "16:00". */
+const opensAt = (start: string) => {
+  const [h, m] = start.split(":").map(Number);
+  const t = Math.max(0, h * 60 + m - 60);
+  return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+};
+
+export function GateView({ rows, now }: { rows: Row[]; now: string }) {
   const [code, setCode] = useState("");
   const [pending, start] = useTransition();
   const toast = useToast();
@@ -94,6 +101,10 @@ export function GateView({ rows }: { rows: Row[] }) {
                 <span className="acts">
                   {r.checked_in_at ? (
                     <span className="status on">In</span>
+                  ) : r.offering?.start_time && now < opensAt(r.offering.start_time) ? (
+                    <span className="muted" style={{ fontSize: 13 }}>
+                      Opens {fmtTime(`${opensAt(r.offering.start_time)}:00`)}
+                    </span>
                   ) : (
                     <button
                       type="button"

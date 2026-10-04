@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { requireSchool } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
 import { StudentsView } from "./students-view";
@@ -27,6 +28,7 @@ export default async function ArkadiaPage() {
             updates their families see.
           </p>
         </div>
+        <Link className="btn" href="/arkadia/schedule">Timetable</Link>
       </div>
       <StudentsView
         students={(students ?? []).map((s) => ({ ...s, last_update: last.get(s.id) ?? null }))}

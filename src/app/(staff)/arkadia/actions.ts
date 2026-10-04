@@ -151,3 +151,57 @@ export async function newFamilyLink(studentId: string): Promise<ActionResult> {
   refresh(studentId);
   return ok("New link made. The old one no longer works.");
 }
+
+export async function saveScheduleEntry(
+  _prev: ActionResult,
+  data: FormData,
+): Promise<ActionResult> {
+  const { supabase } = await schoolOrThrow();
+  const id = field(data, "id");
+  const done = (m: string) => {
+    revalidatePath("/arkadia/schedule");
+    return ok(m);
+  };
+
+  if (data.get("intent") === "delete" && id) {
+    const { error } = await supabase.from("school_schedule").delete().eq("id", id);
+    if (error) return fail(friendly(error));
+    return done("Removed from the timetable");
+  }
+
+  const title = field(data, "title");
+  const start = field(data, "start_time");
+  const end = field(data, "end_time");
+  if (!title) return fail("Give it a title, like Morning circle.");
+  if (!start || !end) return fail("Set a start and end time.");
+  if (end <= start) return fail("The end time has to be after the start.");
+  const once = field(data, "repeat") === "once";
+  const onDate = field(data, "on_date");
+  const days = data.getAll("weekday").map(Number).filter((d) => d >= 0 && d <= 6);
+  if (once && !onDate) return fail("Choose the date.");
+  if (!once && !days.length) return fail("Choose at least one day of the week.");
+
+  const base = {
+    title,
+    start_time: start,
+    end_time: end,
+    group_name: field(data, "group_name"),
+    location: field(data, "location"),
+    teacher_id: field(data, "teacher_id"),
+    notes: field(data, "notes"),
+  };
+  if (id) {
+    const { error } = await supabase
+      .from("school_schedule")
+      .update({ ...base, weekday: once ? null : days[0], on_date: once ? onDate : null })
+      .eq("id", id);
+    if (error) return fail(friendly(error));
+    return done("Timetable saved");
+  }
+  const rows: { weekday: number | null; on_date: string | null }[] = once
+    ? [{ on_date: onDate, weekday: null }]
+    : days.map((weekday) => ({ weekday, on_date: null }));
+  const { error } = await supabase.from("school_schedule").insert(rows.map((r) => ({ ...base, ...r })));
+  if (error) return fail(friendly(error));
+  return done(rows.length > 1 ? `Added on ${rows.length} days` : "Added to the timetable");
+}

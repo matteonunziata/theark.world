@@ -21,18 +21,26 @@ export default async function GatePage() {
         (a.offering?.start_time ?? "").localeCompare(b.offering?.start_time ?? "") ||
         a.name.localeCompare(b.name),
     );
+  const now = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "America/Costa_Rica",
+  }).format(new Date());
   return (
     <div className="page">
       <div className="page-head">
         <div>
           <h1>Gate</h1>
           <p className="lede">
-            Today’s bookings. Scan a ticket with your phone camera, look up the
-            code on it, or check people in from the list.
+            Today’s bookings. Scan a ticket or member pass with your phone
+            camera, look up the code on it, or check people in from the list.
+            Tickets open an hour before the start; member passes work any time
+            their membership covers.
           </p>
         </div>
       </div>
-      <GateView rows={rows} />
+      <GateView rows={rows} now={now} />
     </div>
   );
 }

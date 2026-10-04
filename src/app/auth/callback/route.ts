@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const url = request.nextUrl;
   const next = safeNext(url.searchParams.get("next"));
-  const back = next.startsWith("/portal") ? "/portal/login" : "/login";
+  const back =
+    next.startsWith("/portal") || next.startsWith("/e/") ? "/portal/login" : "/login";
   const fail = (message: string) =>
     NextResponse.redirect(
       new URL(`${back}?error=${encodeURIComponent(message)}`, url.origin),
@@ -15,8 +16,15 @@ export async function GET(request: NextRequest) {
   const error = url.searchParams.get("error_description");
   if (error) return fail(error);
 
+  // Email links carry the session in the URL fragment, which never reaches
+  // the server. The browser keeps the fragment across this redirect, and
+  // /auth/confirm stores the session.
   const code = url.searchParams.get("code");
-  if (!code) return fail("That sign-in link is incomplete. Try again.");
+  if (!code) {
+    return NextResponse.redirect(
+      new URL(`/auth/confirm?next=${encodeURIComponent(next)}`, url.origin),
+    );
+  }
 
   const supabase = await createClient();
   const { error: exchangeError } =

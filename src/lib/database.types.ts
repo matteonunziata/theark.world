@@ -8,671 +8,1879 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
-
-type Rel = {
-  foreignKeyName: string;
-  columns: string[];
-  isOneToOne: boolean;
-  referencedRelation: string;
-  referencedColumns: string[];
-};
-
-type Table<Row, Required extends keyof Row, R extends Rel[] = []> = {
-  Row: Row;
-  Insert: Partial<Row> & Pick<Row, Required>;
-  Update: Partial<Row>;
-  Relationships: R;
-};
+  | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.18";
-  };
+    PostgrestVersion: "14.18"
+  }
   public: {
     Tables: {
-      business_lines: Table<
-        {
-          active: boolean;
-          color: string;
-          created_at: string;
-          id: string;
-          name: string;
-          position: number;
-        },
-        "name"
-      >;
-      cities: Table<
-        {
-          active: boolean;
-          blurb: string | null;
-          country: string | null;
-          cover_path: string | null;
-          created_at: string;
-          id: string;
-          is_home: boolean;
-          name: string;
-          position: number;
-        },
-        "name"
-      >;
-      contact_notes: Table<
-        {
-          author_id: string | null;
-          body: string;
-          contact_id: string;
-          created_at: string;
-          id: string;
-        },
-        "body" | "contact_id",
-        [
+      business_lines: {
+        Row: {
+          active: boolean
+          color: string
+          created_at: string
+          id: string
+          name: string
+          position: number
+        }
+        Insert: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+        }
+        Update: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+        }
+        Relationships: []
+      }
+      cities: {
+        Row: {
+          active: boolean
+          blurb: string | null
+          country: string | null
+          cover_path: string | null
+          created_at: string
+          id: string
+          is_home: boolean
+          name: string
+          position: number
+        }
+        Insert: {
+          active?: boolean
+          blurb?: string | null
+          country?: string | null
+          cover_path?: string | null
+          created_at?: string
+          id?: string
+          is_home?: boolean
+          name: string
+          position?: number
+        }
+        Update: {
+          active?: boolean
+          blurb?: string | null
+          country?: string | null
+          cover_path?: string | null
+          created_at?: string
+          id?: string
+          is_home?: boolean
+          name?: string
+          position?: number
+        }
+        Relationships: []
+      }
+      contact_notes: {
+        Row: {
+          author_id: string | null
+          body: string
+          contact_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          contact_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          contact_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "contact_notes_author_id_fkey";
-            columns: ["author_id"];
-            isOneToOne: false;
-            referencedRelation: "team_members";
-            referencedColumns: ["id"];
+            foreignKeyName: "contact_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "contact_notes_contact_id_fkey";
-            columns: ["contact_id"];
-            isOneToOne: false;
-            referencedRelation: "contacts";
-            referencedColumns: ["id"];
-          },
-        ]
-      >;
-      contact_stages: Table<
-        {
-          contact_id: string;
-          pipeline: string;
-          stage: string;
-          updated_at: string;
-        },
-        "contact_id" | "pipeline" | "stage",
-        [
-          {
-            foreignKeyName: "contact_stages_contact_id_fkey";
-            columns: ["contact_id"];
-            isOneToOne: false;
-            referencedRelation: "contacts";
-            referencedColumns: ["id"];
-          },
-        ]
-      >;
-      contacts: Table<
-        {
-          created_at: string;
-          bio: string | null;
-          city_id: string | null;
-          created_by: string | null;
-          discount_id: string | null;
-          email: string | null;
-          id: string;
-          instagram: string | null;
-          interests: string[];
-          location: string | null;
-          lot: string | null;
-          member_since: string | null;
-          membership_status: string;
-          name: string;
-          open_to_connect: boolean;
-          owner_id: string | null;
-          phone: string | null;
-          renews_on: string | null;
-          resident: boolean;
-          show_in_directory: boolean;
-          source: string | null;
-          tier: string | null;
-          type: string;
-          updated_at: string;
-          user_id: string | null;
-        },
-        "name",
-        [
-          {
-            foreignKeyName: "contacts_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "team_members";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "contacts_owner_id_fkey";
-            columns: ["owner_id"];
-            isOneToOne: false;
-            referencedRelation: "team_members";
-            referencedColumns: ["id"];
+            foreignKeyName: "contact_notes_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
           },
         ]
-      >;
-      discounts: Table<
-        {
-          active: boolean;
-          created_at: string;
-          description: string | null;
-          id: string;
-          lifetime: boolean;
-          name: string;
-          percent: number;
-        },
-        "name" | "percent"
-      >;
-      divisions: Table<
-        {
-          color: string;
-          created_at: string;
-          description: string | null;
-          id: string;
-          is_school: boolean;
-          lead_id: string | null;
-          name: string;
-          updated_at: string;
-        },
-        "name",
-        [
+      }
+      contact_stages: {
+        Row: {
+          contact_id: string
+          pipeline: string
+          stage: string
+          updated_at: string
+        }
+        Insert: {
+          contact_id: string
+          pipeline: string
+          stage: string
+          updated_at?: string
+        }
+        Update: {
+          contact_id?: string
+          pipeline?: string
+          stage?: string
+          updated_at?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "divisions_lead_id_fkey";
-            columns: ["lead_id"];
-            isOneToOne: false;
-            referencedRelation: "team_members";
-            referencedColumns: ["id"];
+            foreignKeyName: "contact_stages_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
           },
         ]
-      >;
-      enrollment_sends: Table<
-        {
-          enrollment_id: string;
-          sent_by: string | null;
-          sent_on: string;
-          step_position: number;
-        },
-        "enrollment_id" | "step_position",
-        [
+      }
+      contacts: {
+        Row: {
+          bio: string | null
+          city_id: string | null
+          created_at: string
+          created_by: string | null
+          discount_id: string | null
+          email: string | null
+          id: string
+          instagram: string | null
+          interests: string[]
+          location: string | null
+          lot: string | null
+          member_since: string | null
+          membership_status: string
+          name: string
+          open_to_connect: boolean
+          owner_id: string | null
+          pass_token: string
+          phone: string | null
+          renews_on: string | null
+          resident: boolean
+          show_in_directory: boolean
+          source: string | null
+          tier: string | null
+          type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          bio?: string | null
+          city_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_id?: string | null
+          email?: string | null
+          id?: string
+          instagram?: string | null
+          interests?: string[]
+          location?: string | null
+          lot?: string | null
+          member_since?: string | null
+          membership_status?: string
+          name: string
+          open_to_connect?: boolean
+          owner_id?: string | null
+          pass_token?: string
+          phone?: string | null
+          renews_on?: string | null
+          resident?: boolean
+          show_in_directory?: boolean
+          source?: string | null
+          tier?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          bio?: string | null
+          city_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_id?: string | null
+          email?: string | null
+          id?: string
+          instagram?: string | null
+          interests?: string[]
+          location?: string | null
+          lot?: string | null
+          member_since?: string | null
+          membership_status?: string
+          name?: string
+          open_to_connect?: boolean
+          owner_id?: string | null
+          pass_token?: string
+          phone?: string | null
+          renews_on?: string | null
+          resident?: boolean
+          show_in_directory?: boolean
+          source?: string | null
+          tier?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "enrollment_sends_enrollment_id_fkey";
-            columns: ["enrollment_id"];
-            isOneToOne: false;
-            referencedRelation: "enrollments";
-            referencedColumns: ["id"];
+            foreignKeyName: "contacts_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_discount_id_fkey"
+            columns: ["discount_id"]
+            isOneToOne: false
+            referencedRelation: "discounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["key"]
           },
         ]
-      >;
-      enrollments: Table<
-        {
-          contact_id: string;
-          created_at: string;
-          id: string;
-          sequence_id: string;
-          started_on: string;
-          status: string;
-        },
-        "contact_id" | "sequence_id",
-        [
+      }
+      discounts: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          lifetime: boolean
+          name: string
+          percent: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          lifetime?: boolean
+          name: string
+          percent: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          lifetime?: boolean
+          name?: string
+          percent?: number
+        }
+        Relationships: []
+      }
+      divisions: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          id: string
+          is_school: boolean
+          lead_id: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_school?: boolean
+          lead_id?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_school?: boolean
+          lead_id?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "enrollments_contact_id_fkey";
-            columns: ["contact_id"];
-            isOneToOne: false;
-            referencedRelation: "contacts";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "enrollments_sequence_id_fkey";
-            columns: ["sequence_id"];
-            isOneToOne: false;
-            referencedRelation: "sequences";
-            referencedColumns: ["id"];
-          },
-        ]
-      >;
-      finance_entries: Table<
-        {
-          amount: number;
-          business_line_id: string | null;
-          category: string | null;
-          created_at: string;
-          created_by: string | null;
-          currency: string;
-          description: string | null;
-          doc_kind: string | null;
-          due_date: string | null;
-          entry_date: string;
-          file_name: string | null;
-          file_path: string | null;
-          id: string;
-          kind: string;
-          method: string | null;
-          paid_on: string | null;
-          party: string | null;
-          reference: string | null;
-          status: string;
-          updated_at: string;
-        },
-        "amount" | "kind",
-        [
-          {
-            foreignKeyName: "finance_entries_business_line_id_fkey";
-            columns: ["business_line_id"];
-            isOneToOne: false;
-            referencedRelation: "business_lines";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "finance_entries_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "team_members";
-            referencedColumns: ["id"];
-          },
-        ]
-      >;
-      finance_months: Table<
-        {
-          ap: number | null;
-          ar: number | null;
-          cash: number | null;
-          cash_date: string | null;
-          created_at: string;
-          events: number | null;
-          expenses: number | null;
-          fnb: number | null;
-          land: number | null;
-          membership: number | null;
-          month: string;
-          notes: string | null;
-          other: number | null;
-          shop: number | null;
-          updated_at: string;
-        },
-        "month"
-      >;
-      membership_tiers: Table<
-        {
-          active: boolean;
-          currency: string;
-          description: string | null;
-          key: string;
-          name: string;
-          pause_rule: string | null;
-          period: string;
-          perks: string[];
-          position: number;
-          price: number | null;
-          spots: number | null;
-          updated_at: string;
-        },
-        "key" | "name"
-      >;
-      messages: Table<
-        {
-          body: string;
-          created_at: string;
-          id: string;
-          read_at: string | null;
-          recipient_id: string;
-          sender_id: string;
-        },
-        "body" | "recipient_id" | "sender_id"
-      >;
-      offerings: Table<
-        {
-          access: string;
-          capacity: number | null;
-          city_id: string | null;
-          cover_path: string | null;
-          created_at: string;
-          created_by: string | null;
-          days: number[];
-          description: string | null;
-          end_date: string | null;
-          end_time: string | null;
-          facilitator_id: string | null;
-          id: string;
-          kind: string;
-          location: string | null;
-          repeat: string;
-          start_date: string;
-          start_time: string | null;
-          status: string;
-          title: string;
-          updated_at: string;
-        },
-        "kind" | "start_date" | "title",
-        [
-          {
-            foreignKeyName: "offerings_facilitator_id_fkey";
-            columns: ["facilitator_id"];
-            isOneToOne: false;
-            referencedRelation: "team_members";
-            referencedColumns: ["id"];
+            foreignKeyName: "divisions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
           },
         ]
-      >;
-      org_settings: Table<
-        {
-          currency: string;
-          currency2: string | null;
-          email: string | null;
-          id: boolean;
-          language: string;
-          location: string;
-          member_cap: number | null;
-          name: string | null;
-          timezone: string;
-          updated_at: string;
-        },
-        never
-      >;
-      pipeline_assignments: Table<
-        { pipeline: string; team_member_id: string },
-        "pipeline" | "team_member_id",
-        [
+      }
+      enrollment_sends: {
+        Row: {
+          enrollment_id: string
+          sent_by: string | null
+          sent_on: string
+          step_position: number
+        }
+        Insert: {
+          enrollment_id: string
+          sent_by?: string | null
+          sent_on?: string
+          step_position: number
+        }
+        Update: {
+          enrollment_id?: string
+          sent_by?: string | null
+          sent_on?: string
+          step_position?: number
+        }
+        Relationships: [
           {
-            foreignKeyName: "pipeline_assignments_team_member_id_fkey";
-            columns: ["team_member_id"];
-            isOneToOne: false;
-            referencedRelation: "team_members";
-            referencedColumns: ["id"];
+            foreignKeyName: "enrollment_sends_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_sends_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
           },
         ]
-      >;
-      posts: Table<
-        {
-          author_contact_id: string | null;
-          author_staff_id: string | null;
-          body: string;
-          city_id: string | null;
-          created_at: string;
-          id: string;
-          parent_id: string | null;
-        },
-        "body"
-      >;
-      products: Table<
-        {
-          active: boolean;
-          category: string;
-          created_at: string;
-          description: string | null;
-          external_id: string | null;
-          id: string;
-          image_path: string | null;
-          image_url: string | null;
-          low_at: number;
-          member_price: number | null;
-          name: string;
-          online: boolean | null;
-          price: number;
-          product_group: string | null;
-          stock: number;
-          track_stock: boolean;
-          unit: string | null;
-          updated_at: string;
-          variant: string | null;
-          web_url: string | null;
-        },
-        "name" | "price"
-      >;
-      registrations: Table<
-        {
-          checked_in_at: string | null;
-          checked_in_by: string | null;
-          contact_id: string | null;
-          created_at: string;
-          email: string | null;
-          id: string;
-          name: string;
-          offering_id: string;
-          paid: boolean;
-          qr_token: string;
-          session_date: string;
-          source: string;
-          ticket_emailed_at: string | null;
-          ticket_type_id: string | null;
-          user_id: string | null;
-        },
-        "name" | "offering_id" | "session_date",
-        [
+      }
+      enrollments: {
+        Row: {
+          contact_id: string
+          created_at: string
+          id: string
+          sequence_id: string
+          started_on: string
+          status: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          id?: string
+          sequence_id: string
+          started_on?: string
+          status?: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          id?: string
+          sequence_id?: string
+          started_on?: string
+          status?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "registrations_offering_id_fkey";
-            columns: ["offering_id"];
-            isOneToOne: false;
-            referencedRelation: "offerings";
-            referencedColumns: ["id"];
+            foreignKeyName: "enrollments_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "registrations_ticket_type_id_fkey";
-            columns: ["ticket_type_id"];
-            isOneToOne: false;
-            referencedRelation: "ticket_types";
-            referencedColumns: ["id"];
+            foreignKeyName: "enrollments_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "sequences"
+            referencedColumns: ["id"]
           },
         ]
-      >;
-      sample_records: Table<
-        { table_name: string; record_id: string },
-        "table_name" | "record_id"
-      >;
-      sequence_steps: Table<
-        {
-          body: string;
-          channel: string;
-          delay_days: number;
-          id: string;
-          position: number;
-          sequence_id: string;
-          subject: string | null;
-        },
-        "body" | "position" | "sequence_id",
-        [
+      }
+      finance_entries: {
+        Row: {
+          amount: number
+          business_line_id: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          doc_kind: string | null
+          due_date: string | null
+          entry_date: string
+          file_name: string | null
+          file_path: string | null
+          id: string
+          kind: string
+          method: string | null
+          paid_on: string | null
+          party: string | null
+          reference: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          business_line_id?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          doc_kind?: string | null
+          due_date?: string | null
+          entry_date?: string
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          kind: string
+          method?: string | null
+          paid_on?: string | null
+          party?: string | null
+          reference?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          business_line_id?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          doc_kind?: string | null
+          due_date?: string | null
+          entry_date?: string
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          kind?: string
+          method?: string | null
+          paid_on?: string | null
+          party?: string | null
+          reference?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "sequence_steps_sequence_id_fkey";
-            columns: ["sequence_id"];
-            isOneToOne: false;
-            referencedRelation: "sequences";
-            referencedColumns: ["id"];
+            foreignKeyName: "finance_entries_business_line_id_fkey"
+            columns: ["business_line_id"]
+            isOneToOne: false
+            referencedRelation: "business_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
           },
         ]
-      >;
-      sequences: Table<
-        {
-          created_at: string;
-          description: string | null;
-          id: string;
-          name: string;
-          updated_at: string;
-        },
-        "name"
-      >;
-      session_cancellations: Table<
-        { created_at: string; offering_id: string; session_date: string },
-        "offering_id" | "session_date",
-        [
+      }
+      finance_months: {
+        Row: {
+          ap: number | null
+          ar: number | null
+          cash: number | null
+          cash_date: string | null
+          created_at: string
+          events: number | null
+          expenses: number | null
+          fnb: number | null
+          land: number | null
+          membership: number | null
+          month: string
+          notes: string | null
+          other: number | null
+          shop: number | null
+          updated_at: string
+        }
+        Insert: {
+          ap?: number | null
+          ar?: number | null
+          cash?: number | null
+          cash_date?: string | null
+          created_at?: string
+          events?: number | null
+          expenses?: number | null
+          fnb?: number | null
+          land?: number | null
+          membership?: number | null
+          month: string
+          notes?: string | null
+          other?: number | null
+          shop?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ap?: number | null
+          ar?: number | null
+          cash?: number | null
+          cash_date?: string | null
+          created_at?: string
+          events?: number | null
+          expenses?: number | null
+          fnb?: number | null
+          land?: number | null
+          membership?: number | null
+          month?: string
+          notes?: string | null
+          other?: number | null
+          shop?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gate_entries: {
+        Row: {
+          contact_id: string | null
+          entered_at: string
+          id: string
+          logged_by: string | null
+        }
+        Insert: {
+          contact_id?: string | null
+          entered_at?: string
+          id?: string
+          logged_by?: string | null
+        }
+        Update: {
+          contact_id?: string | null
+          entered_at?: string
+          id?: string
+          logged_by?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "session_cancellations_offering_id_fkey";
-            columns: ["offering_id"];
-            isOneToOne: false;
-            referencedRelation: "offerings";
-            referencedColumns: ["id"];
+            foreignKeyName: "gate_entries_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gate_entries_logged_by_fkey"
+            columns: ["logged_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
           },
         ]
-      >;
-      stock_movements: Table<
-        {
-          by_id: string | null;
-          created_at: string;
-          delta: number;
-          id: string;
-          product_id: string;
-          type: string;
-        },
-        "delta" | "product_id" | "type",
-        [
+      }
+      lot_household: {
+        Row: {
+          birth_year: number | null
+          contact_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          lives_on_site: boolean
+          lot_id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          relation: string
+        }
+        Insert: {
+          birth_year?: number | null
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          lives_on_site?: boolean
+          lot_id: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          relation?: string
+        }
+        Update: {
+          birth_year?: number | null
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          lives_on_site?: boolean
+          lot_id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          relation?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "stock_movements_product_id_fkey";
-            columns: ["product_id"];
-            isOneToOne: false;
-            referencedRelation: "products";
-            referencedColumns: ["id"];
+            foreignKeyName: "lot_household_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lot_household_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "lots"
+            referencedColumns: ["id"]
           },
         ]
-      >;
-      tasks: Table<
-        {
-          assignee_id: string | null;
-          completed_at: string | null;
-          created_at: string;
-          created_by: string | null;
-          description: string | null;
-          division_id: string | null;
-          due_date: string | null;
-          id: string;
-          kind: string;
-          location: string | null;
-          position: number;
-          priority: string;
-          status: string;
-          title: string;
-          updated_at: string;
-        },
-        "title",
-        [
+      }
+      lot_maintenance: {
+        Row: {
+          category: string
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          details: string | null
+          done_by: string | null
+          id: string
+          lot_id: string
+          performed_on: string
+          status: string
+          title: string
+        }
+        Insert: {
+          category?: string
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          details?: string | null
+          done_by?: string | null
+          id?: string
+          lot_id: string
+          performed_on?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          details?: string | null
+          done_by?: string | null
+          id?: string
+          lot_id?: string
+          performed_on?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "tasks_assignee_id_fkey";
-            columns: ["assignee_id"];
-            isOneToOne: false;
-            referencedRelation: "team_members";
-            referencedColumns: ["id"];
+            foreignKeyName: "lot_maintenance_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tasks_division_id_fkey";
-            columns: ["division_id"];
-            isOneToOne: false;
-            referencedRelation: "divisions";
-            referencedColumns: ["id"];
-          },
-        ]
-      >;
-      student_guardians: Table<
-        {
-          created_at: string;
-          email: string | null;
-          id: string;
-          name: string;
-          phone: string | null;
-          relation: string | null;
-          student_id: string;
-        },
-        "name" | "student_id",
-        [
-          {
-            foreignKeyName: "student_guardians_student_id_fkey";
-            columns: ["student_id"];
-            isOneToOne: false;
-            referencedRelation: "students";
-            referencedColumns: ["id"];
-          },
-        ]
-      >;
-      student_updates: Table<
-        {
-          author_id: string | null;
-          body: string;
-          created_at: string;
-          id: string;
-          photo_path: string | null;
-          shared: boolean;
-          student_id: string;
-        },
-        "body" | "student_id",
-        [
-          {
-            foreignKeyName: "student_updates_author_id_fkey";
-            columns: ["author_id"];
-            isOneToOne: false;
-            referencedRelation: "team_members";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "student_updates_student_id_fkey";
-            columns: ["student_id"];
-            isOneToOne: false;
-            referencedRelation: "students";
-            referencedColumns: ["id"];
+            foreignKeyName: "lot_maintenance_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "lots"
+            referencedColumns: ["id"]
           },
         ]
-      >;
-      students: Table<
-        {
-          about: string | null;
-          birthdate: string | null;
-          created_at: string;
-          group_name: string | null;
-          id: string;
-          name: string;
-          photo_path: string | null;
-          preferred_name: string | null;
-          share_token: string;
-          staff_notes: string | null;
-          start_date: string | null;
-          status: string;
-          updated_at: string;
-        },
-        "name"
-      >;
-      team_members: Table<
-        {
-          created_at: string;
-          division_id: string | null;
-          email: string | null;
-          id: string;
-          name: string;
-          phone: string | null;
-          responsibilities: string | null;
-          role: string;
-          start_date: string | null;
-          status: string;
-          title: string | null;
-          type: string;
-          updated_at: string;
-          user_id: string | null;
-        },
-        "name",
-        [
+      }
+      lots: {
+        Row: {
+          aerial_path: string | null
+          bathrooms: number | null
+          bedrooms: number | null
+          built_m2: number | null
+          code: string
+          created_at: string
+          currency: string
+          description: string | null
+          home_name: string | null
+          home_notes: string | null
+          home_status: string
+          hospitality_since: string | null
+          id: string
+          in_hospitality: boolean
+          listing_notes: string | null
+          max_guests: number | null
+          min_nights: number
+          name: string | null
+          nightly_rate: number | null
+          owner_contact_id: string | null
+          photo_path: string | null
+          price: number | null
+          rate_currency: string
+          size_m2: number | null
+          status: string
+          updated_at: string
+          zone: string | null
+        }
+        Insert: {
+          aerial_path?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          built_m2?: number | null
+          code: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          home_name?: string | null
+          home_notes?: string | null
+          home_status?: string
+          hospitality_since?: string | null
+          id?: string
+          in_hospitality?: boolean
+          listing_notes?: string | null
+          max_guests?: number | null
+          min_nights?: number
+          name?: string | null
+          nightly_rate?: number | null
+          owner_contact_id?: string | null
+          photo_path?: string | null
+          price?: number | null
+          rate_currency?: string
+          size_m2?: number | null
+          status?: string
+          updated_at?: string
+          zone?: string | null
+        }
+        Update: {
+          aerial_path?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          built_m2?: number | null
+          code?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          home_name?: string | null
+          home_notes?: string | null
+          home_status?: string
+          hospitality_since?: string | null
+          id?: string
+          in_hospitality?: boolean
+          listing_notes?: string | null
+          max_guests?: number | null
+          min_nights?: number
+          name?: string | null
+          nightly_rate?: number | null
+          owner_contact_id?: string | null
+          photo_path?: string | null
+          price?: number | null
+          rate_currency?: string
+          size_m2?: number | null
+          status?: string
+          updated_at?: string
+          zone?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "team_members_division_id_fkey";
-            columns: ["division_id"];
-            isOneToOne: false;
-            referencedRelation: "divisions";
-            referencedColumns: ["id"];
+            foreignKeyName: "lots_owner_contact_id_fkey"
+            columns: ["owner_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
           },
         ]
-      >;
-      ticket_types: Table<
-        {
-          currency: string;
-          id: string;
-          name: string;
-          offering_id: string;
-          payment_link: string | null;
-          position: number;
-          price: number;
-          qty: number | null;
-        },
-        "name" | "offering_id",
-        [
+      }
+      membership_tiers: {
+        Row: {
+          active: boolean
+          currency: string
+          description: string | null
+          key: string
+          name: string
+          pause_rule: string | null
+          period: string
+          perks: string[]
+          position: number
+          price: number | null
+          spots: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          currency?: string
+          description?: string | null
+          key: string
+          name: string
+          pause_rule?: string | null
+          period?: string
+          perks?: string[]
+          position?: number
+          price?: number | null
+          spots?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          currency?: string
+          description?: string | null
+          key?: string
+          name?: string
+          pause_rule?: string | null
+          period?: string
+          perks?: string[]
+          position?: number
+          price?: number | null
+          spots?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "ticket_types_offering_id_fkey";
-            columns: ["offering_id"];
-            isOneToOne: false;
-            referencedRelation: "offerings";
-            referencedColumns: ["id"];
+            foreignKeyName: "messages_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
           },
         ]
-      >;
-    };
-    Views: { [_ in never]: never };
+      }
+      offerings: {
+        Row: {
+          access: string
+          capacity: number | null
+          city_id: string | null
+          cover_path: string | null
+          created_at: string
+          created_by: string | null
+          days: number[]
+          description: string | null
+          end_date: string | null
+          end_time: string | null
+          facilitator_id: string | null
+          id: string
+          kind: string
+          location: string | null
+          repeat: string
+          start_date: string
+          start_time: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          access?: string
+          capacity?: number | null
+          city_id?: string | null
+          cover_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          days?: number[]
+          description?: string | null
+          end_date?: string | null
+          end_time?: string | null
+          facilitator_id?: string | null
+          id?: string
+          kind: string
+          location?: string | null
+          repeat?: string
+          start_date: string
+          start_time?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          access?: string
+          capacity?: number | null
+          city_id?: string | null
+          cover_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          days?: number[]
+          description?: string | null
+          end_date?: string | null
+          end_time?: string | null
+          facilitator_id?: string | null
+          id?: string
+          kind?: string
+          location?: string | null
+          repeat?: string
+          start_date?: string
+          start_time?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offerings_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offerings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offerings_facilitator_id_fkey"
+            columns: ["facilitator_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_settings: {
+        Row: {
+          currency: string
+          currency2: string | null
+          email: string | null
+          id: boolean
+          language: string
+          location: string
+          member_cap: number | null
+          name: string | null
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          currency?: string
+          currency2?: string | null
+          email?: string | null
+          id?: boolean
+          language?: string
+          location?: string
+          member_cap?: number | null
+          name?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          currency?: string
+          currency2?: string | null
+          email?: string | null
+          id?: boolean
+          language?: string
+          location?: string
+          member_cap?: number | null
+          name?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pipeline_assignments: {
+        Row: {
+          pipeline: string
+          team_member_id: string
+        }
+        Insert: {
+          pipeline: string
+          team_member_id: string
+        }
+        Update: {
+          pipeline?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_assignments_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          author_contact_id: string | null
+          author_staff_id: string | null
+          body: string
+          city_id: string | null
+          created_at: string
+          id: string
+          parent_id: string | null
+        }
+        Insert: {
+          author_contact_id?: string | null
+          author_staff_id?: string | null
+          body: string
+          city_id?: string | null
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+        }
+        Update: {
+          author_contact_id?: string | null
+          author_staff_id?: string | null
+          body?: string
+          city_id?: string | null
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_author_contact_id_fkey"
+            columns: ["author_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_author_staff_id_fkey"
+            columns: ["author_staff_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          description: string | null
+          external_id: string | null
+          id: string
+          image_path: string | null
+          image_url: string | null
+          low_at: number
+          member_price: number | null
+          name: string
+          online: boolean | null
+          price: number
+          product_group: string | null
+          stock: number
+          track_stock: boolean
+          unit: string | null
+          updated_at: string
+          variant: string | null
+          web_url: string | null
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          external_id?: string | null
+          id?: string
+          image_path?: string | null
+          image_url?: string | null
+          low_at?: number
+          member_price?: number | null
+          name: string
+          online?: boolean | null
+          price: number
+          product_group?: string | null
+          stock?: number
+          track_stock?: boolean
+          unit?: string | null
+          updated_at?: string
+          variant?: string | null
+          web_url?: string | null
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          external_id?: string | null
+          id?: string
+          image_path?: string | null
+          image_url?: string | null
+          low_at?: number
+          member_price?: number | null
+          name?: string
+          online?: boolean | null
+          price?: number
+          product_group?: string | null
+          stock?: number
+          track_stock?: boolean
+          unit?: string | null
+          updated_at?: string
+          variant?: string | null
+          web_url?: string | null
+        }
+        Relationships: []
+      }
+      registrations: {
+        Row: {
+          checked_in_at: string | null
+          checked_in_by: string | null
+          contact_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          offering_id: string
+          paid: boolean
+          qr_token: string
+          session_date: string
+          source: string
+          ticket_emailed_at: string | null
+          ticket_type_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          checked_in_at?: string | null
+          checked_in_by?: string | null
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          offering_id: string
+          paid?: boolean
+          qr_token?: string
+          session_date: string
+          source?: string
+          ticket_emailed_at?: string | null
+          ticket_type_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          checked_in_at?: string | null
+          checked_in_by?: string | null
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          offering_id?: string
+          paid?: boolean
+          qr_token?: string
+          session_date?: string
+          source?: string
+          ticket_emailed_at?: string | null
+          ticket_type_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registrations_checked_in_by_fkey"
+            columns: ["checked_in_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_offering_id_fkey"
+            columns: ["offering_id"]
+            isOneToOne: false
+            referencedRelation: "offerings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_ticket_type_id_fkey"
+            columns: ["ticket_type_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sample_records: {
+        Row: {
+          record_id: string
+          table_name: string
+        }
+        Insert: {
+          record_id: string
+          table_name: string
+        }
+        Update: {
+          record_id?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
+      school_schedule: {
+        Row: {
+          created_at: string
+          end_time: string
+          group_name: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          on_date: string | null
+          start_time: string
+          teacher_id: string | null
+          title: string
+          weekday: number | null
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          group_name?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          on_date?: string | null
+          start_time: string
+          teacher_id?: string | null
+          title: string
+          weekday?: number | null
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          group_name?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          on_date?: string | null
+          start_time?: string
+          teacher_id?: string | null
+          title?: string
+          weekday?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_schedule_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sequence_steps: {
+        Row: {
+          body: string
+          channel: string
+          delay_days: number
+          id: string
+          position: number
+          sequence_id: string
+          subject: string | null
+        }
+        Insert: {
+          body: string
+          channel?: string
+          delay_days?: number
+          id?: string
+          position: number
+          sequence_id: string
+          subject?: string | null
+        }
+        Update: {
+          body?: string
+          channel?: string
+          delay_days?: number
+          id?: string
+          position?: number
+          sequence_id?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sequence_steps_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sequences: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      session_cancellations: {
+        Row: {
+          created_at: string
+          offering_id: string
+          session_date: string
+        }
+        Insert: {
+          created_at?: string
+          offering_id: string
+          session_date: string
+        }
+        Update: {
+          created_at?: string
+          offering_id?: string
+          session_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_cancellations_offering_id_fkey"
+            columns: ["offering_id"]
+            isOneToOne: false
+            referencedRelation: "offerings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stays: {
+        Row: {
+          check_in: string
+          check_out: string
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          email: string | null
+          guest_name: string
+          guests: number | null
+          id: string
+          kind: string
+          lot_id: string
+          nightly_rate: number | null
+          notes: string | null
+          paid: boolean
+          phone: string | null
+          source: string
+          status: string
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          check_in: string
+          check_out: string
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          email?: string | null
+          guest_name: string
+          guests?: number | null
+          id?: string
+          kind?: string
+          lot_id: string
+          nightly_rate?: number | null
+          notes?: string | null
+          paid?: boolean
+          phone?: string | null
+          source?: string
+          status?: string
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          check_in?: string
+          check_out?: string
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          email?: string | null
+          guest_name?: string
+          guests?: number | null
+          id?: string
+          kind?: string
+          lot_id?: string
+          nightly_rate?: number | null
+          notes?: string | null
+          paid?: boolean
+          phone?: string | null
+          source?: string
+          status?: string
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stays_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stays_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stays_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "lots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_movements: {
+        Row: {
+          by_id: string | null
+          created_at: string
+          delta: number
+          id: string
+          product_id: string
+          type: string
+        }
+        Insert: {
+          by_id?: string | null
+          created_at?: string
+          delta: number
+          id?: string
+          product_id: string
+          type: string
+        }
+        Update: {
+          by_id?: string | null
+          created_at?: string
+          delta?: number
+          id?: string
+          product_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_by_id_fkey"
+            columns: ["by_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_guardians: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          relation: string | null
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          relation?: string | null
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          relation?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_guardians_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_updates: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          photo_path: string | null
+          shared: boolean
+          student_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          photo_path?: string | null
+          shared?: boolean
+          student_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          photo_path?: string | null
+          shared?: boolean
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_updates_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_updates_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          about: string | null
+          birthdate: string | null
+          created_at: string
+          group_name: string | null
+          id: string
+          name: string
+          photo_path: string | null
+          preferred_name: string | null
+          share_token: string
+          staff_notes: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          about?: string | null
+          birthdate?: string | null
+          created_at?: string
+          group_name?: string | null
+          id?: string
+          name: string
+          photo_path?: string | null
+          preferred_name?: string | null
+          share_token?: string
+          staff_notes?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          about?: string | null
+          birthdate?: string | null
+          created_at?: string
+          group_name?: string | null
+          id?: string
+          name?: string
+          photo_path?: string | null
+          preferred_name?: string | null
+          share_token?: string
+          staff_notes?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          assignee_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          division_id: string | null
+          due_date: string | null
+          id: string
+          kind: string
+          location: string | null
+          position: number
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          division_id?: string | null
+          due_date?: string | null
+          id?: string
+          kind?: string
+          location?: string | null
+          position?: number
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          division_id?: string | null
+          due_date?: string | null
+          id?: string
+          kind?: string
+          location?: string | null
+          position?: number
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          created_at: string
+          division_id: string | null
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          responsibilities: string | null
+          role: string
+          start_date: string | null
+          status: string
+          title: string | null
+          type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          division_id?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          responsibilities?: string | null
+          role?: string
+          start_date?: string | null
+          status?: string
+          title?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          division_id?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          responsibilities?: string | null
+          role?: string
+          start_date?: string | null
+          status?: string
+          title?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_types: {
+        Row: {
+          currency: string
+          id: string
+          name: string
+          offering_id: string
+          payment_link: string | null
+          position: number
+          price: number
+          qty: number | null
+        }
+        Insert: {
+          currency?: string
+          id?: string
+          name: string
+          offering_id: string
+          payment_link?: string | null
+          position?: number
+          price?: number
+          qty?: number | null
+        }
+        Update: {
+          currency?: string
+          id?: string
+          name?: string
+          offering_id?: string
+          payment_link?: string | null
+          position?: number
+          price?: number
+          qty?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_types_offering_id_fkey"
+            columns: ["offering_id"]
+            isOneToOne: false
+            referencedRelation: "offerings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
+      can_work_gate: { Args: never; Returns: boolean };
+      is_estate_staff: { Args: never; Returns: boolean };
+      org_now: { Args: never; Returns: string };
+      my_pass_token: { Args: never; Returns: string | null };
+      log_pass_entry: { Args: { p_token: string }; Returns: string };
+      pass_by_token: {
+        Args: { p_token: string };
+        Returns: {
+          contact_id: string;
+          holder: string;
+          tier: string | null;
+          tier_name: string | null;
+          period: string;
+          membership_status: string | null;
+          valid_from: string | null;
+          valid_until: string | null;
+          state: string;
+          can_log: boolean;
+          is_mine: boolean;
+          last_entry_at: string | null;
+        }[];
+      };
       book_session: {
         Args: {
           p_email: string;
@@ -824,18 +2032,139 @@ export type Database = {
           state: string;
           ticket_name: string | null;
           title: string;
+          gate_opens: string | null;
         }[];
       };
       ticket_sales_for_month: { Args: { p_month: string }; Returns: number };
     };
-    Enums: { [_ in never]: never };
-    CompositeTypes: { [_ in never]: never };
-  };
-};
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
 
-type PublicTables = Database["public"]["Tables"];
-export type Tables<T extends keyof PublicTables> = PublicTables[T]["Row"];
-export type TablesInsert<T extends keyof PublicTables> =
-  PublicTables[T]["Insert"];
-export type TablesUpdate<T extends keyof PublicTables> =
-  PublicTables[T]["Update"];
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

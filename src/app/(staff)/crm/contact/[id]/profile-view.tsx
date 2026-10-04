@@ -149,7 +149,7 @@ export function ProfileView({
           </section>
 
           <section className="panel">
-            <h2>Sequences</h2>
+            <h2>Workflows</h2>
             {enrollments.length ? (
               enrollments.map((e) => {
                 const seq = sequences.find((s) => s.id === e.sequence_id);
@@ -166,7 +166,7 @@ export function ProfileView({
                         ).toLowerCase()}`;
                 return (
                   <div className="enr" key={e.id}>
-                    <b>{seq.name}</b>
+                    <b><Link href={`/crm/workflows/${seq.id}`} style={{ color: "inherit" }}>{seq.name}</Link></b>
                     <span>
                       {e.sent.length} of {seq.steps.length} sent. {line}.
                     </span>
@@ -206,17 +206,17 @@ export function ProfileView({
                 );
               })
             ) : (
-              <p className="muted" style={{ margin: 0 }}>Not enrolled in any sequence.</p>
+              <p className="muted" style={{ margin: 0 }}>Not enrolled in any workflow.</p>
             )}
             {canEdit &&
               (sequences.length ? (
                 <div className="enroll">
                   <select
-                    aria-label="Sequence"
+                    aria-label="Workflow"
                     value={seqPick}
                     onChange={(e) => setSeqPick(e.target.value)}
                   >
-                    <option value="">Enroll in a sequence…</option>
+                    <option value="">Enroll in a workflow…</option>
                     {sequences.map((s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
@@ -287,11 +287,15 @@ export function ProfileView({
                       ? fmtDate(c.member_since, { month: "short", day: "numeric", year: "numeric" })
                       : "—"}
                   </dd>
-                  <dt>Renews</dt>
+                  <dt>{tierRow?.period === "day" || tierRow?.period === "week" ? "Valid until" : "Renews"}</dt>
                   <dd>
                     {c.renews_on
                       ? fmtDate(c.renews_on, { month: "short", day: "numeric", year: "numeric" })
                       : "—"}
+                  </dd>
+                  <dt>Pass</dt>
+                  <dd>
+                    <a href={`/p/${c.pass_token}`} target="_blank" rel="noreferrer">Open member pass</a>
                   </dd>
                 </>
               )}

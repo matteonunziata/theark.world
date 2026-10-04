@@ -9,7 +9,8 @@ import {
   ok,
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
-import { CHANNELS, MSTATUS, PIPELINES, PTYPES } from "@/lib/crm";
+import { CHANNELS, merge, MSTATUS, PIPELINES, PTYPES } from "@/lib/crm";
+import { sendWorkflowEmail } from "@/lib/email";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -133,7 +134,7 @@ export async function enroll(contactId: string, sequenceId: string) {
     .from("enrollments")
     .insert({ contact_id: contactId, sequence_id: sequenceId });
   if (error) {
-    if (error.code === "23505") return fail("Already enrolled in that sequence.");
+    if (error.code === "23505") return fail("Already enrolled in that workflow.");
     return fail(friendly(error));
   }
   refresh();
@@ -188,43 +189,81 @@ export async function markSent(enrollmentId: string, step: number) {
   return ok("Marked as sent");
 }
 
-export async function saveSequence(
-  _prev: ActionResult,
-  data: FormData,
-): Promise<ActionResult> {
+/** Send an email step in the ARK template, then mark it sent. */
+export async function sendStep(enrollmentId: string, step: number) {
   const { supabase } = await staffOrThrow("admin", "sales");
-  const id = field(data, "id");
-
-  if (data.get("intent") === "delete" && id) {
-    const { error } = await supabase.from("sequences").delete().eq("id", id);
-    if (error) return fail(friendly(error));
-    refresh();
-    return ok("Sequence deleted");
+  const { data: e } = await supabase
+    .from("enrollments")
+    .select("sequence_id, contacts(name, email)")
+    .eq("id", enrollmentId)
+    .single();
+  if (!e?.contacts?.email) return fail("There’s no email on file for this person.");
+  const [{ data: st }, { data: org }] = await Promise.all([
+    supabase
+      .from("sequence_steps")
+      .select("subject, body, channel")
+      .eq("sequence_id", e.sequence_id)
+      .eq("position", step)
+      .single(),
+    supabase.rpc("public_org").maybeSingle(),
+  ]);
+  if (!st || st.channel !== "email") return fail("That step isn’t an email.");
+  const orgName = org?.name ?? "The ARK";
+  const sent = await sendWorkflowEmail({
+    to: e.contacts.email,
+    subject: merge(st.subject, e.contacts, orgName),
+    body: merge(st.body, e.contacts, orgName),
+    orgName,
+  });
+  if (!sent) {
+    return fail("Email isn’t set up yet (Resend). Open it in your email app instead.");
   }
+  const marked = await markSent(enrollmentId, step);
+  return marked.ok ? ok("Sent") : marked;
+}
 
-  const name = field(data, "name");
-  if (!name) return fail("Enter a name.");
-  const channels = data.getAll("s_channel").map(String);
-  const delays = data.getAll("s_delay").map(String);
-  const subjects = data.getAll("s_subject").map(String);
-  const bodies = data.getAll("s_body").map(String);
-  const steps = channels
-    .map((c, i) => ({
-      channel: CHANNELS.some(([k]) => k === c) ? c : "email",
-      delay_days: Math.max(0, Number(delays[i] || 0)),
-      subject: subjects[i]?.trim() ?? "",
-      body: bodies[i]?.trim() ?? "",
-    }))
-    .filter((s) => s.body);
-  if (!steps.length) return fail("Add at least one step with a message.");
+export type WorkflowStep = {
+  channel: string;
+  delay_days: number;
+  subject: string | null;
+  body: string;
+};
 
-  const { error } = await supabase.rpc("save_sequence", {
-    p_id: id,
+/** Save a workflow and its steps from the flowchart editor. */
+export async function saveWorkflow(input: {
+  id: string | null;
+  name: string;
+  description: string | null;
+  steps: WorkflowStep[];
+}): Promise<ActionResult & { id?: string }> {
+  const { supabase } = await staffOrThrow("admin", "sales");
+  const name = input.name.trim();
+  if (!name) return fail("Give the workflow a name.");
+  const steps = input.steps.map((s) => ({
+    channel: CHANNELS.some(([k]) => k === s.channel) ? s.channel : "email",
+    delay_days: Math.max(0, Math.floor(Number(s.delay_days) || 0)),
+    subject: s.subject?.trim() ?? "",
+    body: s.body.trim(),
+  }));
+  const empty = steps.findIndex((s) => !s.body);
+  if (!steps.length) return fail("Add at least one step.");
+  if (empty >= 0) return fail(`Step ${empty + 1} has no message yet.`);
+  const { data, error } = await supabase.rpc("save_sequence", {
+    p_id: input.id,
     p_name: name,
-    p_description: field(data, "description"),
+    p_description: input.description?.trim() || null,
     p_steps: steps,
   });
   if (error) return fail(friendly(error));
   refresh();
-  return ok(id ? "Sequence saved" : "Sequence created");
+  revalidatePath(`/crm/workflows/${data}`);
+  return { ...ok(input.id ? "Workflow saved" : "Workflow created"), id: data ?? undefined };
+}
+
+export async function deleteWorkflow(id: string): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("admin", "sales");
+  const { error } = await supabase.from("sequences").delete().eq("id", id);
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok("Workflow deleted");
 }
