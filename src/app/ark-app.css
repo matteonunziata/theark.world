@@ -13,6 +13,7 @@
 .auth-err{color:var(--danger)!important;font-size:14px;margin:0 0 14px!important}
 .auth-foot{font-size:14px;margin:18px 0 0!important}
 .auth-foot a{color:var(--sea)}
+.auth-or{text-align:center;font-size:13px;color:var(--muted);margin:14px 0!important}
 .auth-card form .fld input{background:var(--bg)}
 
 /* shell */

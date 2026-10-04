@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-export function MagicLinkForm({ next }: { next: string }) {
+export function MagicLinkForm({
+  next,
+  domain,
+}: {
+  next: string;
+  /** Only accept emails at this domain (team sign-in). */
+  domain?: string;
+}) {
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState("");
 
@@ -11,6 +18,10 @@ export function MagicLinkForm({ next }: { next: string }) {
     const email = String(form.get("email") ?? "").trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Enter a valid email.");
+      return;
+    }
+    if (domain && !email.endsWith(`@${domain}`)) {
+      setError(`Use your @${domain} email.`);
       return;
     }
     setState("sending");
@@ -51,7 +62,14 @@ export function MagicLinkForm({ next }: { next: string }) {
       )}
       <div className="fld">
         <label htmlFor="m-email">Email</label>
-        <input id="m-email" name="email" type="email" autoComplete="email" required />
+        <input
+          id="m-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder={domain ? `you@${domain}` : undefined}
+          required
+        />
       </div>
       <button type="submit" className="btn primary auth-btn" disabled={state === "sending"}>
         {state === "sending" ? "Sending…" : "Email me a sign-in link"}
