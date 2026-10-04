@@ -12,7 +12,7 @@
   --pv-sun: #c99a1e;
   --pv-clay: #a65a3a;
   --pv-sea: #1f6e7a;
-  --pv-serif: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+  --pv-serif: "Fraunces", "Iowan Old Style", Georgia, serif;
   min-height: 100dvh;
   background: var(--pv-bg);
   color: var(--pv-ink);

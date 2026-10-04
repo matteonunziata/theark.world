@@ -4,8 +4,8 @@
   --canopy:#21402D; --canopy-2:#2B5039; --canopy-ink:#E7EEE6; --canopy-muted:#A9BCAE;
   --leaf:#3E7A55; --sea:#1F6E7A; --sun:#C99A1E; --clay:#A65A3A; --plum:#6E4A7E; --slate:#56636B;
   --danger:#B4442F; --focus:#1F6E7A;
-  --display:var(--font-bricolage), "Avenir Next", "Segoe UI", system-ui, sans-serif;
-  --body:var(--font-figtree), "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body:"Figtree", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }

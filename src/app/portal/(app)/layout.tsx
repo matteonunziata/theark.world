@@ -1,15 +1,8 @@
-import { Fraunces } from "next/font/google";
 import { initials } from "@/components/avatar";
 import { ToastProvider } from "@/components/toast";
 import { loadPortal } from "@/lib/portal";
 import "../portal.css";
 import { PortalShell } from "../portal-shell";
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  weight: ["500", "600"],
-});
 
 export default async function PortalLayout({ children }: LayoutProps<"/portal">) {
   const p = await loadPortal();
@@ -22,7 +15,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/portal">)
     : { count: 0 };
   return (
     <ToastProvider>
-      <div className={`pv ${fraunces.variable}`}>
+      <div className="pv">
         <PortalShell
           cities={p.cities.map((c) => ({ id: c.id, name: c.name }))}
           cityId={p.city?.id ?? null}
