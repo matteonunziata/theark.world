@@ -44,3 +44,20 @@ dialog.drawer form{display:flex;flex-direction:column;height:100%}
 .note a{color:var(--sea)}
 .check{display:flex;align-items:center;gap:8px;font-size:14px}
 .pill-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+
+/* tickets */
+.ticket{max-width:420px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:26px 24px;text-align:center}
+.ticket h1{font-size:30px;margin-top:6px}
+.ticket .qr{display:grid;place-items:center;margin:18px auto 8px;background:#fff;border-radius:14px;padding:12px;width:fit-content}
+.ticket .qr svg{width:200px;height:200px;display:block}
+.ticket .code{font-family:ui-monospace,Menlo,monospace;font-size:17px;letter-spacing:.12em}
+.ticket .acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.state{display:inline-block;font-weight:700;font-size:15px;border-radius:999px;padding:7px 16px;margin-top:14px}
+.state.ok{background:var(--leaf);color:#fff}
+.state.used{background:var(--surface-2);color:var(--ink)}
+.state.bad{background:var(--danger);color:#fff}
+.state.soon{background:var(--sun);color:#1C2620}
+.gate-note{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+.chk{grid-template-columns:minmax(200px,1.6fr) 1.4fr 1fr auto}
+.chk .acts{display:flex;gap:6px;justify-content:flex-end}
+@media (max-width: 860px){.chk{grid-template-columns:1fr auto}.chk .c-c2,.chk .c-t{display:none}}

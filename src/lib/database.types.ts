@@ -522,6 +522,14 @@ export type Database = {
         };
         Returns: string;
       };
+      session_counts: {
+        Args: { p_offering_id: string; p_from: string; p_to: string };
+        Returns: {
+          session_date: string;
+          ticket_type_id: string | null;
+          taken: number;
+        }[];
+      };
       staff_role: { Args: never; Returns: string };
       ticket_by_token: {
         Args: { p_token: string };
