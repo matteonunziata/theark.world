@@ -1,0 +1,46 @@
+/* Additions to the prototype's design for the real app. */
+
+/* sign-in */
+.auth{min-height:100%;display:grid;place-items:center;padding:24px 16px;background:var(--canopy)}
+.auth-card{position:relative;overflow:hidden;width:min(420px,100%);background:var(--surface);border-radius:18px;padding:34px 30px 28px;text-align:left}
+.auth-card .mark{color:var(--ink);padding:0;margin-bottom:22px}
+.auth-card .mark small{color:var(--muted)}
+.auth-card h1{font-size:30px}
+.auth-card p{color:var(--muted);margin:8px 0 20px}
+.auth-leaf{position:absolute;right:-40px;top:-30px;width:180px;height:180px;fill:none;stroke:var(--leaf);stroke-width:1;opacity:.18}
+.auth-btn{width:100%;justify-content:center;padding:12px 15px}
+.auth-btn .g{width:18px;height:18px}
+.auth-err{color:var(--danger)!important;font-size:14px;margin:0 0 14px!important}
+.auth-foot{font-size:14px;margin:18px 0 0!important}
+.auth-foot a{color:var(--sea)}
+.auth-card form .fld input{background:var(--bg)}
+
+/* shell */
+.side-foot form{margin:0}
+.side-foot .who-me{flex:1;min-width:0}
+.side-foot .who-me b{display:block;color:var(--canopy-ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-foot .linkish{background:none;border:0;padding:0;color:var(--canopy-muted);text-decoration:underline;cursor:pointer;font-size:12.5px}
+.app{height:100dvh}
+main.main{overflow-y:auto;height:100%}
+@media (max-width: 860px){
+  .app{height:auto;min-height:100dvh}
+  main.main{height:auto;overflow:visible}
+  .side.open + .scrim-side{opacity:1;pointer-events:auto}
+}
+.scrim-side{position:fixed;inset:0;background:rgba(10,18,13,.42);opacity:0;pointer-events:none;transition:opacity .2s;z-index:19}
+
+/* drawer as a native dialog */
+dialog.drawer:not([open]){display:none}
+dialog.drawer{margin:0 0 0 auto;height:100dvh;max-height:none;border:0;border-left:1px solid var(--line);transform:none;color:var(--ink);padding:0}
+dialog.drawer::backdrop{background:rgba(10,18,13,.42)}
+dialog.drawer[open]{animation:slidein .24s ease}
+@keyframes slidein{from{transform:translateX(100%)}to{transform:none}}
+dialog.drawer form{display:flex;flex-direction:column;height:100%}
+.drawer h2{margin:0}
+.form-error{background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger);border-radius:10px;padding:10px 12px;font-size:13.5px;margin-bottom:14px}
+.toast{z-index:60}
+.row.static{cursor:default}
+.row.static:hover{background:none}
+.note a{color:var(--sea)}
+.check{display:flex;align-items:center;gap:8px;font-size:14px}
+.pill-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
