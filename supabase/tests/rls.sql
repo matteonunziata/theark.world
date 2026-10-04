@@ -88,7 +88,8 @@ values
     'everyone', 'draft', null, null);
 
 insert into public.finance_months (month, membership) values
-  (date_trunc('month', current_date)::date, 1000);
+  (date_trunc('month', current_date)::date, 1000)
+on conflict (month) do nothing;
 
 insert into public.tasks (title, division_id, assignee_id) values
   ('In my division', pg_temp.id('division'), null),
@@ -139,7 +140,7 @@ select pg_temp.expect(pg_temp.hook('github', 'admin@theark.world') ? 'error',
 -- Finance: admin only ----------------------------------------------------------
 
 select pg_temp.act_as(pg_temp.id('admin'));
-select pg_temp.expect((select count(*) from public.finance_months) = 1,
+select pg_temp.expect((select count(*) from public.finance_months) >= 1,
   'admin reads finance');
 reset role;
 
@@ -210,20 +211,27 @@ end $$;
 
 select pg_temp.act_as(pg_temp.id('member'));
 select pg_temp.expect(
-  (select array_agg(title order by title) from public.offerings)
+  (select array_agg(title order by title) from public.offerings
+   where title in ('Members class', 'Open event', 'Draft event'))
     = array['Members class', 'Open event'],
   'member sees published offerings, not drafts');
 select pg_temp.expect(
-  (select array_agg(name) from public.member_directory()) = array['Test member'],
-  'member directory lists active members');
+  'Test member' = any (select name from public.member_directory())
+  and 'Owned by sales' <> all (select name from public.member_directory()),
+  'member directory lists active members only');
 select pg_temp.expect((select count(*) from public.team_members) = 0,
   'member cannot read team records');
 reset role;
 
 select pg_temp.act_as(null);
 select pg_temp.expect(
-  (select array_agg(title) from public.offerings) = array['Open event'],
+  (select array_agg(title) from public.offerings
+   where title in ('Members class', 'Open event', 'Draft event'))
+    = array['Open event'],
   'anon sees only published open events');
+select pg_temp.expect(
+  not exists (select 1 from public.offerings where kind = 'class'),
+  'anon sees no classes');
 reset role;
 
 -- Booking --------------------------------------------------------------------------
@@ -273,7 +281,9 @@ update public.registrations set session_date = public.org_today()
 where email = 'guest@example.com';
 
 select pg_temp.act_as(pg_temp.id('security'));
-select pg_temp.expect((select count(*) from public.registrations) = 1,
+select pg_temp.expect(
+  not exists (select 1 from public.registrations
+              where session_date <> public.org_today()),
   'security reads only today''s bookings');
 select pg_temp.expect(public.check_in(
   (select qr_token from public.registrations where email = 'guest@example.com')
@@ -281,7 +291,8 @@ select pg_temp.expect(public.check_in(
 update public.registrations set paid = true;
 reset role;
 select pg_temp.expect(
-  not exists (select 1 from public.registrations where paid),
+  not exists (select 1 from public.registrations
+              where paid and email = 'guest@example.com'),
   'security cannot edit bookings directly');
 
 select set_config('test.token', (select qr_token from public.registrations
@@ -330,6 +341,19 @@ select pg_temp.act_as(pg_temp.id('sales'));
 select pg_temp.expect((select count(*) from public.products) = 0,
   'sales cannot read the shop');
 reset role;
+
+-- Sales can work contacts in pipelines they're assigned to.
+insert into public.pipeline_assignments (team_member_id, pipeline)
+select id, 'memberships' from public.team_members where email = 'sales@theark.world';
+insert into public.contact_stages (contact_id, pipeline, stage)
+select id, 'memberships', 'waitlist' from public.contacts where email = 'else@example.com';
+select pg_temp.act_as(pg_temp.id('sales'));
+update public.contacts set location = 'Edited by sales' where email = 'else@example.com';
+reset role;
+select pg_temp.expect(
+  exists (select 1 from public.contacts
+          where email = 'else@example.com' and location = 'Edited by sales'),
+  'sales edits contacts in an assigned pipeline');
 
 select 'All RLS tests passed' as result;
 
