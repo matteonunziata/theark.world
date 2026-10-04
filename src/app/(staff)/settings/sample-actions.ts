@@ -192,7 +192,7 @@ export async function loadSampleData(): Promise<ActionResult> {
           interests: [...interests],
           membership_status: ms,
           instagram: `@${first.toLowerCase()}`,
-          lot: type === "steward" ? (first === "Jonas" ? "12" : "7") : null,
+          lot: type === "steward" ? (first === "Jonas" ? "S-12" : "S-7") : null,
           resident: first === "Jonas",
           member_since: tier ? addDays(td, -40) : null,
           renews_on: tier ? addDays(td, 325) : null,
@@ -214,11 +214,11 @@ export async function loadSampleData(): Promise<ActionResult> {
     );
     // Lots, homes and households; their logs and stays go with the lot.
     const [l12, l7] = await insert("lots", [
-      { code: "12", name: "Casa Guayacán", zone: "Ridge", status: "sold", size_m2: 2400, price: 420000, owner_contact_id: C.Jonas, home_status: "built", home_name: "Casa Guayacán", bedrooms: 3, bathrooms: 2.5, built_m2: 210, home_notes: "Timber and lime plaster, solar on the roof, a small plunge pool.", in_hospitality: true, hospitality_since: addDays(td, -90), nightly_rate: 320, max_guests: 6, min_nights: 3, listing_notes: "Owner keeps the studio locked. Check-in from 3pm.", listing_title: "Casa Guayacán", listing_summary: "A timber and lime house on the ridge, with the ocean through the trees. Three bedrooms open onto a deck and a small plunge pool.\n\nThe beach is a ten-minute walk down the hill, and guests can use the club for the length of their stay.", amenities: ["Pool", "Ocean view", "Air conditioning", "Wifi", "Kitchen", "Solar power", "Club access", "Breakfast from the farm"], house_rules: "Quiet after 10pm.\nNo parties or events.\nThe owner’s studio stays locked.", beds: 4, cleaning_fee: 80, listing_published: true },
-      { code: "7", status: "sold", size_m2: 1850, price: 310000, owner_contact_id: C["Sofía"], home_status: "building", home_name: "Casa Ceiba", bedrooms: 2, bathrooms: 2, built_m2: 140, home_notes: "Roof goes on next month." },
-      { code: "3", zone: "Valley", status: "available", size_m2: 3100, price: 395000, description: "Flat, shaded by two old guanacaste trees, five minutes on foot to the club." },
-      { code: "15", zone: "Ridge", status: "reserved", size_m2: 2650, price: 465000, description: "Ocean view from the upper corner." },
-      { code: "21", zone: "Valley", status: "available", size_m2: 1500, price: 245000 },
+      { code: "S-12", name: "Casa Guayacán", zone: "Ridge", status: "sold", size_m2: 2400, price: 420000, owner_contact_id: C.Jonas, home_status: "built", home_name: "Casa Guayacán", bedrooms: 3, bathrooms: 2.5, built_m2: 210, home_notes: "Timber and lime plaster, solar on the roof, a small plunge pool.", in_hospitality: true, hospitality_since: addDays(td, -90), nightly_rate: 320, max_guests: 6, min_nights: 3, listing_notes: "Owner keeps the studio locked. Check-in from 3pm.", listing_title: "Casa Guayacán", listing_summary: "A timber and lime house on the ridge, with the ocean through the trees. Three bedrooms open onto a deck and a small plunge pool.\n\nThe beach is a ten-minute walk down the hill, and guests can use the club for the length of their stay.", amenities: ["Pool", "Ocean view", "Air conditioning", "Wifi", "Kitchen", "Solar power", "Club access", "Breakfast from the farm"], house_rules: "Quiet after 10pm.\nNo parties or events.\nThe owner’s studio stays locked.", beds: 4, cleaning_fee: 80, listing_published: true },
+      { code: "S-7", status: "sold", size_m2: 1850, price: 310000, owner_contact_id: C["Sofía"], home_status: "building", home_name: "Casa Ceiba", bedrooms: 2, bathrooms: 2, built_m2: 140, home_notes: "Roof goes on next month." },
+      { code: "S-3", zone: "Valley", status: "available", size_m2: 3100, price: 395000, description: "Flat, shaded by two old guanacaste trees, five minutes on foot to the club." },
+      { code: "S-15", zone: "Ridge", status: "reserved", size_m2: 2650, price: 465000, description: "Ocean view from the upper corner." },
+      { code: "S-21", zone: "Valley", status: "available", size_m2: 1500, price: 245000 },
     ]);
     await supabase.from("lot_household").insert([
       { lot_id: l12, name: "Jonas Weber", relation: "owner", contact_id: C.Jonas, birth_year: 1984 },

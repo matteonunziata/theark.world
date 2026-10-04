@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Avatar } from "@/components/avatar";
 import { useDrawer } from "@/components/drawer";
-import { mstatusName, tierClass, tierColor, tierName } from "@/lib/crm";
+import { firstName, lastName, tierColor } from "@/lib/crm";
 import {
   type Contact,
   ContactDrawer,
@@ -105,10 +105,10 @@ export function PeopleView({
         <>
           <div className="list">
             <div className="row head crow">
-              <span>Person</span>
-              <span className="c-ct">Contact</span>
-              <span className="c-int">Interests</span>
-              <span>Membership or lot</span>
+              <span>First name</span>
+              <span>Last name</span>
+              <span className="c-ct">Email</span>
+              <span className="c-ph">Phone</span>
             </div>
             {list.map((c) => (
               <Link
@@ -119,39 +119,13 @@ export function PeopleView({
               >
                 <span className="who">
                   <Avatar name={c.name} color={tierColor(c.tier)} />
-                  <span style={{ minWidth: 0 }}>
-                    <b>{c.name}</b>
-                    <span>{c.location || c.source || ""}</span>
-                  </span>
+                  <b>{firstName(c.name)}</b>
                 </span>
-                <span className="c-ct muted" style={{ fontSize: 13.5, overflowWrap: "anywhere" }}>
-                  {c.email}
-                  {c.email && c.phone && <br />}
-                  {c.phone}
+                <span>{lastName(c.name) || <span className="muted">—</span>}</span>
+                <span className="c-ct" style={{ overflowWrap: "anywhere" }}>
+                  {c.email || <span className="muted">—</span>}
                 </span>
-                <span className="c-int tags">
-                  {c.interests.length ? (
-                    c.interests.slice(0, 3).map((i) => (
-                      <span className="tag" key={i}>{i}</span>
-                    ))
-                  ) : (
-                    <span className="muted">—</span>
-                  )}
-                </span>
-                <span>
-                  {c.type === "steward" ? (
-                    c.lot ? `Lot ${c.lot}` : <span className="muted">—</span>
-                  ) : (
-                    <>
-                      <span className={`tier ${tierClass(c.tier)}`}>{tierName(c.tier)}</span>
-                      {c.tier && c.membership_status !== "active" && (
-                        <span className="ptype" style={{ marginLeft: 6 }}>
-                          {mstatusName(c.membership_status)}
-                        </span>
-                      )}
-                    </>
-                  )}
-                </span>
+                <span className="c-ph">{c.phone || <span className="muted">—</span>}</span>
               </Link>
             ))}
           </div>

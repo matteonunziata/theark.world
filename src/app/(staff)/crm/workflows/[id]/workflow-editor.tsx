@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { resizeImage } from "@/components/cover-field";
 import { useToast } from "@/components/toast";
-import { CHANNELS, merge } from "@/lib/crm";
+import { CHANNELS, channelName, merge } from "@/lib/crm";
 import { arkEmail, textToHtml, textToPlain } from "@/lib/email-template";
 import { createClient } from "@/lib/supabase/client";
 import { aiDraftStep, aiDraftWorkflow, deleteWorkflow, saveWorkflow, type WorkflowStep } from "../../actions";
@@ -180,12 +180,12 @@ export function WorkflowEditor({
                 className={`wf-node ${s.channel} ${selected === s.key ? "on" : ""} ${!s.body.trim() ? "empty" : ""}`}
                 onClick={() => setSelected(s.key)}
               >
-                <span className="wf-ico">{s.channel === "whatsapp" ? "✆" : "✉"}</span>
+                <span className="wf-ico">{s.channel === "whatsapp" ? "✆" : s.channel === "call" ? "☏" : "✉"}</span>
                 <span>
                   <small>
-                    Step {i + 1} · {s.channel === "whatsapp" ? "WhatsApp" : "Email"}
+                    Step {i + 1} · {channelName(s.channel)}
                   </small>
-                  <b>{(s.channel === "email" && s.subject?.trim()) || s.body.trim().split("\n")[0] || "Write this message"}</b>
+                  <b>{(s.channel === "email" && s.subject?.trim()) || s.body.trim().split("\n")[0] || (s.channel === "call" ? "Note what to talk about" : "Write this message")}</b>
                   {stats.waiting[i] ? <em>{stats.waiting[i]} waiting here</em> : null}
                 </span>
               </button>
@@ -294,7 +294,9 @@ export function WorkflowEditor({
                   ))}
                 </div>
                 <div className="fld">
-                  <label htmlFor="wf-delay">{idx === 0 ? "Send after enrolling" : "Wait after the previous step"}</label>
+                  <label htmlFor="wf-delay">
+                    {idx === 0 ? (step.channel === "call" ? "Call after enrolling" : "Send after enrolling") : "Wait after the previous step"}
+                  </label>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <input
                       id="wf-delay"
@@ -314,13 +316,13 @@ export function WorkflowEditor({
                   </div>
                 )}
                 <div className="fld">
-                  <label htmlFor="wf-body">Message</label>
+                  <label htmlFor="wf-body">{step.channel === "call" ? "What to cover on the call" : "Message"}</label>
                   <textarea
                     id="wf-body"
                     rows={9}
                     value={step.body}
                     onChange={(e) => update(step.key, { body: e.target.value })}
-                    placeholder="Hi {{first_name}}, …"
+                    placeholder={step.channel === "call" ? "Ask how their first week went. Offer a walk of the land." : "Hi {{first_name}}, …"}
                   />
                   <div className="merge" style={{ marginTop: 6 }}>
                     Insert:{" "}
@@ -351,6 +353,8 @@ export function WorkflowEditor({
                   placeholder={
                     step.channel === "email"
                       ? "e.g. Make it a short newsletter: a heading, three bullet points on this week’s classes, and a button to the schedule."
+                      : step.channel === "call"
+                      ? "e.g. Talking points for a welcome call: how they found us, what they hope for, and next steps."
                       : "e.g. A friendly two-line check-in asking how their first week went."
                   }
                   aiOn={aiOn}
@@ -421,7 +425,7 @@ function Connector({ label, onAdd, onClick }: { label: string; onAdd?: () => voi
 function Preview({ step, orgName }: { step: WorkflowStep; orgName: string }) {
   const [open, setOpen] = useState(false);
   const body = merge(step.body, SAMPLE, orgName);
-  if (!step.body.trim()) return null;
+  if (!step.body.trim() || step.channel === "call") return null;
   return (
     <div className="wf-preview">
       <button type="button" className="linkish-sm" onClick={() => setOpen(!open)}>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Avatar } from "@/components/avatar";
 import { useDrawer } from "@/components/drawer";
-import { tierColor } from "@/lib/crm";
+import { channelName, tierColor } from "@/lib/crm";
 import { dayLabel } from "@/lib/dates";
 import { type Enrollment, MessageDrawer, type Sequence } from "../message-drawer";
 
@@ -59,7 +59,7 @@ export function QueueView({
                       {it.contact.name}
                     </Link>
                   </b>
-                  <span>{it.seq.steps[it.i].channel === "whatsapp" ? "WhatsApp" : "Email"}</span>
+                  <span>{channelName(it.seq.steps[it.i].channel)}</span>
                 </span>
               </span>
               <span>

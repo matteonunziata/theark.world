@@ -12,6 +12,7 @@ import {
 import { staffOrThrow } from "@/lib/auth";
 import {
   HOME_STATUS,
+  LOT_KINDS,
   LOT_STATUS,
   MAINT_CATEGORIES,
   MAINT_STATUS,
@@ -26,8 +27,8 @@ const ESTATE = ["admin", "lead", "sales"];
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const refresh = (lotId?: string | null) => {
-  revalidatePath("/estate");
-  revalidatePath("/hospitality");
+  revalidatePath("/estate", "layout");
+  revalidatePath("/hospitality", "layout");
   if (lotId) revalidatePath(`/estate/${lotId}`);
 };
 
@@ -61,6 +62,9 @@ export async function saveLot(_prev: ActionResult, data: FormData): Promise<Acti
     code,
     name: field(data, "name"),
     zone: field(data, "zone"),
+    kind: pick(LOT_KINDS, field(data, "kind"), "lot"),
+    features: field(data, "features"),
+    estate_lot_id: field(data, "estate_lot_id"),
     status: pick(LOT_STATUS, field(data, "status"), "available"),
     size_m2: num(data, "size_m2") || null,
     price: num(data, "price"),

@@ -18,7 +18,7 @@ export default async function LotPage({ params }: Props) {
   const { id } = await params;
   const { supabase } = await requireStaff("estate");
   const today = todayIn();
-  const [{ data: lot }, { data: household }, { data: logs }, { data: stays }, { data: people }, { data: team }] =
+  const [{ data: lot }, { data: household }, { data: logs }, { data: stays }, { data: people }, { data: team }, { data: lots }] =
     await Promise.all([
       supabase.from("lots").select("*").eq("id", id).maybeSingle(),
       supabase.from("lot_household").select("*").eq("lot_id", id).order("created_at"),
@@ -32,6 +32,7 @@ export default async function LotPage({ params }: Props) {
         .order("check_in"),
       supabase.from("contacts").select("id, name, email, phone").order("name"),
       supabase.from("team_members").select("id, name"),
+      supabase.from("lots").select("id, code, name, estate_lot_id"),
     ]);
   if (!lot) notFound();
   const owner = (people ?? []).find((p) => p.id === lot.owner_contact_id) ?? null;
@@ -47,6 +48,7 @@ export default async function LotPage({ params }: Props) {
         }))}
         stays={stays ?? []}
         people={(people ?? []).map((p) => ({ id: p.id, name: p.name }))}
+        lots={lots ?? []}
         today={today}
       />
     </div>

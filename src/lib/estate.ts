@@ -7,6 +7,12 @@ export const LOT_STATUS = [
   ["not_for_sale", "Not for sale"],
 ] as const;
 
+export const LOT_KINDS = [
+  ["lot", "Lot"],
+  ["estate", "Estate"],
+  ["fractional", "Fractional ownership"],
+] as const;
+
 export const HOME_STATUS = [
   ["none", "No home yet"],
   ["planned", "Planned"],
@@ -77,6 +83,19 @@ export const estatePhoto = (path: string | null | undefined) =>
 
 export const lotTitle = (l: { code: string; name: string | null }) =>
   l.name ? `${l.name}` : `Lot ${l.code}`;
+
+/** Lots in number order (1, 2, … 10), with lettered codes after. */
+export const byCode = (a: { code: string }, b: { code: string }) =>
+  a.code.localeCompare(b.code, "en", { numeric: true });
+
+type Inv = { id: string; code: string; name: string | null; estate_lot_id: string | null };
+
+/** "Tanit Estate (Lot 10, 11, 12)", "Lot 23". Estates list every lot in them. */
+export function inventoryName(l: Inv, all: Inv[]) {
+  const parts = [l, ...all.filter((x) => x.estate_lot_id === l.id)].map((x) => x.code).sort((a, b) => byCode({ code: a }, { code: b }));
+  const lots = `Lot ${parts.join(", ")}`;
+  return l.name ? `${l.name} (${lots})` : lots;
+}
 
 export function area(m2: number | string | null | undefined) {
   if (m2 === null || m2 === undefined || m2 === "") return null;

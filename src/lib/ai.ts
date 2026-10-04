@@ -24,10 +24,11 @@ Message format (plain text, blank line between blocks). Use these marks only whe
 - "[[Button text|https://link]]" on its own line for a button (only with a real link you were given)
 - "![description](https://image-url)" on its own line for an image (only with an image URL you were given; keep any that are already in the message)
 
-WhatsApp messages are short, have no subject, and use none of these marks except links.`;
+WhatsApp messages are short, have no subject, and use none of these marks except links.
+Call steps are a reminder for the team to phone the person: the body is short talking points for the caller (plain lines or "- " list), no subject.`;
 
 const Step = z.object({
-  channel: z.enum(["email", "whatsapp"]),
+  channel: z.enum(["email", "whatsapp", "call"]),
   delay_days: z.number().int(),
   subject: z.string(),
   body: z.string(),
@@ -98,13 +99,13 @@ export function draftStep(input: {
   return ask(
     Message,
     `This is step ${input.position} of ${input.total} in the workflow "${input.workflowName || "Untitled"}"${input.description ? ` (for: ${input.description})` : ""}.
-Channel: ${input.channel === "whatsapp" ? "WhatsApp" : "Email"}.
+Channel: ${input.channel === "whatsapp" ? "WhatsApp" : input.channel === "call" ? "Phone call (write talking points for the caller)" : "Email"}.
 
 ${input.body.trim() ? `The message right now:\nSubject: ${input.subject}\n\n${input.body}` : "The message is empty; write it from scratch."}
 
 The request from the team:
 ${input.request}
 
-Return the new subject (empty for WhatsApp) and the full message body.`,
+Return the new subject (empty for WhatsApp and calls) and the full message body.`,
   );
 }

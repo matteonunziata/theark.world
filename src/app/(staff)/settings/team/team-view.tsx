@@ -176,6 +176,7 @@ function MemberDrawer({
 }) {
   const m = member;
   const edit = !!m;
+  const [type, setType] = useState(m?.type ?? "team");
   return (
     <Drawer
       title={!canEdit ? (m?.name ?? "") : edit ? "Edit team member" : "Add team member"}
@@ -217,7 +218,7 @@ function MemberDrawer({
         <div className="grid2">
           <div className="fld">
             <label htmlFor="m-type">Type</label>
-            <select id="m-type" name="type" defaultValue={m?.type ?? "team"}>
+            <select id="m-type" name="type" value={type} onChange={(e) => setType(e.target.value)}>
               {TYPES.map(([k, l]) => (
                 <option key={k} value={k}>{l}</option>
               ))}
@@ -236,13 +237,20 @@ function MemberDrawer({
         </div>
         <div className="fld">
           <label htmlFor="m-role">Access level</label>
-          <select id="m-role" name="role" defaultValue={m?.role ?? "lead"}>
-            {ROLES.map((r) => (
-              <option key={r.key} value={r.key}>
-                {r.name} — {r.desc}
-              </option>
-            ))}
-          </select>
+          {type === "security" ? (
+            <>
+              <input id="m-role" readOnly value="Security — the security console only" />
+              <span className="hint">Security staff only see the Security page.</span>
+            </>
+          ) : (
+            <select id="m-role" name="role" defaultValue={m?.role ?? "lead"}>
+              {ROLES.map((r) => (
+                <option key={r.key} value={r.key}>
+                  {r.name} — {r.desc}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="fld">
           <label htmlFor="m-resp">Responsibilities</label>

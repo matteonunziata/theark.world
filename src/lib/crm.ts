@@ -56,7 +56,11 @@ export type PipelineKey = keyof typeof PIPELINES;
 export const CHANNELS = [
   ["email", "Email"],
   ["whatsapp", "WhatsApp"],
+  ["call", "Call"],
 ] as const;
+
+export const channelName = (k: string | null | undefined) =>
+  CHANNELS.find(([c]) => c === k)?.[1] ?? "Email";
 
 export const tierName = (k: string | null | undefined) =>
   TIERS.find((t) => t[0] === (k ?? ""))?.[1] ??
@@ -85,6 +89,10 @@ export const isActiveMember = (c: {
 
 export const firstName = (n: string | null | undefined) =>
   String(n || "").trim().split(/\s+/)[0] || "";
+
+/** Everything after the first name ("Rodríguez Madrigal"). */
+export const lastName = (n: string | null | undefined) =>
+  String(n || "").trim().split(/\s+/).slice(1).join(" ");
 
 export const waLink = (phone: string | null | undefined, text?: string) => {
   const d = String(phone || "").replace(/\D/g, "");

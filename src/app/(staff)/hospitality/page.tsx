@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requireStaff } from "@/lib/auth";
 import { addDays, todayIn, weekStart } from "@/lib/dates";
+import { HospitalityHead } from "./hospitality-head";
 import { HospitalityView } from "./hospitality-view";
 
 export const metadata: Metadata = { title: "Hospitality" };
@@ -37,15 +38,7 @@ export default async function HospitalityPage({ searchParams }: PageProps<"/hosp
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h1>Hospitality</h1>
-          <p className="lede">
-            Homes in the active stewardship programme: who’s staying, who’s
-            arriving, and which homes are free.
-          </p>
-        </div>
-      </div>
+      <HospitalityHead />
       <HospitalityView
         homes={homes}
         allLots={all}
