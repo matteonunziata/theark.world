@@ -8,6 +8,7 @@ import { addDays, addMonths, dow, monthKey, todayIn, weekStart } from "@/lib/dat
 type Client = Awaited<ReturnType<typeof staffOrThrow>>["supabase"];
 
 const ORDER = [
+  "posts",
   "registrations",
   "enrollments",
   "stock_movements",
@@ -20,6 +21,7 @@ const ORDER = [
   "team_members",
   "divisions",
   "finance_months",
+  "cities",
 ] as const;
 
 async function track(supabase: Client, table: string, ids: string[]) {
@@ -29,6 +31,19 @@ async function track(supabase: Client, table: string, ids: string[]) {
     .insert(ids.map((record_id) => ({ table_name: table, record_id })));
   if (error) throw error;
 }
+
+const SAMPLE_CITY: Record<string, string> = {
+  Ben: "Lisbon",
+  Emily: "New York",
+  Lena: "Nosara",
+};
+const SAMPLE_BIO: Record<string, string> = {
+  Ana: "Surfing most mornings, sauna most evenings. Building a small design studio from the cowork.",
+  Ben: "Product person between Lisbon and here. Always up for padel and a long lunch.",
+  Clara: "Breathwork facilitator in training. Happiest in the farm beds with my hands in the soil.",
+  Jonas: "Architect. Building on lot 12 with as little concrete as we can manage.",
+  Emily: "Toronto winters, Santa Teresa summers. Pickleball, cowork, good coffee.",
+};
 
 /** Demo data from the prototype, tagged so it can be removed in one go. */
 export async function loadSampleData(): Promise<ActionResult> {
@@ -70,6 +85,19 @@ export async function loadSampleData(): Promise<ActionResult> {
     );
     const D = Object.fromEntries(divs.map(([n], i) => [n, divIds[i]]));
 
+    const { data: home } = await supabase.from("cities").select("id").eq("is_home", true).maybeSingle();
+    const cityIds = await insert("cities", [
+      { name: "Nosara", country: "Costa Rica", blurb: "Two hours up the coast. Yoga, long beaches, slow mornings.", position: 1 },
+      { name: "Lisbon", country: "Portugal", blurb: "Members passing through Europe. Coffee, Alfama, the Atlantic.", position: 2 },
+      { name: "New York", country: "USA", blurb: "For the months away. Dinners, galleries, familiar faces.", position: 3 },
+    ]);
+    const CITY: Record<string, string | null> = {
+      "Santa Teresa": home?.id ?? null,
+      Nosara: cityIds[0],
+      Lisbon: cityIds[1],
+      "New York": cityIds[2],
+    };
+
     // Sample people get no email, so no real account can ever sign in as them.
     const team = [
       ["Polina Marchenko", "Programming lead", "facilitator", "Programming", "lead"],
@@ -104,6 +132,14 @@ export async function loadSampleData(): Promise<ActionResult> {
         description: "Twelve seats at one long table. Everything on the plate grew within sight of where you’re sitting.",
       },
       {
+        kind: "experience", title: "Sunset sail to Isla Tortuga", f: "Polina Marchenko", location: "Playa Hermosa", date: addDays(td, 4), st: "15:30", et: "19:00", cap: 14,
+        description: "A catamaran, a cooler of fruit from the farm, and the gulf going gold. Swim stop at the island.",
+      },
+      {
+        kind: "expedition", title: "Corcovado: three days in the wild", f: "Camila Rojas", location: "Osa Peninsula", date: addDays(td, 18), end: addDays(td, 20), st: "06:00", et: "18:00", cap: 10,
+        description: "The most biodiverse place on earth, on foot with local guides. Scarlet macaws, tapirs, river crossings, and a night in the rainforest station.",
+      },
+      {
         kind: "event", title: "Founding members evening", f: "Polina Marchenko", location: "The House", date: addDays(td, 10), st: "17:00", et: "19:00", cap: 40,
         description: "Drinks on the deck, a walk through the land, and the founding offer explained in person.",
       },
@@ -111,6 +147,8 @@ export async function loadSampleData(): Promise<ActionResult> {
     const oIds = await insert(
       "offerings",
       offs.map((o) => ({
+        city_id: o.kind === "expedition" ? null : CITY["Santa Teresa"],
+        end_date: (o as { end?: string }).end ?? null,
         kind: o.kind,
         title: o.title,
         description: o.description ?? null,
@@ -122,7 +160,7 @@ export async function loadSampleData(): Promise<ActionResult> {
         start_time: o.st,
         end_time: o.et,
         capacity: o.cap,
-        access: o.kind === "event" ? "everyone" : "members",
+        access: o.kind === "class" ? "members" : "everyone",
         status: "published",
         created_by: staff.id,
       })),
@@ -158,6 +196,8 @@ export async function loadSampleData(): Promise<ActionResult> {
           renews_on: tier ? addDays(td, 325) : null,
           owner_id: staff.id,
           created_by: staff.id,
+          city_id: CITY[SAMPLE_CITY[first] ?? "Santa Teresa"],
+          bio: SAMPLE_BIO[first] ?? null,
         };
       }),
     );
@@ -209,6 +249,17 @@ export async function loadSampleData(): Promise<ActionResult> {
       { contact_id: C.Lena, sequence_id: waitlist.data, started_on: addDays(td, -3) },
       { contact_id: C.Rafa, sequence_id: land.data, started_on: td },
     ]);
+
+    // Oldest first so the feed reads in order.
+    for (const post of [
+      { author_contact_id: null, city_id: CITY["Santa Teresa"], body: "Corcovado expedition dates are up. Ten places, three days, guided by people who grew up on the Osa. Details in Explore." },
+      { author_contact_id: C.Ben, city_id: CITY.Lisbon, body: "In Lisbon until the 20th. Anyone around for a long lunch in Alfama?" },
+      { author_contact_id: C.Clara, city_id: CITY["Santa Teresa"], body: "The farm is pulling the last of the tomatoes this week. If you want to help harvest on Thursday morning, come find me by the beds. Breakfast after." },
+      { author_contact_id: C.Ana, city_id: CITY["Santa Teresa"], body: "Dawn surf at Playa Hermosa tomorrow, 5:45. Two boards in the truck if anyone needs one." },
+    ]) {
+      const { error: postError } = await supabase.rpc("insert_sample_posts", { p_posts: [post] });
+      if (postError) throw postError;
+    }
 
     const nextMon = addDays(ws, td > ws ? 7 : 0);
     await insert("registrations", [

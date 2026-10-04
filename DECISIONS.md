@@ -37,3 +37,12 @@ Newest at the bottom of each section.
 
 ## Testing
 - RLS and sign-in hook tests live in `supabase/tests/rls.sql`. They run in one transaction against the live project and roll back. Run them with the Supabase MCP `execute_sql`, or `psql "$SUPABASE_DB_URL" -f supabase/tests/rls.sql`.
+
+## Round 2 (2026-10-03)
+- **Brand:** the ARK logo (lockup and circle mark) in `public/brand/`, app icon in `src/app/icon.png`.
+- **"Members" is now "Memberships"**, with tabs for members and tiers & pricing. The members portal link moved there from the sidebar.
+- **Dashboard "Get set up" replaced by "Your to-dos"**: the signed-in person's open tasks as a checklist, plus a quick-add. Members get their own "Settling in" checklist in the portal.
+- **Tiers and discounts are tables** (`membership_tiers`, `discounts`), seeded with Founding ₡100,000/month (50 spots), Standard ₡130,000/month, Jungle Ventures 30% off for life, and the pause rules. Contacts reference a tier and an optional discount.
+- **Add to calendar** on tickets, booking confirmations, and ticket emails (Google link and `/t/{token}/calendar.ics`).
+- **Apple Wallet** passes at `/t/{token}/wallet.pkpass`; hidden until the Apple pass certificate env vars are set (needs an Apple Developer account).
+- **Members portal v2:** cities (members pick where they are), experiences and expeditions alongside classes and events, a directory where members choose to appear and to be open to messages, suggested connections (same city, shared interests), a feed with replies, and private member-to-member messages with live updates. This widens the directory from names only to what each member chooses to share (bio, interests, city, Instagram); email and phone stay private. Staff cannot read members' messages.

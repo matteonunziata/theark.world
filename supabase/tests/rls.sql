@@ -355,6 +355,53 @@ select pg_temp.expect(
           where email = 'else@example.com' and location = 'Edited by sales'),
   'sales edits contacts in an assigned pipeline');
 
+-- Feed and messages ------------------------------------------------------------
+insert into _ids values ('member2', gen_random_uuid());
+insert into public.contacts (name, email, tier) values
+  ('Second member', 'member2@example.com', 'standard'),
+  ('Closed member', 'closed@example.com', 'standard');
+update public.contacts set open_to_connect = false where email = 'closed@example.com';
+insert into auth.users (id, email, aud, role, instance_id)
+values (pg_temp.id('member2'), 'member2@example.com', 'authenticated',
+  'authenticated', '00000000-0000-0000-0000-000000000000');
+
+select pg_temp.act_as(pg_temp.id('member'));
+insert into public.posts (author_contact_id, body)
+values (public.current_member_contact_id(), 'Hello from member one');
+do $$
+begin
+  insert into public.posts (author_contact_id, body)
+  values ((select id from public.member_directory() where name = 'Second member'), 'Impersonation');
+  raise exception 'RLS test failed: member posted as someone else';
+exception when insufficient_privilege then null;
+end $$;
+insert into public.messages (sender_id, recipient_id, body)
+values (public.current_member_contact_id(),
+  (select id from public.member_directory() where name = 'Second member'), 'Hi two');
+select pg_temp.expect(
+  not public.can_message((select id from public.member_directory() where name = 'Closed member')),
+  'members cannot message people closed to it');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('member2'));
+select pg_temp.expect((select count(*) from public.messages) = 1,
+  'recipient reads the message');
+select pg_temp.expect(
+  exists (select 1 from public.feed() where body = 'Hello from member one'),
+  'members read the feed');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('outsider'));
+select pg_temp.expect((select count(*) from public.posts) = 0, 'outsider cannot read posts');
+select pg_temp.expect((select count(*) from public.feed()) = 0, 'outsider gets an empty feed');
+select pg_temp.expect((select count(*) from public.messages) = 0, 'outsider cannot read messages');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('admin'));
+select pg_temp.expect((select count(*) from public.messages) = 0,
+  'staff cannot read members'' private messages');
+reset role;
+
 select 'All RLS tests passed' as result;
 
 rollback;

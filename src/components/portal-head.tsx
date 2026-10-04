@@ -1,11 +1,11 @@
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 export function PortalHead({
-  name,
   sub,
   link,
 }: {
-  name: string;
+  name?: string;
   sub: string;
   link?: { href: string; label: string };
 }) {
@@ -13,7 +13,9 @@ export function PortalHead({
     <header className="p-head">
       <div className="p-inner">
         <div>
-          <h1>{name}</h1>
+          <Link href="/portal" aria-label="The ARK" className="p-brand">
+            <Logo height={34} />
+          </Link>
           <p>{sub}</p>
         </div>
         {link && <Link href={link.href}>{link.label}</Link>}

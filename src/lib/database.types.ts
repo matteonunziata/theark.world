@@ -609,6 +609,28 @@ export type Database = {
         }[];
       };
       can_message: { Args: { recipient: string }; Returns: boolean };
+      my_member_profile: {
+        Args: never;
+        Returns: {
+          id: string;
+          name: string;
+          email: string | null;
+          tier: string | null;
+          membership_status: string;
+          member_since: string | null;
+          renews_on: string | null;
+          city_id: string | null;
+          bio: string | null;
+          interests: string[];
+          instagram: string | null;
+          open_to_connect: boolean;
+          show_in_directory: boolean;
+          discount_name: string | null;
+          discount_percent: number | null;
+        }[];
+      };
+      insert_sample_posts: { Args: { p_posts: Json }; Returns: string[] };
+      set_my_city: { Args: { p_city_id: string | null }; Returns: undefined };
       update_my_profile: {
         Args: {
           p_bio: string | null;

@@ -1,38 +1,37 @@
-import { redirect } from "next/navigation";
-import { PortalHead } from "@/components/portal-head";
-import { Tabs } from "@/components/tabs";
+import { Fraunces } from "next/font/google";
+import { initials } from "@/components/avatar";
 import { ToastProvider } from "@/components/toast";
-import { getViewer } from "@/lib/auth";
+import { loadPortal } from "@/lib/portal";
+import "../portal.css";
+import { PortalShell } from "../portal-shell";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  weight: ["500", "600"],
+});
 
 export default async function PortalLayout({ children }: LayoutProps<"/portal">) {
-  const { user, memberId, staff, supabase } = await getViewer();
-  if (!user) redirect("/portal/login");
-  if (!memberId && !staff) redirect("/no-access");
-  const { data: org } = await supabase.rpc("public_org").maybeSingle();
+  const p = await loadPortal();
+  const { count } = p.memberId
+    ? await p.supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_id", p.memberId)
+        .is("read_at", null)
+    : { count: 0 };
   return (
     <ToastProvider>
-      <PortalHead
-        name={org?.name ?? "The ARK"}
-        sub="Classes and events, updated live"
-        link={staff ? { href: "/events", label: "Staff view" } : undefined}
-      />
-      <div className="p-body">
-        <Tabs
-          label="Portal sections"
-          items={[
-            { href: "/portal", label: "Schedule" },
-            { href: "/portal/members", label: "Members" },
-            { href: "/portal/bookings", label: "My bookings" },
-          ]}
-        />
-        {children}
-        {!staff && (
-          <form action="/auth/signout?to=portal" method="post" style={{ marginTop: 32 }}>
-            <button type="submit" className="btn ghost">
-              Sign out
-            </button>
-          </form>
-        )}
+      <div className={`pv ${fraunces.variable}`}>
+        <PortalShell
+          cities={p.cities.map((c) => ({ id: c.id, name: c.name }))}
+          cityId={p.city?.id ?? null}
+          initials={initials(p.me?.name ?? p.staff?.name ?? "")}
+          unread={count ?? 0}
+          isStaff={!!p.staff}
+        >
+          {children}
+        </PortalShell>
       </div>
     </ToastProvider>
   );
