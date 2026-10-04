@@ -513,6 +513,15 @@ export type Database = {
           timezone: string;
         }[];
       };
+      save_sequence: {
+        Args: {
+          p_id: string | null;
+          p_name: string;
+          p_description: string | null;
+          p_steps: Json;
+        };
+        Returns: string;
+      };
       staff_role: { Args: never; Returns: string };
       ticket_by_token: {
         Args: { p_token: string };
