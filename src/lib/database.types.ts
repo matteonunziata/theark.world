@@ -315,6 +315,10 @@ export type Database = {
           },
         ]
       >;
+      sample_records: Table<
+        { table_name: string; record_id: string },
+        "table_name" | "record_id"
+      >;
       sequence_steps: Table<
         {
           body: string;
