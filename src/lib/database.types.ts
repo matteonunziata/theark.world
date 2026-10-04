@@ -169,6 +169,7 @@ export type Database = {
           owner_id: string | null
           pass_token: string
           phone: string | null
+          rate: string
           renews_on: string | null
           resident: boolean
           show_in_directory: boolean
@@ -197,6 +198,7 @@ export type Database = {
           owner_id?: string | null
           pass_token?: string
           phone?: string | null
+          rate?: string
           renews_on?: string | null
           resident?: boolean
           show_in_directory?: boolean
@@ -225,6 +227,7 @@ export type Database = {
           owner_id?: string | null
           pass_token?: string
           phone?: string | null
+          rate?: string
           renews_on?: string | null
           resident?: boolean
           show_in_directory?: boolean
@@ -595,6 +598,108 @@ export type Database = {
           },
         ]
       }
+      guest_passes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email: string | null
+          guest_name: string
+          host_contact_id: string
+          id: string
+          phone: string | null
+          status: string
+          token: string
+          used_at: string | null
+          used_by: string | null
+          visit_date: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          guest_name: string
+          host_contact_id: string
+          id?: string
+          phone?: string | null
+          status?: string
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+          visit_date: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          guest_name?: string
+          host_contact_id?: string
+          id?: string
+          phone?: string | null
+          status?: string
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+          visit_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_passes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_passes_host_contact_id_fkey"
+            columns: ["host_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_passes_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          lot_id: string
+          path: string
+          position: number
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          lot_id: string
+          path: string
+          position?: number
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          lot_id?: string
+          path?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_photos_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "lots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lot_household: {
         Row: {
           birth_year: number | null
@@ -715,9 +820,14 @@ export type Database = {
       lots: {
         Row: {
           aerial_path: string | null
+          amenities: string[]
           bathrooms: number | null
           bedrooms: number | null
+          beds: number | null
           built_m2: number | null
+          check_in_time: string
+          check_out_time: string
+          cleaning_fee: number | null
           code: string
           created_at: string
           currency: string
@@ -726,9 +836,13 @@ export type Database = {
           home_notes: string | null
           home_status: string
           hospitality_since: string | null
+          house_rules: string | null
           id: string
           in_hospitality: boolean
           listing_notes: string | null
+          listing_published: boolean
+          listing_summary: string | null
+          listing_title: string | null
           max_guests: number | null
           min_nights: number
           name: string | null
@@ -744,9 +858,14 @@ export type Database = {
         }
         Insert: {
           aerial_path?: string | null
+          amenities?: string[]
           bathrooms?: number | null
           bedrooms?: number | null
+          beds?: number | null
           built_m2?: number | null
+          check_in_time?: string
+          check_out_time?: string
+          cleaning_fee?: number | null
           code: string
           created_at?: string
           currency?: string
@@ -755,9 +874,13 @@ export type Database = {
           home_notes?: string | null
           home_status?: string
           hospitality_since?: string | null
+          house_rules?: string | null
           id?: string
           in_hospitality?: boolean
           listing_notes?: string | null
+          listing_published?: boolean
+          listing_summary?: string | null
+          listing_title?: string | null
           max_guests?: number | null
           min_nights?: number
           name?: string | null
@@ -773,9 +896,14 @@ export type Database = {
         }
         Update: {
           aerial_path?: string | null
+          amenities?: string[]
           bathrooms?: number | null
           bedrooms?: number | null
+          beds?: number | null
           built_m2?: number | null
+          check_in_time?: string
+          check_out_time?: string
+          cleaning_fee?: number | null
           code?: string
           created_at?: string
           currency?: string
@@ -784,9 +912,13 @@ export type Database = {
           home_notes?: string | null
           home_status?: string
           hospitality_since?: string | null
+          house_rules?: string | null
           id?: string
           in_hospitality?: boolean
           listing_notes?: string | null
+          listing_published?: boolean
+          listing_summary?: string | null
+          listing_title?: string | null
           max_guests?: number | null
           min_nights?: number
           name?: string | null
@@ -815,6 +947,7 @@ export type Database = {
           active: boolean
           currency: string
           description: string | null
+          guest_passes: number
           key: string
           name: string
           pause_rule: string | null
@@ -822,6 +955,7 @@ export type Database = {
           perks: string[]
           position: number
           price: number | null
+          price_ff: number | null
           spots: number | null
           updated_at: string
         }
@@ -829,6 +963,7 @@ export type Database = {
           active?: boolean
           currency?: string
           description?: string | null
+          guest_passes?: number
           key: string
           name: string
           pause_rule?: string | null
@@ -836,6 +971,7 @@ export type Database = {
           perks?: string[]
           position?: number
           price?: number | null
+          price_ff?: number | null
           spots?: number | null
           updated_at?: string
         }
@@ -843,6 +979,7 @@ export type Database = {
           active?: boolean
           currency?: string
           description?: string | null
+          guest_passes?: number
           key?: string
           name?: string
           pause_rule?: string | null
@@ -850,6 +987,7 @@ export type Database = {
           perks?: string[]
           position?: number
           price?: number | null
+          price_ff?: number | null
           spots?: number | null
           updated_at?: string
         }
@@ -1859,6 +1997,64 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      my_guests: { Args: never; Returns: Json };
+      todays_guests: {
+        Args: never;
+        Returns: { guest_name: string; host_name: string; token: string; status: string; used_at: string | null }[];
+      };
+      my_rate: { Args: never; Returns: string | null };
+      invite_guest: {
+        Args: { p_name: string; p_phone: string | null; p_email: string | null; p_visit_date: string };
+        Returns: string;
+      };
+      cancel_guest: { Args: { p_id: string }; Returns: undefined };
+      use_guest_pass: { Args: { p_token: string }; Returns: string };
+      guest_pass_by_token: {
+        Args: { p_token: string };
+        Returns: {
+          guest_name: string;
+          host_name: string;
+          visit_date: string;
+          status: string;
+          state: string;
+          used_at: string | null;
+          can_log: boolean;
+        }[];
+      };
+      public_listings: {
+        Args: { p_check_in?: string | null; p_check_out?: string | null; p_guests?: number | null };
+        Returns: {
+          id: string;
+          title: string;
+          summary: string | null;
+          zone: string | null;
+          bedrooms: number | null;
+          beds: number | null;
+          bathrooms: number | null;
+          max_guests: number | null;
+          min_nights: number;
+          nightly_rate: number | null;
+          rate_currency: string;
+          cleaning_fee: number | null;
+          amenities: string[];
+          cover_path: string | null;
+          available: boolean;
+        }[];
+      };
+      public_listing: { Args: { p_id: string }; Returns: Json };
+      request_stay: {
+        Args: {
+          p_lot_id: string;
+          p_check_in: string;
+          p_check_out: string;
+          p_guests: number;
+          p_name: string;
+          p_email: string;
+          p_phone: string | null;
+          p_message: string | null;
+        };
+        Returns: string;
+      };
       can_work_gate: { Args: never; Returns: boolean };
       is_estate_staff: { Args: never; Returns: boolean };
       org_now: { Args: never; Returns: string };

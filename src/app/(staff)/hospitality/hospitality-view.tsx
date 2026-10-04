@@ -10,7 +10,13 @@ import { type Home, type Stay, StayDrawer } from "./stay-drawer";
 
 const DAYS = 28;
 
-type HomeRow = Home & { photo_path: string | null; bedrooms: number | null };
+type HomeRow = Home & {
+  photo_path: string | null;
+  bedrooms: number | null;
+  home_name: string | null;
+  listing_title: string | null;
+  listing_published: boolean;
+};
 type Defaults = { lot_id?: string; check_in?: string; check_out?: string };
 
 export function HospitalityView({
@@ -66,6 +72,47 @@ export function HospitalityView({
 
   return (
     <>
+      <section className="listings-sec">
+        <div className="listings-h">
+          <h2 className="section-title" style={{ margin: 0 }}>Listings</h2>
+          <span className="spacer" />
+          <a className="btn sm" href="/stay" target="_blank" rel="noreferrer">Public booking site</a>
+          <Link className="btn sm" href="/estate">Add a home</Link>
+        </div>
+        <div className="lots">
+          {listed.map((h) => {
+            const photo = estatePhoto(h.photo_path);
+            return (
+              <Link key={h.id} href={`/hospitality/${h.id}`} className="lot-card">
+                <div className="lot-img">
+                  {photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photo} alt="" loading="lazy" />
+                  ) : (
+                    <span>Lot {h.code}</span>
+                  )}
+                  <span className="lot-pill" style={{ ["--tone" as string]: h.listing_published ? "var(--leaf)" : "var(--slate)" }}>
+                    {h.listing_published ? "Live" : "Draft"}
+                  </span>
+                </div>
+                <div className="lot-body">
+                  <b>{h.listing_title || h.home_name || lotTitle(h)}</b>
+                  <span className="muted">
+                    {[`Lot ${h.code}`, h.bedrooms !== null ? `${h.bedrooms} bedrooms` : null, h.max_guests ? `sleeps ${h.max_guests}` : null]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                  <span className="lot-foot">
+                    {h.nightly_rate !== null ? `${money(h.nightly_rate, h.rate_currency)} a night` : "No rate yet"}
+                    <span className="muted"> · edit listing</span>
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
       <div className="stats" style={{ marginBottom: 18 }}>
         <div className="stat"><b>{listed.length}</b><span>Homes listed</span></div>
         <div className="stat"><b>{hereNow.length}</b><span>Stays in progress</span></div>
@@ -304,7 +351,7 @@ function Timeline({
             const mine = stays.filter((s) => s.lot_id === h.id && s.check_in < to && s.check_out > from);
             return (
               <div key={h.id} className={`tl-row ${focus === h.id ? "focus" : ""}`} style={{ gridTemplateColumns: cols }}>
-                <Link href={`/estate/${h.id}`} className="tl-home">
+                <Link href={`/hospitality/${h.id}`} className="tl-home">
                   <b>{lotTitle(h)}</b>
                   <span>{h.in_hospitality ? (h.nightly_rate ? money(h.nightly_rate, h.rate_currency) : "Listed") : "Not listed"}</span>
                 </Link>

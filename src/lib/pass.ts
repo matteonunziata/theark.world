@@ -28,3 +28,6 @@ export function passValidity(p: {
   if (p.valid_until) return `${name}, until ${f(p.valid_until)}`;
   return `${name}, any day, any hour`;
 }
+
+/** Short code printed under a guest pass QR. */
+export const guestCode = (token: string) => `GST-${token.slice(-6).toUpperCase()}`;

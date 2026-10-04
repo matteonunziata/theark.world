@@ -119,3 +119,31 @@ export function occupancy(stays: (Span & { status: string; kind: string })[], ho
   }
   return booked / total;
 }
+
+export const AMENITIES = [
+  "Pool",
+  "Ocean view",
+  "Air conditioning",
+  "Wifi",
+  "Workspace",
+  "Kitchen",
+  "Washer",
+  "Parking",
+  "Garden",
+  "Outdoor shower",
+  "BBQ",
+  "Solar power",
+  "Family friendly",
+  "Pets allowed",
+  "Club access",
+  "Breakfast from the farm",
+];
+
+/** "15:00:00" → "3pm" */
+export const hourLabel = (t: string | null | undefined) => {
+  if (!t) return "";
+  const [h, m] = t.split(":").map(Number);
+  const ap = h >= 12 ? "pm" : "am";
+  const hh = ((h + 11) % 12) + 1;
+  return m ? `${hh}:${String(m).padStart(2, "0")}${ap}` : `${hh}${ap}`;
+};

@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { resizeImage } from "@/components/cover-field";
 import { useToast } from "@/components/toast";
 import { CHANNELS, merge } from "@/lib/crm";
-import { arkEmail, textToHtml } from "@/lib/email-template";
-import { deleteWorkflow, saveWorkflow, type WorkflowStep } from "../../actions";
+import { arkEmail, textToHtml, textToPlain } from "@/lib/email-template";
+import { createClient } from "@/lib/supabase/client";
+import { aiDraftStep, aiDraftWorkflow, deleteWorkflow, saveWorkflow, type WorkflowStep } from "../../actions";
 
 type Draft = WorkflowStep & { key: number };
 type Selected = "start" | "end" | number;
@@ -19,6 +21,7 @@ export function WorkflowEditor({
   stats,
   canEdit,
   orgName,
+  aiOn,
 }: {
   workflow: {
     id: string;
@@ -29,6 +32,7 @@ export function WorkflowEditor({
   stats: { waiting: number[]; completed: number; active: number };
   canEdit: boolean;
   orgName: string;
+  aiOn: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -230,14 +234,30 @@ export function WorkflowEditor({
                   their CRM profile. Each step shows up in the send queue on the day
                   it’s due.
                 </p>
-                <div className="ai-box">
-                  <label htmlFor="aiPrompt">Draft or change it with AI</label>
-                  <textarea id="aiPrompt" disabled placeholder="Describe the workflow, or what to change." />
-                  <div className="row-b">
-                    <button type="button" className="btn" disabled>Generate steps</button>
-                    <small>AI drafting is switched on in the last build phase.</small>
-                  </div>
-                </div>
+                <AiBox
+                  id="aiWorkflow"
+                  label={steps.some((x) => x.body.trim()) ? "Change the whole workflow with AI" : "Draft the whole workflow with AI"}
+                  placeholder="e.g. A 3-step welcome for new founding members: a warm hello on day 0, a WhatsApp check-in on day 3 about their first class, and an email on day 10 inviting them to the members dinner."
+                  aiOn={aiOn}
+                  run={async (request) => {
+                    const r = await aiDraftWorkflow({
+                      request,
+                      name,
+                      description,
+                      steps: steps.map(({ channel, delay_days, subject, body }) => ({ channel, delay_days, subject, body })),
+                    });
+                    if (r.ok && r.workflow) {
+                      const w = r.workflow;
+                      change(() => {
+                        setName(w.name || name);
+                        setDescription(w.description || description);
+                        const drafted = w.steps.map((x) => ({ ...x, key: nextKey.current++ }));
+                        if (drafted.length) setSteps(drafted);
+                      });
+                    }
+                    return r;
+                  }}
+                />
               </>
             )}
 
@@ -316,6 +336,41 @@ export function WorkflowEditor({
                     ))}
                   </div>
                 </div>
+                {step.channel === "email" && (
+                  <FormatBar
+                    onInsert={(text) =>
+                      update(step.key, { body: `${step.body.replace(/\s*$/, "")}${step.body.trim() ? "\n\n" : ""}${text}` })
+                    }
+                    onBold={() => update(step.key, { body: `${step.body}${step.body && !/\s$/.test(step.body) ? " " : ""}**bold words**` })}
+                  />
+                )}
+                <AiBox
+                  key={step.key}
+                  id="aiStep"
+                  label={step.body.trim() ? "Rewrite this step with AI" : "Write this step with AI"}
+                  placeholder={
+                    step.channel === "email"
+                      ? "e.g. Make it a short newsletter: a heading, three bullet points on this week’s classes, and a button to the schedule."
+                      : "e.g. A friendly two-line check-in asking how their first week went."
+                  }
+                  aiOn={aiOn}
+                  run={async (request) => {
+                    const r = await aiDraftStep({
+                      request,
+                      channel: step.channel,
+                      subject: step.subject ?? "",
+                      body: step.body,
+                      workflowName: name,
+                      description,
+                      position: idx + 1,
+                      total: steps.length,
+                    });
+                    if (r.ok && r.body !== undefined) {
+                      update(step.key, { body: r.body, ...(step.channel === "email" ? { subject: r.subject ?? step.subject } : {}) });
+                    }
+                    return r;
+                  }}
+                />
                 <Preview step={step} orgName={orgName} />
                 {canEdit && (
                   <div className="wf-step-acts">
@@ -385,9 +440,83 @@ function Preview({ step, orgName }: { step: WorkflowStep; orgName: string }) {
             })}
           />
         ) : (
-          <div className="wa-bubble">{body}</div>
+          <div className="wa-bubble">{textToPlain(body)}</div>
         ))}
       {open && <p className="muted" style={{ fontSize: 12, margin: "6px 0 0" }}>Shown for {SAMPLE.name}.</p>}
+    </div>
+  );
+}
+
+function AiBox({
+  id,
+  label,
+  placeholder,
+  aiOn,
+  run,
+}: {
+  id: string;
+  label: string;
+  placeholder: string;
+  aiOn: boolean;
+  run: (request: string) => Promise<{ ok: boolean; message?: string; error?: string }>;
+}) {
+  const [request, setRequest] = useState("");
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
+  return (
+    <div className="ai-box">
+      <label htmlFor={id}>{label}</label>
+      <textarea id={id} value={request} onChange={(e) => setRequest(e.target.value)} placeholder={placeholder} disabled={!aiOn || busy} />
+      <div className="row-b">
+        <button
+          type="button"
+          className="btn"
+          disabled={!aiOn || busy || !request.trim()}
+          onClick={async () => {
+            setBusy(true);
+            const r = await run(request);
+            setBusy(false);
+            toast(r.ok ? (r.message ?? "Drafted") : (r.error ?? "Couldn’t draft that"));
+            if (r.ok) setRequest("");
+          }}
+        >
+          {busy ? "Writing…" : "Write it"}
+        </button>
+        <small>{aiOn ? "You’ll see the draft here before anything is saved or sent." : "Add an Anthropic API key to switch AI on."}</small>
+      </div>
+    </div>
+  );
+}
+
+function FormatBar({ onInsert, onBold }: { onInsert: (text: string) => void; onBold: () => void }) {
+  const toast = useToast();
+  const [uploading, setUploading] = useState(false);
+
+  async function upload(file: File) {
+    setUploading(true);
+    try {
+      const blob = await resizeImage(file, 1400);
+      const path = `${crypto.randomUUID()}.jpg`;
+      const { error } = await createClient().storage.from("email").upload(path, blob, { contentType: "image/jpeg" });
+      if (error) throw error;
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/email/${path}`;
+      onInsert(`![${file.name.replace(/\.[^.]+$/, "").replace(/[\[\]]/g, "")}](${url})`);
+    } catch {
+      toast("Couldn’t upload that image. Try a JPG or PNG under 10 MB.");
+    }
+    setUploading(false);
+  }
+
+  return (
+    <div className="fmt-bar" role="toolbar" aria-label="Formatting">
+      <label className="chip-btn fmt-img">
+        {uploading ? "Uploading…" : "Add image"}
+        <input type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+      </label>
+      <button type="button" className="chip-btn" onClick={() => onInsert("## Heading")}>Heading</button>
+      <button type="button" className="chip-btn" onClick={onBold}>Bold</button>
+      <button type="button" className="chip-btn" onClick={() => onInsert("- First point\n- Second point")}>List</button>
+      <button type="button" className="chip-btn" onClick={() => onInsert("[[See the schedule|https://theark.world]]")}>Button</button>
     </div>
   );
 }

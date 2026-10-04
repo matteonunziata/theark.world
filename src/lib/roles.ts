@@ -18,7 +18,7 @@ export const ROLES = [
     name: "Facilitator",
     desc: "Their own classes and attendance.",
   },
-  { key: "security", name: "Security", desc: "The gate console only." },
+  { key: "security", name: "Security", desc: "The security console only." },
   { key: "shop", name: "Shop staff", desc: "Farm shop sales and stock." },
   { key: "crew", name: "Maintenance crew", desc: "Their own work orders." },
 ] as const;
@@ -35,7 +35,7 @@ export type ModuleKey =
   | "hospitality"
   | "memberships"
   | "events"
-  | "gate"
+  | "security"
   | "shop"
   | "school"
   | "operations"
@@ -81,9 +81,9 @@ export const MODULES: {
     roles: ["admin", "lead", "sales", "facilitator"],
   },
   {
-    key: "gate",
-    name: "Gate",
-    href: "/gate",
+    key: "security",
+    name: "Security",
+    href: "/security",
     roles: ["admin", "lead", "facilitator", "security"],
   },
   {

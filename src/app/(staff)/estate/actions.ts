@@ -232,3 +232,141 @@ export async function saveStay(_prev: ActionResult, data: FormData): Promise<Act
   refresh(lotId);
   return ok(id ? "Stay saved" : kind === "guest" ? "Stay booked" : "Dates blocked");
 }
+
+// Hospitality listings -------------------------------------------------------------
+
+export async function saveListing(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  const id = field(data, "id");
+  if (!id) return fail("Missing home.");
+  const time = (v: string | null, d: string) => (v && /^\d{2}:\d{2}/.test(v) ? v : d);
+  const row = {
+    listing_title: field(data, "listing_title"),
+    listing_summary: field(data, "listing_summary"),
+    house_rules: field(data, "house_rules"),
+    amenities: [
+      ...data.getAll("amenity").map(String),
+      ...(field(data, "amenities_other") ?? "").split(",").map((s) => s.trim()),
+    ]
+      .filter(Boolean)
+      .filter((a, i, all) => all.indexOf(a) === i)
+      .slice(0, 40),
+    bedrooms: num(data, "bedrooms"),
+    beds: num(data, "beds"),
+    bathrooms: num(data, "bathrooms"),
+    max_guests: num(data, "max_guests") || null,
+    min_nights: Math.max(1, num(data, "min_nights") ?? 1),
+    nightly_rate: num(data, "nightly_rate"),
+    rate_currency: cur(field(data, "rate_currency")),
+    cleaning_fee: num(data, "cleaning_fee"),
+    check_in_time: time(field(data, "check_in_time"), "15:00"),
+    check_out_time: time(field(data, "check_out_time"), "11:00"),
+    listing_notes: field(data, "listing_notes"),
+  };
+  const { error } = await supabase.from("lots").update(row).eq("id", id);
+  if (error) return fail(friendly(error));
+  refresh(id);
+  revalidatePath(`/hospitality/${id}`);
+  revalidatePath("/stay", "layout");
+  return ok("Listing saved");
+}
+
+export async function setPublished(id: string, published: boolean): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  if (published) {
+    const { data: l } = await supabase.from("lots").select("in_hospitality, nightly_rate").eq("id", id).single();
+    if (!l?.in_hospitality) return fail("Add the home to hospitality first.");
+    if (l.nightly_rate === null) return fail("Set a nightly rate before publishing.");
+  }
+  const { error } = await supabase.from("lots").update({ listing_published: published }).eq("id", id);
+  if (error) return fail(friendly(error));
+  refresh(id);
+  revalidatePath(`/hospitality/${id}`);
+  revalidatePath("/stay", "layout");
+  return ok(published ? "Published. Guests can find it now." : "Taken off the public site");
+}
+
+export async function addListingPhotos(lotId: string, paths: string[]): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  const { count } = await supabase
+    .from("listing_photos")
+    .select("id", { count: "exact", head: true })
+    .eq("lot_id", lotId);
+  const { error } = await supabase
+    .from("listing_photos")
+    .insert(paths.map((path, i) => ({ lot_id: lotId, path, position: (count ?? 0) + i })));
+  if (error) return fail(friendly(error));
+  revalidatePath(`/hospitality/${lotId}`);
+  revalidatePath("/stay", "layout");
+  return ok(paths.length === 1 ? "Photo added" : `${paths.length} photos added`);
+}
+
+export async function updateListingPhoto(
+  lotId: string,
+  photoId: string,
+  change: { caption?: string | null; move?: -1 | 1; remove?: boolean },
+): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  if (change.remove) {
+    const { error } = await supabase.from("listing_photos").delete().eq("id", photoId);
+    if (error) return fail(friendly(error));
+  } else if (change.move) {
+    const { data: photos } = await supabase
+      .from("listing_photos")
+      .select("id")
+      .eq("lot_id", lotId)
+      .order("position")
+      .order("created_at");
+    const ids = (photos ?? []).map((p) => p.id);
+    const i = ids.indexOf(photoId);
+    const j = i + change.move;
+    if (i < 0 || j < 0 || j >= ids.length) return ok("");
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    const results = await Promise.all(
+      ids.map((id, position) => supabase.from("listing_photos").update({ position }).eq("id", id)),
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) return fail(friendly(failed.error));
+  } else if (change.caption !== undefined) {
+    const { error } = await supabase
+      .from("listing_photos")
+      .update({ caption: change.caption?.trim() || null })
+      .eq("id", photoId);
+    if (error) return fail(friendly(error));
+  }
+  revalidatePath(`/hospitality/${lotId}`);
+  revalidatePath("/stay", "layout");
+  return ok(change.remove ? "Photo removed" : change.move ? "Moved" : "Caption saved");
+}
+
+/** Block nights [from, to) so guests can't book them. */
+export async function blockNights(lotId: string, from: string, to: string, label: string): Promise<ActionResult> {
+  const { supabase, staff } = await staffOrThrow(...ESTATE);
+  if (!(to > from)) return fail("Choose at least one night.");
+  const { error } = await supabase.from("stays").insert({
+    lot_id: lotId,
+    kind: "hold",
+    status: "confirmed",
+    guest_name: label.trim() || "Blocked",
+    check_in: from,
+    check_out: to,
+    source: "other",
+    created_by: staff.id,
+  });
+  if (error) {
+    if (error.code === "23P01") return fail("Some of those nights are already booked.");
+    return fail(friendly(error));
+  }
+  refresh(lotId);
+  revalidatePath(`/hospitality/${lotId}`);
+  return ok(nights(from, to) === 1 ? "Night blocked" : `${nights(from, to)} nights blocked`);
+}
+
+export async function unblock(lotId: string, stayId: string): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  const { error } = await supabase.from("stays").delete().eq("id", stayId).eq("kind", "hold");
+  if (error) return fail(friendly(error));
+  refresh(lotId);
+  revalidatePath(`/hospitality/${lotId}`);
+  return ok("Opened up again");
+}

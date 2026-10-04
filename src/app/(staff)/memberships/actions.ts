@@ -10,7 +10,7 @@ import {
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
 
-const PERIODS = ["day", "week", "month", "year", "once"];
+const PERIODS = ["day", "week", "month", "quarter", "half", "year", "once"];
 
 export async function saveTier(
   _prev: ActionResult,
@@ -29,11 +29,14 @@ export async function saveTier(
   }
 
   const price = field(data, "price");
+  const priceFf = field(data, "price_ff");
   const spots = Number(field(data, "spots") ?? 0);
   const period = field(data, "period") ?? "month";
   const row = {
     name,
     price: price === null ? null : Math.max(0, Number(price)),
+    price_ff: priceFf === null ? null : Math.max(0, Number(priceFf)),
+    guest_passes: Math.max(0, Math.min(99, Math.floor(Number(field(data, "guest_passes") ?? 0)) || 0)),
     currency: field(data, "currency") === "USD" ? "USD" : "CRC",
     period: PERIODS.includes(period) ? period : "month",
     spots: spots > 0 ? spots : null,

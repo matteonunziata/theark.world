@@ -73,7 +73,7 @@ export async function passImage(p: {
         </div>
         </div>
         <div style={{ fontSize: 28, color: BRAND.canopyMuted, textAlign: "center" }}>
-          Show this at the gate · Santa Teresa, Costa Rica
+          Show this to security · Santa Teresa, Costa Rica
         </div>
       </div>
     ),

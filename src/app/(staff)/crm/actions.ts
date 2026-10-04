@@ -10,6 +10,7 @@ import {
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
 import { CHANNELS, merge, MSTATUS, PIPELINES, PTYPES } from "@/lib/crm";
+import { aiEnabled, draftStep, draftWorkflow } from "@/lib/ai";
 import { sendWorkflowEmail } from "@/lib/email";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -52,6 +53,7 @@ export async function saveContact(
     type,
     tier,
     membership_status: status,
+    rate: field(data, "rate") === "ff" ? "ff" : "rack",
     phone: field(data, "phone"),
     instagram: field(data, "instagram"),
     location: field(data, "location"),
@@ -266,4 +268,49 @@ export async function deleteWorkflow(id: string): Promise<ActionResult> {
   if (error) return fail(friendly(error));
   refresh();
   return ok("Workflow deleted");
+}
+
+/** AI: draft or change a whole workflow. The editor shows the result unsaved. */
+export async function aiDraftWorkflow(input: {
+  request: string;
+  name: string;
+  description: string;
+  steps: WorkflowStep[];
+}): Promise<ActionResult & { workflow?: { name: string; description: string; steps: WorkflowStep[] } }> {
+  await staffOrThrow("admin", "sales");
+  if (!aiEnabled()) return fail("AI isn’t switched on yet. Add an Anthropic API key (ANTHROPIC_API_KEY) to turn it on.");
+  if (!input.request.trim()) return fail("Say what you’d like the workflow to do.");
+  try {
+    const w = await draftWorkflow({
+      ...input,
+      steps: input.steps.map((s) => ({
+        channel: s.channel === "whatsapp" ? "whatsapp" : "email",
+        delay_days: s.delay_days,
+        subject: s.subject ?? "",
+        body: s.body,
+      })),
+    });
+    return {
+      ...ok("Drafted. Check it, then save."),
+      workflow: {
+        ...w,
+        steps: w.steps.slice(0, 20).map((s) => ({ ...s, delay_days: Math.min(365, Math.max(0, s.delay_days)) })),
+      },
+    };
+  } catch (e) {
+    return fail((e as Error).message);
+  }
+}
+
+/** AI: write or rewrite one step. */
+export async function aiDraftStep(input: Parameters<typeof draftStep>[0]): Promise<ActionResult & { subject?: string; body?: string }> {
+  await staffOrThrow("admin", "sales");
+  if (!aiEnabled()) return fail("AI isn’t switched on yet. Add an Anthropic API key (ANTHROPIC_API_KEY) to turn it on.");
+  if (!input.request.trim()) return fail("Say what you’d like this message to say or do.");
+  try {
+    const m = await draftStep(input);
+    return { ...ok("Drafted. Check it, then save."), subject: m.subject, body: m.body };
+  } catch (e) {
+    return fail((e as Error).message);
+  }
 }

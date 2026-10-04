@@ -24,15 +24,22 @@ const opensAt = (start: string) => {
   return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
 };
 
-export function GateView({ rows, now }: { rows: Row[]; now: string }) {
+type GuestRow = { guest_name: string; host_name: string; token: string; status: string; used_at: string | null };
+
+export function SecurityView({ rows, now, guests }: { rows: Row[]; now: string; guests: GuestRow[] }) {
   const [code, setCode] = useState("");
   const [pending, start] = useTransition();
   const toast = useToast();
 
-  const clean = code.trim().toUpperCase().replace(/^ARK-?/, "");
-  const match = clean.length >= 4
+  const isGuest = /^GST/i.test(code.trim());
+  const clean = code.trim().toUpperCase().replace(/^(ARK|GST)-?/, "");
+  const match = clean.length >= 4 && !isGuest
     ? rows.filter((r) => r.qr_token.toUpperCase().endsWith(clean))
     : [];
+  const guestMatch = clean.length >= 4
+    ? guests.filter((g) => g.token.toUpperCase().endsWith(clean))
+    : [];
+  const guestsIn = guests.filter((g) => g.status === "used").length;
   const inCount = rows.filter((r) => r.checked_in_at).length;
 
   const doCheckIn = (token: string) =>
@@ -46,7 +53,7 @@ export function GateView({ rows, now }: { rows: Row[]; now: string }) {
       <div className="toolbar">
         <input
           className="field-in search"
-          placeholder="Ticket code, e.g. ARK-4F2A9C"
+          placeholder="Code under the QR, e.g. ARK-4F2A9C"
           aria-label="Ticket code"
           value={code}
           onChange={(e) => setCode(e.target.value)}
@@ -54,10 +61,15 @@ export function GateView({ rows, now }: { rows: Row[]; now: string }) {
         />
         {match.length === 1 && (
           <Link className="btn primary" href={`/t/${match[0].qr_token}`}>
-            Open {match[0].name}’s ticket
+            Check in {match[0].name}
           </Link>
         )}
-        {clean.length >= 4 && !match.length && (
+        {guestMatch.length === 1 && (
+          <Link className="btn primary" href={`/g/${guestMatch[0].token}`}>
+            Let {guestMatch[0].guest_name} in
+          </Link>
+        )}
+        {clean.length >= 4 && !match.length && !guestMatch.length && (
           <span className="muted">No booking today with that code.</span>
         )}
       </div>
@@ -116,9 +128,41 @@ export function GateView({ rows, now }: { rows: Row[]; now: string }) {
                       Check in
                     </button>
                   )}
-                  <Link className="btn" style={{ padding: "6px 10px" }} href={`/t/${r.qr_token}`}>
+                  <Link className="btn" style={{ padding: "6px 10px" }} href={`/t/${r.qr_token}?look=1`}>
                     Ticket
                   </Link>
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <h2 className="section-title" style={{ marginTop: 28 }}>Guests today</h2>
+      {!guests.length ? (
+        <p className="muted">No guest passes for today.</p>
+      ) : (
+        <>
+          <p className="gate-note">{guestsIn} of {guests.length} guests have arrived.</p>
+          <div className="list">
+            {guests.map((g) => (
+              <div className="row chk static" key={g.token}>
+                <span className="who">
+                  <Avatar name={g.guest_name} color={g.status === "used" ? "var(--leaf)" : "var(--slate)"} />
+                  <span>
+                    <b>{g.guest_name}</b>
+                    <span>Guest of {g.host_name}</span>
+                  </span>
+                </span>
+                <span className="c-c2 muted">Guest of {g.host_name}</span>
+                <span className="c-t muted" style={{ fontSize: 13 }}>Guest pass</span>
+                <span className="acts">
+                  {g.status === "used" ? (
+                    <span className="status on">In</span>
+                  ) : (
+                    <Link className="btn primary" style={{ padding: "6px 10px" }} href={`/g/${g.token}`}>
+                      Let in
+                    </Link>
+                  )}
                 </span>
               </div>
             ))}

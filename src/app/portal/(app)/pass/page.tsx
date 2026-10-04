@@ -51,9 +51,10 @@ export default async function MyPass() {
       <div className="pv-pass-acts">
         <SaveImageButton href={`/p/${token}/image.png`} filename="ARK member pass.png" className="pv-btn" label="Save to Photos" />
         <Link className="pv-btn ghost" href={`/p/${token}`}>Open full screen</Link>
+        <Link className="pv-btn ghost" href="/portal/guests">Invite a guest</Link>
       </div>
       <p className="pv-pass-note">
-        Show the code at the gate{ok ? ", any time of day" : ""}. Saved to your photos, it works without
+        Show the code to security{ok ? ", any time of day" : ""}. Saved to your photos, it works without
         signal. Your class and event tickets are under <Link href="/portal/bookings">Bookings</Link>.
       </p>
     </div>

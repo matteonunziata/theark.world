@@ -9,7 +9,9 @@ export const PTYPES = [
 export const TIERS = [
   ["", "No membership"],
   ["founding", "Founding"],
-  ["standard", "Standard"],
+  ["standard", "Monthly"],
+  ["quarter", "3 months"],
+  ["half", "6 months"],
   ["annual", "Annual"],
   ["ambassador", "Ambassador"],
   ["day", "Day pass"],
@@ -69,7 +71,7 @@ export const tierColor = (k: string | null | undefined) =>
       ? "var(--leaf)"
       : k === "ambassador"
         ? "var(--plum)"
-        : k === "standard" || k === "annual"
+        : k === "standard" || k === "annual" || k === "quarter" || k === "half"
           ? "var(--sea)"
           : "var(--slate)";
 export const ptypeName = (k: string | null | undefined) =>
@@ -104,20 +106,50 @@ export function merge(
 }
 
 const PER: Record<string, string> = {
-  day: "day",
-  week: "week",
-  month: "month",
-  year: "year",
+  day: "a day",
+  week: "a week",
+  month: "a month",
+  quarter: "for 3 months",
+  half: "for 6 months",
+  year: "a year",
   once: "",
 };
 
-/** "₡70,000 a month", applying a discount when there is one. */
+export const PERIODS = [
+  ["day", "A day"],
+  ["week", "A week"],
+  ["month", "A month"],
+  ["quarter", "3 months"],
+  ["half", "6 months"],
+  ["year", "A year"],
+  ["once", "Once"],
+] as const;
+
+export const RATES = [
+  ["rack", "Rack rate"],
+  ["ff", "Friends & family"],
+] as const;
+
+type Priced = {
+  price: number | null;
+  price_ff?: number | null;
+  currency: string;
+  period: string;
+};
+
+/** The price for a rate: friends & family when set and asked for, otherwise rack. */
+export const ratePrice = (t: Priced, rate?: string | null) =>
+  rate === "ff" && t.price_ff !== null && t.price_ff !== undefined ? t.price_ff : t.price;
+
+/** "₡130,000 a month", for a rate, applying a discount when there is one. */
 export function tierPrice(
-  t: { price: number | null; currency: string; period: string } | null | undefined,
+  t: Priced | null | undefined,
   discountPercent?: number | null,
+  rate?: string | null,
 ) {
-  if (!t || t.price === null) return "Price not set";
-  const n = Math.round(Number(t.price) * (1 - Number(discountPercent ?? 0) / 100));
+  const base = t ? ratePrice(t, rate) : null;
+  if (!t || base === null) return "Price not set";
+  const n = Math.round(Number(base) * (1 - Number(discountPercent ?? 0) / 100));
   const amount = t.currency === "USD" ? `$${n.toLocaleString("en-US")}` : `₡${n.toLocaleString("en-US")}`;
-  return PER[t.period] ? `${amount} a ${PER[t.period]}` : amount;
+  return PER[t.period] ? `${amount} ${PER[t.period]}` : amount;
 }

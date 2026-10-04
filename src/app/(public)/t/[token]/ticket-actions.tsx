@@ -22,7 +22,7 @@ export function CheckInButton({ token, className = "btn primary" }: { token: str
         })
       }
     >
-      {pending ? "Checking in…" : "Check in at gate"}
+      {pending ? "Checking in…" : "Check in"}
     </button>
   );
 }

@@ -67,7 +67,7 @@ export function BookingPanel({
           <p className="muted">
             {result.emailed
               ? "Your ticket is on its way to your inbox."
-              : "Keep your ticket handy. Show it at the gate."}
+              : "Keep your ticket handy. Show it to security when you arrive."}
           </p>
           <p>
             <Link className="btn" href={`/t/${result.token}`}>

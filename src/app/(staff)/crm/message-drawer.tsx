@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Drawer } from "@/components/drawer";
 import { useToast } from "@/components/toast";
 import { CHANNELS, merge, waLink } from "@/lib/crm";
+import { textToPlain } from "@/lib/email-template";
 import type { Step } from "@/lib/sequences";
 import { markSent, sendStep } from "./actions";
 import type { Contact } from "./contact-drawer";
@@ -36,7 +37,7 @@ export function MessageDrawer({
   onClose: () => void;
 }) {
   const st = seq.steps[i];
-  const body = merge(st.body, c, orgName);
+  const body = textToPlain(merge(st.body, c, orgName));
   const subject = merge(st.subject, c, orgName);
   const wa = st.channel === "whatsapp";
   const link = wa
