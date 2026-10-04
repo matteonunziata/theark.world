@@ -300,3 +300,27 @@
 .pv-passlink { display: inline-flex; align-items: center; gap: 6px; }
 .pv-passlink svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
 @media (max-width: 480px) { .pv-passlink .t { display: none; } .pv-passlink { padding: 8px 10px; } }
+
+/* Guests */
+.gp-meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.gp-meter { display: flex; flex-direction: column; gap: 2px; }
+.gp-meter b { font-family: var(--pv-serif); font-size: 44px; line-height: 1; }
+.gp-meter span { color: var(--pv-muted); font-size: 14px; }
+.gp-month { font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: 12px !important; color: var(--pv-sea) !important; }
+.gp-dots { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.gp-dots i { width: 14px; height: 14px; border-radius: 50%; background: var(--pv-green-2); }
+.gp-dots i.used { background: var(--pv-line); }
+.gp-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: end; }
+.gp-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; font-weight: 600; }
+.gp-form input { font: inherit; font-weight: 400; border: 1px solid var(--pv-line); background: var(--pv-bg); color: var(--pv-ink); border-radius: 12px; padding: 10px 12px; }
+.gp-form .pv-btn { justify-content: center; }
+.gp-note { color: var(--pv-muted); font-size: 13.5px; margin: 10px 0 0; }
+.gp-share { margin-top: 14px; border: 2px solid var(--pv-green-2); }
+.gp-share-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.gp-share-h h2 { margin: 0; font-size: 20px; }
+.gp-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.gp-list { display: grid; gap: 10px; }
+.gp-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 18px; }
+.gp-row b { display: block; font-size: 16px; }
+.gp-row span { color: var(--pv-muted); font-size: 14px; }
+.gp-row.past { opacity: .7; }

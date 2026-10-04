@@ -16,7 +16,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const refresh = () => {
   revalidatePath("/events", "layout");
-  revalidatePath("/gate");
+  revalidatePath("/security");
   revalidatePath("/portal", "layout");
   revalidatePath("/e", "layout");
 };

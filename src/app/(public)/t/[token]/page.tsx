@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { AddToCalendar } from "@/components/add-to-calendar";
-import { GateFlash } from "@/components/gate-flash";
+import { ScanResult } from "@/components/scan-result";
 import { PortalHead } from "@/components/portal-head";
 import { SaveImageButton } from "@/components/save-image";
 import { getViewer } from "@/lib/auth";
@@ -23,19 +23,32 @@ const STATE: Record<string, [string, string]> = {
   cancelled: ["bad", "Session cancelled"],
 };
 
-export default async function TicketPage({ params }: PageProps<"/t/[token]">) {
+export default async function TicketPage({ params, searchParams }: PageProps<"/t/[token]">) {
   const { token } = await params;
+  const { look } = await searchParams;
   const { supabase, staff } = await getViewer();
-  const [{ data: t }, { data: org }] = await Promise.all([
+  const [first, { data: org }] = await Promise.all([
     supabase.rpc("ticket_by_token", { p_token: token }).maybeSingle(),
     supabase.rpc("public_org").maybeSingle(),
   ]);
+  let t = first.data;
+  // Security scanning a valid ticket lets the person in: it's checked in right
+  // away, so scanning it again shows "Already used". Links inside the app add
+  // ?look=1 to open a ticket without checking it in.
+  let admitted = false;
+  if (t?.can_check_in && t.state === "valid" && !look) {
+    const { error } = await supabase.rpc("check_in", { p_token: token });
+    if (!error) {
+      admitted = true;
+      t = (await supabase.rpc("ticket_by_token", { p_token: token }).maybeSingle()).data ?? t;
+    }
+  }
   const orgName = org?.name ?? "The ARK";
   const head = (
     <PortalHead
       name={orgName}
-      sub={staff ? "Gate check" : "Your ticket"}
-      link={staff ? { href: "/gate", label: "Gate console" } : undefined}
+      sub={staff ? "Security check" : "Your ticket"}
+      link={staff ? { href: "/security", label: "Security console" } : undefined}
     />
   );
 
@@ -43,7 +56,7 @@ export default async function TicketPage({ params }: PageProps<"/t/[token]">) {
     return (
       <>
         {head}
-        {staff && <GateFlash ok={false} title="Not a valid ticket" detail="This code isn’t on any booking." />}
+        {staff && <ScanResult ok={false} title="Not valid" detail="This code isn’t on any booking." />}
         <div className="p-body">
           <div className="ticket">
             <span className="state bad">Not valid</span>
@@ -60,28 +73,24 @@ export default async function TicketPage({ params }: PageProps<"/t/[token]">) {
   const [cls, label] = STATE[t.state] ?? ["bad", "Not valid"];
   const tz = org?.timezone ?? "America/Costa_Rica";
   const day = fmtDate(t.session_date, { weekday: "long", month: "long", day: "numeric" });
-  // Why the gate is (or isn't) letting this ticket through.
-  const why: Record<string, string> = {
-    valid: `${t.title}, ${timeRange(t) || "today"}`,
-    early: `Entry opens at ${fmtTime(t.gate_opens)}, an hour before ${t.title} starts.`,
-    upcoming: `This ticket is for ${day}.`,
-    expired: `This ticket was for ${day}.`,
-    used: t.checked_in_at
-      ? `Already checked in at ${new Date(t.checked_in_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: tz })}.`
-      : "Already checked in.",
-    cancelled: "This session was cancelled.",
-  };
+  const at = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: tz });
+  // What security needs to know, in as few words as possible.
+  const scan: { title: string; detail: string } =
+    admitted || t.state === "valid"
+      ? { title: "Access approved", detail: `${t.title}, ${timeRange(t) || "today"}` }
+      : ({
+          used: { title: "Already used", detail: t.checked_in_at ? `Checked in at ${at(t.checked_in_at)}` : "" },
+          early: { title: "Too early", detail: `Opens at ${fmtTime(t.gate_opens)}, an hour before ${t.title}` },
+          upcoming: { title: "Not today", detail: `This ticket is for ${day}` },
+          expired: { title: "Expired", detail: `This ticket was for ${day}` },
+          cancelled: { title: "Cancelled", detail: `${t.title} was cancelled` },
+        }[t.state] ?? { title: "Not valid", detail: "" });
 
   return (
     <>
       {head}
-      {t.can_check_in && (
-        <GateFlash
-          ok={t.state === "valid"}
-          title={t.state === "valid" ? `Valid · ${t.holder.split(/\s+/)[0]}` : (t.state === "used" ? "Already used" : label)}
-          detail={`${t.holder} · ${why[t.state] ?? ""}`}
-          action={t.state === "valid" ? <CheckInButton token={token} className="gf-btn" /> : undefined}
-        />
+      {t.can_check_in && !look && (
+        <ScanResult ok={admitted || t.state === "valid"} title={scan.title} name={t.holder} detail={scan.detail} />
       )}
       <div className="p-body">
         <div className="ticket">

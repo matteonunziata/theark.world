@@ -34,7 +34,7 @@ export default async function ContactPage({
         .in("role", ["admin", "sales"])
         .eq("status", "active"),
       supabase.rpc("public_org").maybeSingle(),
-      supabase.from("membership_tiers").select("key, name, price, currency, period, active").order("position"),
+      supabase.from("membership_tiers").select("key, name, price, price_ff, currency, period, active, guest_passes").order("position"),
       supabase.from("discounts").select("id, name, percent, active").order("name"),
     ]);
   if (!contact.data) {

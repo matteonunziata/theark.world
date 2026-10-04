@@ -96,6 +96,11 @@ export default async function PortalHome() {
           <Link className="pv-btn ghost" href="/portal/people">
             Who’s here
           </Link>
+          {p.memberId && (
+            <Link className="pv-btn ghost" href="/portal/guests">
+              Invite a guest
+            </Link>
+          )}
         </div>
       </section>
 

@@ -11,6 +11,7 @@ const NAV = [
   { href: "/portal/schedule", label: "Schedule", icon: '<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/>' },
   { href: "/portal/explore", label: "Explore", icon: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>' },
   { href: "/portal/people", label: "People", icon: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/>' },
+  { href: "/portal/guests", label: "Guests", icon: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5"/><path d="M18 11v6M15 14h6"/>' },
   { href: "/portal/feed", label: "Feed", icon: '<path d="M4 6h16M4 12h16M4 18h10"/>' },
   { href: "/portal/messages", label: "Messages", icon: '<path d="M4 5h16v11H8l-4 4z"/>' },
 ];
@@ -102,7 +103,7 @@ export function PortalShell({
       </header>
       <main className="pv-main">{children}</main>
       <nav className="pv-tabbar" aria-label="Portal">
-        {[...NAV.filter((n) => n.href !== "/portal/explore"), ME].map((n) => (
+        {[...NAV.filter((n) => n.href !== "/portal/explore" && n.href !== "/portal/guests"), ME].map((n) => (
           <Link key={n.href} href={n.href} aria-current={current(n.href) ? "page" : undefined}>
             <svg viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{ __html: n.icon }} />
             {n.label}

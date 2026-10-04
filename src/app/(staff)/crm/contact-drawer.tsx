@@ -2,14 +2,14 @@
 
 import { ConfirmButton, Drawer } from "@/components/drawer";
 import type { Tables } from "@/lib/database.types";
-import { MSTATUS, PTYPES, ptypeName, tierPrice } from "@/lib/crm";
+import { MSTATUS, PTYPES, ptypeName, RATES, tierPrice } from "@/lib/crm";
 import { saveContact } from "./actions";
 
 export type Contact = Tables<"contacts">;
 export type Owner = Pick<Tables<"team_members">, "id" | "name">;
 export type TierOption = Pick<
   Tables<"membership_tiers">,
-  "key" | "name" | "price" | "currency" | "period" | "active"
+  "key" | "name" | "price" | "price_ff" | "currency" | "period" | "active" | "guest_passes"
 >;
 export type DiscountOption = Pick<Tables<"discounts">, "id" | "name" | "percent" | "active">;
 
@@ -129,6 +129,14 @@ export function ContactDrawer({
                     {t.price !== null ? `, ${tierPrice(t)}` : ""}
                   </option>
                 ))}
+            </select>
+          </div>
+          <div className="fld">
+            <label htmlFor="c-rate">Rate</label>
+            <select id="c-rate" name="rate" defaultValue={c?.rate ?? "rack"}>
+              {RATES.map(([k, l]) => (
+                <option key={k} value={k}>{l}</option>
+              ))}
             </select>
           </div>
           <div className="fld">

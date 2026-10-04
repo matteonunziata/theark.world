@@ -10,6 +10,7 @@ import {
   ok,
 } from "@/lib/action-result";
 import { getViewer } from "@/lib/auth";
+import { sendGuestPassEmail } from "@/lib/email";
 import { CITY_COOKIE } from "@/lib/portal";
 
 async function viewer() {
@@ -98,4 +99,48 @@ export async function markRead(otherId: string) {
     .eq("recipient_id", v.memberId)
     .eq("sender_id", otherId)
     .is("read_at", null);
+}
+
+export async function inviteGuest(
+  _prev: ActionResult & { token?: string },
+  data: FormData,
+): Promise<ActionResult & { token?: string; emailed?: boolean }> {
+  const v = await viewer();
+  if (!v.memberId) return fail("Only members can invite guests.");
+  const name = field(data, "guest_name");
+  const email = field(data, "email");
+  const date = field(data, "visit_date");
+  const { data: token, error } = await v.supabase.rpc("invite_guest", {
+    p_name: name ?? "",
+    p_phone: field(data, "phone"),
+    p_email: email,
+    p_visit_date: date ?? "",
+  });
+  if (error || !token) return fail(friendly(error));
+
+  let emailed = false;
+  if (email && date) {
+    const [{ data: me }, { data: org }] = await Promise.all([
+      v.supabase.rpc("my_member_profile").maybeSingle(),
+      v.supabase.rpc("public_org").maybeSingle(),
+    ]);
+    emailed = await sendGuestPassEmail({
+      to: email,
+      guest: name ?? "",
+      host: me?.name ?? "A member",
+      date,
+      token,
+      orgName: org?.name ?? "The ARK",
+    });
+  }
+  revalidatePath("/portal/guests");
+  return { ...ok(emailed ? `Invited. We emailed ${name} their pass.` : "Invited. Send them their pass."), token, emailed };
+}
+
+export async function cancelGuest(id: string) {
+  const v = await viewer();
+  const { error } = await v.supabase.rpc("cancel_guest", { p_id: id });
+  if (error) return fail(friendly(error));
+  revalidatePath("/portal/guests");
+  return ok("Invite cancelled. The pass is back in your allowance.");
 }

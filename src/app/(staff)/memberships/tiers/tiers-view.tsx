@@ -2,7 +2,7 @@
 
 import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
 import type { Tables } from "@/lib/database.types";
-import { tierClass, tierPrice } from "@/lib/crm";
+import { PERIODS, tierClass, tierPrice } from "@/lib/crm";
 import { saveDiscount, saveTier } from "../actions";
 
 type Tier = Tables<"membership_tiers">;
@@ -26,7 +26,7 @@ export function TiersView({
   return (
     <>
       <div className="toolbar">
-        <span className="muted">What each membership costs and includes.</span>
+        <span className="muted">What each membership costs, at the rack rate and for friends &amp; family, and how many guests it brings.</span>
         <span className="count" />
         {canEdit && (
           <button type="button" className="btn primary" onClick={tier.openNew}>
@@ -50,6 +50,14 @@ export function TiersView({
                 {!t.active && <span className="ptype">Not offered</span>}
               </div>
               <h3>{tierPrice(t)}</h3>
+              {t.price_ff !== null && (
+                <p className="ff-price">Friends &amp; family: {tierPrice(t, null, "ff")}</p>
+              )}
+              <p className="guests-line">
+                {t.guest_passes
+                  ? `${t.guest_passes} guest passes a month`
+                  : "No guest passes"}
+              </p>
               <p>{t.description || "No description yet."}</p>
               {t.perks.length > 0 && (
                 <ul className="perks">
@@ -143,10 +151,14 @@ export function TiersView({
           <label htmlFor="tr-name">Name</label>
           <input id="tr-name" name="name" defaultValue={tier.item?.name} required />
         </div>
-        <div className="grid2">
+        <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr 110px" }}>
           <div className="fld">
-            <label htmlFor="tr-price">Price</label>
+            <label htmlFor="tr-price">Rack rate</label>
             <input id="tr-price" name="price" type="number" min={0} step="any" defaultValue={tier.item?.price ?? ""} placeholder="Not set" />
+          </div>
+          <div className="fld">
+            <label htmlFor="tr-ff">Friends &amp; family</label>
+            <input id="tr-ff" name="price_ff" type="number" min={0} step="any" defaultValue={tier.item?.price_ff ?? ""} placeholder="Same as rack" />
           </div>
           <div className="fld">
             <label htmlFor="tr-cur">Currency</label>
@@ -156,16 +168,18 @@ export function TiersView({
             </select>
           </div>
         </div>
-        <div className="grid2">
+        <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
           <div className="fld">
-            <label htmlFor="tr-per">Billed</label>
+            <label htmlFor="tr-per">Covers</label>
             <select id="tr-per" name="period" defaultValue={tier.item?.period ?? "month"}>
-              <option value="month">Monthly</option>
-              <option value="year">Yearly</option>
-              <option value="week">Weekly</option>
-              <option value="day">Daily</option>
-              <option value="once">Once</option>
+              {PERIODS.map(([k, l]) => (
+                <option key={k} value={k}>{l}</option>
+              ))}
             </select>
+          </div>
+          <div className="fld">
+            <label htmlFor="tr-guests">Guest passes a month</label>
+            <input id="tr-guests" name="guest_passes" type="number" min={0} defaultValue={tier.item?.guest_passes ?? 0} />
           </div>
           <div className="fld">
             <label htmlFor="tr-spots">Spots</label>

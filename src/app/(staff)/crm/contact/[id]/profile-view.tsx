@@ -278,7 +278,8 @@ export function ProfileView({
                 <>
                   <dt>Pays</dt>
                   <dd>
-                    {tierPrice(tierRow, disc?.percent)}
+                    {tierPrice(tierRow, disc?.percent, c.rate)}
+                    {c.rate === "ff" ? ", friends & family" : ""}
                     {disc ? ` (${disc.name}, ${Number(disc.percent)}% off)` : ""}
                   </dd>
                   <dt>Member since</dt>
@@ -295,7 +296,7 @@ export function ProfileView({
                   </dd>
                   <dt>Pass</dt>
                   <dd>
-                    <a href={`/p/${c.pass_token}`} target="_blank" rel="noreferrer">Open member pass</a>
+                    <a href={`/p/${c.pass_token}?look=1`} target="_blank" rel="noreferrer">Open member pass</a>
                   </dd>
                 </>
               )}

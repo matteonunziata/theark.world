@@ -11,7 +11,7 @@ export default async function Me() {
   const p = await loadPortal();
   const { me } = p;
   const today = todayIn(p.timezone);
-  const [{ data: regs }, { data: tier }] = await Promise.all([
+  const [{ data: regs }, { data: tier }, { data: rate }] = await Promise.all([
     me
       ? p.supabase
           .from("registrations")
@@ -23,6 +23,7 @@ export default async function Me() {
     me?.tier
       ? p.supabase.from("membership_tiers").select("*").eq("key", me.tier).maybeSingle()
       : Promise.resolve({ data: null }),
+    me ? p.supabase.rpc("my_rate") : Promise.resolve({ data: null }),
   ]);
 
   if (!me) {
@@ -74,7 +75,7 @@ export default async function Me() {
                 <>
                   <dt>You pay</dt>
                   <dd>
-                    {tierPrice(tier, me.discount_percent)}
+                    {tierPrice(tier, me.discount_percent, rate)}
                     {me.discount_name ? ` (${me.discount_name}, ${Number(me.discount_percent)}% off)` : ""}
                   </dd>
                 </>

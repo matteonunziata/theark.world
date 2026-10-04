@@ -11,6 +11,7 @@ import {
   type EmailParts,
   esc,
   textToHtml,
+  textToPlain,
 } from "@/lib/email-template";
 
 /** Absolute URL of this deployment, for links in emails and QR codes. */
@@ -94,10 +95,10 @@ export async function sendTicketEmail(t: {
     subject: `Your ticket: ${t.title}`,
     parts: {
       orgName: t.orgName,
-      preheader: `${day}, ${time}. Show the QR code at the gate.`,
+      preheader: `${day}, ${time}. Show the QR code to security.`,
       eyebrow: "Your ticket",
       heading: t.title,
-      body: `<p style="margin:0 0 16px">Hi ${esc(first)}, you’re booked in. Show this code at the gate when you arrive.</p>
+      body: `<p style="margin:0 0 16px">Hi ${esc(first)}, you’re booked in. Show this code to security when you arrive.</p>
 ${detailRows([
   ["When", `${esc(day)}<br>${esc(time)}`],
   ...(t.location ? ([["Where", esc(t.location)]] as [string, string][]) : []),
@@ -109,7 +110,7 @@ ${detailRows([
 </td></tr></table>
 <p style="margin:16px 0 18px;font-size:14px;text-align:center">Add to <a href="${gcal}" style="${link}">Google Calendar</a> · <a href="${url}/calendar.ics" style="${link}">Apple or Outlook</a></p>`,
       cta: { label: "Open your ticket", href: url },
-      footnote: "The gate opens an hour before the start time.",
+      footnote: "Security lets you in from an hour before the start time.",
     },
     text: `Hi ${first},\n\nHere is your ticket for ${t.title}, ${day}, ${time}${t.location ? ` at ${t.location}` : ""}.\n\nOpen it here: ${url}\nCode: ${ticketCode(t.token)}\n\nSee you there.`,
     attachments: [{ filename: "ticket-qr.png", content: png, contentId: "ticket-qr" }],
@@ -128,10 +129,66 @@ export async function sendWorkflowEmail(m: {
     subject: m.subject || m.orgName,
     parts: {
       orgName: m.orgName,
-      preheader: m.body.slice(0, 120),
+      preheader: textToPlain(m.body).slice(0, 120),
       body: textToHtml(m.body),
       footnote: "You’re receiving this because you’re in touch with The ARK. Reply any time.",
     },
-    text: m.body,
+    text: textToPlain(m.body),
+  });
+}
+
+/** A guest's day pass, from the member who invited them. */
+export async function sendGuestPassEmail(g: {
+  to: string;
+  guest: string;
+  host: string;
+  date: string;
+  token: string;
+  orgName: string;
+}) {
+  if (!emailConfigured()) return false;
+  const origin = await siteUrl();
+  const url = `${origin}/g/${g.token}`;
+  const png = await QRCode.toBuffer(url, { width: 360, margin: 1 });
+  const day = fmtDate(g.date, { weekday: "long", month: "long", day: "numeric" });
+  const first = g.guest.trim().split(/\s+/)[0] ?? "";
+  return sendEmail({
+    to: g.to,
+    subject: `${g.host} invited you to ${g.orgName}`,
+    parts: {
+      orgName: g.orgName,
+      preheader: `Your guest pass for ${day}.`,
+      eyebrow: "Guest pass",
+      heading: `You’re invited, ${first}`,
+      body: `<p style="margin:0 0 16px">${esc(g.host)} has invited you to spend the day at ${esc(g.orgName)}. Show this code to security when you arrive.</p>
+${detailRows([
+  ["When", esc(day)],
+  ["Guest of", esc(g.host)],
+])}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 6px">
+<img src="cid:guest-qr" width="200" height="200" alt="Guest pass QR code" style="display:block;border:0">
+</td></tr></table>`,
+      cta: { label: "Open your pass", href: url },
+      footnote: "The pass works once, on the day of your visit.",
+    },
+    text: `Hi ${first},\n\n${g.host} has invited you to ${g.orgName} on ${day}. Show your pass to security when you arrive: ${url}\n\nThe pass works once, on the day of your visit.`,
+    attachments: [{ filename: "guest-pass.png", content: png, contentId: "guest-qr" }],
+  });
+}
+
+/** The sign-in email in the ARK look: a button, and a code for another device. */
+export async function sendSignInEmail(m: { to: string; link: string; code: string; team: boolean }) {
+  return sendEmail({
+    to: m.to,
+    subject: `Your sign-in code: ${m.code}`,
+    parts: {
+      preheader: `Your code is ${m.code}. It works once and expires in an hour.`,
+      eyebrow: m.team ? "Team sign-in" : "Members portal",
+      heading: "Sign in to The ARK",
+      body: `<p style="margin:0 0 18px">Tap the button to sign in. You can open it on your phone or your computer.</p>`,
+      cta: { label: "Sign in", href: m.link },
+      footnote: `Or enter this code on the sign-in page: <b style="font-family:Menlo,Consolas,monospace;font-size:15px;letter-spacing:3px;color:${BRAND.ink}">${esc(m.code)}</b><br>It works once and expires in an hour. If you didn’t ask for it, you can ignore this email.`,
+    },
+    text: `Sign in to The ARK: ${m.link}\n\nOr enter this code on the sign-in page: ${m.code}\n\nIt works once and expires in an hour. If you didn't ask for it, you can ignore this email.`,
   });
 }

@@ -552,6 +552,100 @@ select pg_temp.act_as(pg_temp.id('sales'));
 select pg_temp.expect((select count(*) from public.gate_entries) = 0, 'sales cannot read gate entries');
 reset role;
 
+-- Guest passes: members invite within their monthly allowance; only security lets guests in --
+
+update public.membership_tiers set guest_passes = 2 where key = 'founding';
+select pg_temp.act_as(pg_temp.id('member'));
+select set_config('test.guest1', public.invite_guest('Guest One', '+506 1', null, public.org_today()), true);
+select set_config('test.guest2', public.invite_guest('Guest Two', null, 'two@example.com', public.org_today()), true);
+do $$
+begin
+  perform public.invite_guest('Guest Three', '+506 3', null, public.org_today());
+  raise exception 'RLS test failed: a member went over their guest allowance';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+select pg_temp.expect(
+  ((public.my_guests() -> 'this_month' ->> 'used')::int) = 2,
+  'members see how many guest passes they''ve used');
+do $$
+begin
+  perform public.use_guest_pass(current_setting('test.guest1'));
+  raise exception 'RLS test failed: a member let a guest in';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(pg_temp.id('member2'));
+do $$
+begin
+  perform public.cancel_guest((select id from public.guest_passes where token = current_setting('test.guest1')));
+  raise exception 'RLS test failed: a member cancelled someone else''s guest';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+select pg_temp.expect(json_array_length(public.my_guests() -> 'guests') = 0, 'members only see their own guests');
+reset role;
+
+select pg_temp.act_as(null);
+select pg_temp.expect(
+  (select state from public.guest_pass_by_token(current_setting('test.guest1'))) = 'valid'
+  and not (select can_log from public.guest_pass_by_token(current_setting('test.guest1'))),
+  'anyone with the link sees the guest pass, but can''t let them in');
+select pg_temp.expect((select count(*) from public.guest_passes) = 0, 'anon cannot list guest passes');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('security'));
+select pg_temp.expect(public.use_guest_pass(current_setting('test.guest1')) is not null, 'security lets a guest in');
+select pg_temp.expect(
+  (select state from public.guest_pass_by_token(current_setting('test.guest1'))) = 'used',
+  'a guest pass works once');
+select pg_temp.expect((select count(*) from public.todays_guests()) = 2, 'security sees today''s guests');
+reset role;
+
+-- Public listings: only published homes, never owners or guests ----------------------
+
+update public.lots set listing_published = true, max_guests = 4, nightly_rate = 100 where code = 'TEST-1';
+select pg_temp.act_as(null);
+select pg_temp.expect(
+  exists (select 1 from public.public_listings() where title = 'Lot TEST-1'),
+  'published homes show on the public site');
+select pg_temp.expect(
+  not (select available from public.public_listings(public.org_today() + 31, public.org_today() + 32, 2) where title = 'Lot TEST-1'),
+  'booked nights show as not free');
+select pg_temp.expect(
+  public.public_listing((select id from public.public_listings() where title = 'Lot TEST-1'))::text not like '%Test guest%',
+  'the public page never shows guest names');
+select pg_temp.expect((select count(*) from public.listing_photos) = 0, 'anon cannot read listing photos directly');
+select pg_temp.expect(
+  public.request_stay((select id from public.public_listings() where title = 'Lot TEST-1'),
+    public.org_today() + 40, public.org_today() + 42, 2, 'Visitor', 'visitor@example.com', null, null) is not null,
+  'the public can request free dates');
+do $$
+begin
+  perform public.request_stay((select id from public.public_listings() where title = 'Lot TEST-1'),
+    public.org_today() + 31, public.org_today() + 32, 2, 'Visitor', 'visitor@example.com', null, null);
+  raise exception 'RLS test failed: the public requested booked nights';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+do $$
+begin
+  perform public.request_stay((select id from public.public_listings() where title = 'Lot TEST-1'),
+    public.org_today() + 50, public.org_today() + 52, 9, 'Visitor', 'visitor@example.com', null, null);
+  raise exception 'RLS test failed: the public booked over capacity';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+reset role;
+
+update public.lots set listing_published = false where code = 'TEST-1';
+select pg_temp.act_as(null);
+select pg_temp.expect(
+  not exists (select 1 from public.public_listings() where title = 'Lot TEST-1'),
+  'unpublished homes are hidden');
+reset role;
+
 select 'All RLS tests passed' as result;
 
 rollback;

@@ -680,7 +680,7 @@ function SessionDrawer({
                   Paid
                 </label>
               )}
-              <a className="mini" href={`/t/${r.qr_token}`} target="_blank" rel="noopener noreferrer">
+              <a className="mini" href={`/t/${r.qr_token}?look=1`} target="_blank" rel="noopener noreferrer">
                 Ticket
               </a>
               {canManage && r.email && (

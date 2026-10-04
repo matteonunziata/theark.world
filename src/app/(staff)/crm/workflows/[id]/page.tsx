@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { aiEnabled } from "@/lib/ai";
 import { requireStaff } from "@/lib/auth";
 import { nextStep } from "@/lib/sequences";
 import { WorkflowEditor } from "./workflow-editor";
@@ -31,6 +32,7 @@ export default async function WorkflowPage({ params }: Props) {
         stats={{ waiting: [], completed: 0, active: 0 }}
         canEdit={canEdit}
         orgName={org?.name ?? "The ARK"}
+        aiOn={aiEnabled()}
       />
     );
   }
@@ -64,6 +66,7 @@ export default async function WorkflowPage({ params }: Props) {
       stats={{ waiting, completed, active }}
       canEdit={canEdit}
       orgName={org?.name ?? "The ARK"}
+      aiOn={aiEnabled()}
     />
   );
 }
