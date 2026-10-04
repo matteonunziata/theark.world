@@ -9,6 +9,7 @@ import {
   estatePhoto,
   HOME_STATUS,
   label,
+  LOT_KINDS,
   LOT_STATUS,
   lotTitle,
   MAINT_CATEGORIES,
@@ -27,6 +28,7 @@ type Lot = Tables<"lots">;
 type Member = Tables<"lot_household">;
 type Log = Tables<"lot_maintenance"> & { logged_by: string | null };
 type Person = { id: string; name: string };
+type LotRef = { id: string; code: string; name: string | null; estate_lot_id: string | null };
 
 export function LotView({
   lot,
@@ -35,6 +37,7 @@ export function LotView({
   logs,
   stays,
   people,
+  lots,
   today,
 }: {
   lot: Lot;
@@ -43,8 +46,11 @@ export function LotView({
   logs: Log[];
   stays: Stay[];
   people: Person[];
+  lots: LotRef[];
   today: string;
 }) {
+  const estate = lots.find((l) => l.id === lot.estate_lot_id);
+  const parts = lots.filter((l) => l.estate_lot_id === lot.id);
   const edit = useDrawer<null>();
   const hosp = useDrawer<null>();
   const fam = useDrawer<Member>();
@@ -66,7 +72,9 @@ export function LotView({
   return (
     <>
       <p style={{ margin: "0 0 14px" }}>
-        <Link href="/estate" className="muted">← All lots</Link>
+        <Link href="/estate" className="muted">← Inventory</Link>
+        <span className="muted"> · </span>
+        <Link href={`/estate/map?lot=${lot.code}`} className="muted">See on the map</Link>
       </p>
       <div className="lot-head">
         <div>
@@ -108,11 +116,44 @@ export function LotView({
           <section className="panel">
             <h2>The lot</h2>
             <dl className="kv">
+              {lot.kind !== "lot" && (
+                <>
+                  <dt>Type</dt>
+                  <dd>{label(LOT_KINDS, lot.kind)}</dd>
+                </>
+              )}
+              {lot.features && (
+                <>
+                  <dt>Specifications</dt>
+                  <dd>{lot.features}</dd>
+                </>
+              )}
+              {estate && (
+                <>
+                  <dt>Sold with</dt>
+                  <dd>
+                    <Link href={`/estate/${estate.id}`}>{estate.name ? `${estate.name} (Lot ${estate.code})` : `Lot ${estate.code}`}</Link>
+                  </dd>
+                </>
+              )}
+              {parts.length > 0 && (
+                <>
+                  <dt>Includes</dt>
+                  <dd>
+                    {parts.map((p, i) => (
+                      <span key={p.id}>
+                        {i > 0 && ", "}
+                        <Link href={`/estate/${p.id}`}>Lot {p.code}</Link>
+                      </span>
+                    ))}
+                  </dd>
+                </>
+              )}
               <dt>Size</dt>
               <dd>{area(lot.size_m2) ?? "—"}</dd>
               <dt>Status</dt>
               <dd>{label(LOT_STATUS, lot.status)}</dd>
-              {!sold && (
+              {!sold && !estate && (
                 <>
                   <dt>Price</dt>
                   <dd>{lot.price !== null ? money(lot.price, lot.currency) : "Not set"}</dd>
@@ -280,7 +321,7 @@ export function LotView({
           </>
         }
       >
-        <LotFields lot={lot} people={people} />
+        <LotFields lot={lot} people={people} lots={lots} />
       </Drawer>
 
       <Drawer

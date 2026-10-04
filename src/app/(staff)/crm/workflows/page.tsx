@@ -58,7 +58,7 @@ export default async function WorkflowsPage() {
                   {steps.map((s) => (
                     <span key={s.position}>
                       <em />
-                      <i className={s.channel === "whatsapp" ? "wa" : ""} />
+                      <i className={s.channel === "whatsapp" ? "wa" : s.channel === "call" ? "call" : ""} />
                     </span>
                   ))}
                 </div>

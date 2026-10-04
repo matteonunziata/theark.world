@@ -284,7 +284,7 @@ export async function aiDraftWorkflow(input: {
     const w = await draftWorkflow({
       ...input,
       steps: input.steps.map((s) => ({
-        channel: s.channel === "whatsapp" ? "whatsapp" : "email",
+        channel: s.channel === "whatsapp" || s.channel === "call" ? s.channel : "email",
         delay_days: s.delay_days,
         subject: s.subject ?? "",
         body: s.body,

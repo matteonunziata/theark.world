@@ -34,60 +34,43 @@ export function TiersView({
           </button>
         )}
       </div>
-      <div className="cards">
+      <div className="list">
+        <div className="row head tier-row">
+          <span>Tier</span>
+          <span>Rack rate</span>
+          <span className="t-ff">Friends &amp; family</span>
+          <span className="t-guests">Guest passes</span>
+          <span>Members</span>
+        </div>
         {tiers.map((t) => {
           const n = counts[t.key] ?? 0;
           return (
             <button
               type="button"
-              className="card tier-card"
+              className="row tier-row"
               key={t.key}
               onClick={() => canEdit && tier.openItem(t)}
               style={canEdit ? undefined : { cursor: "default" }}
             >
-              <div className="top">
+              <span style={{ minWidth: 0 }}>
                 <span className={`tier ${tierClass(t.key)}`}>{t.name}</span>
-                {!t.active && <span className="ptype">Not offered</span>}
-              </div>
-              <h3>{tierPrice(t)}</h3>
-              {t.price_ff !== null && (
-                <p className="ff-price">Friends &amp; family: {tierPrice(t, null, "ff")}</p>
-              )}
-              <p className="guests-line">
-                {t.guest_passes
-                  ? `${t.guest_passes} guest passes a month`
-                  : "No guest passes"}
-              </p>
-              <p>{t.description || "No description yet."}</p>
-              {t.perks.length > 0 && (
-                <ul className="perks">
-                  {t.perks.map((p) => (
-                    <li key={p}>{p}</li>
-                  ))}
-                </ul>
-              )}
-              {t.spots ? (
-                <>
-                  <div className="meter" aria-hidden="true">
-                    <span style={{ width: `${Math.min(100, (n / t.spots) * 100)}%` }} />
-                  </div>
-                  <div className="meta">
-                    <span>
-                      {n} of {t.spots} spots taken
-                    </span>
-                    <span>{Math.max(0, t.spots - n)} left</span>
-                  </div>
-                </>
-              ) : (
-                <div className="meta">
-                  <span>
-                    {n} active {n === 1 ? "member" : "members"}
-                  </span>
-                </div>
-              )}
+                {!t.active && <span className="ptype" style={{ marginLeft: 6 }}>Not offered</span>}
+                {t.description && <span className="t-desc muted">{t.description}</span>}
+              </span>
+              <b style={{ fontWeight: 600 }}>{tierPrice(t)}</b>
+              <span className="t-ff">{t.price_ff !== null ? tierPrice(t, null, "ff") : <span className="muted">—</span>}</span>
+              <span className="t-guests">{t.guest_passes ? `${t.guest_passes} a month` : <span className="muted">None</span>}</span>
+              <span className="muted">
+                {t.spots ? `${n} of ${t.spots} spots` : `${n} active`}
+              </span>
             </button>
           );
         })}
+        {!tiers.length && (
+          <div className="row static">
+            <span className="muted">No tiers yet.</span>
+          </div>
+        )}
       </div>
 
       <h2 className="section-title" style={{ marginTop: 28 }}>

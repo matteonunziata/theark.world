@@ -40,7 +40,13 @@ export function MessageDrawer({
   const body = textToPlain(merge(st.body, c, orgName));
   const subject = merge(st.subject, c, orgName);
   const wa = st.channel === "whatsapp";
-  const link = wa
+  const call = st.channel === "call";
+  const tel = String(c.phone || "").replace(/[^\d+]/g, "");
+  const link = call
+    ? tel
+      ? `tel:${tel}`
+      : ""
+    : wa
     ? waLink(c.phone, body)
     : c.email
       ? `mailto:${c.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
@@ -61,14 +67,14 @@ export function MessageDrawer({
             Close
           </button>
           <button type="submit" className="btn primary">
-            Mark as sent
+            {call ? "Mark as done" : "Mark as sent"}
           </button>
         </>
       }
     >
       <p className="muted" style={{ marginTop: 0 }}>
-        {CHANNELS.find(([k]) => k === st.channel)?.[1]} to {c.name}
-        {wa
+        {CHANNELS.find(([k]) => k === st.channel)?.[1]} {call ? "" : "to "}{c.name}
+        {wa || call
           ? c.phone
             ? `, ${c.phone}`
             : ", no number on file"
@@ -76,14 +82,14 @@ export function MessageDrawer({
             ? `, ${c.email}`
             : ", no email on file"}
       </p>
-      {!wa && subject && (
+      {!wa && !call && subject && (
         <div className="fld">
           <label htmlFor="msgSubj">Subject</label>
           <input id="msgSubj" readOnly value={subject} />
         </div>
       )}
       <div className="fld">
-        <label htmlFor="msgBody">Message</label>
+        <label htmlFor="msgBody">{call ? "What to cover" : "Message"}</label>
         <textarea id="msgBody" readOnly value={body} style={{ minHeight: 180 }} />
       </div>
       <div className="share">
@@ -97,14 +103,14 @@ export function MessageDrawer({
             )
           }
         >
-          Copy message
+          {call ? "Copy notes" : "Copy message"}
         </button>
         {link && (
           <a className="btn" href={link} target="_blank" rel="noopener noreferrer">
-            Open in {wa ? "WhatsApp" : "email"}
+            {call ? `Call ${c.phone}` : `Open in ${wa ? "WhatsApp" : "email"}`}
           </a>
         )}
-        {!wa && c.email && (
+        {!wa && !call && c.email && (
           <button
             type="button"
             className="btn primary"

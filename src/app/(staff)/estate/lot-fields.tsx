@@ -2,7 +2,7 @@
 
 import { CoverField } from "@/components/cover-field";
 import type { Tables } from "@/lib/database.types";
-import { HOME_STATUS, LOT_STATUS } from "@/lib/estate";
+import { byCode, HOME_STATUS, LOT_KINDS, LOT_STATUS } from "@/lib/estate";
 
 type Lot = Tables<"lots">;
 
@@ -10,10 +10,13 @@ type Lot = Tables<"lots">;
 export function LotFields({
   lot,
   people,
+  lots = [],
 }: {
   lot?: Lot | null;
   people: { id: string; name: string }[];
+  lots?: { id: string; code: string; name: string | null; estate_lot_id: string | null }[];
 }) {
+  const estates = lots.filter((l) => l.id !== lot?.id && !l.estate_lot_id).sort(byCode);
   return (
     <>
       {lot && <input type="hidden" name="id" value={lot.id} />}
@@ -41,6 +44,32 @@ export function LotFields({
           <input id="l-zone" name="zone" defaultValue={lot?.zone ?? ""} placeholder="e.g. Ridge, Phase 1" />
         </div>
       </div>
+      <div className="grid2">
+        <div className="fld">
+          <label htmlFor="l-kind">Type</label>
+          <select id="l-kind" name="kind" defaultValue={lot?.kind ?? "lot"}>
+            {LOT_KINDS.map(([k, l]) => (
+              <option key={k} value={k}>{l}</option>
+            ))}
+          </select>
+        </div>
+        <div className="fld">
+          <label htmlFor="l-features">Specifications</label>
+          <input id="l-features" name="features" defaultValue={lot?.features ?? ""} placeholder="e.g. Ocean Horizon & Jungle" />
+        </div>
+      </div>
+      {estates.length > 0 && (
+        <div className="fld">
+          <label htmlFor="l-estate">Sold together with</label>
+          <select id="l-estate" name="estate_lot_id" defaultValue={lot?.estate_lot_id ?? ""}>
+            <option value="">On its own</option>
+            {estates.map((e) => (
+              <option key={e.id} value={e.id}>{e.name ? `${e.name} (Lot ${e.code})` : `Lot ${e.code}`}</option>
+            ))}
+          </select>
+          <small className="muted">For estates made of several lots. Price the estate on its main lot.</small>
+        </div>
+      )}
       <div className="grid2">
         <div className="fld">
           <label htmlFor="l-size">Size (m²)</label>

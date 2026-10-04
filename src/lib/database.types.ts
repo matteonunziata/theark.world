@@ -832,6 +832,8 @@ export type Database = {
           created_at: string
           currency: string
           description: string | null
+          estate_lot_id: string | null
+          features: string | null
           home_name: string | null
           home_notes: string | null
           home_status: string
@@ -839,6 +841,7 @@ export type Database = {
           house_rules: string | null
           id: string
           in_hospitality: boolean
+          kind: string
           listing_notes: string | null
           listing_published: boolean
           listing_summary: string | null
@@ -870,6 +873,8 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string | null
+          estate_lot_id?: string | null
+          features?: string | null
           home_name?: string | null
           home_notes?: string | null
           home_status?: string
@@ -877,6 +882,7 @@ export type Database = {
           house_rules?: string | null
           id?: string
           in_hospitality?: boolean
+          kind?: string
           listing_notes?: string | null
           listing_published?: boolean
           listing_summary?: string | null
@@ -908,6 +914,8 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string | null
+          estate_lot_id?: string | null
+          features?: string | null
           home_name?: string | null
           home_notes?: string | null
           home_status?: string
@@ -915,6 +923,7 @@ export type Database = {
           house_rules?: string | null
           id?: string
           in_hospitality?: boolean
+          kind?: string
           listing_notes?: string | null
           listing_published?: boolean
           listing_summary?: string | null
@@ -933,6 +942,13 @@ export type Database = {
           zone?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "lots_estate_lot_id_fkey"
+            columns: ["estate_lot_id"]
+            isOneToOne: false
+            referencedRelation: "lots"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lots_owner_contact_id_fkey"
             columns: ["owner_contact_id"]

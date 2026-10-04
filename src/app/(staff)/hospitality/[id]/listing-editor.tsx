@@ -34,7 +34,7 @@ export function ListingEditor({ lot, photos, stays, today }: { lot: Lot; photos:
   return (
     <>
       <p style={{ margin: "0 0 14px" }}>
-        <Link href="/hospitality" className="muted">← Hospitality</Link>
+        <Link href="/hospitality/listings" className="muted">← Listings</Link>
       </p>
       <div className="lot-head">
         <div>

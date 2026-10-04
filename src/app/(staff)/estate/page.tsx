@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { requireStaff } from "@/lib/auth";
+import { EstateHead } from "./estate-head";
 import { LotsView } from "./lots-view";
 
 export const metadata: Metadata = { title: "Real estate" };
@@ -16,15 +17,7 @@ export default async function EstatePage() {
   for (const h of household ?? []) counts.set(h.lot_id, (counts.get(h.lot_id) ?? 0) + 1);
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h1>Real estate</h1>
-          <p className="lede">
-            Every lot on the land: what’s available, who owns what, the homes,
-            and the families who live in them.
-          </p>
-        </div>
-      </div>
+      <EstateHead />
       <LotsView
         lots={(lots ?? []).map((l) => ({
           ...l,

@@ -128,6 +128,7 @@ export const TYPES = [
   ["facilitator", "Facilitator"],
   ["crew", "Maintenance crew"],
   ["contractor", "Contractor"],
+  ["security", "Security"],
 ] as const;
 
 export const typeName = (k: string | null | undefined) =>
