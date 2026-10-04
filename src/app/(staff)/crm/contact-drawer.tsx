@@ -2,17 +2,24 @@
 
 import { ConfirmButton, Drawer } from "@/components/drawer";
 import type { Tables } from "@/lib/database.types";
-import { MSTATUS, PTYPES, ptypeName, TIERS } from "@/lib/crm";
+import { MSTATUS, PTYPES, ptypeName, tierPrice } from "@/lib/crm";
 import { saveContact } from "./actions";
 
 export type Contact = Tables<"contacts">;
 export type Owner = Pick<Tables<"team_members">, "id" | "name">;
+export type TierOption = Pick<
+  Tables<"membership_tiers">,
+  "key" | "name" | "price" | "currency" | "period" | "active"
+>;
+export type DiscountOption = Pick<Tables<"discounts">, "id" | "name" | "percent" | "active">;
 
 export function ContactDrawer({
   open,
   contact,
   type = "contact",
   owners,
+  tiers,
+  discounts,
   isAdmin,
   canEdit,
   onClose,
@@ -21,6 +28,8 @@ export function ContactDrawer({
   contact: Contact | null;
   type?: string;
   owners: Owner[];
+  tiers: TierOption[];
+  discounts: DiscountOption[];
   isAdmin: boolean;
   canEdit: boolean;
   onClose: () => void;
@@ -111,9 +120,15 @@ export function ContactDrawer({
           <div className="fld">
             <label htmlFor="c-tier">Tier</label>
             <select id="c-tier" name="tier" defaultValue={c?.tier ?? ""}>
-              {TIERS.map(([k, l]) => (
-                <option key={k} value={k}>{l}</option>
-              ))}
+              <option value="">No membership</option>
+              {tiers
+                .filter((t) => t.active || t.key === c?.tier)
+                .map((t) => (
+                  <option key={t.key} value={t.key}>
+                    {t.name}
+                    {t.price !== null ? `, ${tierPrice(t)}` : ""}
+                  </option>
+                ))}
             </select>
           </div>
           <div className="fld">
@@ -124,6 +139,19 @@ export function ContactDrawer({
               ))}
             </select>
           </div>
+        </div>
+        <div className="fld">
+          <label htmlFor="c-disc">Discount</label>
+          <select id="c-disc" name="discount_id" defaultValue={c?.discount_id ?? ""}>
+            <option value="">None</option>
+            {discounts
+              .filter((d) => d.active || d.id === c?.discount_id)
+              .map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}, {Number(d.percent)}% off
+                </option>
+              ))}
+          </select>
         </div>
         <div className="grid2">
           <div className="fld">

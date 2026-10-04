@@ -10,7 +10,7 @@ export default async function ContactPage({
 }: PageProps<"/crm/contact/[id]">) {
   const { id } = await params;
   const { supabase, staff } = await requireStaff("crm");
-  const [contact, notes, stages, enrollments, sequences, owners, org] =
+  const [contact, notes, stages, enrollments, sequences, owners, org, tiers, discounts] =
     await Promise.all([
       supabase.from("contacts").select("*").eq("id", id).maybeSingle(),
       supabase
@@ -34,6 +34,8 @@ export default async function ContactPage({
         .in("role", ["admin", "sales"])
         .eq("status", "active"),
       supabase.rpc("public_org").maybeSingle(),
+      supabase.from("membership_tiers").select("key, name, price, currency, period, active").order("position"),
+      supabase.from("discounts").select("id, name, percent, active").order("name"),
     ]);
   if (!contact.data) {
     return (
@@ -69,6 +71,8 @@ export default async function ContactPage({
         steps: [...s.sequence_steps].sort((a, b) => a.position - b.position),
       }))}
       owners={owners.data ?? []}
+      tiers={tiers.data ?? []}
+      discounts={discounts.data ?? []}
       role={staff.role}
       orgName={org.data?.name ?? "The ARK"}
     />

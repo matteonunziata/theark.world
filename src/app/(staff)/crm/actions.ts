@@ -9,7 +9,7 @@ import {
   ok,
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
-import { CHANNELS, MSTATUS, PIPELINES, PTYPES, TIERS } from "@/lib/crm";
+import { CHANNELS, MSTATUS, PIPELINES, PTYPES } from "@/lib/crm";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -40,7 +40,6 @@ export async function saveContact(
   if (!name) return fail("Enter a name.");
   if (email && !EMAIL.test(email)) return fail("Enter a valid email.");
   if (!PTYPES.some((t) => t[0] === type)) return fail("Choose a type.");
-  if (tier && !TIERS.some((t) => t[0] === tier)) return fail("Choose a tier.");
   if (!MSTATUS.some((m) => m[0] === status)) return fail("Choose a status.");
 
   // Sales own what they add; only admins hand contacts to someone else.
@@ -64,6 +63,7 @@ export async function saveContact(
     renews_on: field(data, "renews_on"),
     lot: field(data, "lot"),
     resident: data.get("resident") === "yes",
+    discount_id: field(data, "discount_id"),
     ...(isAdmin ? { owner_id: field(data, "owner_id") } : {}),
   };
 

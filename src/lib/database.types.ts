@@ -79,6 +79,7 @@ export type Database = {
         {
           created_at: string;
           created_by: string | null;
+          discount_id: string | null;
           email: string | null;
           id: string;
           instagram: string | null;
@@ -115,6 +116,18 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ]
+      >;
+      discounts: Table<
+        {
+          active: boolean;
+          created_at: string;
+          description: string | null;
+          id: string;
+          lifetime: boolean;
+          name: string;
+          percent: number;
+        },
+        "name" | "percent"
       >;
       divisions: Table<
         {
@@ -202,6 +215,23 @@ export type Database = {
         },
         "month"
       >;
+      membership_tiers: Table<
+        {
+          active: boolean;
+          currency: string;
+          description: string | null;
+          key: string;
+          name: string;
+          pause_rule: string | null;
+          period: string;
+          perks: string[];
+          position: number;
+          price: number | null;
+          spots: number | null;
+          updated_at: string;
+        },
+        "key" | "name"
+      >;
       offerings: Table<
         {
           access: string;
@@ -243,6 +273,7 @@ export type Database = {
           id: boolean;
           language: string;
           location: string;
+          member_cap: number | null;
           name: string | null;
           timezone: string;
           updated_at: string;
@@ -535,6 +566,10 @@ export type Database = {
         }[];
       };
       staff_role: { Args: never; Returns: string };
+      tier_counts: {
+        Args: never;
+        Returns: { tier: string; active: number }[];
+      };
       ticket_by_token: {
         Args: { p_token: string };
         Returns: {

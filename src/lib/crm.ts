@@ -57,7 +57,9 @@ export const CHANNELS = [
 ] as const;
 
 export const tierName = (k: string | null | undefined) =>
-  TIERS.find((t) => t[0] === (k ?? ""))?.[1] ?? "No membership";
+  TIERS.find((t) => t[0] === (k ?? ""))?.[1] ??
+  // Tiers added later in Settings fall back to a readable key.
+  String(k).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 export const tierClass = (k: string | null | undefined) =>
   !k ? "none" : ["day", "week"].includes(k) ? "pass" : k;
 export const tierColor = (k: string | null | undefined) =>
@@ -99,4 +101,23 @@ export function merge(
     .replace(/{{\s*first_name\s*}}/gi, firstName(c.name))
     .replace(/{{\s*name\s*}}/gi, c.name || "")
     .replace(/{{\s*org\s*}}/gi, org);
+}
+
+const PER: Record<string, string> = {
+  day: "day",
+  week: "week",
+  month: "month",
+  year: "year",
+  once: "",
+};
+
+/** "₡70,000 a month", applying a discount when there is one. */
+export function tierPrice(
+  t: { price: number | null; currency: string; period: string } | null | undefined,
+  discountPercent?: number | null,
+) {
+  if (!t || t.price === null) return "Price not set";
+  const n = Math.round(Number(t.price) * (1 - Number(discountPercent ?? 0) / 100));
+  const amount = t.currency === "USD" ? `$${n.toLocaleString("en-US")}` : `₡${n.toLocaleString("en-US")}`;
+  return PER[t.period] ? `${amount} a ${PER[t.period]}` : amount;
 }

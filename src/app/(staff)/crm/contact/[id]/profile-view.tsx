@@ -13,12 +13,19 @@ import {
   tierClass,
   tierColor,
   tierName,
+  tierPrice,
   waLink,
 } from "@/lib/crm";
 import { dayLabel, fmtDate, todayIn } from "@/lib/dates";
 import { nextStep, stepDue } from "@/lib/sequences";
 import { addNote, enroll, setStage, updateEnrollment } from "../../actions";
-import { type Contact, ContactDrawer, type Owner } from "../../contact-drawer";
+import {
+  type Contact,
+  ContactDrawer,
+  type DiscountOption,
+  type Owner,
+  type TierOption,
+} from "../../contact-drawer";
 import {
   type Enrollment,
   MessageDrawer,
@@ -34,6 +41,8 @@ export function ProfileView({
   enrollments,
   sequences,
   owners,
+  tiers,
+  discounts,
   role,
   orgName,
 }: {
@@ -43,9 +52,13 @@ export function ProfileView({
   enrollments: Enrollment[];
   sequences: Sequence[];
   owners: Owner[];
+  tiers: TierOption[];
+  discounts: DiscountOption[];
   role: string;
   orgName: string;
 }) {
+  const tierRow = tiers.find((t) => t.key === c.tier);
+  const disc = discounts.find((d) => d.id === c.discount_id);
   const toast = useToast();
   const [pending, start] = useTransition();
   const [note, setNote] = useState("");
@@ -263,6 +276,11 @@ export function ProfileView({
               <dd>{owners.find((o) => o.id === c.owner_id)?.name ?? "—"}</dd>
               {c.tier && (
                 <>
+                  <dt>Pays</dt>
+                  <dd>
+                    {tierPrice(tierRow, disc?.percent)}
+                    {disc ? ` (${disc.name}, ${Number(disc.percent)}% off)` : ""}
+                  </dd>
                   <dt>Member since</dt>
                   <dd>
                     {c.member_since
@@ -317,6 +335,8 @@ export function ProfileView({
         open={editing}
         contact={c}
         owners={owners}
+        tiers={tiers}
+        discounts={discounts}
         isAdmin={role === "admin"}
         canEdit={canEdit}
         onClose={() => setEditing(false)}

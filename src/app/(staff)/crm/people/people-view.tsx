@@ -5,7 +5,13 @@ import { useState } from "react";
 import { Avatar } from "@/components/avatar";
 import { useDrawer } from "@/components/drawer";
 import { mstatusName, tierClass, tierColor, tierName } from "@/lib/crm";
-import { type Contact, ContactDrawer, type Owner } from "../contact-drawer";
+import {
+  type Contact,
+  ContactDrawer,
+  type DiscountOption,
+  type Owner,
+  type TierOption,
+} from "../contact-drawer";
 
 const FILTERS = [
   ["", "Everyone"],
@@ -17,10 +23,14 @@ const FILTERS = [
 export function PeopleView({
   contacts,
   owners,
+  tiers,
+  discounts,
   role,
 }: {
   contacts: Contact[];
   owners: Owner[];
+  tiers: TierOption[];
+  discounts: DiscountOption[];
   role: string;
 }) {
   const [type, setType] = useState("");
@@ -157,6 +167,8 @@ export function PeopleView({
         contact={drawer.item}
         type={type || "contact"}
         owners={owners}
+        tiers={tiers}
+        discounts={discounts}
         isAdmin={role === "admin"}
         canEdit={canEdit}
         onClose={drawer.close}

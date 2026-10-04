@@ -97,3 +97,6 @@ dialog.drawer form{display:flex;flex-direction:column;height:100%}
 .todo li .meta{display:flex;gap:10px;align-items:center;flex:none}
 .cal-links{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
 .cal-links .btn{padding:7px 12px;font-size:13.5px}
+.tier-card h3{font-size:24px;margin:8px 0 4px}
+.tier-card .perks{margin:0 0 12px;padding-left:18px;color:var(--muted);font-size:13.5px}
+.tier-card .meter{margin-bottom:8px}
