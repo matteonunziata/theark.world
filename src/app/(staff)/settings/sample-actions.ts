@@ -9,6 +9,7 @@ type Client = Awaited<ReturnType<typeof staffOrThrow>>["supabase"];
 
 const ORDER = [
   "posts",
+  "finance_entries",
   "registrations",
   "enrollments",
   "stock_movements",
@@ -291,29 +292,6 @@ export async function loadSampleData(): Promise<ActionResult> {
       })),
     );
 
-    const prods = [
-      ["Cherry tomatoes", "Vegetables", "kg", 3500, 3000, 4, 5],
-      ["Lettuce mix", "Vegetables", "bag", 2200, 1800, 14, 6],
-      ["Farm eggs", "Eggs & dairy", "dozen", 4500, 4000, 9, 8],
-      ["Kombucha, ginger", "Drinks", "bottle", 3000, 2500, 22, 10],
-      ["Sourdough loaf", "Bakery", "loaf", 4000, 3500, 0, 4],
-      ["Raw honey", "Pantry", "jar", 7500, 6500, 11, 3],
-      ["Bananas", "Fruit", "bunch", 1500, 1200, 18, 5],
-      ["Coconut oil", "Body & home", "jar", 6000, 5000, 2, 3],
-    ] as const;
-    const pIds = await insert(
-      "products",
-      prods.map(([name, category, unit, price, member_price, , low_at]) => ({
-        name, category, unit, price, member_price, low_at,
-      })),
-    );
-    await insert(
-      "stock_movements",
-      prods
-        .map(([, , , , , stock], i) => ({ product_id: pIds[i], type: "restock", delta: stock, by_id: staff.id }))
-        .filter((m) => m.delta > 0),
-    );
-
     const m0 = monthKey(td);
     const { data: existing } = await supabase
       .from("finance_months")
@@ -321,13 +299,41 @@ export async function loadSampleData(): Promise<ActionResult> {
       .in("month", [m0, addMonths(m0, -1), addMonths(m0, -2)].map((m) => `${m}-01`));
     const taken = new Set((existing ?? []).map((r) => r.month.slice(0, 7)));
     const fin = [
-      { month: addMonths(m0, -2), membership: 2600000, events: 310000, shop: 420000, fnb: 880000, land: 0, other: 0, expenses: 3900000, cash: 7200000, ar: 600000, ap: 950000, notes: "Seeding month, soft launch." },
-      { month: addMonths(m0, -1), membership: 4100000, events: 650000, shop: 610000, fnb: 1240000, land: 0, other: 150000, expenses: 4300000, cash: 9100000, ar: 1200000, ap: 700000, notes: "Founding members evening drove 11 sign-ups." },
-      { month: m0, membership: 5200000, events: 420000, shop: 380000, fnb: 900000, land: 0, other: 0, expenses: 2100000, cash: 9800000, ar: 1450000, ap: 420000, cash_date: td, notes: "Month in progress." },
+      { month: addMonths(m0, -2), cash: 7200000, notes: "Seeding month, soft launch." },
+      { month: addMonths(m0, -1), cash: 9100000, notes: "Founding members evening drove 11 sign-ups." },
+      { month: m0, cash: 9800000, cash_date: td, notes: "Month in progress." },
     ]
       .filter((f) => !taken.has(f.month))
       .map((f) => ({ ...f, month: `${f.month}-01` }));
     if (fin.length) await insert("finance_months", fin);
+
+    // Ledger entries for the same three months, spread across business lines.
+    const { data: bl } = await supabase.from("business_lines").select("id, name");
+    const lineId = (n: string) => bl?.find((l) => l.name === n)?.id ?? null;
+    const day = (m: string, d: number) => `${m}-${String(d).padStart(2, "0")}`;
+    const months3 = [addMonths(m0, -2), addMonths(m0, -1), m0];
+    const scale = [0.6, 0.85, 1];
+    const ledger = months3.flatMap((m, i) => {
+      const s = scale[i];
+      const last = m === m0 ? Number(td.slice(8, 10)) : 28;
+      const d = (n: number) => day(m, Math.min(n, last));
+      return [
+        { kind: "income", entry_date: d(2), business_line_id: lineId("Memberships"), category: "Membership dues", description: "Monthly dues", amount: Math.round(5200000 * s), method: "transfer" },
+        { kind: "income", entry_date: d(9), business_line_id: lineId("Events & experiences"), category: "Tickets", description: "Full moon gathering", amount: Math.round(420000 * s), method: "sinpe" },
+        { kind: "income", entry_date: d(12), business_line_id: lineId("Farm shop"), category: "Shop sales", description: "Shop sales, first half", amount: Math.round(380000 * s), method: "card" },
+        { kind: "income", entry_date: d(15), business_line_id: lineId("Arkadia"), category: "Tuition", description: "Term tuition", amount: Math.round(1800000 * s), method: "transfer" },
+        { kind: "income", entry_date: d(20), business_line_id: lineId("Food & beverage"), category: "Food & drink", description: "Café sales", amount: Math.round(900000 * s), method: "card" },
+        { kind: "expense", entry_date: d(1), business_line_id: null, category: "Payroll", description: "Team payroll", amount: Math.round(1600000 * s), method: "transfer", party: "Team" },
+        { kind: "expense", entry_date: d(6), business_line_id: lineId("Farm shop"), category: "Farm inputs", description: "Compost and seedlings", amount: Math.round(240000 * s), method: "cash", party: "Vivero Cóbano", doc_kind: "receipt" },
+        { kind: "expense", entry_date: d(11), business_line_id: null, category: "Utilities", description: "Electricity", amount: Math.round(310000 * s), method: "transfer", party: "Coopeguanacaste", doc_kind: "bill" },
+      ];
+    });
+    await insert("finance_entries", [
+      ...ledger.map((e) => ({ ...e, created_by: staff.id })),
+      { kind: "expense", entry_date: day(m0, 1), business_line_id: null, category: "Maintenance", description: "Roof repair, main shala", amount: 650000, status: "unpaid", due_date: addDays(td, 6), party: "Construcciones Malpaís", doc_kind: "bill", reference: "F-2291", created_by: staff.id },
+      { kind: "expense", entry_date: addDays(td, -20), business_line_id: lineId("Farm shop"), category: "Supplies", description: "Glass jars, 400 units", amount: 180000, status: "unpaid", due_date: addDays(td, -3), party: "Envases CR", doc_kind: "bill", created_by: staff.id },
+      { kind: "income", entry_date: addDays(td, -10), business_line_id: lineId("Events & experiences"), category: "Tickets", description: "Private retreat, 12 guests", amount: 2400, currency: "USD", status: "unpaid", due_date: addDays(td, 4), party: "Wild Women Retreats", doc_kind: "invoice", reference: "ARK-0042", created_by: staff.id },
+    ]);
   } catch (e) {
     console.error("Sample data failed", e);
     revalidatePath("/", "layout");

@@ -50,3 +50,18 @@ export async function staffOrThrow(...roles: string[]) {
   }
   return { ...v, staff: v.staff };
 }
+
+/** Arkadia pages: admins and people in the school division. */
+export async function requireSchool() {
+  const v = await requireStaff();
+  const { data } = await v.supabase.rpc("is_school_staff");
+  if (!data) redirect("/");
+  return v;
+}
+
+export async function schoolOrThrow() {
+  const v = await staffOrThrow();
+  const { data } = await v.supabase.rpc("is_school_staff");
+  if (!data) throw new Error("You don’t have access to Arkadia.");
+  return v;
+}

@@ -31,6 +31,17 @@ export type Database = {
   };
   public: {
     Tables: {
+      business_lines: Table<
+        {
+          active: boolean;
+          color: string;
+          created_at: string;
+          id: string;
+          name: string;
+          position: number;
+        },
+        "name"
+      >;
       cities: Table<
         {
           active: boolean;
@@ -153,6 +164,7 @@ export type Database = {
           created_at: string;
           description: string | null;
           id: string;
+          is_school: boolean;
           lead_id: string | null;
           name: string;
           updated_at: string;
@@ -209,6 +221,47 @@ export type Database = {
             columns: ["sequence_id"];
             isOneToOne: false;
             referencedRelation: "sequences";
+            referencedColumns: ["id"];
+          },
+        ]
+      >;
+      finance_entries: Table<
+        {
+          amount: number;
+          business_line_id: string | null;
+          category: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          description: string | null;
+          doc_kind: string | null;
+          due_date: string | null;
+          entry_date: string;
+          file_name: string | null;
+          file_path: string | null;
+          id: string;
+          kind: string;
+          method: string | null;
+          paid_on: string | null;
+          party: string | null;
+          reference: string | null;
+          status: string;
+          updated_at: string;
+        },
+        "amount" | "kind",
+        [
+          {
+            foreignKeyName: "finance_entries_business_line_id_fkey";
+            columns: ["business_line_id"];
+            isOneToOne: false;
+            referencedRelation: "business_lines";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "finance_entries_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "team_members";
             referencedColumns: ["id"];
           },
         ]
@@ -341,14 +394,22 @@ export type Database = {
           category: string;
           created_at: string;
           description: string | null;
+          external_id: string | null;
           id: string;
+          image_path: string | null;
+          image_url: string | null;
           low_at: number;
           member_price: number | null;
           name: string;
+          online: boolean | null;
           price: number;
+          product_group: string | null;
           stock: number;
+          track_stock: boolean;
           unit: string | null;
           updated_at: string;
+          variant: string | null;
+          web_url: string | null;
         },
         "name" | "price"
       >;
@@ -492,6 +553,73 @@ export type Database = {
           },
         ]
       >;
+      student_guardians: Table<
+        {
+          created_at: string;
+          email: string | null;
+          id: string;
+          name: string;
+          phone: string | null;
+          relation: string | null;
+          student_id: string;
+        },
+        "name" | "student_id",
+        [
+          {
+            foreignKeyName: "student_guardians_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+        ]
+      >;
+      student_updates: Table<
+        {
+          author_id: string | null;
+          body: string;
+          created_at: string;
+          id: string;
+          photo_path: string | null;
+          shared: boolean;
+          student_id: string;
+        },
+        "body" | "student_id",
+        [
+          {
+            foreignKeyName: "student_updates_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "team_members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "student_updates_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+        ]
+      >;
+      students: Table<
+        {
+          about: string | null;
+          birthdate: string | null;
+          created_at: string;
+          group_name: string | null;
+          id: string;
+          name: string;
+          photo_path: string | null;
+          preferred_name: string | null;
+          share_token: string;
+          staff_notes: string | null;
+          start_date: string | null;
+          status: string;
+          updated_at: string;
+        },
+        "name"
+      >;
       team_members: Table<
         {
           created_at: string;
@@ -575,6 +703,7 @@ export type Database = {
         Returns: { id: string; name: string }[];
       };
       is_member: { Args: never; Returns: boolean };
+      is_school_staff: { Args: never; Returns: boolean };
       is_staff: { Args: never; Returns: boolean };
       member_directory: {
         Args: never;
@@ -661,6 +790,7 @@ export type Database = {
         };
         Returns: string;
       };
+      student_page: { Args: { p_token: string }; Returns: Json };
       session_counts: {
         Args: { p_offering_id: string; p_from: string; p_to: string };
         Returns: {
