@@ -7,6 +7,7 @@ import { getViewer } from "@/lib/auth";
 import { fmtDate, timeRange } from "@/lib/dates";
 import { siteUrl, ticketCode, ticketUrl } from "@/lib/email";
 import { kindName, money } from "@/lib/schedule";
+import { walletEnabled } from "@/lib/wallet";
 import { CheckInButton, CopyTicketLink } from "./ticket-actions";
 
 export const metadata: Metadata = { title: "Ticket", robots: { index: false } };
@@ -94,6 +95,11 @@ export default async function TicketPage({ params }: PageProps<"/t/[token]">) {
             {t.can_check_in && t.state === "valid" && <CheckInButton token={token} />}
             <CopyTicketLink url={url} />
           </div>
+          {walletEnabled() && (t.state === "valid" || t.state === "upcoming") && (
+            <a className="wallet-btn" href={`/t/${token}/wallet.pkpass`}>
+              Add to Apple Wallet
+            </a>
+          )}
           {(t.state === "valid" || t.state === "upcoming") && (
             <AddToCalendar
               icsHref={`/t/${token}/calendar.ics`}
