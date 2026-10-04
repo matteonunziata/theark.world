@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "@/components/icons";
+import { Logo } from "@/components/logo";
 import { type ModuleKey, roleName } from "@/lib/roles";
 
 type NavItem = { key: ModuleKey; name: string; href: string; planned?: boolean };
@@ -28,7 +29,9 @@ export function Shell({
   return (
     <div className="app">
       <div className="topbar">
-        <div className="mark">ARK</div>
+        <Link href="/" aria-label="Home">
+          <Logo height={24} />
+        </Link>
         <button
           type="button"
           aria-expanded={open}
@@ -39,9 +42,10 @@ export function Shell({
         </button>
       </div>
       <aside className={`side ${open ? "open" : ""}`} id="side">
-        <div className="mark">
-          ARK <small>OS</small>
-        </div>
+        <Link href="/" className="brand" aria-label="ARK OS home">
+          <Logo height={30} />
+          <small>OS</small>
+        </Link>
         <div className="place">{place}</div>
         {/* Close the mobile menu when a link is chosen. */}
         <nav className="nav" aria-label="Modules" onClick={() => setOpen(false)}>
@@ -58,10 +62,6 @@ export function Shell({
               </Link>
             </span>
           ))}
-          <Link href="/portal" target="_blank">
-            <Icon name="portal" />
-            Members portal
-          </Link>
         </nav>
         <div className="side-foot">
           <span className="who-me">

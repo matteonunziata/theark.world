@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LeafMark } from "@/components/leaf-mark";
+import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "No access" };
@@ -9,7 +9,10 @@ export default async function NoAccessPage() {
   return (
     <main className="auth">
       <div className="auth-card">
-        <LeafMark className="auth-leaf" />
+        <Logo tone="dark" kind="mark" height={220} className="auth-leaf" />
+        <div className="auth-brand">
+          <Logo tone="dark" height={34} />
+        </div>
         <h1>You’re signed in, but not set up yet</h1>
         <p>
           {user?.email ? `${user.email} isn’t` : "This account isn’t"} active

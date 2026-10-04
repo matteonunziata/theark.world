@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LeafMark } from "@/components/leaf-mark";
+import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
 import { GoogleButton } from "./google-button";
 
@@ -17,9 +17,9 @@ export default async function LoginPage({
   return (
     <main className="auth">
       <div className="auth-card">
-        <LeafMark className="auth-leaf" />
-        <div className="mark">
-          ARK <small>OS</small>
+        <Logo tone="dark" kind="mark" height={220} className="auth-leaf" />
+        <div className="auth-brand">
+          <Logo tone="dark" height={34} />
         </div>
         <h1>Team sign-in</h1>
         <p>Use your @theark.world Google account.</p>

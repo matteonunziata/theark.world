@@ -28,6 +28,7 @@ const LOCATIONS = ["The Shala", "Spa deck", "Cowork lounge", "Courts", "Gym", "T
 export function TasksView({
   view,
   today,
+  initialAssignee = "",
   staffId,
   tasks,
   team,
@@ -35,12 +36,13 @@ export function TasksView({
 }: {
   view: "board" | "list";
   today: string;
+  initialAssignee?: string;
   staffId: string;
   tasks: Task[];
   team: Person[];
   divisions: Division[];
 }) {
-  const [f, setF] = useState({ asg: "", div: "", pri: "", kind: "", status: "open" });
+  const [f, setF] = useState({ asg: initialAssignee, div: "", pri: "", kind: "", status: "open" });
   const [showDone, setShowDone] = useState(false);
   const [over, setOver] = useState("");
   const drawer = useDrawer<Task>();

@@ -72,3 +72,28 @@ dialog.drawer form{display:flex;flex-direction:column;height:100%}
 .ledger .n{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
 .ledger .n:first-child{border-top:0}
 @media (max-width: 860px){.srow{grid-template-columns:1fr auto}.srow .c-cat,.srow .c-price,.srow > span:last-child{display:none}}
+
+/* brand */
+.side .brand{display:flex;align-items:flex-end;gap:8px;padding:0 10px 4px;text-decoration:none;color:var(--canopy-muted)}
+.side .brand small{font-size:12px;font-weight:500;line-height:1;padding-bottom:3px}
+.auth-brand{margin-bottom:24px}
+.auth-leaf{position:absolute!important;right:-60px;top:-50px;width:220px!important;height:220px!important;opacity:.08;pointer-events:none}
+.hello .hello-mark{position:absolute;right:-50px;bottom:-60px;width:300px!important;height:300px!important;opacity:.14}
+.p-brand{display:block;margin-bottom:14px}
+
+/* personal to-dos */
+.todo{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:28px}
+.todo header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.todo header a{color:var(--sea)}
+.todo-add{display:flex;gap:8px;margin-bottom:6px}
+.todo-add input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 12px}
+.todo ul{list-style:none;margin:0;padding:0}
+.todo li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 2px;border-top:1px solid var(--line)}
+.todo li:first-child{border-top:0}
+.todo li label{display:flex;align-items:center;gap:12px;cursor:pointer;min-width:0}
+.todo li input{width:20px;height:20px;accent-color:var(--leaf);flex:none}
+.todo li .t{overflow-wrap:anywhere}
+.todo li.done .t{text-decoration:line-through;color:var(--muted)}
+.todo li .meta{display:flex;gap:10px;align-items:center;flex:none}
+.cal-links{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.cal-links .btn{padding:7px 12px;font-size:13.5px}

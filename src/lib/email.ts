@@ -2,6 +2,7 @@ import "server-only";
 import { headers } from "next/headers";
 import QRCode from "qrcode";
 import { Resend } from "resend";
+import { googleCalendarUrl } from "@/lib/calendar";
 import { fmtDate, timeRange } from "@/lib/dates";
 
 /** Absolute URL of this deployment, for links in emails and QR codes. */
@@ -44,6 +45,14 @@ export async function sendTicketEmail(t: {
   const png = await QRCode.toBuffer(url, { width: 360, margin: 1 });
   const when = `${fmtDate(t.sessionDate, { weekday: "long", month: "long", day: "numeric" })}, ${timeRange({ start_time: t.startTime, end_time: t.endTime })}`;
   const first = t.holder.trim().split(/\s+/)[0] ?? "";
+  const gcal = googleCalendarUrl({
+    title: `${t.title} · ${t.orgName}`,
+    date: t.sessionDate,
+    start: t.startTime,
+    end: t.endTime,
+    location: t.location,
+    details: `Your ticket: ${url}`,
+  });
 
   const html = `<!doctype html><html><body style="margin:0;background:#F1F3EF;font-family:Helvetica,Arial,sans-serif;color:#1C2620">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:28px 12px">
@@ -57,7 +66,8 @@ export async function sendTicketEmail(t: {
     </td></tr>
     <tr><td align="center" style="padding:16px 26px 6px"><img src="cid:ticket-qr" width="220" height="220" alt="Ticket QR code" style="display:block"></td></tr>
     <tr><td align="center" style="padding:0 26px 6px;font-family:Menlo,monospace;font-size:16px;letter-spacing:2px">${ticketCode(t.token)}</td></tr>
-    <tr><td align="center" style="padding:10px 26px 26px"><a href="${url}" style="color:#1F6E7A">Open your ticket</a></td></tr>
+    <tr><td align="center" style="padding:10px 26px 4px"><a href="${url}" style="color:#1F6E7A">Open your ticket</a></td></tr>
+    <tr><td align="center" style="padding:6px 26px 26px;font-size:14px">Add to <a href="${gcal}" style="color:#1F6E7A">Google Calendar</a> · <a href="${url}/calendar.ics" style="color:#1F6E7A">Apple or Outlook</a></td></tr>
   </table>
   <p style="color:#5B6960;font-size:12px;margin:16px 0 0">See you there.</p>
   </td></tr></table></body></html>`;

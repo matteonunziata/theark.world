@@ -15,7 +15,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const refresh = () => {
   revalidatePath("/crm", "layout");
-  revalidatePath("/members");
+  revalidatePath("/memberships", "layout");
 };
 
 export async function saveContact(

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AddToCalendar } from "@/components/add-to-calendar";
 import { useState, useTransition } from "react";
 import type { Tables } from "@/lib/database.types";
 import { dayLabel, timeRange } from "@/lib/dates";
@@ -73,6 +74,20 @@ export function BookingPanel({
               View your ticket
             </Link>
           </p>
+          {picked && (
+            <AddToCalendar
+              icsHref={`/t/${result.token}/calendar.ics`}
+              event={{
+                title: o.title,
+                date: picked,
+                start: o.start_time,
+                end: o.end_time,
+                location: o.location,
+                details: `Your ticket: ${typeof window === "undefined" ? "" : window.location.origin}/t/${result.token}`,
+              }}
+            />
+          )}
+          <p />
           {result.price &&
             (result.paymentLink ? (
               <a className="btn primary" href={result.paymentLink} target="_blank" rel="noopener noreferrer">

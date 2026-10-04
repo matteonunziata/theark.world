@@ -66,3 +66,21 @@ export async function setTaskStatus(id: string, status: string) {
   revalidatePath("/dashboard");
   return ok("Moved");
 }
+
+/** Quick personal to-do from the dashboard, assigned to whoever adds it. */
+export async function addTodo(title: string) {
+  const { supabase, staff } = await staffOrThrow();
+  const t = title.trim();
+  if (!t) return fail("Write the to-do first.");
+  const { error } = await supabase.from("tasks").insert({
+    title: t,
+    assignee_id: staff.id,
+    created_by: staff.id,
+    division_id: staff.division_id,
+    status: "next",
+  });
+  if (error) return fail(friendly(error));
+  revalidatePath("/dashboard");
+  revalidatePath("/operations", "layout");
+  return ok("Added");
+}

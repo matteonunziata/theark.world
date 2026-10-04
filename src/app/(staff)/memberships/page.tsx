@@ -3,10 +3,10 @@ import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
 import { MembersView } from "./members-view";
 
-export const metadata: Metadata = { title: "Members" };
+export const metadata: Metadata = { title: "Memberships" };
 
 export default async function MembersPage() {
-  const { supabase } = await requireStaff("members");
+  const { supabase } = await requireStaff("memberships");
   const { data } = await supabase
     .from("contacts")
     .select("id, name, tier, location, interests, membership_status")
@@ -19,7 +19,7 @@ export default async function MembersPage() {
     <div className="page">
       <div className="page-head">
         <div>
-          <h1>Members</h1>
+          <h1>Memberships</h1>
           <p className="lede">
             Everyone with an active membership. Open a card to see their full
             profile in the CRM.
@@ -27,6 +27,9 @@ export default async function MembersPage() {
         </div>
         <div className="head-actions">
           <Link className="btn" href="/crm/people">Manage in CRM</Link>
+          <Link className="btn primary" href="/portal" target="_blank">
+            Open members portal
+          </Link>
         </div>
       </div>
       <div className="stats" style={{ marginBottom: 22 }}>

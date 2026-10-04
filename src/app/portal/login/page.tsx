@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LeafMark } from "@/components/leaf-mark";
+import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
 import { MagicLinkForm } from "./magic-link-form";
 
@@ -14,9 +14,9 @@ export default async function PortalLogin({ searchParams }: PageProps<"/portal/l
   return (
     <main className="auth">
       <div className="auth-card">
-        <LeafMark className="auth-leaf" />
-        <div className="mark">
-          The ARK <small>Members</small>
+        <Logo tone="dark" kind="mark" height={220} className="auth-leaf" />
+        <div className="auth-brand">
+          <Logo tone="dark" height={34} />
         </div>
         <h1>Members portal</h1>
         <p>

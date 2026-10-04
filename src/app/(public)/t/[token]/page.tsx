@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import QRCode from "qrcode";
+import { AddToCalendar } from "@/components/add-to-calendar";
 import { PortalHead } from "@/components/portal-head";
 import { getViewer } from "@/lib/auth";
 import { fmtDate, timeRange } from "@/lib/dates";
@@ -93,6 +94,20 @@ export default async function TicketPage({ params }: PageProps<"/t/[token]">) {
             {t.can_check_in && t.state === "valid" && <CheckInButton token={token} />}
             <CopyTicketLink url={url} />
           </div>
+          {(t.state === "valid" || t.state === "upcoming") && (
+            <AddToCalendar
+              icsHref={`/t/${token}/calendar.ics`}
+              event={{
+                title: `${t.title} · ${orgName}`,
+                date: t.session_date,
+                start: t.start_time,
+                end: t.end_time,
+                location: [t.location, org?.location].filter(Boolean).join(", "),
+                details: `Your ticket: ${url}`,
+                timeZone: org?.timezone,
+              }}
+            />
+          )}
           <p className="gate-note" style={{ marginTop: 16 }}>
             Security scans the code with any phone camera. It opens this page
             and shows whether the ticket is valid.
