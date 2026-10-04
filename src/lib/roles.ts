@@ -36,6 +36,7 @@ export type ModuleKey =
   | "events"
   | "gate"
   | "shop"
+  | "school"
   | "operations"
   | "finance"
   | "settings";
@@ -85,6 +86,13 @@ export const MODULES: {
     name: "Farm shop",
     href: "/shop",
     roles: ["admin", "lead", "shop"],
+  },
+  {
+    // Admins, plus anyone in a school division (added in the staff layout).
+    key: "school",
+    name: "Arkadia",
+    href: "/arkadia",
+    roles: ["admin"],
   },
   {
     key: "operations",

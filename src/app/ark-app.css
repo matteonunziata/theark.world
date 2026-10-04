@@ -110,3 +110,78 @@ dialog.drawer form{display:flex;flex-direction:column;height:100%}
 .who.prod{display:flex;align-items:center;gap:12px;text-align:left}
 .who.prod img,.who.prod .ph{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:var(--surface-2)}
 .who.prod > span{display:flex;flex-direction:column}
+
+/* Finance ledger */
+.btn.sm{padding:6px 10px;font-size:13px;min-height:0}
+.erow{grid-template-columns:120px minmax(200px,2fr) 1fr 150px auto;cursor:pointer}
+.erow .c-amt{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.erow .amt.income{color:var(--leaf)}
+.erow .acts{display:flex;gap:6px;justify-content:flex-end}
+.dot-label{display:inline-flex;align-items:center;gap:7px;font-size:14px}
+.dot-label i{width:9px;height:9px;border-radius:50%;flex:none}
+.brk .ln .dot-label{color:var(--ink)}
+.brk .ln.sub span{font-size:13px;color:var(--muted)}
+.lines-table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.lines-table th,.lines-table td{padding:9px 10px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+.lines-table th:first-child,.lines-table td:first-child{text-align:left}
+.lines-table thead th{border-top:0;color:var(--muted);font-weight:600;font-size:13px}
+.lines-table tfoot td{font-weight:700}
+.table-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 8px;margin-bottom:22px}
+@media (max-width: 860px){.erow{grid-template-columns:1fr auto}.erow > span:first-child,.erow .c-line{display:none}.erow .acts{grid-column:1 / -1;justify-content:flex-start}}
+.lines-table .linkish{background:none;border:0;padding:0;font:inherit;color:var(--ink);cursor:pointer;text-align:left}
+.lines-table .linkish:hover{text-decoration:underline}
+.lines-table th a{color:inherit}
+
+/* Arkadia */
+.students{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.student-card{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 14px;color:var(--ink);text-decoration:none;transition:border-color .15s,transform .15s}
+.student-card:hover{border-color:var(--plum);transform:translateY(-1px)}
+.student-card img,.student-card .ph{width:84px;height:84px;border-radius:50%;object-fit:cover;margin-bottom:8px;background:var(--surface-2)}
+.student-card .ph,.student-head .ph{display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:26px;color:var(--plum)}
+.student-card .muted{font-size:13px}
+.student-card .last{font-size:12px;color:var(--muted);margin-top:6px}
+.student-card .last.none{color:var(--clay)}
+.student-head{display:flex;gap:18px;align-items:center;margin-bottom:24px;flex-wrap:wrap}
+.student-head img,.student-head .ph{width:96px;height:96px;border-radius:50%;object-fit:cover;background:var(--surface-2);flex:none}
+.student-head h1{margin:0}
+.student-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:22px;align-items:start}
+.student-side{display:flex;flex-direction:column;gap:14px}
+.student-side .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.student-side .card h2{font-size:16px;margin:0 0 8px}
+.student-side .staff-only{border-style:dashed}
+.student-side .fam{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;font:inherit;color:var(--ink);cursor:pointer}
+.student-side .fam:first-of-type{border-top:0}
+.linkish-sm{display:block;margin-top:10px;background:none;border:0;padding:0;font:inherit;font-size:13px;color:var(--muted);text-decoration:underline;cursor:pointer}
+.composer{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:22px}
+.composer textarea{width:100%;margin:6px 0 10px}
+.composer-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.composer .cover-ed img,.composer .cover-ed .ph{width:64px;height:48px}
+.updates{display:flex;flex-direction:column;gap:12px}
+.update{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.update.private{border-style:dashed}
+.update header{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13.5px}
+.update header .tag-sm{margin:0 0 0 auto}
+.update p{white-space:pre-line;margin:8px 0}
+.update img{max-width:100%;max-height:420px;border-radius:10px;display:block}
+.update footer{display:flex;gap:6px;margin-top:8px}
+@media (max-width: 960px){.student-grid{grid-template-columns:1fr}.student-side{order:-1}}
+
+/* Family page (public, private link) */
+.family{max-width:640px;margin:0 auto;padding:22px 16px 48px;min-height:100vh}
+.family-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:34px}
+.family-top span{font-family:var(--display);font-weight:700;color:var(--plum);letter-spacing:.02em}
+.family-hero{text-align:center;margin-bottom:34px}
+.family-hero img,.family-hero .ph{width:140px;height:140px;border-radius:50%;object-fit:cover;margin:0 auto 16px;display:block;background:var(--surface-2);border:4px solid var(--surface)}
+.family-hero .ph{display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:48px;color:var(--plum)}
+.family-hero h1{font-size:38px;margin:0}
+.family-hero .grp{color:var(--muted);margin:4px 0 0}
+.family-hero .about{white-space:pre-line;margin:16px auto 0;max-width:520px;line-height:1.6}
+.family-feed h2{font-size:18px;margin:0 0 14px}
+.family-feed article{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:14px}
+.family-feed time{font-size:13px;color:var(--muted)}
+.family-feed p{white-space:pre-line;line-height:1.6;margin:6px 0 10px}
+.family-feed img{width:100%;border-radius:12px;display:block;margin-bottom:8px}
+.family-feed .by{font-size:13px;color:var(--muted)}
+.family-feed .none{color:var(--muted)}
+.family-foot{text-align:center;font-size:12.5px;color:var(--muted);margin-top:30px}
+.student-side .card{cursor:default}

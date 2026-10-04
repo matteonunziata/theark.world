@@ -164,6 +164,7 @@ export type Database = {
           created_at: string;
           description: string | null;
           id: string;
+          is_school: boolean;
           lead_id: string | null;
           name: string;
           updated_at: string;
@@ -552,6 +553,73 @@ export type Database = {
           },
         ]
       >;
+      student_guardians: Table<
+        {
+          created_at: string;
+          email: string | null;
+          id: string;
+          name: string;
+          phone: string | null;
+          relation: string | null;
+          student_id: string;
+        },
+        "name" | "student_id",
+        [
+          {
+            foreignKeyName: "student_guardians_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+        ]
+      >;
+      student_updates: Table<
+        {
+          author_id: string | null;
+          body: string;
+          created_at: string;
+          id: string;
+          photo_path: string | null;
+          shared: boolean;
+          student_id: string;
+        },
+        "body" | "student_id",
+        [
+          {
+            foreignKeyName: "student_updates_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "team_members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "student_updates_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+        ]
+      >;
+      students: Table<
+        {
+          about: string | null;
+          birthdate: string | null;
+          created_at: string;
+          group_name: string | null;
+          id: string;
+          name: string;
+          photo_path: string | null;
+          preferred_name: string | null;
+          share_token: string;
+          staff_notes: string | null;
+          start_date: string | null;
+          status: string;
+          updated_at: string;
+        },
+        "name"
+      >;
       team_members: Table<
         {
           created_at: string;
@@ -635,6 +703,7 @@ export type Database = {
         Returns: { id: string; name: string }[];
       };
       is_member: { Args: never; Returns: boolean };
+      is_school_staff: { Args: never; Returns: boolean };
       is_staff: { Args: never; Returns: boolean };
       member_directory: {
         Args: never;
@@ -721,6 +790,7 @@ export type Database = {
         };
         Returns: string;
       };
+      student_page: { Args: { p_token: string }; Returns: Json };
       session_counts: {
         Args: { p_offering_id: string; p_from: string; p_to: string };
         Returns: {

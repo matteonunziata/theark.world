@@ -46,3 +46,13 @@ Newest at the bottom of each section.
 - **Add to calendar** on tickets, booking confirmations, and ticket emails (Google link and `/t/{token}/calendar.ics`).
 - **Apple Wallet** passes at `/t/{token}/wallet.pkpass`; hidden until the Apple pass certificate env vars are set (needs an Apple Developer account).
 - **Members portal v2:** cities (members pick where they are), experiences and expeditions alongside classes and events, a directory where members choose to appear and to be open to messages, suggested connections (same city, shared interests), a feed with replies, and private member-to-member messages with live updates. This widens the directory from names only to what each member chooses to share (bio, interests, city, Instagram); email and phone stay private. Staff cannot read members' messages.
+
+## Round 3 (farm shop catalog, finance ledger, Arkadia, team)
+
+- **Farm shop catalog comes from thearkfarm.shop (Shopify).** One product row per size/flavour so each has its own price and stock. "Sync from website" adds new products and refreshes price, availability and the website photo; name, category, uploaded photo, description and stock edited in ARK OS are kept. Imported products start with stock counting off so they don't raise alerts before anyone counts.
+- **Finance is a ledger, not monthly totals.** Every income and expense is one entry with a business line, party, method, reference and an optional receipt/invoice/bill file (private `finance` bucket, admins only). Payables and receivables are simply unpaid entries. Colones and dollars are never added together; totals show per currency. `finance_months` now only holds cash in bank and monthly notes.
+- **Business lines** are editable on the Finance overview: Memberships, Events & experiences, Farm shop, Arkadia, Food & beverage, Real estate, Other.
+- **Arkadia (the school)** is visible to admins and anyone in a division marked `is_school`. Families get a private, unguessable link per student (no account) showing the profile and updates marked "Family can see"; staff notes and staff-only updates never leave the database function. A new link can be made at any time, which turns the old one off.
+- **School photos** live in a public bucket under random file names with no listing, so the family page can show them without sign-in. Revisit if Arkadia wants photos behind a login.
+- **Team emails were assumed to be firstname@theark.world** (Rocío → rocio@). Correct them in Settings → Team if different; sign-in links match on email.
+- **Roles for the roster:** Marat and Matteo admin; Farm → Shop staff; Operations → Division lead; Arkadia → Facilitator (sees Arkadia through the school division); Marketing → Sales.

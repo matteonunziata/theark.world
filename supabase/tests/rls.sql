@@ -402,6 +402,63 @@ select pg_temp.expect((select count(*) from public.messages) = 0,
   'staff cannot read members'' private messages');
 reset role;
 
+-- Finance ledger: admins only ------------------------------------------------------
+
+select pg_temp.act_as(pg_temp.id('admin'));
+insert into public.finance_entries (kind, amount, description)
+values ('expense', 1000, 'Test expense');
+select pg_temp.expect((select count(*) from public.finance_entries where description = 'Test expense') = 1,
+  'admins add and read ledger entries');
+select pg_temp.expect((select count(*) from public.business_lines) > 0, 'admins read business lines');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('lead'));
+select pg_temp.expect((select count(*) from public.finance_entries) = 0, 'leads cannot read the ledger');
+select pg_temp.expect((select count(*) from public.business_lines) = 0, 'leads cannot read business lines');
+reset role;
+
+-- Arkadia: admins and the school division only; families via the private link --
+
+insert into _ids values ('school', gen_random_uuid()), ('teacher', gen_random_uuid()), ('student', gen_random_uuid());
+insert into public.divisions (id, name, is_school) values (pg_temp.id('school'), 'Test school', true);
+insert into auth.users (id, email, aud, role, instance_id)
+values (pg_temp.id('teacher'), 'teacher@theark.world', 'authenticated', 'authenticated',
+  '00000000-0000-0000-0000-000000000000');
+insert into public.team_members (email, name, role, division_id)
+values ('teacher@theark.world', 'Test teacher', 'facilitator', pg_temp.id('school'));
+insert into public.students (id, name, about, staff_notes, share_token)
+values (pg_temp.id('student'), 'Test student', 'Loves frogs', 'Peanut allergy', repeat('a', 64));
+
+select pg_temp.act_as(pg_temp.id('teacher'));
+select pg_temp.expect(public.is_school_staff(), 'school division staff are school staff');
+select pg_temp.expect((select count(*) from public.students where name = 'Test student') = 1,
+  'teachers read students');
+insert into public.student_updates (student_id, author_id, body, shared)
+values (pg_temp.id('student'), public.current_staff_id(), 'Shared update', true),
+       (pg_temp.id('student'), public.current_staff_id(), 'Staff-only update', false);
+reset role;
+
+select pg_temp.act_as(pg_temp.id('facilitator'));
+select pg_temp.expect(not public.is_school_staff(), 'facilitators outside the school are not school staff');
+select pg_temp.expect((select count(*) from public.students) = 0, 'other staff cannot read students');
+select pg_temp.expect((select count(*) from public.student_updates) = 0, 'other staff cannot read updates');
+reset role;
+
+select pg_temp.act_as(null);
+select pg_temp.expect((select count(*) from public.students) = 0, 'anon cannot read students');
+select pg_temp.expect(
+  (public.student_page(repeat('a', 64)) ->> 'about') = 'Loves frogs',
+  'families read the profile through the link');
+select pg_temp.expect(
+  json_array_length(public.student_page(repeat('a', 64)) -> 'updates') = 1,
+  'families see only shared updates');
+select pg_temp.expect(
+  public.student_page(repeat('a', 64))::text not like '%Peanut%',
+  'staff notes never reach the family page');
+select pg_temp.expect(public.student_page(repeat('b', 64)) is null, 'a wrong link shows nothing');
+select pg_temp.expect(public.student_page('a') is null, 'short tokens are rejected');
+reset role;
+
 select 'All RLS tests passed' as result;
 
 rollback;
