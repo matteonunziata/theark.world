@@ -186,3 +186,32 @@ export async function saveOrg(
   revalidatePath("/", "layout");
   return ok("Organization saved");
 }
+
+export async function saveCity(
+  _prev: ActionResult,
+  data: FormData,
+): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("admin", "lead");
+  const id = field(data, "id");
+  if (data.get("intent") === "delete" && id) {
+    const { error } = await supabase.from("cities").delete().eq("id", id);
+    if (error) return fail(friendly(error));
+    revalidatePath("/", "layout");
+    return ok("City removed");
+  }
+  const name = field(data, "name");
+  if (!name) return fail("Enter a name.");
+  const row = {
+    name,
+    country: field(data, "country"),
+    blurb: field(data, "blurb"),
+    cover_path: field(data, "cover_path"),
+    active: data.get("active") !== "no",
+  };
+  const { error } = id
+    ? await supabase.from("cities").update(row).eq("id", id)
+    : await supabase.from("cities").insert({ ...row, position: 50 });
+  if (error) return fail(friendly(error));
+  revalidatePath("/", "layout");
+  return ok(id ? "City saved" : `${name} added`);
+}

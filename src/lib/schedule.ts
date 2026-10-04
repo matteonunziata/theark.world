@@ -58,7 +58,14 @@ export function money(price: number | null | undefined, cur?: string | null) {
     : `₡${n.toLocaleString("en-US")}`;
 }
 
-export const kindName = (k: string) => (k === "event" ? "Event" : "Class");
+export const KINDS = [
+  ["class", "Class"],
+  ["event", "Event"],
+  ["experience", "Experience"],
+  ["expedition", "Expedition"],
+] as const;
+
+export const kindName = (k: string) => KINDS.find(([x]) => x === k)?.[1] ?? "Class";
 
 export function whenLabel(o: Offering) {
   if (o.repeat === "weekly") {
@@ -77,6 +84,9 @@ export function whenLabel(o: Offering) {
         ? ` until ${fmtDate(o.end_date, { month: "short", day: "numeric" })}`
         : "")
     );
+  }
+  if (o.end_date && o.end_date > o.start_date) {
+    return `${fmtDate(o.start_date, { month: "short", day: "numeric" })} – ${fmtDate(o.end_date, { month: "short", day: "numeric" })}`;
   }
   return `${fmtDate(o.start_date)}, ${timeRange(o)}`;
 }

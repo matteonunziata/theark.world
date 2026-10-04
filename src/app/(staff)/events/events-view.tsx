@@ -16,6 +16,7 @@ import {
 } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/client";
 import {
+  KINDS,
   kindName,
   money,
   type Offering,
@@ -48,9 +49,10 @@ export function EventsView({
   cancellations,
   registrations,
   team,
+  cities,
 }: EventsData & { mode: "week" | "all"; weekStart: string; today: string }) {
   const offering = useDrawer<Offering>();
-  const [newKind, setNewKind] = useState<"class" | "event">("class");
+  const [newKind, setNewKind] = useState<Kind>("class");
   const [session, setSession] = useState<{ id: string; date: string } | null>(null);
   const [kind, setKind] = useState("");
   const canCreate = staff.role === "admin" || staff.role === "lead";
@@ -60,7 +62,7 @@ export function EventsView({
   const regsFor = (oid: string, d: string) =>
     registrations.filter((r) => r.offering_id === oid && r.session_date === d);
 
-  const startNew = (k: "class" | "event") => {
+  const startNew = (k: Kind) => {
     setNewKind(k);
     offering.openNew();
   };
@@ -90,8 +92,11 @@ export function EventsView({
             onChange={(e) => setKind(e.target.value)}
           >
             <option value="">Classes and events</option>
-            <option value="class">Classes</option>
-            <option value="event">Events</option>
+            {KINDS.map(([k, l]) => (
+              <option key={k} value={k}>
+                {l === "Class" ? "Classes" : `${l}s`}
+              </option>
+            ))}
           </select>
         )}
         {canCreate && (
@@ -126,7 +131,7 @@ export function EventsView({
                         <button
                           type="button"
                           key={s.o.id}
-                          className={`sess ${s.o.kind === "event" ? "event" : ""} ${s.o.status !== "published" ? "draft" : ""} ${s.cancelled ? "cancelled" : ""}`}
+                          className={`sess ${s.o.kind !== "class" ? "event" : ""} ${s.o.status !== "published" ? "draft" : ""} ${s.cancelled ? "cancelled" : ""}`}
                           onClick={() => setSession({ id: s.o.id, date: d })}
                         >
                           <span className="tm">
@@ -194,11 +199,11 @@ export function EventsView({
                 >
                   <span className="who" style={{ display: "block" }}>
                     <b>{o.title}</b>
-                    <span className={`kind ${o.kind === "event" ? "event" : ""}`}>
+                    <span className={`kind ${o.kind !== "class" ? "event" : ""}`}>
                       <i />
                       {kindName(o.kind)}
                       {o.location ? `, ${o.location}` : ""}
-                      {o.kind === "event" && o.access === "everyone" ? ", public" : ""}
+                      {o.kind !== "class" && o.access === "everyone" ? ", public" : ""}
                     </span>
                   </span>
                   <span className="c-when">{whenLabel(o)}</span>
@@ -218,6 +223,7 @@ export function EventsView({
         o={offering.item}
         kind={newKind}
         team={team}
+        cities={cities}
         tickets={tickets.filter((t) => t.offering_id === offering.item?.id)}
         canEdit={offering.item ? canManage(offering.item) : canCreate}
         canDelete={canCreate}
@@ -251,12 +257,15 @@ export function EventsView({
 /* ---------- Class / event editor ---------- */
 
 type DraftTicket = Partial<TicketType> & { key: number };
+type Kind = "class" | "event" | "experience" | "expedition";
+type City = EventsData["cities"][number];
 
 function OfferingDrawer({
   open,
   o,
   kind,
   team,
+  cities,
   tickets,
   canEdit,
   canDelete,
@@ -265,15 +274,16 @@ function OfferingDrawer({
 }: {
   open: boolean;
   o: Offering | null;
-  kind: "class" | "event";
+  kind: Kind;
   team: Person[];
+  cities: City[];
   tickets: TicketType[];
   canEdit: boolean;
   canDelete: boolean;
   today: string;
   onClose: () => void;
 }) {
-  const k = (o?.kind ?? kind) as "class" | "event";
+  const k = (o?.kind ?? kind) as Kind;
   const [curKind, setCurKind] = useState(k);
   const [repeat, setRepeat] = useState(o?.repeat ?? (k === "class" ? "weekly" : "none"));
   const [rows, setRows] = useState<DraftTicket[]>(tickets.map((t, i) => ({ ...t, key: i })));
@@ -332,9 +342,10 @@ function OfferingDrawer({
         <div className="grid2">
           <div className="fld">
             <label htmlFor="e-kind">Type</label>
-            <select id="e-kind" name="kind" value={curKind} onChange={(e) => setCurKind(e.target.value as "class" | "event")}>
-              <option value="class">Class</option>
-              <option value="event">Event</option>
+            <select id="e-kind" name="kind" value={curKind} onChange={(e) => setCurKind(e.target.value as Kind)}>
+              {KINDS.map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
             </select>
           </div>
           <div className="fld">
@@ -381,6 +392,16 @@ function OfferingDrawer({
           </div>
         </div>
 
+        {cities.length > 0 && (
+          <div className="fld">
+            <label htmlFor="e-city">City</label>
+            <select id="e-city" name="city_id" defaultValue={o?.city_id ?? cities.find((c) => c.is_home)?.id ?? ""}>
+              {cities.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="subhead">When</div>
         <div className="grid2">
           <div className="fld">
@@ -395,6 +416,13 @@ function OfferingDrawer({
             <input id="e-date" name="start_date" type="date" defaultValue={o?.start_date ?? today} required />
           </div>
         </div>
+        {repeat !== "weekly" && (
+          <div className="fld">
+            <label htmlFor="e-end1">Ends on</label>
+            <input id="e-end1" name="end_date" type="date" defaultValue={o?.end_date ?? ""} />
+            <span className="hint">For multi-day expeditions. Leave empty for a single day.</span>
+          </div>
+        )}
         {repeat === "weekly" && (
           <>
             <fieldset className="fld" style={{ border: 0, padding: 0 }}>

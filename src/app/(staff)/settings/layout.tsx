@@ -21,6 +21,7 @@ export default async function SettingsLayout({
         items={[
           { href: "/settings/team", label: "Team" },
           { href: "/settings/divisions", label: "Divisions" },
+          { href: "/settings/cities", label: "Cities" },
           { href: "/settings/access", label: "Access levels" },
           { href: "/settings/organization", label: "Organization" },
         ]}

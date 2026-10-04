@@ -1,5 +1,6 @@
 import { PKPass } from "passkit-generator";
 import { fmtDate, timeRange } from "@/lib/dates";
+import { kindName } from "@/lib/schedule";
 import { ticketCode } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
 import { pem, walletEnabled } from "@/lib/wallet";
@@ -57,7 +58,7 @@ export async function GET(req: Request, ctx: RouteContext<"/t/[token]/wallet.pkp
     },
   );
 
-  pass.primaryFields.push({ key: "event", label: t.kind === "event" ? "EVENT" : "CLASS", value: t.title });
+  pass.primaryFields.push({ key: "event", label: kindName(t.kind).toUpperCase(), value: t.title });
   pass.secondaryFields.push(
     { key: "date", label: "DATE", value: fmtDate(t.session_date, { weekday: "short", month: "short", day: "numeric" }) },
     { key: "time", label: "TIME", value: timeRange(t) || "All day" },

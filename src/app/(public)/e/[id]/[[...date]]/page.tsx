@@ -77,7 +77,7 @@ export default async function EventPage({ params }: Props) {
   const upcoming = sessions([o], cancels ?? [], today, to).slice(0, 8);
   const f = (facs ?? []).find((x) => x.id === o.facilitator_id);
   const cover = coverUrl(o.cover_path);
-  const canBook = !!memberId || (o.kind === "event" && o.access === "everyone");
+  const canBook = !!memberId || (o.kind !== "class" && o.access === "everyone");
 
   return (
     <>
@@ -86,7 +86,7 @@ export default async function EventPage({ params }: Props) {
         <Link className="ev-back" href={memberId ? "/portal" : "/"}>
           ← {memberId ? "Full schedule" : orgName}
         </Link>
-        <span className={`kind ${o.kind === "event" ? "event" : ""}`}>
+        <span className={`kind ${o.kind !== "class" ? "event" : ""}`}>
           <i />
           {kindName(o.kind)}
           {o.access === "members" ? ", members only" : ""}

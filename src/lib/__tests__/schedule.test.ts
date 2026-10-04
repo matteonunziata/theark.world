@@ -17,6 +17,7 @@ const base: Offering = {
   start_time: "07:00",
   end_time: "08:00",
   capacity: null,
+  city_id: null,
   access: "members",
   status: "published",
   cover_path: null,

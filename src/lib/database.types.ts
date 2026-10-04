@@ -31,6 +31,20 @@ export type Database = {
   };
   public: {
     Tables: {
+      cities: Table<
+        {
+          active: boolean;
+          blurb: string | null;
+          country: string | null;
+          cover_path: string | null;
+          created_at: string;
+          id: string;
+          is_home: boolean;
+          name: string;
+          position: number;
+        },
+        "name"
+      >;
       contact_notes: Table<
         {
           author_id: string | null;
@@ -78,6 +92,8 @@ export type Database = {
       contacts: Table<
         {
           created_at: string;
+          bio: string | null;
+          city_id: string | null;
           created_by: string | null;
           discount_id: string | null;
           email: string | null;
@@ -89,10 +105,12 @@ export type Database = {
           member_since: string | null;
           membership_status: string;
           name: string;
+          open_to_connect: boolean;
           owner_id: string | null;
           phone: string | null;
           renews_on: string | null;
           resident: boolean;
+          show_in_directory: boolean;
           source: string | null;
           tier: string | null;
           type: string;
@@ -232,10 +250,22 @@ export type Database = {
         },
         "key" | "name"
       >;
+      messages: Table<
+        {
+          body: string;
+          created_at: string;
+          id: string;
+          read_at: string | null;
+          recipient_id: string;
+          sender_id: string;
+        },
+        "body" | "recipient_id" | "sender_id"
+      >;
       offerings: Table<
         {
           access: string;
           capacity: number | null;
+          city_id: string | null;
           cover_path: string | null;
           created_at: string;
           created_by: string | null;
@@ -292,6 +322,18 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ]
+      >;
+      posts: Table<
+        {
+          author_contact_id: string | null;
+          author_staff_id: string | null;
+          body: string;
+          city_id: string | null;
+          created_at: string;
+          id: string;
+          parent_id: string | null;
+        },
+        "body"
       >;
       products: Table<
         {
@@ -536,7 +578,47 @@ export type Database = {
       is_staff: { Args: never; Returns: boolean };
       member_directory: {
         Args: never;
-        Returns: { id: string; name: string }[];
+        Returns: {
+          id: string;
+          name: string;
+          tier: string | null;
+          city_id: string | null;
+          bio: string | null;
+          interests: string[];
+          instagram: string | null;
+          open_to_connect: boolean;
+          is_me: boolean;
+        }[];
+      };
+      member_names: {
+        Args: { ids: string[] };
+        Returns: { id: string; name: string; tier: string | null }[];
+      };
+      feed: {
+        Args: { p_limit?: number };
+        Returns: {
+          id: string;
+          parent_id: string | null;
+          city_id: string | null;
+          body: string;
+          created_at: string;
+          author_name: string;
+          author_contact_id: string | null;
+          from_team: boolean;
+          mine: boolean;
+        }[];
+      };
+      can_message: { Args: { recipient: string }; Returns: boolean };
+      update_my_profile: {
+        Args: {
+          p_bio: string | null;
+          p_interests: string[];
+          p_city_id: string | null;
+          p_instagram: string | null;
+          p_open_to_connect: boolean;
+          p_show_in_directory: boolean;
+        };
+        Returns: undefined;
       };
       org_today: { Args: never; Returns: string };
       public_org: {

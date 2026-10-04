@@ -38,7 +38,8 @@ export async function saveOffering(
     return fail("Ask a lead to add new classes and events.");
   }
 
-  const kind = field(data, "kind") === "event" ? "event" : "class";
+  const k = field(data, "kind");
+  const kind = k === "event" || k === "experience" || k === "expedition" ? k : "class";
   const title = field(data, "title");
   const repeat = field(data, "repeat") === "weekly" ? "weekly" : "none";
   const start_date = field(data, "start_date");
@@ -61,7 +62,8 @@ export async function saveOffering(
     location: field(data, "location"),
     repeat,
     start_date,
-    end_date: repeat === "weekly" ? field(data, "end_date") : null,
+    end_date: field(data, "end_date"),
+    city_id: field(data, "city_id"),
     days: repeat === "weekly" ? days : [dow(start_date)],
     start_time,
     end_time,
