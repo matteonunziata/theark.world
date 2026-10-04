@@ -459,6 +459,99 @@ select pg_temp.expect(public.student_page(repeat('b', 64)) is null, 'a wrong lin
 select pg_temp.expect(public.student_page('a') is null, 'short tokens are rejected');
 reset role;
 
+-- Arkadia timetable: school staff edit it; families see it on the family page --
+
+select pg_temp.act_as(pg_temp.id('teacher'));
+insert into public.school_schedule (title, weekday, start_time, end_time, notes)
+values ('Test circle', 1, '08:00', '08:30', 'Bring a hat');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('facilitator'));
+select pg_temp.expect((select count(*) from public.school_schedule) = 0, 'other staff cannot read the timetable');
+reset role;
+
+select pg_temp.act_as(null);
+select pg_temp.expect(
+  public.student_page(repeat('a', 64))::text like '%Test circle%',
+  'families see whole-school timetable entries');
+reset role;
+
+-- Real estate and hospitality: admin, lead and sales only ---------------------------
+
+select pg_temp.act_as(pg_temp.id('sales'));
+insert into public.lots (id, code, status, in_hospitality, min_nights)
+values (gen_random_uuid(), 'TEST-1', 'available', true, 1);
+insert into public.lot_household (lot_id, name)
+select id, 'Test resident' from public.lots where code = 'TEST-1';
+insert into public.stays (lot_id, guest_name, check_in, check_out)
+select id, 'Test guest', public.org_today() + 30, public.org_today() + 33 from public.lots where code = 'TEST-1';
+select pg_temp.expect((select count(*) from public.lots where code = 'TEST-1') = 1, 'sales manage lots');
+reset role;
+
+do $$
+begin
+  insert into public.stays (lot_id, guest_name, check_in, check_out)
+  select id, 'Clash', public.org_today() + 31, public.org_today() + 32 from public.lots where code = 'TEST-1';
+  raise exception 'RLS test failed: overlapping confirmed stays were allowed';
+exception when exclusion_violation then null;
+end $$;
+insert into public.stays (lot_id, guest_name, check_in, check_out)
+select id, 'Back to back', public.org_today() + 33, public.org_today() + 35 from public.lots where code = 'TEST-1';
+insert into public.stays (lot_id, guest_name, status, check_in, check_out)
+select id, 'Overlapping inquiry', 'inquiry', public.org_today() + 31, public.org_today() + 32 from public.lots where code = 'TEST-1';
+
+select pg_temp.act_as(pg_temp.id('crew'));
+select pg_temp.expect((select count(*) from public.lots) = 0, 'crew cannot read lots');
+select pg_temp.expect((select count(*) from public.stays) = 0, 'crew cannot read stays');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('member'));
+select pg_temp.expect((select count(*) from public.lots) = 0, 'members cannot read lots');
+select pg_temp.expect((select count(*) from public.lot_household) = 0, 'members cannot read households');
+reset role;
+
+select pg_temp.act_as(null);
+select pg_temp.expect((select count(*) from public.stays) = 0, 'anon cannot read stays');
+reset role;
+
+-- Member passes: anyone with the link sees the state; only gate staff log entries --
+
+select set_config('test.pass', (select pass_token from public.contacts
+  where email = 'member@example.com'), true);
+select pg_temp.act_as(null);
+select pg_temp.expect(
+  (select state from public.pass_by_token(current_setting('test.pass'))) = 'valid',
+  'an active member''s pass is valid');
+select pg_temp.expect(
+  not (select can_log from public.pass_by_token(current_setting('test.pass'))),
+  'anon cannot log entries');
+select pg_temp.expect(
+  (select count(*) from public.pass_by_token('short')) = 0, 'short pass tokens are rejected');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('member'));
+select pg_temp.expect(
+  public.my_pass_token() = current_setting('test.pass'),
+  'members get their own pass');
+do $$
+begin
+  perform public.log_pass_entry(current_setting('test.pass'));
+  raise exception 'RLS test failed: a member logged a gate entry';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(pg_temp.id('security'));
+select pg_temp.expect(
+  public.log_pass_entry(current_setting('test.pass')) is not null,
+  'security logs member entries');
+select pg_temp.expect((select count(*) from public.gate_entries) >= 1, 'security reads gate entries');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('sales'));
+select pg_temp.expect((select count(*) from public.gate_entries) = 0, 'sales cannot read gate entries');
+reset role;
+
 select 'All RLS tests passed' as result;
 
 rollback;

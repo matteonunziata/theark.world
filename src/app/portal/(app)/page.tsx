@@ -141,7 +141,8 @@ export default async function PortalHome() {
         <SectionHead
           title={`This week${city ? ` in ${city.name}` : ""}`}
           sub="Classes, gatherings, and experiences. Members book in a tap."
-          href="/portal/explore"
+          href="/portal/schedule"
+          link="Full schedule"
         />
         {week.length ? (
           <div className="pv-rail">

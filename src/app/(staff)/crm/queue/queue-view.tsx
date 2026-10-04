@@ -38,7 +38,7 @@ export function QueueView({
           <h2>Nothing due</h2>
           <p>
             Messages appear here on the day they’re due, based on who’s enrolled
-            in which sequence.
+            in which workflow.
           </p>
         </div>
       ) : (

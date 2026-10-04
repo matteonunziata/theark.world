@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createLinkClient } from "@/lib/supabase/link-client";
 
 export function MagicLinkForm({
   next,
@@ -26,7 +26,7 @@ export function MagicLinkForm({
     }
     setState("sending");
     setError("");
-    const { error } = await createClient().auth.signInWithOtp({
+    const { error } = await createLinkClient().auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
@@ -49,7 +49,7 @@ export function MagicLinkForm({
   if (state === "sent") {
     return (
       <p role="status" style={{ color: "var(--ink)" }}>
-        Check your inbox for a sign-in link. Open it on this device.
+        Check your inbox for a sign-in link. You can open it on any device.
       </p>
     );
   }

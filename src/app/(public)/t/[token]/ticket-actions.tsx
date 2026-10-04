@@ -5,14 +5,14 @@ import { useTransition } from "react";
 import { useToast } from "@/components/toast";
 import { checkIn } from "@/app/(staff)/events/actions";
 
-export function CheckInButton({ token }: { token: string }) {
+export function CheckInButton({ token, className = "btn primary" }: { token: string; className?: string }) {
   const [pending, start] = useTransition();
   const toast = useToast();
   const router = useRouter();
   return (
     <button
       type="button"
-      className="btn primary"
+      className={className}
       disabled={pending}
       onClick={() =>
         start(async () => {

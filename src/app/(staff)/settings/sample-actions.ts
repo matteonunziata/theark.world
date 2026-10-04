@@ -8,6 +8,7 @@ import { addDays, addMonths, dow, monthKey, todayIn, weekStart } from "@/lib/dat
 type Client = Awaited<ReturnType<typeof staffOrThrow>>["supabase"];
 
 const ORDER = [
+  "lots",
   "posts",
   "finance_entries",
   "registrations",
@@ -211,6 +212,33 @@ export async function loadSampleData(): Promise<ActionResult> {
         body: `Met via ${source.toLowerCase()}. ${interests[0]} is the way in.`,
       })),
     );
+    // Lots, homes and households; their logs and stays go with the lot.
+    const [l12, l7] = await insert("lots", [
+      { code: "12", name: "Casa Guayacán", zone: "Ridge", status: "sold", size_m2: 2400, price: 420000, owner_contact_id: C.Jonas, home_status: "built", home_name: "Casa Guayacán", bedrooms: 3, bathrooms: 2.5, built_m2: 210, home_notes: "Timber and lime plaster, solar on the roof, a small plunge pool.", in_hospitality: true, hospitality_since: addDays(td, -90), nightly_rate: 320, max_guests: 6, min_nights: 3, listing_notes: "Owner keeps the studio locked. Check-in from 3pm." },
+      { code: "7", status: "sold", size_m2: 1850, price: 310000, owner_contact_id: C["Sofía"], home_status: "building", home_name: "Casa Ceiba", bedrooms: 2, bathrooms: 2, built_m2: 140, home_notes: "Roof goes on next month." },
+      { code: "3", zone: "Valley", status: "available", size_m2: 3100, price: 395000, description: "Flat, shaded by two old guanacaste trees, five minutes on foot to the club." },
+      { code: "15", zone: "Ridge", status: "reserved", size_m2: 2650, price: 465000, description: "Ocean view from the upper corner." },
+      { code: "21", zone: "Valley", status: "available", size_m2: 1500, price: 245000 },
+    ]);
+    await supabase.from("lot_household").insert([
+      { lot_id: l12, name: "Jonas Weber", relation: "owner", contact_id: C.Jonas, birth_year: 1984 },
+      { lot_id: l12, name: "Mira Weber", relation: "partner", birth_year: 1986 },
+      { lot_id: l12, name: "Theo Weber", relation: "child", birth_year: 2019, notes: "At Arkadia, Seeds group." },
+      { lot_id: l7, name: "Sofía Herrera", relation: "owner", contact_id: C["Sofía"], lives_on_site: false },
+    ]);
+    await supabase.from("lot_maintenance").insert([
+      { lot_id: l12, title: "Pool pump replaced", category: "pool", performed_on: addDays(td, -21), cost: 640, done_by: "Piscinas Malpaís", created_by: staff.id },
+      { lot_id: l12, title: "Garden trim and mulch", category: "garden", performed_on: addDays(td, -6), cost: 85000, currency: "CRC", done_by: "Farm crew", created_by: staff.id },
+      { lot_id: l12, title: "Annual roof inspection", category: "inspection", status: "scheduled", performed_on: addDays(td, 12), created_by: staff.id },
+      { lot_id: l7, title: "Site cleared for foundations", category: "build", performed_on: addDays(td, -60), created_by: staff.id },
+    ]);
+    await supabase.from("stays").insert([
+      { lot_id: l12, guest_name: "Sofia Marín", email: "sofia@example.com", guests: 4, check_in: addDays(td, -2), check_out: addDays(td, 3), nightly_rate: 320, total: 1600, paid: true, source: "direct", created_by: staff.id },
+      { lot_id: l12, kind: "owner", guest_name: "Owner", check_in: addDays(td, 10), check_out: addDays(td, 17), source: "owner", created_by: staff.id },
+      { lot_id: l12, guest_name: "The Harper family", guests: 5, check_in: addDays(td, 20), check_out: addDays(td, 26), nightly_rate: 320, total: 1920, source: "airbnb", created_by: staff.id },
+      { lot_id: l12, status: "inquiry", guest_name: "Daniel Ruiz", email: "daniel@example.com", guests: 2, check_in: addDays(td, 4), check_out: addDays(td, 8), source: "direct", created_by: staff.id },
+    ]);
+
     await supabase.from("contact_stages").insert([
       { contact_id: C.Marcus, pipeline: "memberships", stage: "invited" },
       { contact_id: C.Lena, pipeline: "memberships", stage: "applied" },

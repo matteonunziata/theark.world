@@ -1,0 +1,234 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import {
+  type ActionResult,
+  fail,
+  field,
+  friendly,
+  ok,
+} from "@/lib/action-result";
+import { staffOrThrow } from "@/lib/auth";
+import {
+  HOME_STATUS,
+  LOT_STATUS,
+  MAINT_CATEGORIES,
+  MAINT_STATUS,
+  nights,
+  RELATIONS,
+  STAY_KINDS,
+  STAY_SOURCES,
+  STAY_STATUS,
+} from "@/lib/estate";
+
+const ESTATE = ["admin", "lead", "sales"];
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const refresh = (lotId?: string | null) => {
+  revalidatePath("/estate");
+  revalidatePath("/hospitality");
+  if (lotId) revalidatePath(`/estate/${lotId}`);
+};
+
+const pick = <T extends string>(list: readonly (readonly [T, string])[], v: string | null, d: T): T =>
+  (list.find(([k]) => k === v)?.[0] ?? d) as T;
+
+const num = (data: FormData, name: string) => {
+  const v = field(data, name);
+  if (v === null) return null;
+  const n = Number(v.replace(/[,\s]/g, ""));
+  return Number.isFinite(n) && n >= 0 ? n : null;
+};
+
+const cur = (v: string | null) => (v === "CRC" ? "CRC" : "USD");
+
+export async function saveLot(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  const id = field(data, "id");
+
+  if (data.get("intent") === "delete" && id) {
+    const { error } = await supabase.from("lots").delete().eq("id", id);
+    if (error) return fail(friendly(error));
+    refresh();
+    redirect("/estate");
+  }
+
+  const code = field(data, "code");
+  if (!code) return fail("Enter the lot number.");
+  const inHospitality = data.get("in_hospitality") === "on";
+  const row = {
+    code,
+    name: field(data, "name"),
+    zone: field(data, "zone"),
+    status: pick(LOT_STATUS, field(data, "status"), "available"),
+    size_m2: num(data, "size_m2") || null,
+    price: num(data, "price"),
+    currency: cur(field(data, "currency")),
+    owner_contact_id: field(data, "owner_contact_id"),
+    photo_path: field(data, "photo_path"),
+    aerial_path: field(data, "aerial_path"),
+    description: field(data, "description"),
+    home_status: pick(HOME_STATUS, field(data, "home_status"), "none"),
+    home_name: field(data, "home_name"),
+    bedrooms: num(data, "bedrooms"),
+    bathrooms: num(data, "bathrooms"),
+    built_m2: num(data, "built_m2") || null,
+    home_notes: field(data, "home_notes"),
+    in_hospitality: inHospitality,
+    hospitality_since: inHospitality ? field(data, "hospitality_since") : null,
+    nightly_rate: num(data, "nightly_rate"),
+    rate_currency: cur(field(data, "rate_currency")),
+    max_guests: num(data, "max_guests") || null,
+    min_nights: Math.max(1, num(data, "min_nights") ?? 1),
+    listing_notes: field(data, "listing_notes"),
+  };
+  // Only fields present in the form are saved, so smaller forms (the
+  // hospitality panel) don't wipe the rest.
+  const present = Object.fromEntries(
+    Object.entries(row).filter(([k]) => data.has(k) || (k === "in_hospitality" && data.has("hospitality_form"))),
+  ) as Partial<typeof row>;
+  if (id) {
+    const { error } = await supabase.from("lots").update(present).eq("id", id);
+    if (error) return fail(error.code === "23505" ? "Another lot already has that number." : friendly(error));
+    refresh(id);
+    return ok("Lot saved");
+  }
+  const { data: lot, error } = await supabase.from("lots").insert(row).select("id").single();
+  if (error) return fail(error.code === "23505" ? "Another lot already has that number." : friendly(error));
+  refresh();
+  redirect(`/estate/${lot.id}`);
+}
+
+export async function saveHousehold(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  const id = field(data, "id");
+  const lotId = field(data, "lot_id");
+  if (data.get("intent") === "delete" && id) {
+    const { error } = await supabase.from("lot_household").delete().eq("id", id);
+    if (error) return fail(friendly(error));
+    refresh(lotId);
+    return ok("Removed from the household");
+  }
+  const name = field(data, "name");
+  if (!name || !lotId) return fail("Enter a name.");
+  const email = field(data, "email");
+  if (email && !EMAIL.test(email)) return fail("Enter a valid email, or leave it empty.");
+  const year = num(data, "birth_year");
+  const row = {
+    lot_id: lotId,
+    name,
+    relation: pick(RELATIONS, field(data, "relation"), "family"),
+    contact_id: field(data, "contact_id"),
+    birth_year: year && year > 1900 ? year : null,
+    email,
+    phone: field(data, "phone"),
+    lives_on_site: data.get("lives_on_site") === "on",
+    notes: field(data, "notes"),
+  };
+  const { error } = id
+    ? await supabase.from("lot_household").update(row).eq("id", id)
+    : await supabase.from("lot_household").insert(row);
+  if (error) return fail(friendly(error));
+  refresh(lotId);
+  return ok(id ? "Saved" : `${name} added`);
+}
+
+export async function saveMaintenance(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const { supabase, staff } = await staffOrThrow(...ESTATE);
+  const id = field(data, "id");
+  const lotId = field(data, "lot_id");
+  if (data.get("intent") === "delete" && id) {
+    const { error } = await supabase.from("lot_maintenance").delete().eq("id", id);
+    if (error) return fail(friendly(error));
+    refresh(lotId);
+    return ok("Log entry deleted");
+  }
+  const title = field(data, "title");
+  if (!title || !lotId) return fail("Say what was done.");
+  const row = {
+    lot_id: lotId,
+    title,
+    details: field(data, "details"),
+    category: pick(MAINT_CATEGORIES, field(data, "category"), "repair"),
+    status: pick(MAINT_STATUS, field(data, "status"), "done"),
+    performed_on: field(data, "performed_on") ?? undefined,
+    cost: num(data, "cost"),
+    currency: cur(field(data, "currency")),
+    done_by: field(data, "done_by"),
+  };
+  const { error } = id
+    ? await supabase.from("lot_maintenance").update(row).eq("id", id)
+    : await supabase.from("lot_maintenance").insert({ ...row, created_by: staff.id });
+  if (error) return fail(friendly(error));
+  refresh(lotId);
+  return ok(id ? "Log entry saved" : "Logged");
+}
+
+export async function saveStay(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const { supabase, staff } = await staffOrThrow(...ESTATE);
+  const id = field(data, "id");
+  const lotId = field(data, "lot_id");
+
+  if (data.get("intent") === "delete" && id) {
+    const { error } = await supabase.from("stays").delete().eq("id", id);
+    if (error) return fail(friendly(error));
+    refresh(lotId);
+    return ok("Stay deleted");
+  }
+
+  if (!lotId) return fail("Choose a home.");
+  const checkIn = field(data, "check_in");
+  const checkOut = field(data, "check_out");
+  if (!checkIn || !checkOut) return fail("Choose check-in and check-out dates.");
+  if (checkOut <= checkIn) return fail("Check-out has to be after check-in.");
+  const kind = pick(STAY_KINDS, field(data, "kind"), "guest");
+  const name = field(data, "guest_name") ?? (kind === "owner" ? "Owner" : kind === "hold" ? "Blocked" : null);
+  if (!name) return fail("Enter the guest’s name.");
+  const email = field(data, "email");
+  if (email && !EMAIL.test(email)) return fail("Enter a valid email, or leave it empty.");
+
+  const { data: lot } = await supabase
+    .from("lots")
+    .select("in_hospitality, min_nights, nightly_rate, rate_currency")
+    .eq("id", lotId)
+    .single();
+  if (!lot) return fail("That home wasn’t found.");
+  if (kind === "guest" && !lot.in_hospitality) {
+    return fail("This home isn’t in the hospitality programme. Turn it on from the lot page first.");
+  }
+  const n = nights(checkIn, checkOut);
+  if (kind === "guest" && n < lot.min_nights) {
+    return fail(`This home has a ${lot.min_nights}-night minimum.`);
+  }
+  const rate = num(data, "nightly_rate") ?? (kind === "guest" ? lot.nightly_rate : null);
+  const total = num(data, "total") ?? (rate !== null ? Number(rate) * n : null);
+  const row = {
+    lot_id: lotId,
+    kind,
+    status: pick(STAY_STATUS, field(data, "status"), "confirmed"),
+    guest_name: name,
+    email,
+    phone: field(data, "phone"),
+    guests: num(data, "guests") || null,
+    check_in: checkIn,
+    check_out: checkOut,
+    nightly_rate: rate,
+    currency: cur(field(data, "currency") ?? lot.rate_currency),
+    total,
+    paid: data.get("paid") === "on",
+    source: pick(STAY_SOURCES, field(data, "source"), kind === "owner" ? "owner" : "direct"),
+    notes: field(data, "notes"),
+  };
+  const { error } = id
+    ? await supabase.from("stays").update(row).eq("id", id)
+    : await supabase.from("stays").insert({ ...row, created_by: staff.id });
+  if (error) {
+    if (error.code === "23P01") {
+      return fail("Those dates overlap a confirmed stay in this home. Pick other dates or save it as an inquiry.");
+    }
+    return fail(friendly(error));
+  }
+  refresh(lotId);
+  return ok(id ? "Stay saved" : kind === "guest" ? "Stay booked" : "Dates blocked");
+}
