@@ -1,7 +1,9 @@
 import type { Tables } from "@/lib/database.types";
 import { fmtMoney } from "@/lib/shop";
 
-export type Entry = Tables<"finance_entries">;
+export type Entry = Tables<"finance_entries"> & {
+  contact?: { id: string; name: string } | null;
+};
 export type Line = Tables<"business_lines">;
 
 export const METHODS = [

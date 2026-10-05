@@ -1,5 +1,6 @@
 "use client";
 
+import { type Person, PersonPicker } from "@/components/person-picker";
 import { useState, useTransition } from "react";
 import { CoverField } from "@/components/cover-field";
 import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
@@ -192,12 +193,13 @@ function ProductDrawer({
   onClose: () => void;
 }) {
   const [qty, setQty] = useState("1");
+  const [buyer, setBuyer] = useState<Person | null>(null);
   const [track, setTrack] = useState(p?.track_stock ?? true);
   const [pending, start] = useTransition();
   const toast = useToast();
   const quick = (type: "sale" | "restock") =>
     start(async () => {
-      const r = await recordStock(p!.id, type, Number(qty));
+      const r = await recordStock(p!.id, type, Number(qty), type === "sale" ? buyer?.id : null);
       toast(r.ok ? (r.message ?? "") : (r.error ?? ""));
       if (r.ok) onClose();
     });
@@ -309,6 +311,14 @@ function ProductDrawer({
                     Restock
                   </button>
                 </div>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <PersonPicker
+                  name="sold_to"
+                  label="Sold to (optional)"
+                  hint="Pick a member or contact and the sale shows on their CRM profile, at member price for active members."
+                  onChange={setBuyer}
+                />
               </div>
             </>
           )}

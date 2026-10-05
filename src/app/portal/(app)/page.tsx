@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { EventLink } from "../booking-modal";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { reason, suggestions } from "@/lib/connect";
@@ -179,7 +180,7 @@ export default async function PortalHome() {
               const c = coverUrl(o.cover_path);
               const where = p.cities.find((x) => x.id === o.city_id)?.name;
               return (
-                <Link key={o.id} className="pv-big" href={`/e/${o.id}`}>
+                <EventLink key={o.id} className="pv-big" id={o.id}>
                   <div className="img" style={c ? { backgroundImage: `url(${c})` } : undefined} />
                   <div className="body">
                     <span className="pv-tag" style={{ alignSelf: "flex-start" }}>
@@ -195,7 +196,7 @@ export default async function PortalHome() {
                       Find out more
                     </span>
                   </div>
-                </Link>
+                </EventLink>
               );
             })}
           </div>

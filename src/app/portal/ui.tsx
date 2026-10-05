@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EventLink } from "./booking-modal";
 import { initials } from "@/components/avatar";
 import { avatarColor, type DirEntry } from "@/lib/connect";
 import { coverUrl } from "@/lib/covers";
@@ -33,7 +34,7 @@ export function SessionCard({
   const cover = coverUrl(o.cover_path);
   const d = pd(date);
   return (
-    <Link className={`pv-card ${cancelled ? "cancelled" : ""}`} href={`/e/${o.id}/${date}`}>
+    <EventLink className={`pv-card ${cancelled ? "cancelled" : ""}`} id={o.id} date={date}>
       <div
         className={`img k-${o.kind}`}
         style={cover ? { backgroundImage: `url(${cover})` } : undefined}
@@ -55,7 +56,7 @@ export function SessionCard({
           <span>{price}</span>
         </div>
       </div>
-    </Link>
+    </EventLink>
   );
 }
 

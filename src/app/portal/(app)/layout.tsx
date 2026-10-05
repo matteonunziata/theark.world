@@ -1,4 +1,5 @@
 import { initials } from "@/components/avatar";
+import { BookingModalProvider } from "../booking-modal";
 import { ToastProvider } from "@/components/toast";
 import { loadPortal } from "@/lib/portal";
 import "../portal.css";
@@ -16,6 +17,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/portal">)
   return (
     <ToastProvider>
       <div className="pv">
+        <BookingModalProvider>
         <PortalShell
           cities={p.cities.map((c) => ({ id: c.id, name: c.name }))}
           cityId={p.city?.id ?? null}
@@ -25,6 +27,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/portal">)
         >
           {children}
         </PortalShell>
+        </BookingModalProvider>
       </div>
     </ToastProvider>
   );

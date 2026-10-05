@@ -87,17 +87,28 @@ export async function recordStock(
   productId: string,
   type: "sale" | "restock",
   qty: number,
+  contactId?: string | null,
 ): Promise<ActionResult> {
   const { supabase, staff } = await staffOrThrow("admin", "shop");
   if (!(qty > 0)) return fail("Enter a quantity.");
+  let amount: number | null = null;
   if (type === "sale") {
     const { data: p } = await supabase
       .from("products")
-      .select("stock")
+      .select("stock, price, member_price")
       .eq("id", productId)
       .single();
     if (p && Number(p.stock) < qty) {
       return fail(`Only ${Number(p.stock)} in stock.`);
+    }
+    if (p) {
+      // Member price for active members, when the product has one.
+      let member = false;
+      if (contactId && p.member_price != null) {
+        const { data } = await supabase.rpc("is_active_member", { cid: contactId });
+        member = !!data;
+      }
+      amount = qty * Number(member ? p.member_price : p.price);
     }
   }
   const { error } = await supabase.from("stock_movements").insert({
@@ -105,6 +116,8 @@ export async function recordStock(
     type,
     delta: type === "sale" ? -qty : qty,
     by_id: staff.id,
+    contact_id: type === "sale" ? (contactId ?? null) : null,
+    amount,
   });
   if (error) return fail(friendly(error));
   revalidatePath("/shop");

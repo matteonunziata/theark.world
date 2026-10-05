@@ -18,6 +18,7 @@ import {
 } from "@/lib/crm";
 import { dayLabel, fmtDate, todayIn } from "@/lib/dates";
 import { nextStep, stepDue } from "@/lib/sequences";
+import { type Activity, ActivityPanel } from "./activity-panel";
 import { addNote, enroll, setStage, updateEnrollment } from "../../actions";
 import {
   type Contact,
@@ -43,6 +44,9 @@ export function ProfileView({
   owners,
   tiers,
   discounts,
+  activity,
+  currency,
+  now,
   role,
   orgName,
 }: {
@@ -54,6 +58,9 @@ export function ProfileView({
   owners: Owner[];
   tiers: TierOption[];
   discounts: DiscountOption[];
+  activity: Activity[];
+  currency: string;
+  now: string;
   role: string;
   orgName: string;
 }) {
@@ -105,6 +112,7 @@ export function ProfileView({
 
       <div className="prof-grid">
         <div>
+          <ActivityPanel items={activity} currency={currency} now={now} />
           <section className="panel">
             <h2>Notes</h2>
             {canEdit && (

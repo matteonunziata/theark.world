@@ -127,7 +127,8 @@ export function HospitalityView({
         open={drawer.open}
         onClose={drawer.close}
         stay={drawer.item}
-        homes={allLots}
+        // Only homes in hospitality, plus the home an existing stay is at.
+        homes={allLots.filter((l) => l.in_hospitality || l.id === drawer.item?.lot_id)}
         defaults={defaults}
       />
     </>

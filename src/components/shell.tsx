@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { AskAi, AskAiPanel } from "@/components/ask-ai";
 import { Icon } from "@/components/icons";
 import { Logo } from "@/components/logo";
 import { type ModuleKey, roleName } from "@/lib/roles";
@@ -32,6 +33,7 @@ export function Shell({
         <Link href="/" aria-label="Home">
           <Logo height={24} />
         </Link>
+        <AskAi variant="bar" />
         <button
           type="button"
           aria-expanded={open}
@@ -82,7 +84,13 @@ export function Shell({
         tabIndex={-1}
         onClick={() => setOpen(false)}
       />
-      <main className="main">{children}</main>
+      <main className="main">
+        <div className="main-top">
+          <AskAi />
+        </div>
+        {children}
+      </main>
+      <AskAiPanel />
     </div>
   );
 }

@@ -540,6 +540,7 @@ export type Database = {
       }
       finance_entries: {
         Row: {
+          contact_id: string | null
           amount: number
           business_line_id: string | null
           category: string | null
@@ -562,6 +563,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          contact_id?: string | null
           amount: number
           business_line_id?: string | null
           category?: string | null
@@ -584,6 +586,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          contact_id?: string | null
           amount?: number
           business_line_id?: string | null
           category?: string | null
@@ -606,6 +609,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "finance_entries_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "finance_entries_business_line_id_fkey"
             columns: ["business_line_id"]
@@ -1775,6 +1785,8 @@ export type Database = {
       }
       stock_movements: {
         Row: {
+          amount: number | null
+          contact_id: string | null
           by_id: string | null
           created_at: string
           delta: number
@@ -1783,6 +1795,8 @@ export type Database = {
           type: string
         }
         Insert: {
+          amount?: number | null
+          contact_id?: string | null
           by_id?: string | null
           created_at?: string
           delta: number
@@ -1791,6 +1805,8 @@ export type Database = {
           type: string
         }
         Update: {
+          amount?: number | null
+          contact_id?: string | null
           by_id?: string | null
           created_at?: string
           delta?: number
@@ -1799,6 +1815,13 @@ export type Database = {
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "stock_movements_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_movements_by_id_fkey"
             columns: ["by_id"]
@@ -2276,6 +2299,24 @@ export type Database = {
         };
         Returns: string;
       };
+      shop_contact_search: {
+        Args: { q: string };
+        Returns: { id: string; name: string; email: string | null; tier: string | null }[];
+      };
+      contact_activity: {
+        Args: { cid: string };
+        Returns: {
+          at: string;
+          area: string;
+          title: string;
+          detail: string | null;
+          amount: number | null;
+          currency: string | null;
+          status: string | null;
+          link: string | null;
+        }[];
+      };
+      is_active_member: { Args: { cid: string }; Returns: boolean };
       school_contact_search: {
         Args: { q: string };
         Returns: { email: string | null; id: string; name: string; phone: string | null }[];

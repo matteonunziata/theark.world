@@ -7,7 +7,7 @@ export async function loadFinance() {
   const [{ data: entries }, { data: lines }, { data: org }] = await Promise.all([
     supabase
       .from("finance_entries")
-      .select("*")
+      .select("*, contact:contacts(id, name)")
       .order("entry_date", { ascending: false })
       .order("created_at", { ascending: false }),
     supabase.from("business_lines").select("*").order("position"),
