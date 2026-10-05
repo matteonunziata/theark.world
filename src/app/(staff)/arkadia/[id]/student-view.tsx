@@ -20,10 +20,10 @@ import {
   deleteUpdate,
   newFamilyLink,
   postUpdate,
-  saveGuardian,
   saveStudent,
   toggleShared,
 } from "../actions";
+import { FamilyDrawer } from "./family-drawer";
 
 type Student = Tables<"students">;
 type Guardian = Tables<"student_guardians">;
@@ -258,44 +258,14 @@ export function StudentView({
         </div>
       </Drawer>
 
-      <Drawer
-        key={fam.item?.id ?? "new-fam"}
-        title={fam.item ? "Edit family member" : "Add a family member"}
+      <FamilyDrawer
+        // Remounts on each open, so a new form starts empty.
+        key={fam.item?.id ?? `new-${fam.open}`}
         open={fam.open}
         onClose={fam.close}
-        action={saveGuardian}
-        footer={
-          <>
-            {fam.item && <ConfirmButton />}
-            <span className="spacer" />
-            <button type="button" className="btn ghost" onClick={fam.close}>Cancel</button>
-            <button type="submit" className="btn primary">Save</button>
-          </>
-        }
-      >
-        <input type="hidden" name="student_id" value={s.id} />
-        {fam.item && <input type="hidden" name="id" value={fam.item.id} />}
-        <div className="grid2">
-          <div className="fld">
-            <label htmlFor="f-name">Name</label>
-            <input id="f-name" name="name" required defaultValue={fam.item?.name ?? ""} />
-          </div>
-          <div className="fld">
-            <label htmlFor="f-rel">Relation</label>
-            <input id="f-rel" name="relation" defaultValue={fam.item?.relation ?? ""} placeholder="Mother, father, guardian" />
-          </div>
-        </div>
-        <div className="grid2">
-          <div className="fld">
-            <label htmlFor="f-email">Email</label>
-            <input id="f-email" name="email" type="email" defaultValue={fam.item?.email ?? ""} />
-          </div>
-          <div className="fld">
-            <label htmlFor="f-phone">Phone or WhatsApp</label>
-            <input id="f-phone" name="phone" type="tel" defaultValue={fam.item?.phone ?? ""} />
-          </div>
-        </div>
-      </Drawer>
+        studentId={s.id}
+        guardian={fam.item}
+      />
     </>
   );
 }

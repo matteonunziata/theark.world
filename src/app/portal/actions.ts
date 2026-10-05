@@ -144,3 +144,22 @@ export async function cancelGuest(id: string) {
   revalidatePath("/portal/guests");
   return ok("Invite cancelled. The pass is back in your allowance.");
 }
+
+export async function bookCourt(courtId: string, date: string, start: string) {
+  const v = await viewer();
+  if (!v.memberId) return fail("Court booking is for members.");
+  const { error } = await v.supabase.rpc("book_court", { p_court: courtId, p_date: date, p_start: start });
+  if (error) return fail(friendly(error));
+  revalidatePath("/portal/courts");
+  revalidatePath("/events/courts");
+  return ok("Booked. See you on the court.");
+}
+
+export async function cancelCourt(id: string) {
+  const v = await viewer();
+  const { error } = await v.supabase.rpc("cancel_court_booking", { p_id: id });
+  if (error) return fail(friendly(error));
+  revalidatePath("/portal/courts");
+  revalidatePath("/events/courts");
+  return ok("Booking cancelled.");
+}

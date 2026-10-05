@@ -76,7 +76,7 @@ export const MODULES: {
   },
   {
     key: "events",
-    name: "Events & classes",
+    name: "Schedule",
     href: "/events",
     roles: ["admin", "lead", "sales", "facilitator"],
   },

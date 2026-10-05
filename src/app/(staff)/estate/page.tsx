@@ -8,7 +8,8 @@ export const metadata: Metadata = { title: "Real estate" };
 export default async function EstatePage() {
   const { supabase } = await requireStaff("estate");
   const [{ data: lots }, { data: people }, { data: household }] = await Promise.all([
-    supabase.from("lots").select("*").order("code"),
+    // Rental homes (Beehives, Casa Lumy…) live in Hospitality, not the land inventory.
+    supabase.from("lots").select("*").neq("kind", "rental").order("code"),
     supabase.from("contacts").select("id, name").order("name"),
     supabase.from("lot_household").select("lot_id"),
   ]);

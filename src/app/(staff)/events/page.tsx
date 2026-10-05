@@ -3,7 +3,7 @@ import { addDays, todayIn, weekStart } from "@/lib/dates";
 import { loadEvents } from "./data";
 import { EventsView } from "./events-view";
 
-export const metadata: Metadata = { title: "Events & classes" };
+export const metadata: Metadata = { title: "Schedule" };
 
 export default async function SchedulePage({ searchParams }: PageProps<"/events">) {
   const { week } = await searchParams;

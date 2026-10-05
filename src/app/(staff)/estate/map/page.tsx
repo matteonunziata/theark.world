@@ -12,6 +12,7 @@ export default async function EstateMapPage({ searchParams }: PageProps<"/estate
     supabase
       .from("lots")
       .select("id, code, name, kind, features, status, size_m2, price, currency, estate_lot_id, owner_contact_id, in_hospitality, home_status, home_name")
+      .neq("kind", "rental")
       .order("code"),
     supabase.from("contacts").select("id, name"),
   ]);

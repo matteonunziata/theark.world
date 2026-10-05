@@ -275,6 +275,120 @@ export type Database = {
           },
         ]
       }
+      court_bookings: {
+        Row: {
+          contact_id: string | null
+          court_id: string
+          created_at: string
+          created_by: string | null
+          date: string
+          email: string | null
+          end_time: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          players: number | null
+          source: string
+          start_time: string
+          status: string
+        }
+        Insert: {
+          contact_id?: string | null
+          court_id: string
+          created_at?: string
+          created_by?: string | null
+          date: string
+          email?: string | null
+          end_time: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          players?: number | null
+          source?: string
+          start_time: string
+          status?: string
+        }
+        Update: {
+          contact_id?: string | null
+          court_id?: string
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          email?: string | null
+          end_time?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          players?: number | null
+          source?: string
+          start_time?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "court_bookings_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "court_bookings_court_id_fkey"
+            columns: ["court_id"]
+            isOneToOne: false
+            referencedRelation: "courts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "court_bookings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courts: {
+        Row: {
+          active: boolean
+          close_time: string
+          created_at: string
+          id: string
+          name: string
+          open_time: string
+          position: number
+          slot_minutes: number
+          sport: string
+        }
+        Insert: {
+          active?: boolean
+          close_time?: string
+          created_at?: string
+          id?: string
+          name: string
+          open_time?: string
+          position?: number
+          slot_minutes?: number
+          sport?: string
+        }
+        Update: {
+          active?: boolean
+          close_time?: string
+          created_at?: string
+          id?: string
+          name?: string
+          open_time?: string
+          position?: number
+          slot_minutes?: number
+          sport?: string
+        }
+        Relationships: [
+
+        ]
+      }
       discounts: {
         Row: {
           active: boolean
@@ -1703,6 +1817,7 @@ export type Database = {
       }
       student_guardians: {
         Row: {
+          contact_id: string | null
           created_at: string
           email: string | null
           id: string
@@ -1712,6 +1827,7 @@ export type Database = {
           student_id: string
         }
         Insert: {
+          contact_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1721,6 +1837,7 @@ export type Database = {
           student_id: string
         }
         Update: {
+          contact_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1730,6 +1847,13 @@ export type Database = {
           student_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "student_guardians_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "student_guardians_student_id_fkey"
             columns: ["student_id"]
@@ -2023,6 +2147,23 @@ export type Database = {
         Args: { p_name: string; p_phone: string | null; p_email: string | null; p_visit_date: string };
         Returns: string;
       };
+      book_court: {
+        Args: { p_court: string; p_date: string; p_start: string };
+        Returns: string;
+      };
+      cancel_court_booking: { Args: { p_id: string }; Returns: undefined };
+      court_class_at: {
+        Args: { p_court: string; p_date: string; p_end: string; p_start: string };
+        Returns: string;
+      };
+      my_court_bookings: {
+        Args: never;
+        Returns: { court: string; date: string; end_time: string; id: string; start_time: string }[];
+      };
+      court_day: {
+        Args: { p_date: string };
+        Returns: { court_id: string; end_time: string; id: string; mine: boolean; start_time: string }[];
+      };
       cancel_guest: { Args: { p_id: string }; Returns: undefined };
       use_guest_pass: { Args: { p_token: string }; Returns: string };
       guest_pass_by_token: {
@@ -2124,6 +2265,21 @@ export type Database = {
       };
       is_member: { Args: never; Returns: boolean };
       is_school_staff: { Args: never; Returns: boolean };
+      school_add_guardian: {
+        Args: {
+          p_contact_id: string | null;
+          p_email: string | null;
+          p_name: string;
+          p_phone: string | null;
+          p_relation: string | null;
+          p_student_id: string;
+        };
+        Returns: string;
+      };
+      school_contact_search: {
+        Args: { q: string };
+        Returns: { email: string | null; id: string; name: string; phone: string | null }[];
+      };
       is_staff: { Args: never; Returns: boolean };
       member_directory: {
         Args: never;

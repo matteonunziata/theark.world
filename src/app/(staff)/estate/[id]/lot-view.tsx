@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
+import { useToast } from "@/components/toast";
 import type { Tables } from "@/lib/database.types";
 import { fmtDate } from "@/lib/dates";
 import {
@@ -21,7 +23,7 @@ import {
 } from "@/lib/estate";
 import { money } from "@/lib/schedule";
 import { type Stay, StayDrawer } from "../../hospitality/stay-drawer";
-import { saveHousehold, saveLot, saveMaintenance } from "../actions";
+import { saveHousehold, saveLot, saveMaintenance, setHospitality } from "../actions";
 import { LotFields } from "../lot-fields";
 
 type Lot = Tables<"lots">;
@@ -56,6 +58,15 @@ export function LotView({
   const fam = useDrawer<Member>();
   const log = useDrawer<Log>();
   const stay = useDrawer<Stay>();
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const hospitality = async (on: boolean) => {
+    setBusy(true);
+    const r = await setHospitality(lot.id, on);
+    setBusy(false);
+    toast(r.ok ? (r.message ?? "Saved") : (r.error ?? "Couldn’t save"));
+    if (r.ok && !on) hosp.close();
+  };
   const photo = estatePhoto(lot.photo_path);
   const aerial = estatePhoto(lot.aerial_path);
   const sold = lot.status === "sold" || lot.status === "not_for_sale";
@@ -300,7 +311,9 @@ export function LotView({
                 <p className="muted" style={{ fontSize: 13.5 }}>
                   Not listed. Owners in the active stewardship programme can offer their home to guests when they’re away.
                 </p>
-                <button type="button" className="btn sm" onClick={hosp.openNew}>Add to hospitality</button>
+                <button type="button" className="btn sm" disabled={busy} onClick={() => hospitality(true)}>
+                  {busy ? "Adding…" : "Add to hospitality"}
+                </button>
               </>
             )}
           </section>
@@ -331,6 +344,9 @@ export function LotView({
         action={saveLot}
         footer={
           <>
+            <button type="button" className="btn danger" disabled={busy} onClick={() => hospitality(false)}>
+              Remove from hospitality
+            </button>
             <span className="spacer" />
             <button type="button" className="btn ghost" onClick={hosp.close}>Cancel</button>
             <button type="submit" className="btn primary">Save</button>
@@ -340,10 +356,7 @@ export function LotView({
         <input type="hidden" name="id" value={lot.id} />
         <input type="hidden" name="code" value={lot.code} />
         <input type="hidden" name="hospitality_form" value="1" />
-        <label className="check" style={{ marginBottom: 16 }}>
-          <input type="checkbox" name="in_hospitality" defaultChecked={lot.in_hospitality} />
-          In the active stewardship programme (guests can book this home)
-        </label>
+        <input type="hidden" name="in_hospitality" value="on" />
         <div className="grid2">
           <div className="fld">
             <label htmlFor="h-rate">Nightly rate</label>

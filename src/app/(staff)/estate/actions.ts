@@ -10,6 +10,7 @@ import {
   ok,
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
+import { todayIn } from "@/lib/dates";
 import {
   HOME_STATUS,
   LOT_KINDS,
@@ -102,6 +103,18 @@ export async function saveLot(_prev: ActionResult, data: FormData): Promise<Acti
   if (error) return fail(error.code === "23505" ? "Another lot already has that number." : friendly(error));
   refresh();
   redirect(`/estate/${lot.id}`);
+}
+
+/** Put a home in hospitality (from today), or take it out. */
+export async function setHospitality(lotId: string, on: boolean): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  const { error } = await supabase
+    .from("lots")
+    .update(on ? { in_hospitality: true, hospitality_since: todayIn() } : { in_hospitality: false, hospitality_since: null })
+    .eq("id", lotId);
+  if (error) return fail(friendly(error));
+  refresh(lotId);
+  return ok(on ? "Added to hospitality" : "Removed from hospitality");
 }
 
 export async function saveHousehold(_prev: ActionResult, data: FormData): Promise<ActionResult> {
