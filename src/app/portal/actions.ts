@@ -163,3 +163,12 @@ export async function cancelCourt(id: string) {
   revalidatePath("/events/courts");
   return ok("Booking cancelled.");
 }
+
+export async function setPhoto(path: string | null) {
+  const v = await viewer();
+  if (!v.memberId) return fail("Only members have a profile photo.");
+  const { error } = await v.supabase.rpc("set_my_photo", { p_path: path });
+  if (error) return fail(friendly(error));
+  revalidatePath("/portal/me");
+  return ok(path ? "Photo saved" : "Photo removed");
+}

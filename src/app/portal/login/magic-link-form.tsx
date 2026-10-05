@@ -2,16 +2,18 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 import { useState } from "react";
-import { sendSignInLink } from "@/app/auth/actions";
+import { type Audience, sendSignInLink } from "@/app/auth/actions";
 import { createLinkClient } from "@/lib/supabase/link-client";
 
 export function MagicLinkForm({
   next,
   domain,
+  audience = domain ? "team" : "member",
 }: {
   next: string;
   /** Only accept emails at this domain (team sign-in). */
   domain?: string;
+  audience?: Audience;
 }) {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "sent-code">("idle");
   const [email, setEmail] = useState("");
@@ -33,7 +35,7 @@ export function MagicLinkForm({
     setEmail(value);
 
     // The ARK-styled email with a link and a code, when it's set up.
-    const r = await sendSignInLink(value, next, !!domain).catch(() => ({ status: "fallback" as const }));
+    const r = await sendSignInLink(value, next, audience).catch(() => ({ status: "fallback" as const }));
     if (r.status === "sent") {
       setState("sent-code");
       return;

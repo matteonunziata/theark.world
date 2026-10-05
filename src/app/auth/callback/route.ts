@@ -5,8 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const url = request.nextUrl;
   const next = safeNext(url.searchParams.get("next"));
-  const back =
-    next.startsWith("/portal") || next.startsWith("/e/") ? "/portal/login" : "/login";
+  const back = next.startsWith("/classes")
+    ? "/facilitator"
+    : next.startsWith("/portal") || next.startsWith("/e/")
+      ? "/portal/login"
+      : "/login";
   const fail = (message: string) =>
     NextResponse.redirect(
       new URL(`${back}?error=${encodeURIComponent(message)}`, url.origin),

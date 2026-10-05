@@ -34,6 +34,7 @@ export const roleName = (k: string | null | undefined) =>
   ROLES.find((r) => r.key === k)?.name ?? "—";
 
 export type ModuleKey =
+  | "classes"
   | "dashboard"
   | "crm"
   | "estate"
@@ -55,6 +56,13 @@ export const MODULES: {
   roles: Role[];
   planned?: string;
 }[] = [
+  {
+    // A facilitator's own classes and who's booked. First, so it's their home.
+    key: "classes",
+    name: "My classes",
+    href: "/classes",
+    roles: ["facilitator"],
+  },
   {
     key: "dashboard",
     name: "Dashboard",

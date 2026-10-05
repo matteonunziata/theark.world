@@ -16,14 +16,18 @@ export type SignInResult =
  * Supabase service-role key; without them the form falls back to Supabase's
  * own email. The before-user-created hook still guards account creation.
  */
-export async function sendSignInLink(rawEmail: string, next: string, team: boolean): Promise<SignInResult> {
+export type Audience = "member" | "team" | "facilitator";
+
+export async function sendSignInLink(rawEmail: string, next: string, audience: Audience): Promise<SignInResult> {
   const admin = createAdminClient();
   if (!admin || !emailConfigured()) return { status: "fallback" };
 
   const email = rawEmail.trim().toLowerCase();
   if (!EMAIL.test(email)) return { status: "error", error: "Enter a valid email." };
+  const team = audience !== "member";
   const isTeamEmail = email.endsWith(`@${TEAM_DOMAIN}`);
-  if (team !== isTeamEmail) {
+  // Facilitators can use any email that's on their team record.
+  if (audience !== "facilitator" && team !== isTeamEmail) {
     return {
       status: "error",
       error: team ? `Use your @${TEAM_DOMAIN} email.` : "Team members sign in on the team page.",
@@ -32,7 +36,16 @@ export async function sendSignInLink(rawEmail: string, next: string, team: boole
 
   // The same rules as the sign-in hook, checked first so nobody gets an
   // email that can't work.
-  const allowed = team
+  const allowed =
+    audience === "facilitator"
+      ? await admin
+          .from("team_members")
+          .select("id")
+          .eq("email", email)
+          .eq("status", "active")
+          .eq("role", "facilitator")
+          .maybeSingle()
+      : team
     ? await admin.from("team_members").select("id").eq("email", email).eq("status", "active").maybeSingle()
     : await admin
         .from("contacts")
@@ -45,7 +58,10 @@ export async function sendSignInLink(rawEmail: string, next: string, team: boole
   if (!allowed.data) {
     return {
       status: "error",
-      error: team
+      error:
+        audience === "facilitator"
+          ? "This email isn’t on a facilitator’s team record. Ask an admin to add it in Settings, Team."
+          : team
         ? "You haven’t been added to ARK OS yet. Ask an admin to add you in Settings, Team."
         : "This email isn’t on an active membership. Write to us and we’ll sort it out.",
     };

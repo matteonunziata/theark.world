@@ -818,3 +818,52 @@ a.mk-tr:hover{background:var(--surface-2)}
   .soc-post{padding:2px 4px;font-size:11px}
   .auto-flow li + li::before{display:none}
 }
+/* facilitator: my classes */
+.fac{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+.fac-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.fac-head h2{font-family:var(--display);font-size:26px;margin:0}
+.fac-head p{color:var(--muted);margin:4px 0 0}
+.fac-list{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:4px;position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}
+.fac-list h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:2px 6px 6px}
+.fac-sess{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;text-decoration:none;color:inherit}
+.fac-sess:hover{background:var(--surface-2)}
+.fac-sess[aria-current="page"]{background:var(--surface-2);box-shadow:inset 3px 0 0 var(--leaf)}
+.fac-sess b{display:block;font-size:14.5px}
+.fac-sess small{color:var(--muted);font-size:13px}
+.fac-sess .n{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.fac-sess.off b{text-decoration:line-through;color:var(--muted)}
+.roster-count{color:var(--muted);margin:0 0 14px}
+.roster-count b{color:var(--ink);font-size:18px}
+.roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 16px 16px;text-align:center;display:flex;flex-direction:column;align-items:center}
+.rcard.in{border-color:var(--leaf);background:color-mix(in srgb,var(--leaf) 7%,var(--surface))}
+.rcard .rphoto{width:96px;height:96px;border-radius:50%;object-fit:cover;display:grid;place-items:center;background:var(--slate);color:#fff;font-family:var(--display);font-weight:700;font-size:32px;margin-bottom:12px}
+.rcard h3{font-family:var(--display);font-size:17px;margin:0 0 4px}
+.rcard .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+.rcard .btn{width:100%;margin-top:auto;padding:11px 14px}
+.rdone{margin-top:auto;color:var(--leaf);font-weight:600;font-size:14px}
+.rdone .linkish-sm{margin:6px auto 0}
+@media (max-width:860px){
+  .fac{grid-template-columns:1fr}
+  .fac-list{position:static;max-height:none}
+  .roster{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .rcard .rphoto{width:76px;height:76px;font-size:26px}
+}
+/* class QR posters */
+.qr-page{background:var(--surface-2);min-height:100vh;padding:0 16px 40px}
+.qr-bar{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:12px;max-width:760px;margin:0 auto;padding:14px 0;color:var(--muted)}
+.qr-poster{background:#fff;color:#1C2620;max-width:760px;margin:0 auto 24px;padding:56px 48px;border-radius:16px;text-align:center;display:flex;flex-direction:column;align-items:center}
+.qr-kicker{text-transform:uppercase;letter-spacing:.14em;font-weight:600;font-size:15px;color:#3E7A55;margin:36px 0 6px}
+.qr-poster h1{font-family:var(--display);font-size:52px;line-height:1.05;margin:0 0 12px;letter-spacing:-0.02em}
+.qr-when{font-size:20px;color:#5B6960;margin:0 0 32px}
+.qr-code{width:min(360px,80%);aspect-ratio:1;padding:18px;border:2px solid #1C2620;border-radius:18px}
+.qr-code svg{width:100%;height:100%;display:block}
+.qr-foot{max-width:44ch;color:#5B6960;font-size:16px;margin:28px 0 0}
+.qr-dl{margin-top:20px}
+@media print{
+  @page{size:auto;margin:0}
+  .qr-page{background:#fff;padding:0}
+  .qr-bar,.qr-dl{display:none}
+  .qr-poster{max-width:none;min-height:100vh;margin:0;border-radius:0;justify-content:center;break-after:page}
+  .qr-poster:last-child{break-after:auto}
+}
