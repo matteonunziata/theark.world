@@ -39,3 +39,16 @@
 - **Team sign-in by email link.** The sign-in hook still turns down new @theark.world accounts that use an email link ("Team members sign in with Google"), while the team sign-in page now offers an email link. That only affects staff signing in for the first time. Should the hook allow email links for anyone on the team?
 - **Photos for check-in.** Members add their own photo. Should staff be able to add one from the CRM too (for members who never open the portal), and should a photo be required to join?
 - **QR code destination.** Posters link to the class page, where members pick a date. Should scanning on the day go straight to today's session instead?
+
+## Round 11: CSV import, membership page
+
+- **Updating existing contacts on import.** Imports skip anyone whose email is already in the CRM. Should there be an option to fill in blank fields (phone, Instagram, location) on existing people instead?
+- **Pass payments.** Day and Week Pass buttons use the MightySales payment links from the live site, so those purchases don't reach ARK OS. Move them to Stripe so they show up in Finance and the CRM?
+- **Reviewing applications.** Applications land as a note and an Applied stage on the contact. Do you want an Applications list in Memberships, with approve and decline?
+- **The live site's application** posts to a separate CRM (it tags people "Membership Applicant"). Once this page is live, should that one be switched off so applications only come here?
+- **Membership page domain.** Should theark.world/ark-membership point at this page, and should the photos move off the main site's CDN?
+- **Class categories.** The live schedule filters by Movement, Sports, Community, Farm and Dining. Classes have no category yet. Add one so the page can filter?
+- **Dollar rate.** The USD view uses ₡505 per dollar. Keep a fixed rate, or pull a daily one?
+- **Breakfast and lunch links are the same.** Both use https://site.theark.world/payment-link/6aabe11a9f7ff2c808a761bd. Is there a separate lunch link? It can be changed in Events → Lunch → Tickets.
+- **Meal prices.** The meal tickets have no price, so the Pay button reads "Pay for breakfast". Add the prices so members see the amount before paying?
+- **Checking the day pass.** Applicants say whether they've come on a day pass; ARK OS can't check it while passes are sold through the payment links. Fine as a self-declared answer for now?

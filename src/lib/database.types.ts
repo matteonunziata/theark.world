@@ -1110,6 +1110,59 @@ export type Database = {
           },
         ]
       }
+      membership_applications: {
+        Row: {
+          building: string
+          contact_id: string
+          contributing: string
+          created_at: string
+          drawn_to: string[]
+          id: string
+          invited_by: string | null
+          invites: string[]
+          plan: string
+          status: string
+          tried_day_pass: boolean | null
+          why_join: string
+        }
+        Insert: {
+          building: string
+          contact_id: string
+          contributing: string
+          created_at?: string
+          drawn_to?: string[]
+          id?: string
+          invited_by?: string | null
+          invites?: string[]
+          plan: string
+          status?: string
+          tried_day_pass?: boolean | null
+          why_join: string
+        }
+        Update: {
+          building?: string
+          contact_id?: string
+          contributing?: string
+          created_at?: string
+          drawn_to?: string[]
+          id?: string
+          invited_by?: string | null
+          invites?: string[]
+          plan?: string
+          status?: string
+          tried_day_pass?: boolean | null
+          why_join?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_applications_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       membership_tiers: {
         Row: {
           active: boolean
@@ -2747,6 +2800,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_for_membership: {
+        Args: {
+          p_building: string
+          p_campaign: string
+          p_contributing: string
+          p_drawn_to: string[]
+          p_email: string
+          p_first: string
+          p_invited_by: string
+          p_invites: string[]
+          p_last: string
+          p_medium: string
+          p_phone: string
+          p_plan: string
+          p_source: string
+          p_tried_day_pass?: boolean
+          p_why: string
+        }
+        Returns: string
+      }
       my_guests: { Args: never; Returns: Json };
       todays_guests: {
         Args: never;
@@ -2788,6 +2861,18 @@ export type Database = {
           can_log: boolean;
         }[];
       };
+      public_class_schedule: {
+        Args: never
+        Returns: {
+          days: number[]
+          end_time: string
+          facilitator: string
+          id: string
+          location: string
+          start_time: string
+          title: string
+        }[]
+      }
       public_listings: {
         Args: { p_check_in?: string | null; p_check_out?: string | null; p_guests?: number | null };
         Returns: {

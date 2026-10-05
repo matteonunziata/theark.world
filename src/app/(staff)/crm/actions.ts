@@ -12,6 +12,7 @@ import { staffOrThrow } from "@/lib/auth";
 import { CHANNELS, merge, MSTATUS, PIPELINES, PTYPES } from "@/lib/crm";
 import { aiEnabled, draftStep, draftWorkflow } from "@/lib/ai";
 import { sendWorkflowEmail } from "@/lib/email";
+import { IMPORT_MAX, type ImportRow } from "@/lib/csv";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -92,6 +93,102 @@ export async function saveContact(
   }
   refresh();
   return ok(`${name} added`);
+}
+
+/**
+ * Add contacts from a CSV the browser already parsed (see lib/csv). People
+ * whose email is already in the CRM are left as they are.
+ */
+export async function importContacts(
+  _prev: ActionResult,
+  data: FormData,
+): Promise<ActionResult> {
+  const { supabase, staff } = await staffOrThrow("admin", "sales");
+  let rows: ImportRow[];
+  try {
+    rows = JSON.parse(String(data.get("rows") ?? "[]"));
+  } catch {
+    return fail("Couldn’t read that file. Try exporting it again as CSV.");
+  }
+  if (!Array.isArray(rows) || !rows.length) return fail("There’s no one to add.");
+  if (rows.length > IMPORT_MAX) {
+    return fail(`Up to ${IMPORT_MAX.toLocaleString()} people at a time. Split the file and import each part.`);
+  }
+  const fallbackType = field(data, "type") ?? "contact";
+  if (!PTYPES.some((t) => t[0] === fallbackType)) return fail("Choose a type.");
+  const fallbackSource = field(data, "source")?.slice(0, 120) ?? "CSV import";
+  const str = (v: unknown, max = 200) =>
+    typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null;
+
+  const clean = rows
+    .map((r) => {
+      const email = str(r.email)?.toLowerCase() ?? null;
+      return {
+        name: str(r.name),
+        email: email && EMAIL.test(email) ? email : null,
+        phone: str(r.phone, 60),
+        instagram: str(r.instagram, 80),
+        location: str(r.location),
+        source: str(r.source, 120) ?? fallbackSource,
+        interests: Array.isArray(r.interests)
+          ? r.interests.map((s) => str(s, 60)).filter((s): s is string => !!s).slice(0, 20)
+          : [],
+        type: PTYPES.some((t) => t[0] === r.type) ? (r.type as string) : fallbackType,
+        note: str(r.note, 4000),
+      };
+    })
+    .filter((r): r is typeof r & { name: string } => !!r.name);
+
+  // Skip anyone already in the CRM (emails are case-insensitive in the table).
+  const emails = clean.flatMap((r) => (r.email ? [r.email] : []));
+  const existing = new Set<string>();
+  for (let i = 0; i < emails.length; i += 200) {
+    const { data: found, error } = await supabase
+      .from("contacts")
+      .select("email")
+      .in("email", emails.slice(i, i + 200));
+    if (error) return fail(friendly(error));
+    for (const f of found ?? []) if (f.email) existing.add(String(f.email).toLowerCase());
+  }
+  const fresh = clean.filter((r) => !r.email || !existing.has(r.email));
+
+  let added = 0;
+  for (let i = 0; i < fresh.length; i += 250) {
+    const chunk = fresh.slice(i, i + 250);
+    const { data: inserted, error } = await supabase
+      .from("contacts")
+      .insert(
+        chunk.map((r) => ({
+          name: r.name,
+          email: r.email,
+          phone: r.phone,
+          instagram: r.instagram,
+          location: r.location,
+          source: r.source,
+          interests: r.interests,
+          type: r.type,
+          owner_id: staff.id,
+          created_by: staff.id,
+        })),
+      )
+      .select("id");
+    if (error) {
+      if (added) refresh();
+      const what = error.code === "23505" ? "Someone in the file was just added by someone else." : friendly(error);
+      return fail(added ? `Added ${added}, then stopped: ${what}` : what);
+    }
+    added += inserted.length;
+    const notes = chunk.flatMap((r, j) =>
+      r.note && inserted[j] ? [{ contact_id: inserted[j].id, body: r.note, author_id: staff.id }] : [],
+    );
+    if (notes.length) await supabase.from("contact_notes").insert(notes);
+  }
+
+  refresh();
+  const skipped = clean.length - fresh.length;
+  const parts = [`Added ${added} ${added === 1 ? "person" : "people"}`];
+  if (skipped) parts.push(`${skipped} already in the CRM`);
+  return ok(parts.join(", "));
 }
 
 export async function addNote(contactId: string, body: string) {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArkFonts } from "@/components/ark-fonts";
 import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
 import { MagicLinkForm } from "./magic-link-form";
@@ -12,7 +13,8 @@ export default async function PortalLogin({ searchParams }: PageProps<"/portal/l
   const { memberId, staff } = await getViewer();
   if (memberId || staff) redirect(typeof next === "string" ? next : "/portal");
   return (
-    <main className="auth">
+    <main className="auth ark-type">
+      <ArkFonts />
       <div className="auth-card">
         <Logo tone="dark" kind="mark" height={220} className="auth-leaf" />
         <div className="auth-brand">

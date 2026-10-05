@@ -70,7 +70,8 @@ export async function bookSession(input: {
     ok: true,
     token: data.qr_token,
     emailed,
-    paymentLink: paid ? tt.payment_link : null,
+    // A link without a price (meals) still needs paying.
+    paymentLink: tt?.payment_link ?? null,
     price: paid
       ? tt.currency === "USD"
         ? `$${Number(tt.price).toLocaleString("en-US")}`
