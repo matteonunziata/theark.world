@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { resizeImage } from "@/components/cover-field";
 import { ConfirmButton, Drawer } from "@/components/drawer";
+import { PersonPicker } from "@/components/person-picker";
 import { useToast } from "@/components/toast";
 import {
   CATEGORY_HINTS,
@@ -106,6 +107,13 @@ function EntryForm({
           </datalist>
         </div>
       </div>
+      {income && (
+        <PersonPicker
+          label="Paid by (a person in the CRM)"
+          initial={e?.contact ?? null}
+          hint="Optional. Shows on their CRM profile. Tickets and stays are already there, so link those only if they aren’t booked in ARK OS."
+        />
+      )}
       <div className="fld">
         <label htmlFor="e-desc">Description</label>
         <input id="e-desc" name="description" defaultValue={e?.description ?? ""} placeholder={income ? "e.g. October dues, Ana López" : "e.g. Irrigation parts"} />

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { fail, friendly } from "@/lib/action-result";
 import { sendTicketEmail } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
+import { loadEvent } from "./load";
 
 export type BookingResult =
   | { ok: true; token: string; emailed: boolean; paymentLink: string | null; price: string | null }
@@ -76,4 +77,10 @@ export async function bookSession(input: {
         : `₡${Number(tt.price).toLocaleString("en-US")}`
       : null,
   };
+}
+
+/** For the portal's booking modal: the same details as the event page. */
+export async function eventForModal(id: string, date: string | null) {
+  const { event, memberId } = await loadEvent(id, date);
+  return { event, isMember: !!memberId };
 }

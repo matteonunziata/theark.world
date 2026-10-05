@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { EventLink } from "../../booking-modal";
 import Link from "next/link";
 import { addDays, addMonths, DOW, fmtDate, fmtTime, monthLabel, timeRange, todayIn, weekStart } from "@/lib/dates";
 import { monthGrid } from "@/lib/estate";
@@ -216,12 +217,12 @@ function status(s: Session, p: Props) {
 
 function Block({ s, ...p }: Props & { s: Session }) {
   return (
-    <Link href={`/e/${s.o.id}/${s.date}`} className={`sch-block k-${s.o.kind} ${s.cancelled ? "cancelled" : ""}`}>
+    <EventLink id={s.o.id} date={s.date} className={`sch-block k-${s.o.kind} ${s.cancelled ? "cancelled" : ""}`}>
       <span className="t">{timeRange(s.o) || "All day"}</span>
       <b>{s.o.title}</b>
       <span className="m">{[p.fac(s.o.facilitator_id), s.o.location].filter(Boolean).join(" · ")}</span>
       {status(s, p)}
-    </Link>
+    </EventLink>
   );
 }
 
@@ -257,9 +258,9 @@ function DayList({ items, ...p }: Props & { items: Session[] }) {
             </span>
             <span className="act">
               {status(s, p)}
-              <Link className={`pv-btn sm ${canBook ? "" : "ghost"}`} href={`/e/${s.o.id}/${s.date}`}>
+              <EventLink className={`pv-btn sm ${canBook ? "" : "ghost"}`} id={s.o.id} date={s.date}>
                 {canBook ? "Sign up" : "Details"}
-              </Link>
+              </EventLink>
             </span>
           </div>
         );

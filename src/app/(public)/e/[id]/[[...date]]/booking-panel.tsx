@@ -17,10 +17,12 @@ export function BookingPanel({
   counts,
   tickets,
   highlight,
+  startOn,
   today,
   isMember,
   canBook,
   loginHref,
+  onBooked,
 }: {
   offering: {
     id: string;
@@ -34,12 +36,21 @@ export function BookingPanel({
   counts: Count[];
   tickets: Ticket[];
   highlight: string | null;
+  /** Open straight on the booking form for this date, when it can be booked. */
+  startOn?: string | null;
   today: string;
   isMember: boolean;
   canBook: boolean;
   loginHref: string;
+  onBooked?: () => void;
 }) {
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(() => {
+    const s = startOn ? sessions.find((x) => x.date === startOn) : null;
+    if (!s || s.cancelled || !canBook) return null;
+    const cap = o.capacity;
+    const n = counts.filter((c) => c.session_date === s.date).reduce((a, c) => a + Number(c.taken), 0);
+    return cap && n >= cap ? null : s.date;
+  });
   const [result, setResult] = useState<BookingResult | null>(null);
   const [pending, start] = useTransition();
 
@@ -120,16 +131,16 @@ export function BookingPanel({
             e.preventDefault();
             const fd = new FormData(e.currentTarget);
             start(async () => {
-              setResult(
-                await bookSession({
-                  offeringId: o.id,
-                  date: picked,
-                  name: String(fd.get("name") ?? ""),
-                  email: String(fd.get("email") ?? ""),
-                  ticketTypeId: (fd.get("ticket") as string) || null,
-                  website: String(fd.get("website") ?? ""),
-                }),
-              );
+              const r = await bookSession({
+                offeringId: o.id,
+                date: picked,
+                name: String(fd.get("name") ?? ""),
+                email: String(fd.get("email") ?? ""),
+                ticketTypeId: (fd.get("ticket") as string) || null,
+                website: String(fd.get("website") ?? ""),
+              });
+              setResult(r);
+              if (r.ok) onBooked?.();
             });
           }}
         >
@@ -182,7 +193,7 @@ export function BookingPanel({
           )}
           <div style={{ display: "flex", gap: 10 }}>
             <button type="button" className="btn ghost" onClick={() => setPicked(null)}>
-              Back
+              Other dates
             </button>
             <button type="submit" className="btn primary" disabled={pending}>
               {pending ? "Booking…" : "Confirm booking"}

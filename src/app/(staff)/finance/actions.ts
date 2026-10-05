@@ -54,6 +54,7 @@ export async function saveEntry(
     business_line_id: field(data, "business_line_id"),
     category: field(data, "category"),
     party: field(data, "party"),
+    contact_id: kind === "income" ? field(data, "contact_id") : null,
     description: field(data, "description"),
     method: METHODS.some((m) => m[0] === method) ? method : null,
     reference: field(data, "reference"),

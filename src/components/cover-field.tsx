@@ -5,7 +5,9 @@ import { useToast } from "@/components/toast";
 import { createClient } from "@/lib/supabase/client";
 
 const publicUrl = (bucket: string, path: string) =>
-  `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+  path.startsWith("/") || path.startsWith("https://")
+    ? path
+    : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 
 /**
  * Photo picker: shrinks the image in the browser, uploads it to a public
