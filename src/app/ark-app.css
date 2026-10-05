@@ -552,3 +552,28 @@ a.seq-card{display:block;color:var(--ink);text-decoration:none}
   .tier-row{grid-template-columns:minmax(0,1fr) auto}
   .tier-row .t-ff,.tier-row .t-guests,.tier-row > span:last-child{display:none}
 }
+
+/* Picking a contact (Arkadia family) */
+.pick-list{display:grid;margin-top:6px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.pick-list button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:9px 12px;border:0;border-top:1px solid var(--line);background:none;font:inherit;color:var(--ink);cursor:pointer}
+.pick-list button:first-child{border-top:0}
+.pick-list button:hover,.pick-list button:focus-visible{background:var(--surface-2)}
+.pick-list .muted{font-size:13px}
+.pick-chip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;padding:10px 12px;margin-bottom:14px;border-radius:12px;background:var(--surface-2);font-size:14px}
+.pick-chip .linkish-sm{margin-top:0}
+
+/* Courts */
+.courts{display:grid;gap:14px;align-items:start;overflow-x:auto}
+.court-col{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;display:grid;gap:6px;min-width:200px}
+.court-col h2{margin:0 0 6px;font-size:17px;display:flex;flex-direction:column;gap:2px}
+.court-col h2 .muted{font-family:var(--body);font-size:12.5px;font-weight:500}
+.court-slot{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;text-align:left;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:none;font:inherit;font-size:14px;color:var(--ink);min-height:44px}
+.court-slot .t{font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
+.court-slot > span:last-child{display:flex;flex-direction:column;min-width:0}
+.court-slot.free{cursor:pointer;border-style:dashed}
+.court-slot.free:hover:not(:disabled){border-color:var(--leaf);background:color-mix(in srgb,var(--leaf) 8%,transparent)}
+.court-slot.free:disabled{opacity:.45;cursor:default}
+.court-slot.taken{cursor:pointer;background:color-mix(in srgb,var(--clay) 12%,var(--surface));border-color:color-mix(in srgb,var(--clay) 40%,var(--line))}
+.court-slot.taken .muted{font-size:12.5px}
+.court-slot.class{background:var(--surface-2);color:var(--muted)}
+.court-row{grid-template-columns:1fr auto}

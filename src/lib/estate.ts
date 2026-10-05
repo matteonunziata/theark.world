@@ -11,6 +11,7 @@ export const LOT_KINDS = [
   ["lot", "Lot"],
   ["estate", "Estate"],
   ["fractional", "Fractional ownership"],
+  ["rental", "Rental home"],
 ] as const;
 
 export const HOME_STATUS = [
@@ -76,10 +77,13 @@ export const statusTone: Record<string, string> = {
   not_for_sale: "var(--plum)",
 };
 
+/** A photo in the estate bucket, or a full https:// address (photos imported from Guesty). */
 export const estatePhoto = (path: string | null | undefined) =>
-  path
-    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/estate/${path}`
-    : null;
+  !path
+    ? null
+    : path.startsWith("https://")
+      ? path
+      : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/estate/${path}`;
 
 export const lotTitle = (l: { code: string; name: string | null }) =>
   l.name ? `${l.name}` : `Lot ${l.code}`;

@@ -646,6 +646,110 @@ select pg_temp.expect(
   'unpublished homes are hidden');
 reset role;
 
+-- Arkadia family members from the CRM ---------------------------------------------
+
+select pg_temp.act_as(pg_temp.id('teacher'));
+select pg_temp.expect(
+  exists (select 1 from public.school_contact_search('Someone') where name = 'Someone else'),
+  'school staff can search contacts for family members');
+select pg_temp.expect(
+  public.school_add_guardian(pg_temp.id('student'), null, 'New parent', 'Mother', 'newparent@example.com', null) is not null,
+  'school staff add a new family member');
+reset role;
+select pg_temp.expect(
+  exists (select 1 from public.contacts where email = 'newparent@example.com' and source = 'Arkadia family'),
+  'a new family member becomes a CRM contact');
+select pg_temp.expect(
+  (select contact_id from public.student_guardians where name = 'New parent')
+    = (select id from public.contacts where email = 'newparent@example.com'),
+  'the family member is linked to their contact');
+
+select pg_temp.act_as(pg_temp.id('facilitator'));
+select pg_temp.expect(
+  (select count(*) from public.school_contact_search('Someone')) = 0,
+  'staff outside the school cannot search contacts this way');
+do $$
+begin
+  perform public.school_add_guardian(pg_temp.id('student'), null, 'Sneaky', null, null, null);
+  raise exception 'RLS test failed: non-school staff added a family member';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+reset role;
+
+-- Courts: staff book for anyone; members book their own slots ------------------
+
+insert into _ids values ('court', gen_random_uuid());
+insert into public.courts (id, name, sport, open_time, close_time, slot_minutes)
+values (pg_temp.id('court'), 'TEST court', 'padel', '06:00', '08:00', 30);
+
+select pg_temp.act_as(pg_temp.id('member'));
+select pg_temp.expect(
+  public.book_court(pg_temp.id('court'), public.org_today() + 3, '06:00') is not null,
+  'members book a free slot');
+select pg_temp.expect(
+  public.book_court(pg_temp.id('court'), public.org_today() + 3, '07:00') is not null,
+  'members book a second slot the same day');
+do $$
+begin
+  perform public.book_court(pg_temp.id('court'), public.org_today() + 3, '07:30');
+  raise exception 'RLS test failed: a member booked three slots in a day';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+do $$
+begin
+  perform public.book_court(pg_temp.id('court'), public.org_today() + 3, '06:10');
+  raise exception 'RLS test failed: a member booked an off-grid time';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+do $$
+begin
+  perform public.book_court(pg_temp.id('court'), public.org_today() + 20, '06:00');
+  raise exception 'RLS test failed: a member booked more than two weeks ahead';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+select pg_temp.expect((select count(*) from public.court_bookings) = 0,
+  'members cannot read the bookings table directly');
+select pg_temp.expect(
+  (select count(*) from public.court_day(public.org_today() + 3) where mine) = 2,
+  'members see their own slots in the day view');
+select pg_temp.expect((select count(*) from public.my_court_bookings()) = 2,
+  'members list their upcoming court bookings');
+select public.cancel_court_booking((select id from public.my_court_bookings() order by start_time limit 1));
+select pg_temp.expect((select count(*) from public.my_court_bookings()) = 1, 'members cancel their own booking');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('outsider'));
+do $$
+begin
+  perform public.book_court(pg_temp.id('court'), public.org_today() + 3, '06:30');
+  raise exception 'RLS test failed: a non-member booked a court';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+reset role;
+
+select pg_temp.act_as(pg_temp.id('facilitator'));
+insert into public.court_bookings (court_id, date, start_time, end_time, name)
+values (pg_temp.id('court'), public.org_today() + 3, '06:00', '06:30', 'Walk-in');
+select pg_temp.expect((select count(*) from public.court_bookings where court_id = pg_temp.id('court')) >= 2,
+  'facilitators book and read courts');
+do $$
+begin
+  insert into public.court_bookings (court_id, date, start_time, end_time, name)
+  values (pg_temp.id('court'), public.org_today() + 3, '07:00', '07:30', 'Clash');
+  raise exception 'RLS test failed: two bookings overlap on one court';
+exception when exclusion_violation then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(pg_temp.id('shop'));
+select pg_temp.expect((select count(*) from public.court_bookings) = 0, 'shop staff cannot read court bookings');
+reset role;
+
 select 'All RLS tests passed' as result;
 
 rollback;

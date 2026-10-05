@@ -94,12 +94,34 @@ export async function saveGuardian(
     email,
     phone: field(data, "phone"),
   };
-  const { error } = id
-    ? await supabase.from("student_guardians").update(row).eq("id", id)
-    : await supabase.from("student_guardians").insert({ ...row, student_id: studentId });
+  if (id) {
+    const { error } = await supabase.from("student_guardians").update(row).eq("id", id);
+    if (error) return fail(friendly(error));
+    refresh(studentId);
+    return ok("Saved");
+  }
+  // New family members are linked to a CRM contact: the one picked, one
+  // with the same email, or a new contact.
+  const contactId = field(data, "contact_id");
+  const { error } = await supabase.rpc("school_add_guardian", {
+    p_student_id: studentId,
+    p_contact_id: contactId,
+    p_name: name,
+    p_relation: row.relation,
+    p_email: email,
+    p_phone: row.phone,
+  });
   if (error) return fail(friendly(error));
   refresh(studentId);
-  return ok(id ? "Saved" : `${name} added`);
+  return ok(contactId ? `${name} added` : `${name} added, and saved to the CRM`);
+}
+
+/** Contacts matching a search, for picking a family member. */
+export async function searchContacts(q: string) {
+  const { supabase } = await schoolOrThrow();
+  if (q.trim().length < 2) return [];
+  const { data } = await supabase.rpc("school_contact_search", { q: q.trim() });
+  return data ?? [];
 }
 
 export async function postUpdate(

@@ -96,6 +96,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/portal/
           <h1 style={{ fontSize: 40, margin: 0 }}>Schedule</h1>
           <p>Classes and gatherings{p.city ? ` in ${p.city.name}` : ""}. Tap one to sign up.</p>
         </div>
+        <Link className="pv-btn ghost sm" href="/portal/courts">Book a court</Link>
       </div>
 
       <div className="sch-bar">

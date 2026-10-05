@@ -324,3 +324,19 @@
 .gp-row b { display: block; font-size: 16px; }
 .gp-row span { color: var(--pv-muted); font-size: 14px; }
 .gp-row.past { opacity: .7; }
+
+/* Courts */
+.crt-mine{background:var(--pv-paper);border:1px solid var(--pv-line);border-radius:16px;padding:14px 16px;margin-bottom:18px}
+.crt-mine h2{margin:0 0 8px;font-size:18px}
+.crt-mine-row{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:6px 0}
+.crt-days{overflow-x:auto;margin-bottom:18px}
+.crt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-items:start}
+.crt-court{background:var(--pv-paper);border:1px solid var(--pv-line);border-radius:16px;padding:12px;display:grid;gap:6px}
+.crt-court h2{margin:0 0 6px;font-size:20px;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.crt-court h2 span{font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.65}
+.crt-slot{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--pv-line)}
+.crt-slot .t{font-weight:600;font-variant-numeric:tabular-nums}
+.crt-slot.taken,.crt-slot.gone{opacity:.5}
+.crt-slot.class{opacity:.7;font-style:italic}
+.crt-slot.mine{border-color:currentColor;font-weight:600}
+.crt-mine .muted{opacity:.65}
