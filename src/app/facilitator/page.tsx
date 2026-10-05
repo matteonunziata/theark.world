@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
@@ -31,10 +30,7 @@ export default async function FacilitatorLogin({
             {error}
           </p>
         )}
-        <MagicLinkForm next="/classes" audience="facilitator" />
-        <p className="auth-foot">
-          On the team? <Link href="/login">Team sign-in</Link>
-        </p>
+        <MagicLinkForm next="/classes" />
       </div>
     </main>
   );

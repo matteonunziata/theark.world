@@ -2,19 +2,11 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 import { useState } from "react";
-import { type Audience, sendSignInLink } from "@/app/auth/actions";
+import { sendSignInLink } from "@/app/auth/actions";
 import { createLinkClient } from "@/lib/supabase/link-client";
 
-export function MagicLinkForm({
-  next,
-  domain,
-  audience = domain ? "team" : "member",
-}: {
-  next: string;
-  /** Only accept emails at this domain (team sign-in). */
-  domain?: string;
-  audience?: Audience;
-}) {
+/** One sign-in for the team and members; the email says who someone is. */
+export function MagicLinkForm({ next }: { next: string }) {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "sent-code">("idle");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -26,16 +18,15 @@ export function MagicLinkForm({
       setError("Enter a valid email.");
       return;
     }
-    if (domain && !value.endsWith(`@${domain}`)) {
-      setError(`Use your @${domain} email.`);
-      return;
-    }
     setState("sending");
     setError("");
     setEmail(value);
 
     // The ARK-styled email with a link and a code, when it's set up.
-    const r = await sendSignInLink(value, next, audience).catch(() => ({ status: "fallback" as const }));
+    const r = await sendSignInLink(value, next).catch(() => ({
+      status: "error" as const,
+      error: "Couldn’t send the link. Check your connection and try again.",
+    }));
     if (r.status === "sent") {
       setState("sent-code");
       return;
@@ -151,7 +142,6 @@ export function MagicLinkForm({
           name="email"
           type="email"
           autoComplete="email"
-          placeholder={domain ? `you@${domain}` : undefined}
           required
         />
       </div>

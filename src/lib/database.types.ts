@@ -2861,6 +2861,7 @@ export type Database = {
           can_log: boolean;
         }[];
       };
+      sign_in_check: { Args: { p_email: string }; Returns: string };
       public_class_schedule: {
         Args: never
         Returns: {

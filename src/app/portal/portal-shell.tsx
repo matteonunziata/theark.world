@@ -24,6 +24,7 @@ export function PortalShell({
   initials,
   unread,
   isStaff,
+  isMember,
   children,
 }: {
   cities: { id: string; name: string }[];
@@ -31,6 +32,8 @@ export function PortalShell({
   initials: string;
   unread: number;
   isStaff: boolean;
+  /** Team members are members too, so they can have both. */
+  isMember: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -81,11 +84,11 @@ export function PortalShell({
               </label>
             )}
             {isStaff && (
-              <Link className="pv-btn ghost sm" href="/memberships">
+              <Link className="pv-btn ghost sm" href="/">
                 Staff view
               </Link>
             )}
-            {!isStaff && (
+            {isMember && (
               <Link className="pv-btn sm pv-passlink" href="/portal/pass" aria-label="My pass" aria-current={pathname === "/portal/pass" ? "page" : undefined}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <rect x="3" y="3" width="7" height="7" rx="1" />

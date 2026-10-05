@@ -26,6 +26,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/portal">)
           initials={initials(p.me?.name ?? p.staff?.name ?? "")}
           unread={count ?? 0}
           isStaff={!!p.staff}
+          isMember={!!p.memberId}
         >
           {children}
         </PortalShell>
