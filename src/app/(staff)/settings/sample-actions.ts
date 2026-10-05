@@ -8,6 +8,12 @@ import { addDays, addMonths, dow, monthKey, todayIn, weekStart } from "@/lib/dat
 type Client = Awaited<ReturnType<typeof staffOrThrow>>["supabase"];
 
 const ORDER = [
+  "email_sends",
+  "email_campaigns",
+  "social_posts",
+  "content_items",
+  "marketing_assets",
+  "brand_refs",
   "lots",
   "posts",
   "finance_entries",

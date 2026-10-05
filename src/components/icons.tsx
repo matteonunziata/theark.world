@@ -16,6 +16,7 @@ const PATHS: Record<string, string> = {
   shop: '<path d="M4 9h16l-1.5 10.5a2 2 0 0 1-2 1.5h-9a2 2 0 0 1-2-1.5z"/><path d="M8.5 9 12 3.5 15.5 9"/>',
   operations:
     '<path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.3 1.3L7 5M3.5 12l1.3 1.3L7 11M3.5 18l1.3 1.3L7 17"/>',
+  marketing: '<path d="M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>',
   school: '<path d="M3 9.5 12 5l9 4.5-9 4.5z"/><path d="M7 11.5V16c1.4 1.3 3 2 5 2s3.6-.7 5-2v-4.5"/><path d="M21 9.5V15"/>',
   finance: '<path d="M4 20h16"/><path d="M7 16v-5M12 16V6M17 16v-3"/>',
   settings:

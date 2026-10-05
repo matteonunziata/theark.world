@@ -49,6 +49,13 @@ const SCHEMA = {
   cities: "id, name, country, is_home",
   posts: "community feed: id, author_contact_id, author_staff_id, city_id, parent_id, body, created_at",
   org_settings: "name, location, currency, currency2, timezone, member_cap",
+  marketing_brands: "the five marketing brands: key (farm|arkadia|ark|courts|membership), name",
+  brand_strategies: "one strategy per brand: brand, story, audience, key_messages, pillars, tone, channels, goals",
+  content_items: "marketing content pipeline: id, title, brief, brands[], stage (idea|production|review|approved|published), assignee_id→team_members, due_date, stage_changed_at, published_at",
+  marketing_assets: "asset library: id, title, kind (photo|video|copy), body, brands[], tags[]",
+  social_posts: "social planner: id, caption, brands[], channels[], scheduled_at, status (draft|ready|published), published_at, link, reach, likes, comments, shares, saves",
+  email_campaigns: "id, name, brands[], list_key (waitlist|applicants|members|attendees), subject, status (draft|scheduled|sending|sent), scheduled_at, sent_at",
+  email_sends: "one row per marketing email: campaign_id, automation_step, email, status (sent|failed|test), sent_at, opened_at, clicked_at, bounced_at, unsubscribed_at",
 } as const;
 
 type Table = keyof typeof SCHEMA;
