@@ -24,3 +24,11 @@
 - **Original class photos.** The class photos came from screenshots and are small. Can you share the full-size originals, and a photo for Farm Volunteer Day?
 - **Women and Men Circle** alternate weeks under one class. Split them into two classes, each with its own photo and description?
 - **Ask AI scope.** Should Ask AI be on the members portal too (answering only about a member's own bookings and the schedule)? And should chats be saved?
+
+## Round 9: Marketing
+
+- **Sending domain and address.** Which address should marketing email come from (MARKETING_FROM)? The domain needs to be verified in Resend, with open and click tracking on.
+- **Vercel plan.** On Hobby, scheduled campaigns and the automation run once a day at 7:00. Upgrade to Pro (or use Supabase pg_cron) to send every 15 minutes?
+- **Where the waitlist form lives.** The signup page is `/join` on ARK OS. If theark.world (Squarespace) already has a waitlist form, should it post here instead, or link to `/join`?
+- **Application form.** The automation links to https://theark.world/apply as a placeholder. What's the real application link?
+- **Who's the strategist?** Add them in Settings → Team with the Marketing access level.

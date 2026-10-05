@@ -36,7 +36,7 @@ insert into _ids
 select r, gen_random_uuid()
 from unnest(array[
   'admin', 'lead', 'sales', 'facilitator', 'security', 'shop', 'crew',
-  'member', 'outsider', 'division', 'other_division'
+  'marketing', 'member', 'outsider', 'division', 'other_division'
 ]) r;
 
 insert into public.divisions (id, name) values
@@ -48,18 +48,18 @@ select id, k || '@theark.world', 'authenticated', 'authenticated',
   '00000000-0000-0000-0000-000000000000'
 from _ids
 where k in ('admin', 'lead', 'sales', 'facilitator', 'security', 'shop',
-  'crew', 'outsider');
+  'crew', 'marketing', 'outsider');
 
 insert into public.team_members (email, name, role, division_id)
 select k || '@theark.world', 'Test ' || k, k, pg_temp.id('division')
 from _ids
-where k in ('admin', 'lead', 'sales', 'facilitator', 'security', 'shop', 'crew');
+where k in ('admin', 'lead', 'sales', 'facilitator', 'security', 'shop', 'crew', 'marketing');
 
 -- Team members inserted after their auth user still get linked.
 select pg_temp.expect(
   (select count(*) from public.team_members
    where email like '%@theark.world' and user_id is not null
-     and name like 'Test %') = 7,
+     and name like 'Test %') = 8,
   'team members link to existing auth users by email');
 
 insert into public.contacts (id, name, email, tier) values
@@ -749,6 +749,48 @@ reset role;
 select pg_temp.act_as(pg_temp.id('shop'));
 select pg_temp.expect((select count(*) from public.court_bookings) = 0, 'shop staff cannot read court bookings');
 reset role;
+
+-- Marketing ----------------------------------------------------------------------
+
+select pg_temp.act_as(pg_temp.id('marketing'));
+insert into public.content_items (title, brands) values ('Test item', '{farm}');
+insert into public.social_posts (caption, channels, scheduled_at) values ('Test post', '{instagram}', now());
+insert into public.email_campaigns (name) values ('Test campaign');
+select pg_temp.expect((select count(*) from public.content_items where title = 'Test item') = 1,
+  'marketing manages content');
+select pg_temp.expect((select count(*) from public.contacts) = 0,
+  'marketing cannot read the CRM');
+select pg_temp.expect((select count(*) from public.marketing_list('members')) >= 1,
+  'marketing sees list members through marketing_list');
+select pg_temp.expect((select count(*) from public.finance_entries) = 0,
+  'marketing cannot read finance');
+reset role;
+
+do $$
+declare r text;
+begin
+  foreach r in array array['lead', 'sales', 'facilitator', 'shop', 'crew', 'security', 'member'] loop
+    perform pg_temp.act_as(pg_temp.id(r));
+    perform pg_temp.expect((select count(*) from public.content_items) = 0, r || ' cannot read marketing content');
+    perform pg_temp.expect((select count(*) from public.email_campaigns) = 0, r || ' cannot read campaigns');
+    perform pg_temp.expect((select count(*) from public.marketing_list('members')) = 0, r || ' gets no marketing lists');
+    perform pg_temp.expect((select count(*) from public.marketing_leads(current_date - 30, current_date)) = 0, r || ' gets no lead data');
+    reset role;
+  end loop;
+end $$;
+
+select pg_temp.act_as(pg_temp.id('admin'));
+select pg_temp.expect((select count(*) from public.email_campaigns where name = 'Test campaign') = 1,
+  'admins see marketing');
+reset role;
+
+select pg_temp.act_as(null);
+select pg_temp.expect(public.join_waitlist('Signup Test', 'signup.test@example.com', null, 'farm', 'instagram', 'social', 'test') is not null,
+  'anyone can join the waitlist');
+select pg_temp.expect((select count(*) from public.content_items) = 0, 'anon cannot read marketing content');
+reset role;
+select pg_temp.expect((select stage from public.contact_stages s join public.contacts c on c.id = s.contact_id
+  where c.email = 'signup.test@example.com') = 'waitlist', 'signups land on the membership waitlist');
 
 select 'All RLS tests passed' as result;
 

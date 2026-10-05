@@ -157,9 +157,11 @@ export type Database = {
           created_by: string | null
           discount_id: string | null
           email: string | null
+          email_opt_out: boolean
           id: string
           instagram: string | null
           interests: string[]
+          lead_brand: string | null
           location: string | null
           lot: string | null
           member_since: string | null
@@ -178,6 +180,10 @@ export type Database = {
           type: string
           updated_at: string
           user_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          waitlist_at: string | null
         }
         Insert: {
           bio?: string | null
@@ -186,9 +192,11 @@ export type Database = {
           created_by?: string | null
           discount_id?: string | null
           email?: string | null
+          email_opt_out?: boolean
           id?: string
           instagram?: string | null
           interests?: string[]
+          lead_brand?: string | null
           location?: string | null
           lot?: string | null
           member_since?: string | null
@@ -207,6 +215,10 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          waitlist_at?: string | null
         }
         Update: {
           bio?: string | null
@@ -215,9 +227,11 @@ export type Database = {
           created_by?: string | null
           discount_id?: string | null
           email?: string | null
+          email_opt_out?: boolean
           id?: string
           instagram?: string | null
           interests?: string[]
+          lead_brand?: string | null
           location?: string | null
           lot?: string | null
           member_since?: string | null
@@ -236,6 +250,10 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          waitlist_at?: string | null
         }
         Relationships: [
           {
@@ -258,6 +276,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "discounts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_lead_brand_fkey"
+            columns: ["lead_brand"]
+            isOneToOne: false
+            referencedRelation: "marketing_brands"
+            referencedColumns: ["key"]
           },
           {
             foreignKeyName: "contacts_owner_id_fkey"
@@ -2155,6 +2180,565 @@ export type Database = {
           },
         ]
       }
+      brand_refs: {
+        Row: {
+          brand: string
+          caption: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          path: string | null
+          url: string | null
+        }
+        Insert: {
+          brand: string
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          path?: string | null
+          url?: string | null
+        }
+        Update: {
+          brand?: string
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          path?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_refs_brand_fkey"
+            columns: ["brand"]
+            isOneToOne: false
+            referencedRelation: "marketing_brands"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "brand_refs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_strategies: {
+        Row: {
+          audience: string | null
+          brand: string
+          channels: string | null
+          goals: string | null
+          key_messages: string | null
+          pillars: string | null
+          story: string | null
+          tone: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          audience?: string | null
+          brand: string
+          channels?: string | null
+          goals?: string | null
+          key_messages?: string | null
+          pillars?: string | null
+          story?: string | null
+          tone?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          audience?: string | null
+          brand?: string
+          channels?: string | null
+          goals?: string | null
+          key_messages?: string | null
+          pillars?: string | null
+          story?: string | null
+          tone?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_strategies_brand_fkey"
+            columns: ["brand"]
+            isOneToOne: true
+            referencedRelation: "marketing_brands"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "brand_strategies_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_comments: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          item_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          item_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_comments_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_item_assets: {
+        Row: {
+          asset_id: string
+          item_id: string
+        }
+        Insert: {
+          asset_id: string
+          item_id: string
+        }
+        Update: {
+          asset_id?: string
+          item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_item_assets_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_item_assets_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_items: {
+        Row: {
+          assignee_id: string | null
+          brands: string[]
+          brief: string | null
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: string
+          published_at: string | null
+          stage: string
+          stage_changed_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          brands?: string[]
+          brief?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          published_at?: string | null
+          stage?: string
+          stage_changed_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          brands?: string[]
+          brief?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          published_at?: string | null
+          stage?: string
+          stage_changed_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_items_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_automations: {
+        Row: {
+          active: boolean
+          application_url: string | null
+          followup_body: string
+          followup_days: number
+          followup_subject: string
+          key: string
+          name: string
+          updated_at: string
+          welcome_body: string
+          welcome_subject: string
+        }
+        Insert: {
+          active?: boolean
+          application_url?: string | null
+          followup_body?: string
+          followup_days?: number
+          followup_subject?: string
+          key: string
+          name: string
+          updated_at?: string
+          welcome_body?: string
+          welcome_subject?: string
+        }
+        Update: {
+          active?: boolean
+          application_url?: string | null
+          followup_body?: string
+          followup_days?: number
+          followup_subject?: string
+          key?: string
+          name?: string
+          updated_at?: string
+          welcome_body?: string
+          welcome_subject?: string
+        }
+        Relationships: []
+      }
+      email_campaigns: {
+        Row: {
+          body: string
+          brands: string[]
+          created_at: string
+          created_by: string | null
+          id: string
+          list_key: string
+          name: string
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          brands?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          list_key?: string
+          name: string
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          brands?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          list_key?: string
+          name?: string
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_sends: {
+        Row: {
+          automation_step: string | null
+          bounced_at: string | null
+          campaign_id: string | null
+          clicked_at: string | null
+          contact_id: string | null
+          created_at: string
+          delivered_at: string | null
+          email: string
+          id: string
+          opened_at: string | null
+          resend_id: string | null
+          sent_at: string | null
+          status: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          automation_step?: string | null
+          bounced_at?: string | null
+          campaign_id?: string | null
+          clicked_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          email: string
+          id?: string
+          opened_at?: string | null
+          resend_id?: string | null
+          sent_at?: string | null
+          status?: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          automation_step?: string | null
+          bounced_at?: string | null
+          campaign_id?: string | null
+          clicked_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          email?: string
+          id?: string
+          opened_at?: string | null
+          resend_id?: string | null
+          sent_at?: string | null
+          status?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_sends_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_assets: {
+        Row: {
+          body: string | null
+          brands: string[]
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          path: string | null
+          tags: string[]
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          brands?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          path?: string | null
+          tags?: string[]
+          title: string
+        }
+        Update: {
+          body?: string | null
+          brands?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          path?: string | null
+          tags?: string[]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_assets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_brands: {
+        Row: {
+          color: string
+          key: string
+          name: string
+          position: number
+        }
+        Insert: {
+          color: string
+          key: string
+          name: string
+          position?: number
+        }
+        Update: {
+          color?: string
+          key?: string
+          name?: string
+          position?: number
+        }
+        Relationships: []
+      }
+      social_post_assets: {
+        Row: {
+          asset_id: string
+          position: number
+          post_id: string
+        }
+        Insert: {
+          asset_id: string
+          position?: number
+          post_id: string
+        }
+        Update: {
+          asset_id?: string
+          position?: number
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_assets_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_post_assets_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_posts: {
+        Row: {
+          brands: string[]
+          caption: string
+          channels: string[]
+          comments: number | null
+          content_item_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          likes: number | null
+          link: string | null
+          published_at: string | null
+          reach: number | null
+          saves: number | null
+          scheduled_at: string
+          shares: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          brands?: string[]
+          caption?: string
+          channels?: string[]
+          comments?: number | null
+          content_item_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          likes?: number | null
+          link?: string | null
+          published_at?: string | null
+          reach?: number | null
+          saves?: number | null
+          scheduled_at: string
+          shares?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          brands?: string[]
+          caption?: string
+          channels?: string[]
+          comments?: number | null
+          content_item_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          likes?: number | null
+          link?: string | null
+          published_at?: string | null
+          reach?: number | null
+          saves?: number | null
+          scheduled_at?: string
+          shares?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2317,6 +2901,33 @@ export type Database = {
         }[];
       };
       is_active_member: { Args: { cid: string }; Returns: boolean };
+      is_sample: { Args: { p_table: string; p_id: string }; Returns: boolean };
+      is_marketing: { Args: never; Returns: boolean }
+      marketing_leads: {
+        Args: { p_from: string; p_to: string; p_brand?: string | null };
+        Returns: { day: string; source: string; medium: string | null; campaign: string | null; brand: string | null }[];
+      };
+      marketing_list: {
+        Args: { p_list: string }
+        Returns: {
+          contact_id: string
+          email: string
+          name: string
+        }[]
+      }
+      join_waitlist: {
+        Args: {
+          p_brand: string
+          p_campaign: string
+          p_email: string
+          p_medium: string
+          p_name: string
+          p_phone: string
+          p_source: string
+        }
+        Returns: string
+      }
+      email_unsubscribe: { Args: { p_send: string }; Returns: string }
       school_contact_search: {
         Args: { q: string };
         Returns: { email: string | null; id: string; name: string; phone: string | null }[];

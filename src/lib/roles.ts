@@ -21,6 +21,11 @@ export const ROLES = [
   { key: "security", name: "Security", desc: "The security console only." },
   { key: "shop", name: "Shop staff", desc: "Farm shop sales and stock." },
   { key: "crew", name: "Maintenance crew", desc: "Their own work orders." },
+  {
+    key: "marketing",
+    name: "Marketing",
+    desc: "Brand strategy, content, social, email and marketing analytics.",
+  },
 ] as const;
 
 export type Role = (typeof ROLES)[number]["key"];
@@ -38,6 +43,7 @@ export type ModuleKey =
   | "security"
   | "shop"
   | "school"
+  | "marketing"
   | "operations"
   | "finance"
   | "settings";
@@ -100,10 +106,16 @@ export const MODULES: {
     roles: ["admin"],
   },
   {
+    key: "marketing",
+    name: "Marketing",
+    href: "/marketing",
+    roles: ["admin", "marketing"],
+  },
+  {
     key: "operations",
     name: "Operations",
     href: "/operations",
-    roles: ["admin", "lead", "sales", "facilitator", "shop", "crew"],
+    roles: ["admin", "lead", "sales", "facilitator", "shop", "crew", "marketing"],
   },
   { key: "finance", name: "Finance", href: "/finance", roles: ["admin"] },
   {
