@@ -7,7 +7,7 @@ import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
 import { useToast } from "@/components/toast";
 import type { Tables } from "@/lib/database.types";
 import { CATEGORIES, fmtMoney, lowState, productImage } from "@/lib/shop";
-import { recordStock, saveProduct, syncFromWebsite } from "./actions";
+import { recordStock, saveProduct, syncFromWebsite } from "../actions";
 
 type Product = Tables<"products">;
 type Move = { id: string; product_id: string; type: string; delta: number; created_at: string };
