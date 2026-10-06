@@ -147,6 +147,7 @@ export function CourtsView({
         slot={slot}
         date={date}
         court={book.item ? courtOf(book.item.court_id) : slot?.court}
+        courts={courts.filter((c) => c.active)}
         people={people}
       />
       {canManage && (
@@ -163,6 +164,7 @@ function BookingDrawer({
   slot,
   date,
   court,
+  courts,
   people,
 }: {
   open: boolean;
@@ -171,6 +173,7 @@ function BookingDrawer({
   slot: Slot | null;
   date: string;
   court?: Court;
+  courts: Court[];
   people: Person[];
 }) {
   const [name, setName] = useState(b?.name ?? "");
@@ -186,8 +189,12 @@ function BookingDrawer({
       setPhone(p.phone ?? "");
     } else setContactId("");
   };
-  const start = b ? hhmm(b.start_time) : slot?.start;
-  const end = b ? hhmm(b.end_time) : slot?.end;
+  const [courtId, setCourtId] = useState(b?.court_id ?? "");
+  const [when, setWhen] = useState(b?.date ?? date);
+  const [from, setFrom] = useState(b ? hhmm(b.start_time) : "");
+  const [to, setTo] = useState(b ? hhmm(b.end_time) : "");
+  const start = b ? from : slot?.start;
+  const end = b ? to : slot?.end;
 
   return (
     <Drawer
@@ -204,10 +211,41 @@ function BookingDrawer({
         </>
       }
     >
-      <p className="muted" style={{ marginTop: 0 }}>
-        {court?.name ?? "Court"}, {fmtDate(b?.date ?? date, { weekday: "long", month: "long", day: "numeric" })}, {start}–{end}
-      </p>
+      {!b && (
+        <p className="muted" style={{ marginTop: 0 }}>
+          {court?.name ?? "Court"}, {fmtDate(date, { weekday: "long", month: "long", day: "numeric" })}, {start}–{end}
+        </p>
+      )}
       {b && <input type="hidden" name="id" value={b.id} />}
+      {b && (
+        <>
+          <div className="grid2">
+            <div className="fld">
+              <label htmlFor="cb-court">Court</label>
+              <select id="cb-court" name="court_id" value={courtId} onChange={(e) => setCourtId(e.target.value)}>
+                {courts.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+                {!courts.some((c) => c.id === b.court_id) && court && <option value={court.id}>{court.name}</option>}
+              </select>
+            </div>
+            <div className="fld">
+              <label htmlFor="cb-date">Date</label>
+              <input id="cb-date" name="date" type="date" required value={when} onChange={(e) => setWhen(e.target.value)} />
+            </div>
+          </div>
+          <div className="grid2">
+            <div className="fld">
+              <label htmlFor="cb-from">Starts</label>
+              <input id="cb-from" name="start_time" type="time" step={900} required value={from} onChange={(e) => setFrom(e.target.value)} />
+            </div>
+            <div className="fld">
+              <label htmlFor="cb-to">Ends</label>
+              <input id="cb-to" name="end_time" type="time" step={900} required value={to} onChange={(e) => setTo(e.target.value)} />
+            </div>
+          </div>
+        </>
+      )}
       {!b && slot && (
         <>
           <input type="hidden" name="court_id" value={slot.court.id} />
@@ -321,7 +359,7 @@ function CourtsDrawer({ open, onClose, courts }: { open: boolean; onClose: () =>
               </span>
               <span className="muted">
                 {SPORTS.find(([k]) => k === x.sport)?.[1]} · {hhmm(x.open_time)}–{hhmm(x.close_time)} · {x.slot_minutes} min ·{" "}
-                {courtMoney(x.price, x.currency)}
+                {[x.price, x.price_90, x.price_120].map((p) => (p === null ? "—" : courtMoney(p, x.currency))).join(" / ")}
               </span>
             </button>
           ))}
@@ -360,9 +398,19 @@ function CourtsDrawer({ open, onClose, courts }: { open: boolean; onClose: () =>
           </div>
           <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
             <div className="fld">
-              <label htmlFor="ct-price">Price per slot</label>
+              <label htmlFor="ct-price">1 hour</label>
               <input id="ct-price" name="price" type="number" min={0} step="any" defaultValue={c?.price ?? ""} />
             </div>
+            <div className="fld">
+              <label htmlFor="ct-p90">1½ hours</label>
+              <input id="ct-p90" name="price_90" type="number" min={0} step="any" defaultValue={c?.price_90 ?? ""} />
+            </div>
+            <div className="fld">
+              <label htmlFor="ct-p120">2 hours</label>
+              <input id="ct-p120" name="price_120" type="number" min={0} step="any" defaultValue={c?.price_120 ?? ""} />
+            </div>
+          </div>
+          <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr" }}>
             <div className="fld">
               <label htmlFor="ct-currency">Currency</label>
               <select id="ct-currency" name="currency" defaultValue={c?.currency ?? "CRC"}>
@@ -378,7 +426,9 @@ function CourtsDrawer({ open, onClose, courts }: { open: boolean; onClose: () =>
           <div className="fld">
             <label htmlFor="ct-desc">On the public page</label>
             <input id="ct-desc" name="description" defaultValue={c?.description ?? ""} placeholder="Glass court, lights, rackets at reception" />
-            <span className="hint">Members pay the price less their tier’s discount. Shown on /courts.</span>
+            <span className="hint">
+              Prices are per booking length; leave 1½ or 2 hours empty to scale the 1 hour price. Members get their tier’s discount.
+            </span>
           </div>
           <label className="check">
             <input type="checkbox" name="active" defaultChecked={c?.active ?? true} />

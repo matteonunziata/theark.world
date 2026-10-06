@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Integrations" };
 
 export default async function IntegrationsPage() {
   const { supabase } = await requireStaff("settings");
-  const [{ data: ghl }, { count: linked }, { data: guesty }, { count: homes }, { count: guestyStays }, { count: paid }, { data: slack }, { count: posted }] = await Promise.all([
+  const [{ data: ghl }, { count: linked }, { data: guesty }, { count: homes }, { count: guestyStays }, { count: paid }, { data: slack }, { count: posted }, { data: shop }, { count: shopLinked }] = await Promise.all([
     supabase.from("integrations").select("enabled, connected_at, last_sync_at, last_error").eq("key", "ghl").maybeSingle(),
     supabase.from("integration_links").select("contact_id", { count: "exact", head: true }).eq("provider", "ghl"),
     supabase.from("integrations").select("enabled, connected_at, last_sync_at, last_error").eq("key", "guesty").maybeSingle(),
@@ -25,7 +25,10 @@ export default async function IntegrationsPage() {
       .eq("ok", true)
       .in("kind", ["notify", "digest"])
       .gte("created_at", daysAgo(30)),
+    supabase.from("integrations").select("enabled, connected_at, last_error, account_name").eq("key", "shopify").maybeSingle(),
+    supabase.from("integration_links").select("contact_id", { count: "exact", head: true }).eq("provider", "shopify"),
   ]);
+  const shopOn = !!shop?.connected_at;
   const slackOn = !!slack?.connected_at && slack.enabled;
   const slackKinds = Object.values((slack?.rules ?? {}) as Record<string, { on?: boolean }>).filter((r) => r?.on).length;
   const stripeOn = !!process.env.STRIPE_SECRET_KEY && !!process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -105,6 +108,26 @@ export default async function IntegrationsPage() {
             <span>
               {slack?.last_error ? "Needs attention" : slackOn && !slackKinds ? "Nothing switched on" : slack?.connected_at ? "Manage" : "Set up"}
             </span>
+          </div>
+        </Link>
+        <Link href="/settings/integrations/shopify" className="card integ">
+          <div className="top">
+            <span className={`status-dot${shopOn && shop.enabled ? " on" : ""}`}>
+              {!shopOn ? "Not connected" : shop.enabled ? "On" : "Connected, paused"}
+            </span>
+          </div>
+          <h3>Shopify</h3>
+          <p>
+            Give verified members their discount in the online shop: member10 for 1, 3 and 6 months, member20 for
+            annual, valid only while the membership is.
+          </p>
+          <div className="meta">
+            <span>
+              {shopOn
+                ? `${shop.account_name ? `${shop.account_name} · ` : ""}${shopLinked ?? 0} member${shopLinked === 1 ? "" : "s"} linked`
+                : "Needs a Shopify app’s credentials"}
+            </span>
+            <span>{shop?.last_error ? "Needs attention" : shopOn ? "Manage" : "Set up"}</span>
           </div>
         </Link>
       </div>

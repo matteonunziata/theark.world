@@ -114,8 +114,13 @@
 - **Refunds are by hand.** A cancellation within the rules doesn't refund on its own; someone refunds it in the Stripe dashboard and the webhook does the rest. Should ARK OS refund automatically on a within-policy cancellation (one Stripe API call per player)?
 - **Hold that outlives its slot.** If someone takes more than 20 minutes to pay and the slot was taken in the meantime, the payment is still recorded, the booking stays expired, and a note is added to it for a refund. Stripe's Checkout page itself stays open for 24 hours, so a longer hold (or a Checkout `expires_at` of 30 minutes, Stripe's minimum) would shrink the window.
 - **Levels never change.** Playtomic adjusts a rating from results. Recording scores and adjusting levels is a next step if open matches take off.
-- **Members' discount.** The public page applies the member's active discount only when they're signed in (the email field is then fixed to their membership email). A member who books signed out pays the full price. Fine, or should an email that matches an active member get the discount anyway?
+- **Members' discount when signed out.** The tier discount applies only when the member is signed in (the email field is then fixed to their membership email). A member who books signed out pays the full price. Fine, or should an email that matches an active member get the discount anyway?
 - **Court bookers in the CRM.** Every visitor who books becomes a contact (source "Courts"), like Guesty guests. Keep, or add them only to the booking?
+- **Meal products in Stripe.** The first meal payment looks for active one-time Stripe products named exactly "Breakfast" and "Lunch" (then by prefix). If the products are named differently, pick them once in Schedule → the class → Tickets → Stripe product. The 30-minute hold matches Stripe's shortest Checkout expiry; fine, or shorter for busy meals?
+
+
+- **Shopify: should Founding, Ambassador and Team get member10?** They have a 10% discount on their tier, so the sync tags them. The ask named only 1, 3, 6 months and Annual. Set the tier's discount to 0 in Memberships → Tiers to exclude one.
+- **Shopify: should the codes combine with other discounts or exclude sale items?** They currently apply to everything and combine only with free shipping.
 
 ## Round 19: Importing past Stripe payments
 

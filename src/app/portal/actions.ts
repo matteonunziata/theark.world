@@ -13,6 +13,7 @@ import { getViewer } from "@/lib/auth";
 import { splitList } from "@/lib/connect";
 import { sendGuestPassEmail } from "@/lib/email";
 import { notifyLater } from "@/lib/slack";
+import { stripeReady } from "@/lib/stripe";
 import { guestMessage } from "@/lib/slack-format";
 
 async function viewer() {
@@ -103,14 +104,40 @@ export async function cancelGuest(id: string) {
   return ok("Invite cancelled. The pass is back in your allowance.");
 }
 
-export async function bookCourt(courtId: string, date: string, start: string) {
+/**
+ * Book a court from the portal. Members pay when they book (their tier's
+ * discount applied): the slot is held and they go to Stripe. While Stripe
+ * isn't set up, it's booked and settled at reception.
+ */
+export async function bookCourt(courtId: string, date: string, start: string): Promise<ActionResult & { payUrl?: string }> {
   const v = await viewer();
   if (!v.memberId) return fail("Court booking is for members.");
-  const { error } = await v.supabase.rpc("book_court", { p_court: courtId, p_date: date, p_start: start });
-  if (error) return fail(friendly(error));
+  const [{ data: me }, { data: court }] = await Promise.all([
+    v.supabase.rpc("my_member_profile").maybeSingle(),
+    v.supabase.from("courts").select("slot_minutes").eq("id", courtId).maybeSingle(),
+  ]);
+  if (!me?.email) return fail("Add your email under Me first.");
+  const online = stripeReady();
+  const { data, error } = await v.supabase.rpc("hold_court", {
+    p: {
+      court_id: courtId,
+      date,
+      start,
+      minutes: court?.slot_minutes ?? 60,
+      name: me.name,
+      email: me.email,
+      phone: me.phone ?? "",
+      pay: online ? "online" : "reception",
+    },
+  });
+  if (error || !data) return fail(friendly(error));
+  const h = data as { token: string; player_token: string; amount: number; status: string };
   revalidatePath("/portal/schedule");
   revalidatePath("/events/courts");
-  return ok("Booked. Pay from your bookings above, or settle at reception.");
+  revalidatePath("/courts", "layout");
+  if (h.status === "held") return { ...ok("Taking you to payment…"), payUrl: `/pay/court/${h.player_token}` };
+  if (Number(h.amount) > 0) return ok("Booked. Settle it at reception when you arrive.");
+  return ok("Booked.");
 }
 
 export async function cancelCourt(id: string) {

@@ -168,6 +168,11 @@ export function TiersView({
             <label htmlFor="tr-spots">Spots</label>
             <input id="tr-spots" name="spots" type="number" min={1} defaultValue={tier.item?.spots ?? ""} placeholder="No limit" />
           </div>
+          <div className="fld">
+            <label htmlFor="tr-court">Off court bookings (%)</label>
+            <input id="tr-court" name="court_discount" type="number" min={0} max={100} step="any" defaultValue={tier.item?.court_discount ?? 0} />
+            <span className="hint">Applied when members book a court. A higher personal discount still wins.</span>
+          </div>
         </div>
         <div className="fld">
           <label htmlFor="tr-desc">Description</label>

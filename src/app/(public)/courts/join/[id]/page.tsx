@@ -77,7 +77,6 @@ export default async function JoinMatchPage({ params }: PageProps<"/courts/join/
                 share={Number(m.share)}
                 currency={m.currency}
                 me={me ? { name: me.name ?? "", email: me.email ?? "", phone: me.phone ?? "" } : null}
-                isMember={!!memberId}
                 online={stripeReady()}
               />
             )}

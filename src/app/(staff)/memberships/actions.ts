@@ -37,6 +37,7 @@ export async function saveTier(
     price: price === null ? null : Math.max(0, Number(price)),
     price_ff: priceFf === null ? null : Math.max(0, Number(priceFf)),
     guest_passes: Math.max(0, Math.min(99, Math.floor(Number(field(data, "guest_passes") ?? 0)) || 0)),
+    court_discount: Math.max(0, Math.min(100, Number(field(data, "court_discount") ?? 0) || 0)),
     currency: field(data, "currency") === "USD" ? "USD" : "CRC",
     period: PERIODS.includes(period) ? period : "month",
     spots: spots > 0 ? spots : null,

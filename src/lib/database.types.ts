@@ -505,6 +505,8 @@ export type Database = {
           slot_minutes: number
           sport: string
           price: number | null
+          price_90: number | null
+          price_120: number | null
           currency: string
           description: string | null
           max_players: number
@@ -520,6 +522,8 @@ export type Database = {
           slot_minutes?: number
           sport?: string
           price?: number | null
+          price_90?: number | null
+          price_120?: number | null
           currency?: string
           description?: string | null
           max_players?: number
@@ -535,6 +539,8 @@ export type Database = {
           slot_minutes?: number
           sport?: string
           price?: number | null
+          price_90?: number | null
+          price_120?: number | null
           currency?: string
           description?: string | null
           max_players?: number
@@ -1212,6 +1218,8 @@ export type Database = {
           account_name: string | null
           channel: string | null
           rules: Json
+          shop_domain: string | null
+          settings: Json
           connected_at: string | null
           created_at: string
           direction: string
@@ -1235,6 +1243,8 @@ export type Database = {
           account_name?: string | null
           channel?: string | null
           rules?: Json
+          shop_domain?: string | null
+          settings?: Json
           connected_at?: string | null
           created_at?: string
           direction?: string
@@ -1258,6 +1268,8 @@ export type Database = {
           account_name?: string | null
           channel?: string | null
           rules?: Json
+          shop_domain?: string | null
+          settings?: Json
           connected_at?: string | null
           created_at?: string
           direction?: string
@@ -1628,6 +1640,7 @@ export type Database = {
           currency: string
           description: string | null
           guest_passes: number
+          court_discount: number
           key: string
           name: string
           pause_rule: string | null
@@ -1644,6 +1657,7 @@ export type Database = {
           currency?: string
           description?: string | null
           guest_passes?: number
+          court_discount?: number
           key: string
           name: string
           pause_rule?: string | null
@@ -1660,6 +1674,7 @@ export type Database = {
           currency?: string
           description?: string | null
           guest_passes?: number
+          court_discount?: number
           key?: string
           name?: string
           pause_rule?: string | null
@@ -3461,8 +3476,8 @@ export type Database = {
         Args: never;
         Returns: {
           id: string; name: string; sport: string; open_time: string; close_time: string;
-          slot_minutes: number; price: number | null; currency: string; description: string | null;
-          max_players: number;
+          slot_minutes: number; price: number | null; price_90: number | null; price_120: number | null;
+          currency: string; description: string | null; max_players: number;
         }[];
       };
       public_court_day: {
@@ -3484,6 +3499,8 @@ export type Database = {
       };
       court_booking_by_token: { Args: { p_token: string }; Returns: Json };
       hold_court: { Args: { p: Json }; Returns: Json };
+      my_court_discount: { Args: never; Returns: number };
+      court_discount_for: { Args: { p_contact: string | null }; Returns: number };
       join_court_match: { Args: { p: Json }; Returns: Json };
       cancel_court_by_token: { Args: { p_token: string }; Returns: string };
       court_price: { Args: { p_court: string; p_minutes: number; p_contact: string | null }; Returns: number };
