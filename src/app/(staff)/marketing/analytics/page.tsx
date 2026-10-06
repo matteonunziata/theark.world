@@ -13,8 +13,8 @@ import {
   STAGES,
   STUCK_DAYS,
 } from "@/lib/marketing";
-import { BarList, Columns } from "./charts";
-import { RangePicker } from "./range-picker";
+import { BarList, Columns } from "@/components/charts";
+import { RangePicker } from "@/components/range-picker";
 
 export const metadata: Metadata = { title: "Marketing analytics" };
 

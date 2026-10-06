@@ -66,7 +66,7 @@ export function GuestsView({
     <>
       <div className="pv-sec-h" style={{ marginBottom: 18 }}>
         <div>
-          <h1 style={{ fontSize: 40, margin: 0 }}>Guests</h1>
+          <h1 className="pv-h1">Guests</h1>
           <p>Bring a friend for the day. They get their own pass to show security.</p>
         </div>
       </div>

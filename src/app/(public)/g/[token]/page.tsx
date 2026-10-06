@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import QRCode from "qrcode";
+import { GateButton } from "@/components/gate-button";
 import { PortalHead } from "@/components/portal-head";
 import { SaveImageButton } from "@/components/save-image";
 import { ScanResult } from "@/components/scan-result";
@@ -7,6 +8,7 @@ import { getViewer } from "@/lib/auth";
 import { fmtDate } from "@/lib/dates";
 import { siteUrl } from "@/lib/email";
 import { guestCode } from "@/lib/pass";
+import { letGuestIn } from "../actions";
 
 export const metadata: Metadata = { title: "Guest pass", robots: { index: false } };
 
@@ -20,13 +22,12 @@ const LABEL: Record<string, [string, string]> = {
 
 export default async function GuestPassPage({ params, searchParams }: PageProps<"/g/[token]">) {
   const { token } = await params;
-  const { look } = await searchParams;
+  const { look, done } = await searchParams;
   const { supabase, staff } = await getViewer();
-  const [first, { data: org }] = await Promise.all([
+  const [{ data: g }, { data: org }] = await Promise.all([
     supabase.rpc("guest_pass_by_token", { p_token: token }).maybeSingle(),
     supabase.rpc("public_org").maybeSingle(),
   ]);
-  let g = first.data;
   const orgName = org?.name ?? "The ARK";
   const tz = org?.timezone ?? "America/Costa_Rica";
   const head = (
@@ -41,7 +42,7 @@ export default async function GuestPassPage({ params, searchParams }: PageProps<
     return (
       <>
         {head}
-        {staff && <ScanResult ok={false} title="Not valid" detail="This code isn’t on any guest pass." />}
+        {staff && !look && <ScanResult ok={false} title="Not valid" detail="This code isn’t on any guest pass." />}
         <div className="p-body">
           <div className="ticket">
             <span className="state bad">Not valid</span>
@@ -53,29 +54,23 @@ export default async function GuestPassPage({ params, searchParams }: PageProps<
     );
   }
 
-  // Scanning a valid guest pass lets the guest in and uses it up.
-  let admitted = false;
-  if (g.can_log && g.state === "valid" && !look) {
-    const { error } = await supabase.rpc("use_guest_pass", { p_token: token });
-    if (!error) {
-      admitted = true;
-      g = (await supabase.rpc("guest_pass_by_token", { p_token: token }).maybeSingle()).data ?? g;
-    }
-  }
-
+  // Security scans, sees green or red, and taps Let in; that uses the pass up.
+  const admitted = !!done && g.state === "used";
   const day = fmtDate(g.visit_date, { weekday: "long", month: "long", day: "numeric" });
   const at = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: tz });
   const scan = admitted
-    ? { ok: true, title: "Access approved", detail: `Guest of ${g.host_name}` }
-    : {
-        ok: false,
-        ...({
-          used: { title: "Already used", detail: g.used_at ? `Came in at ${at(g.used_at)}` : "" },
-          upcoming: { title: "Not today", detail: `This pass is for ${day}` },
-          expired: { title: "Expired", detail: `This pass was for ${day}` },
-          cancelled: { title: "Cancelled", detail: `${g.host_name} cancelled this invite` },
-        }[g.state] ?? { title: "Not valid", detail: "" }),
-      };
+    ? { ok: true, title: "Checked in", detail: `Guest of ${g.host_name}` }
+    : g.state === "valid"
+      ? { ok: true, title: "Valid", detail: `Guest of ${g.host_name}, today` }
+      : {
+          ok: false,
+          ...({
+            used: { title: "Already used", detail: g.used_at ? `Came in at ${at(g.used_at)}` : "" },
+            upcoming: { title: "Not today", detail: `This pass is for ${day}` },
+            expired: { title: "Expired", detail: `This pass was for ${day}` },
+            cancelled: { title: "Cancelled", detail: `${g.host_name} cancelled this invite` },
+          }[g.state] ?? { title: "Not valid", detail: "" }),
+        };
   const url = `${await siteUrl()}/g/${token}`;
   const svg = await QRCode.toString(url, { type: "svg", margin: 0 });
   const [cls, label] = LABEL[g.state] ?? ["bad", "Not valid"];
@@ -83,7 +78,15 @@ export default async function GuestPassPage({ params, searchParams }: PageProps<
   return (
     <>
       {head}
-      {g.can_log && !look && <ScanResult ok={scan.ok} title={scan.title} name={g.guest_name} detail={scan.detail} />}
+      {g.can_log && !look && (admitted || !done) && (
+        <ScanResult
+          ok={scan.ok}
+          title={scan.title}
+          name={g.guest_name}
+          detail={scan.detail}
+          action={g.state === "valid" ? <GateButton token={token} action={letGuestIn} href={`/g/${token}?done=1`} label="Let in" /> : undefined}
+        />
+      )}
       <div className="p-body">
         <div className="ticket pass">
           <span className="ptype">{orgName} · Guest pass</span>
@@ -97,11 +100,14 @@ export default async function GuestPassPage({ params, searchParams }: PageProps<
           <div className="qr" dangerouslySetInnerHTML={{ __html: svg }} />
           <div className="code">{guestCode(token)}</div>
           <span className={`state ${cls}`}>{g.state === "used" && g.used_at ? `Used at ${at(g.used_at)}` : label}</span>
-          {(g.state === "valid" || g.state === "upcoming") && (
-            <div className="acts">
+          <div className="acts">
+            {g.can_log && g.state === "valid" && (
+              <GateButton token={token} action={letGuestIn} href={`/g/${token}?done=1`} label="Let in" />
+            )}
+            {(g.state === "valid" || g.state === "upcoming") && (
               <SaveImageButton href={`/g/${token}/image.png`} filename="ARK guest pass.png" className="btn primary" />
-            </div>
-          )}
+            )}
+          </div>
           <p className="gate-note" style={{ marginTop: 16 }}>
             Show this to security when you arrive. It works once, on the day of your visit.
           </p>

@@ -369,6 +369,16 @@ values ((select id from public.products where name = 'Eggs'), 'sale', -3,
 select pg_temp.expect(
   (select stock from public.products where name = 'Eggs') = 7,
   'shop records a sale and stock follows');
+select pg_temp.expect(
+  (public.shop_report(current_date - 1, current_date + 1)->'totals'->>'orders')::int = 1
+  and (public.shop_report(current_date - 1, current_date + 1)->'totals'->>'revenue')::numeric = 9000,
+  'shop sees the sales report at the product price');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('sales'));
+select pg_temp.expect(
+  (public.shop_report(current_date - 1, current_date + 1)->'totals'->>'orders')::int = 0,
+  'sales cannot see the sales report');
 reset role;
 
 select pg_temp.act_as(pg_temp.id('sales'));
@@ -569,21 +579,131 @@ select pg_temp.expect(
   'members get their own pass');
 do $$
 begin
-  perform public.log_pass_entry(current_setting('test.pass'));
-  raise exception 'RLS test failed: a member logged a gate entry';
+  perform public.gate_check_in(current_setting('test.pass'));
+  raise exception 'RLS test failed: a member checked themselves in at the gate';
 exception when insufficient_privilege then null;
 end $$;
 reset role;
 
 select pg_temp.act_as(pg_temp.id('security'));
 select pg_temp.expect(
-  public.log_pass_entry(current_setting('test.pass')) is not null,
-  'security logs member entries');
-select pg_temp.expect((select count(*) from public.gate_entries) >= 1, 'security reads gate entries');
+  (select ok from public.gate_check_in(current_setting('test.pass'))),
+  'security checks a member in');
+select pg_temp.expect(
+  (select state from public.gate_check_in(current_setting('test.pass'))) = 'checked_in'
+  and not (select ok from public.gate_check_in(current_setting('test.pass'))),
+  'a second check-in the same day is refused');
+select pg_temp.expect(
+  (select state from public.pass_by_token(current_setting('test.pass'))) = 'checked_in',
+  'the pass reads checked in for the rest of the day');
+-- Security can't read contacts, so the person comes from the pass itself.
+select pg_temp.expect(
+  (select count(*) from public.gate_entries e
+   where e.contact_id = (select contact_id from public.pass_by_token(current_setting('test.pass')))
+     and e.result = 'admitted') = 1
+  and (select count(*) from public.gate_entries e
+   where e.contact_id = (select contact_id from public.pass_by_token(current_setting('test.pass')))
+     and e.result = 'checked_in') >= 1,
+  'security reads gate entries, refused scans included');
+select pg_temp.expect(
+  (select count(*) from public.gate_search('Test mem')) = 1, 'security finds a pass by name');
 reset role;
 
 select pg_temp.act_as(pg_temp.id('sales'));
 select pg_temp.expect((select count(*) from public.gate_entries) = 0, 'sales cannot read gate entries');
+reset role;
+
+-- Day passes: no portal, start at the first check-in, one check-in a day, then over --
+
+insert into public.contacts (name, email) values ('Day Tripper', 'day@example.com');
+insert into public.memberships (contact_id, tier, status, activate_by, source)
+select id, 'day', 'unused', public.org_today() + 90, 'stripe'
+from public.contacts where email = 'day@example.com';
+select set_config('test.day', (select pass_token from public.contacts where email = 'day@example.com'), true);
+select pg_temp.expect(
+  not public.is_portal_member((select id from public.contacts where email = 'day@example.com')),
+  'a pass holder is not a portal member');
+select pg_temp.expect(public.sign_in_check('day@example.com') is not null, 'a pass holder cannot sign in');
+select pg_temp.expect(pg_temp.hook('email', 'day@example.com') ? 'error', 'hook rejects pass holders');
+select pg_temp.expect(
+  (select membership_status = 'upcoming' and tier = 'day' from public.contacts where email = 'day@example.com'),
+  'an unused pass shows as upcoming on the contact');
+select pg_temp.act_as(null);
+select pg_temp.expect(
+  (select state from public.pass_by_token(current_setting('test.day'))) = 'unused',
+  'an unused pass is ready for its first visit');
+reset role;
+select pg_temp.act_as(pg_temp.id('security'));
+select pg_temp.expect(
+  (select ok from public.gate_check_in(current_setting('test.day'))),
+  'the first check-in starts a day pass');
+select pg_temp.expect(
+  not (select ok from public.gate_check_in(current_setting('test.day'))),
+  'a day pass cannot be used twice');
+reset role;
+select pg_temp.expect(
+  (select m.starts_on = public.org_today() and m.ends_on = public.org_today() and m.status = 'active'
+   from public.memberships m join public.contacts c on c.id = m.contact_id where c.email = 'day@example.com'),
+  'a day pass runs for that day only');
+select pg_temp.expect(
+  public.has_access_today((select id from public.contacts where email = 'day@example.com')),
+  'a pass holder has access on the day');
+-- A week pass used eight days ago ended the day before yesterday.
+update public.memberships m set tier = 'week', starts_on = public.org_today() - 8, ends_on = public.org_today() - 2
+from public.contacts c where c.id = m.contact_id and c.email = 'day@example.com';
+select pg_temp.act_as(pg_temp.id('security'));
+select pg_temp.expect(
+  (select state = 'expired' and valid_until = public.org_today() - 2
+   from public.pass_by_token(current_setting('test.day'))),
+  'an old week pass reads expired with its last day');
+select pg_temp.expect(
+  not (select ok from public.gate_check_in(current_setting('test.day'))),
+  'an expired pass is refused');
+reset role;
+select pg_temp.expect(
+  (select membership_status from public.contacts where email = 'day@example.com') = 'expired',
+  'the contact shows expired once the pass is over');
+-- A pass never used in time.
+update public.memberships m set status = 'unused', starts_on = null, ends_on = null, activate_by = public.org_today() - 1
+from public.contacts c where c.id = m.contact_id and c.email = 'day@example.com';
+select pg_temp.act_as(null);
+select pg_temp.expect(
+  (select state from public.pass_by_token(current_setting('test.day'))) = 'expired',
+  'an unused pass past its use-by date is over');
+reset role;
+
+-- Staff set memberships through set_membership; the columns on contacts are a cache --
+
+select pg_temp.act_as(pg_temp.id('admin'));
+select pg_temp.expect(
+  public.set_membership((select id from public.contacts where email = 'owned@example.com'),
+    'standard', 'active', null, null) is not null,
+  'admins set a membership');
+select pg_temp.expect(
+  public.is_portal_member((select id from public.contacts where email = 'owned@example.com')),
+  'a set membership opens the portal');
+update public.contacts set tier = null where email = 'owned@example.com';
+select pg_temp.expect(
+  (select tier from public.contacts where email = 'owned@example.com') = 'standard',
+  'the cached tier cannot be changed by hand');
+-- Two statements: a stable check in the same statement would still see the
+-- snapshot from before the revoke.
+select pg_temp.expect(
+  public.set_membership((select id from public.contacts where email = 'owned@example.com'),
+    '', 'active', null, null) is null,
+  '"No membership" returns nothing to point at');
+select pg_temp.expect(
+  not public.is_portal_member((select id from public.contacts where email = 'owned@example.com')),
+  'no membership revokes what is current');
+reset role;
+select pg_temp.act_as(pg_temp.id('member'));
+do $$
+begin
+  perform public.set_membership((select id from public.contacts where email = 'owned@example.com'),
+    'standard', 'active', null, null);
+  raise exception 'RLS test failed: a member set a membership';
+exception when insufficient_privilege then null;
+end $$;
 reset role;
 
 -- Guest passes: members invite within their monthly allowance; only security lets guests in --
@@ -851,18 +971,314 @@ select pg_temp.expect((select count(*) from public.membership_applications a joi
   where c.email = 'apply.test@example.com') = 1, 'admins read applications');
 reset role;
 
--- Team members are members too.
+-- Team members are members too (the eight above plus the Arkadia teacher).
 select pg_temp.expect(
   (select count(*) from public.contacts c join public.team_members t on t.email = c.email
-   where t.name like 'Test %' and c.tier = 'team' and c.membership_status = 'active') = 8,
+   where t.name like 'Test %' and c.tier = 'team' and c.membership_status = 'active')
+    = (select count(*) from public.team_members where name like 'Test %' and status = 'active'),
   'every active team member gets a Team membership');
 select pg_temp.act_as(pg_temp.id('admin'));
 select pg_temp.expect(public.is_member(), 'staff count as members in the portal');
 reset role;
 update public.team_members set status = 'inactive' where email = 'crew@theark.world';
 select pg_temp.expect(
-  (select membership_status from public.contacts where email = 'crew@theark.world') = 'expired',
+  not public.is_portal_member((select id from public.contacts where email = 'crew@theark.world'))
+  and (select tier from public.contacts where email = 'crew@theark.world') is null,
   'leaving the team ends the Team membership');
+
+-- Integrations ---------------------------------------------------------------
+
+select pg_temp.act_as(pg_temp.id('admin'));
+update public.integrations set location_id = 'loc_test', secret = 'pit-test', enabled = true where key = 'ghl';
+select pg_temp.expect((select secret from public.integrations where key = 'ghl') = 'pit-test',
+  'admins manage integrations');
+insert into public.integration_links (provider, contact_id, external_id)
+select 'ghl', id, 'ghl_' || email from public.contacts where email in ('owned@example.com', 'else@example.com');
+insert into public.integration_events (provider, direction, kind, detail) values ('ghl', 'out', 'test', 'ok');
+-- The live project has real sync events, so count only the one above.
+select pg_temp.expect((select count(*) from public.integration_events where kind = 'test' and detail = 'ok') = 1,
+  'admins log integration events');
+-- Slack shares the table: a token, a default channel and per-kind rules.
+update public.integrations
+set secret = 'xoxb-test', channel = '#ark-os', enabled = true,
+    rules = '{"booking": {"on": true, "channel": "#front-desk"}}'::jsonb
+where key = 'slack';
+select pg_temp.expect((select rules->'booking'->>'channel' from public.integrations where key = 'slack') = '#front-desk',
+  'admins manage Slack rules');
+insert into public.integration_events (provider, direction, kind, detail) values ('slack', 'out', 'notify', 'ok');
+select pg_temp.expect((select count(*) from public.integration_events where provider = 'slack' and kind = 'notify' and detail = 'ok') = 1,
+  'admins log Slack posts');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('sales'));
+select pg_temp.expect((select count(*) from public.integrations) = 0, 'sales cannot read integration tokens');
+select pg_temp.expect((select count(*) from public.integration_events) = 0, 'sales cannot read integration events');
+-- Sales own 'owned' and work 'else' in their pipeline, so they see those two links.
+select pg_temp.expect((select count(*) from public.integration_links where external_id like 'ghl_%@example.com') = 2,
+  'sales see links only for contacts they can read');
+do $$
+begin
+  update public.integrations set enabled = false where key = 'ghl';
+  if exists (select 1 from public.integrations) then
+    raise exception 'RLS test failed: sales changed an integration';
+  end if;
+end $$;
+reset role;
+
+do $$
+declare r text;
+begin
+  foreach r in array array['lead', 'facilitator', 'shop', 'crew', 'security', 'marketing', 'member'] loop
+    perform pg_temp.act_as(pg_temp.id(r));
+    perform pg_temp.expect((select count(*) from public.integrations) = 0, r || ' cannot read integrations');
+    perform pg_temp.expect((select count(*) from public.integration_events) = 0, r || ' cannot read integration events');
+    reset role;
+  end loop;
+end $$;
+
+-- Guesty listings: admins manage, estate staff read, others nothing.
+select pg_temp.act_as(pg_temp.id('admin'));
+insert into public.guesty_listings (id, title) values ('gl_test', 'Test cabin');
+reset role;
+select pg_temp.act_as(pg_temp.id('sales'));
+select pg_temp.expect((select count(*) from public.guesty_listings where id = 'gl_test') = 1,
+  'estate staff read Guesty listings');
+do $$
+begin
+  update public.guesty_listings set title = 'Changed' where id = 'gl_test';
+  if exists (select 1 from public.guesty_listings where id = 'gl_test' and title = 'Changed') then
+    raise exception 'RLS test failed: sales changed a Guesty listing';
+  end if;
+end $$;
+reset role;
+select pg_temp.act_as(pg_temp.id('shop'));
+select pg_temp.expect((select count(*) from public.guesty_listings) = 0, 'shop cannot read Guesty listings');
+reset role;
+
+-- Onboarding, WhatsApp and who's going ------------------------------------------------
+
+update public.contacts set phone = '+50688880001', cities = array['Santa Teresa', 'Lisbon']
+where email = 'member2@example.com';
+insert into public.registrations (offering_id, session_date, contact_id, name, source)
+select id, public.org_today() + 3, (select id from public.contacts where email = 'member2@example.com'),
+  'Second member', 'portal'
+from public.offerings where title = 'Open event';
+insert into public.registrations (offering_id, session_date, name, email, source)
+select id, public.org_today() + 3, 'Walk-in guest', 'guest@example.com', 'public'
+from public.offerings where title = 'Open event';
+
+select pg_temp.act_as(pg_temp.id('member'));
+select pg_temp.expect(
+  (select phone from public.member_directory() where name = 'Second member') = '+50688880001'
+  and (select cities from public.member_directory() where name = 'Second member') = array['Santa Teresa', 'Lisbon'],
+  'members open to connecting share their WhatsApp number and cities');
+select pg_temp.expect(
+  (select phone from public.member_directory() where name = 'Closed member') is null
+  and (select instagram from public.member_directory() where name = 'Closed member') is null,
+  'members closed to connecting keep their number private');
+select pg_temp.expect(
+  (select array_agg(name) from public.session_attendees(
+    (select id from public.offerings where title = 'Open event'),
+    public.org_today(), public.org_today() + 30)) = array['Second member'],
+  'members see which directory members are going, never public guests');
+select pg_temp.expect((select onboarded_at from public.my_member_profile()) is null,
+  'a new member has not onboarded yet');
+select public.complete_my_onboarding('Test member', '+50688880002', '@testmember', 'Hello',
+  array['Santa Teresa'], true);
+select pg_temp.expect(
+  (select onboarded_at is not null and phone = '+50688880002' and cities = array['Santa Teresa']
+   from public.my_member_profile()),
+  'finishing onboarding saves the profile and marks the member onboarded');
+select public.update_my_profile('Test member', '+50688880002', 'Hello again', array['surfing'],
+  array['Santa Teresa', 'Berlin'], null, true, true);
+select pg_temp.expect(
+  (select bio = 'Hello again' and cities = array['Santa Teresa', 'Berlin'] from public.my_member_profile()),
+  'members update their own profile');
+do $$
+begin
+  perform public.update_my_profile('', null, null, '{}', '{}', null, true, true);
+  raise exception 'RLS test failed: a blank name was accepted';
+exception when raise_exception then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(null);
+do $$
+begin
+  perform public.session_attendees(
+    (select id from public.offerings where title = 'Open event'),
+    public.org_today(), public.org_today() + 30);
+  raise exception 'RLS test failed: anon can list attendees';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(pg_temp.id('outsider'));
+select pg_temp.expect(
+  (select count(*) from public.session_attendees(
+    (select id from public.offerings where title = 'Open event'),
+    public.org_today(), public.org_today() + 30)) = 0,
+  'people outside the membership see no attendees');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('facilitator'));
+select pg_temp.expect(
+  (select count(*) from public.session_attendees(
+    (select id from public.offerings where title = 'Open event'),
+    public.org_today(), public.org_today() + 30)) = 1,
+  'staff see who is going too');
+reset role;
+
+-- Stripe payments: only the server (service role) records them; staff read them.
+insert into public.payments (kind, contact_id, name, email, description, amount, currency, session_id)
+select 'membership', id, name, email, 'Test payment', 130000, 'CRC', 'cs_test_rls'
+from public.contacts where email = 'member@example.com';
+
+select pg_temp.act_as(pg_temp.id('admin'));
+select pg_temp.expect(
+  (select count(*) from public.payments where session_id = 'cs_test_rls') = 1,
+  'admins read payments');
+do $$
+begin
+  perform public.record_stripe_payment('{"session_id": "cs_x", "kind": "pass"}');
+  raise exception 'RLS test failed: staff can record a payment';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(pg_temp.id('shop'));
+select pg_temp.expect((select count(*) from public.payments) = 0,
+  'shop staff can''t read payments');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('member'));
+select pg_temp.expect((select count(*) from public.payments) = 0,
+  'members can''t read payments, even their own');
+do $$
+begin
+  insert into public.payments (kind, description, amount, currency, session_id)
+  values ('pass', 'Free pass', 0, 'CRC', 'cs_forged');
+  raise exception 'RLS test failed: a member forged a payment';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(null);
+do $$
+begin
+  perform public.record_stripe_payment('{"session_id": "cs_x", "kind": "pass"}');
+  raise exception 'RLS test failed: anon can record a payment';
+exception when insufficient_privilege then null;
+end $$;
+do $$
+begin
+  perform public.refund_stripe_payment('pi_x', 're_x', 1, 'CRC');
+  raise exception 'RLS test failed: anon can refund a payment';
+exception when insufficient_privilege then null;
+end $$;
+do $$
+begin
+  perform public.import_stripe_charge('{"charge_id": "ch_x", "amount": 1, "currency": "USD"}');
+  raise exception 'RLS test failed: anon can import a Stripe charge';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+-- Courts online: anyone holds a court, joins an open match, cancels by token ---
+
+select pg_temp.act_as(null);
+select pg_temp.expect((select count(*) from public.public_courts() where name = 'TEST court') = 1,
+  'visitors see the courts');
+-- The TEST court is 06:00–08:00 in 30-minute slots; the member booked 06:00 and
+-- the facilitator 06:00–06:30 above, so 07:00 is free.
+insert into _ids values ('web_hold', (
+  public.hold_court(jsonb_build_object(
+    'court_id', pg_temp.id('court'), 'date', public.org_today() + 3, 'start', '07:00', 'minutes', 60,
+    'name', 'Web Visitor', 'email', 'visitor@example.com', 'open_match', true, 'level', 2.5, 'spots', 4,
+    'pay', 'online')) ->> 'id')::uuid);
+select pg_temp.expect(
+  (select status from public.court_bookings where id = pg_temp.id('web_hold')) is null,
+  'visitors cannot read bookings directly');
+reset role;
+select pg_temp.expect(
+  (select status from public.court_bookings where id = pg_temp.id('web_hold')) = 'held',
+  'a web booking paid online starts as a hold');
+select pg_temp.expect(
+  (select count(*) from public.court_players where booking_id = pg_temp.id('web_hold') and host and status = 'held') = 1,
+  'the host gets a held player row');
+select pg_temp.expect(
+  (select source from public.contacts where email = 'visitor@example.com') = 'Courts',
+  'a visitor joins the CRM from the courts page');
+-- A held slot blocks others.
+select pg_temp.act_as(null);
+do $$
+begin
+  perform public.hold_court(jsonb_build_object(
+    'court_id', pg_temp.id('court'), 'date', public.org_today() + 3, 'start', '07:30', 'minutes', 30,
+    'name', 'Other Visitor', 'email', 'other@example.com', 'pay', 'online'));
+  raise exception 'RLS test failed: a visitor booked over a held slot';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+-- Visitors see it as taken but not open (the host hasn't paid).
+select pg_temp.expect(
+  (select count(*) from public.public_court_day(public.org_today() + 3)
+   where court_id = pg_temp.id('court') and start_time = '07:00' and kind = 'booking' and not open_match) = 1,
+  'a hold shows as taken, not as an open match');
+reset role;
+-- Stripe says it's paid: the server records it, the booking is booked and the match opens.
+select public.record_stripe_payment(jsonb_build_object(
+  'session_id', 'cs_test_court', 'payment_intent', 'pi_test_court', 'kind', 'court',
+  'email', 'visitor@example.com', 'name', 'Web Visitor', 'amount', 5000, 'currency', 'CRC',
+  'court_player_id', (select id from public.court_players where booking_id = pg_temp.id('web_hold') and host),
+  'description', 'TEST court'));
+select pg_temp.expect(
+  (select status from public.court_bookings where id = pg_temp.id('web_hold')) = 'booked',
+  'a court payment books the held slot');
+select pg_temp.expect(
+  (select count(*) from public.payments where kind = 'court' and court_booking_id = pg_temp.id('web_hold')) = 1,
+  'court payments are kept');
+select pg_temp.expect(
+  (select count(*) from public.public_open_matches() where booking_id = pg_temp.id('web_hold') and players = 1 and spots = 4) = 1,
+  'a paid open match is listed for others');
+-- Someone joins at the right level, someone at the wrong level can't.
+select pg_temp.act_as(null);
+do $$
+begin
+  perform public.join_court_match(jsonb_build_object(
+    'booking_id', pg_temp.id('web_hold'), 'name', 'Too Good', 'email', 'pro@example.com', 'level', 5.5, 'pay', 'reception'));
+  raise exception 'RLS test failed: a player outside the level range joined';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+insert into _ids values ('web_join', (
+  public.join_court_match(jsonb_build_object(
+    'booking_id', pg_temp.id('web_hold'), 'name', 'Joiner One', 'email', 'joiner@example.com', 'level', 3.5, 'pay', 'reception')) ->> 'token'));
+select pg_temp.expect(
+  (select count(*) from public.public_open_matches() where booking_id = pg_temp.id('web_hold') and players = 2) = 1,
+  'joining counts the player');
+select pg_temp.expect(
+  (public.court_booking_by_token((select id::text from _ids where k = 'web_join')) -> 'you' ->> 'host') = 'false',
+  'a player token opens their own page');
+select pg_temp.expect(
+  jsonb_array_length(public.court_booking_by_token((select id::text from _ids where k = 'web_join')) -> 'players') = 2,
+  'the booking page lists the players');
+select pg_temp.expect(public.cancel_court_by_token((select id::text from _ids where k = 'web_join')) = 'player',
+  'a player leaves a match that is not full');
+select pg_temp.expect(
+  public.cancel_court_by_token((select token from public.court_bookings where id = pg_temp.id('web_hold'))) = 'booking',
+  'the host cancels the booking by token');
+do $$
+begin
+  perform public.cancel_court_by_token('not-a-token');
+  raise exception 'RLS test failed: an unknown token cancelled something';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+reset role;
+select pg_temp.expect(
+  (select status from public.court_bookings where id = pg_temp.id('web_hold')) = 'cancelled',
+  'the cancelled booking is marked cancelled');
 
 select 'All RLS tests passed' as result;
 

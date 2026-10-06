@@ -3,11 +3,22 @@
 import { revalidatePath } from "next/cache";
 import { fail, friendly } from "@/lib/action-result";
 import { sendTicketEmail } from "@/lib/email";
+import { notifyLater } from "@/lib/slack";
+import { bookingMessage } from "@/lib/slack-format";
+import { stripeReady } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { loadEvent } from "./load";
 
 export type BookingResult =
-  | { ok: true; token: string; emailed: boolean; paymentLink: string | null; price: string | null }
+  | {
+      ok: true;
+      token: string;
+      emailed: boolean;
+      paymentLink: string | null;
+      /** Pay on Stripe (ARK OS's own checkout) when the ticket has a price and no outside link. */
+      payUrl: string | null;
+      price: string | null;
+    }
   | { ok: false; error: string };
 
 /** Public and member booking. All checks happen in book_session. */
@@ -66,17 +77,32 @@ export async function bookSession(input: {
   }
   revalidatePath(`/e/${input.offeringId}`, "layout");
   const paid = tt && Number(tt.price) > 0;
+  const price = paid
+    ? tt.currency === "USD"
+      ? `$${Number(tt.price).toLocaleString("en-US")}`
+      : `₡${Number(tt.price).toLocaleString("en-US")}`
+    : null;
+  if (t) {
+    const b = {
+      holder: t.holder,
+      title: t.title,
+      date: t.session_date,
+      startTime: t.start_time,
+      endTime: t.end_time,
+      location: t.location,
+      price,
+      offeringId: input.offeringId,
+    };
+    notifyLater("booking", (origin) => bookingMessage(b, origin));
+  }
   return {
     ok: true,
     token: data.qr_token,
     emailed,
     // A link without a price (meals) still needs paying.
     paymentLink: tt?.payment_link ?? null,
-    price: paid
-      ? tt.currency === "USD"
-        ? `$${Number(tt.price).toLocaleString("en-US")}`
-        : `₡${Number(tt.price).toLocaleString("en-US")}`
-      : null,
+    payUrl: paid && !tt.payment_link && stripeReady() ? `/pay/ticket/${data.qr_token}` : null,
+    price,
   };
 }
 

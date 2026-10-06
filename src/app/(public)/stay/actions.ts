@@ -7,6 +7,8 @@ import { sendEmail, siteUrl } from "@/lib/email";
 import { detailRows, esc } from "@/lib/email-template";
 import { nights } from "@/lib/estate";
 import { money } from "@/lib/schedule";
+import { notifyLater } from "@/lib/slack";
+import { stayMessage } from "@/lib/slack-format";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /** A guest asks to stay. It lands as an inquiry the team confirms. */
@@ -21,11 +23,12 @@ export async function requestStay(_prev: ActionResult, data: FormData): Promise<
   // A hidden field people don't see; bots tend to fill it in.
   if (field(data, "website")) return ok("Thanks. We’ll be in touch.");
 
+  const guests = Math.max(1, Number(field(data, "guests") ?? 1) || 1);
   const { error } = await supabase.rpc("request_stay", {
     p_lot_id: lotId,
     p_check_in: checkIn,
     p_check_out: checkOut,
-    p_guests: Math.max(1, Number(field(data, "guests") ?? 1) || 1),
+    p_guests: guests,
     p_name: name,
     p_email: email,
     p_phone: field(data, "phone"),
@@ -43,6 +46,19 @@ export async function requestStay(_prev: ActionResult, data: FormData): Promise<
       ? money(Number(h.nightly_rate) * n + Number(h.cleaning_fee ?? 0), h.rate_currency)
       : null;
   const first = name.trim().split(/\s+/)[0] ?? "";
+  const stay = {
+    name,
+    email,
+    home: h?.title ?? "a home",
+    checkIn,
+    checkOut,
+    nights: n,
+    guests,
+    estimate: total,
+    note: field(data, "message"),
+    lotId,
+  };
+  notifyLater("stay", (origin) => stayMessage(stay, origin));
   await sendEmail({
     to: email,
     subject: `Your request to stay at ${h?.title ?? "The ARK"}`,

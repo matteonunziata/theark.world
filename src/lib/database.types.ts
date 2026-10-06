@@ -170,6 +170,10 @@ export type Database = {
           open_to_connect: boolean
           owner_id: string | null
           pass_token: string
+          pay_token: string
+          cities: string[]
+          onboarded_at: string | null
+          welcome_sent_at: string | null
           photo_path: string | null
           phone: string | null
           rate: string
@@ -206,6 +210,10 @@ export type Database = {
           open_to_connect?: boolean
           owner_id?: string | null
           pass_token?: string
+          pay_token?: string
+          cities?: string[]
+          onboarded_at?: string | null
+          welcome_sent_at?: string | null
           photo_path?: string | null
           phone?: string | null
           rate?: string
@@ -242,6 +250,10 @@ export type Database = {
           open_to_connect?: boolean
           owner_id?: string | null
           pass_token?: string
+          pay_token?: string
+          cities?: string[]
+          onboarded_at?: string | null
+          welcome_sent_at?: string | null
           photo_path?: string | null
           phone?: string | null
           rate?: string
@@ -320,6 +332,17 @@ export type Database = {
           source: string
           start_time: string
           status: string
+          paid: boolean
+          paid_at: string | null
+          amount: number | null
+          currency: string
+          token: string
+          open_match: boolean
+          level: number | null
+          level_min: number | null
+          level_max: number | null
+          spots: number | null
+          held_until: string | null
         }
         Insert: {
           contact_id?: string | null
@@ -337,6 +360,17 @@ export type Database = {
           source?: string
           start_time: string
           status?: string
+          paid?: boolean
+          paid_at?: string | null
+          amount?: number | null
+          currency?: string
+          token?: string
+          open_match?: boolean
+          level?: number | null
+          level_min?: number | null
+          level_max?: number | null
+          spots?: number | null
+          held_until?: string | null
         }
         Update: {
           contact_id?: string | null
@@ -354,6 +388,17 @@ export type Database = {
           source?: string
           start_time?: string
           status?: string
+          paid?: boolean
+          paid_at?: string | null
+          amount?: number | null
+          currency?: string
+          token?: string
+          open_match?: boolean
+          level?: number | null
+          level_min?: number | null
+          level_max?: number | null
+          spots?: number | null
+          held_until?: string | null
         }
         Relationships: [
           {
@@ -379,6 +424,75 @@ export type Database = {
           },
         ]
       }
+      court_players: {
+        Row: {
+          amount: number
+          booking_id: string
+          contact_id: string | null
+          created_at: string
+          email: string | null
+          held_until: string | null
+          host: boolean
+          id: string
+          level: number | null
+          name: string
+          paid: boolean
+          paid_at: string | null
+          phone: string | null
+          status: string
+          token: string
+        }
+        Insert: {
+          amount?: number
+          booking_id: string
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          held_until?: string | null
+          host?: boolean
+          id?: string
+          level?: number | null
+          name: string
+          paid?: boolean
+          paid_at?: string | null
+          phone?: string | null
+          status?: string
+          token?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          held_until?: string | null
+          host?: boolean
+          id?: string
+          level?: number | null
+          name?: string
+          paid?: boolean
+          paid_at?: string | null
+          phone?: string | null
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "court_players_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "court_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "court_players_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courts: {
         Row: {
           active: boolean
@@ -390,6 +504,10 @@ export type Database = {
           position: number
           slot_minutes: number
           sport: string
+          price: number | null
+          currency: string
+          description: string | null
+          max_players: number
         }
         Insert: {
           active?: boolean
@@ -401,6 +519,10 @@ export type Database = {
           position?: number
           slot_minutes?: number
           sport?: string
+          price?: number | null
+          currency?: string
+          description?: string | null
+          max_players?: number
         }
         Update: {
           active?: boolean
@@ -412,6 +534,10 @@ export type Database = {
           position?: number
           slot_minutes?: number
           sport?: string
+          price?: number | null
+          currency?: string
+          description?: string | null
+          max_players?: number
         }
         Relationships: [
 
@@ -719,19 +845,28 @@ export type Database = {
           contact_id: string | null
           entered_at: string
           id: string
+          kind: string
           logged_by: string | null
+          membership_id: string | null
+          result: string
         }
         Insert: {
           contact_id?: string | null
           entered_at?: string
           id?: string
+          kind?: string
           logged_by?: string | null
+          membership_id?: string | null
+          result?: string
         }
         Update: {
           contact_id?: string | null
           entered_at?: string
           id?: string
+          kind?: string
           logged_by?: string | null
+          membership_id?: string | null
+          result?: string
         }
         Relationships: [
           {
@@ -744,6 +879,111 @@ export type Database = {
           {
             foreignKeyName: "gate_entries_logged_by_fkey"
             columns: ["logged_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memberships: {
+        Row: {
+          activate_by: string | null
+          activated_at: string | null
+          activated_by: string | null
+          cancelled_at: string | null
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          ends_on: string | null
+          id: string
+          notes: string | null
+          payment_id: string | null
+          revoke_reason: string | null
+          revoked_at: string | null
+          source: string
+          starts_on: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          activate_by?: string | null
+          activated_at?: string | null
+          activated_by?: string | null
+          cancelled_at?: string | null
+          contact_id: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          id?: string
+          notes?: string | null
+          payment_id?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          source?: string
+          starts_on?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          activate_by?: string | null
+          activated_at?: string | null
+          activated_by?: string | null
+          cancelled_at?: string | null
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          id?: string
+          notes?: string | null
+          payment_id?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          source?: string
+          starts_on?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "memberships_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_activated_by_fkey"
+            columns: ["activated_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "team_members"
             referencedColumns: ["id"]
@@ -816,6 +1056,222 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      guesty_listings: {
+        Row: {
+          accommodates: number | null
+          active: boolean
+          base_price: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          beds: number | null
+          check_in_time: string | null
+          check_out_time: string | null
+          cleaning_fee: number | null
+          cover_url: string | null
+          currency: string | null
+          id: string
+          listed: boolean
+          min_nights: number | null
+          nickname: string | null
+          seen_at: string
+          title: string
+        }
+        Insert: {
+          accommodates?: number | null
+          active?: boolean
+          base_price?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          beds?: number | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          cleaning_fee?: number | null
+          cover_url?: string | null
+          currency?: string | null
+          id: string
+          listed?: boolean
+          min_nights?: number | null
+          nickname?: string | null
+          seen_at?: string
+          title: string
+        }
+        Update: {
+          accommodates?: number | null
+          active?: boolean
+          base_price?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          beds?: number | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          cleaning_fee?: number | null
+          cover_url?: string | null
+          currency?: string | null
+          id?: string
+          listed?: boolean
+          min_nights?: number | null
+          nickname?: string | null
+          seen_at?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      integration_events: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          detail: string
+          direction: string
+          id: string
+          kind: string
+          ok: boolean
+          provider: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          detail: string
+          direction: string
+          id?: string
+          kind: string
+          ok?: boolean
+          provider: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          detail?: string
+          direction?: string
+          id?: string
+          kind?: string
+          ok?: boolean
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_events_provider_fkey"
+            columns: ["provider"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      integration_links: {
+        Row: {
+          contact_id: string
+          external_id: string
+          provider: string
+          synced_at: string
+        }
+        Insert: {
+          contact_id: string
+          external_id: string
+          provider: string
+          synced_at?: string
+        }
+        Update: {
+          contact_id?: string
+          external_id?: string
+          provider?: string
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_links_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_links_provider_fkey"
+            columns: ["provider"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      integrations: {
+        Row: {
+          access_token: string | null
+          client_id: string | null
+          sync_details: boolean
+          token_expires_at: string | null
+          webhook_id: string | null
+          webhook_signing_secret: string | null
+          account_name: string | null
+          channel: string | null
+          rules: Json
+          connected_at: string | null
+          created_at: string
+          direction: string
+          enabled: boolean
+          key: string
+          last_error: string | null
+          last_sync_at: string | null
+          location_id: string | null
+          secret: string | null
+          tag: string
+          updated_at: string
+          webhook_secret: string
+        }
+        Insert: {
+          access_token?: string | null
+          client_id?: string | null
+          sync_details?: boolean
+          token_expires_at?: string | null
+          webhook_id?: string | null
+          webhook_signing_secret?: string | null
+          account_name?: string | null
+          channel?: string | null
+          rules?: Json
+          connected_at?: string | null
+          created_at?: string
+          direction?: string
+          enabled?: boolean
+          key: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          location_id?: string | null
+          secret?: string | null
+          tag?: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Update: {
+          access_token?: string | null
+          client_id?: string | null
+          sync_details?: boolean
+          token_expires_at?: string | null
+          webhook_id?: string | null
+          webhook_signing_secret?: string | null
+          account_name?: string | null
+          channel?: string | null
+          rules?: Json
+          connected_at?: string | null
+          created_at?: string
+          direction?: string
+          enabled?: boolean
+          key?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          location_id?: string | null
+          secret?: string | null
+          tag?: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Relationships: []
       }
       listing_photos: {
         Row: {
@@ -971,6 +1427,7 @@ export type Database = {
       }
       lots: {
         Row: {
+          guesty_listing_id: string | null
           aerial_path: string | null
           amenities: string[]
           bathrooms: number | null
@@ -1012,6 +1469,7 @@ export type Database = {
           zone: string | null
         }
         Insert: {
+          guesty_listing_id?: string | null
           aerial_path?: string | null
           amenities?: string[]
           bathrooms?: number | null
@@ -1053,6 +1511,7 @@ export type Database = {
           zone?: string | null
         }
         Update: {
+          guesty_listing_id?: string | null
           aerial_path?: string | null
           amenities?: string[]
           bathrooms?: number | null
@@ -1406,6 +1865,128 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "team_members"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          charge_id: string | null
+          fee: number | null
+          fee_currency: string | null
+          source: string
+          amount: number
+          contact_id: string | null
+          created_at: string
+          currency: string
+          description: string
+          email: string | null
+          ends_on: string | null
+          finance_entry_id: string | null
+          id: string
+          kind: string
+          live: boolean
+          name: string | null
+          paid_at: string
+          payment_intent: string | null
+          provider: string
+          refunded_amount: number
+          refunded_at: string | null
+          registration_id: string | null
+          session_id: string | null
+          starts_on: string | null
+          status: string
+          tier: string | null
+          court_booking_id: string | null
+          court_player_id: string | null
+        }
+        Insert: {
+          charge_id?: string | null
+          fee?: number | null
+          fee_currency?: string | null
+          source?: string
+          amount: number
+          contact_id?: string | null
+          created_at?: string
+          currency: string
+          description: string
+          email?: string | null
+          ends_on?: string | null
+          finance_entry_id?: string | null
+          id?: string
+          kind: string
+          live?: boolean
+          name?: string | null
+          paid_at?: string
+          payment_intent?: string | null
+          provider?: string
+          refunded_amount?: number
+          refunded_at?: string | null
+          registration_id?: string | null
+          session_id?: string | null
+          starts_on?: string | null
+          status?: string
+          tier?: string | null
+          court_booking_id?: string | null
+          court_player_id?: string | null
+        }
+        Update: {
+          charge_id?: string | null
+          fee?: number | null
+          fee_currency?: string | null
+          source?: string
+          amount?: number
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string
+          email?: string | null
+          ends_on?: string | null
+          finance_entry_id?: string | null
+          id?: string
+          kind?: string
+          live?: boolean
+          name?: string | null
+          paid_at?: string
+          payment_intent?: string | null
+          provider?: string
+          refunded_amount?: number
+          refunded_at?: string | null
+          registration_id?: string | null
+          session_id?: string | null
+          starts_on?: string | null
+          status?: string
+          tier?: string | null
+          court_booking_id?: string | null
+          court_player_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_finance_entry_id_fkey"
+            columns: ["finance_entry_id"]
+            isOneToOne: false
+            referencedRelation: "finance_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["key"]
           },
         ]
       }
@@ -1775,6 +2356,10 @@ export type Database = {
       }
       stays: {
         Row: {
+          channel: string | null
+          external_id: string | null
+          external_ref: string | null
+          guesty_pushed_at: string | null
           check_in: string
           check_out: string
           contact_id: string | null
@@ -1797,6 +2382,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          channel?: string | null
+          external_id?: string | null
+          external_ref?: string | null
+          guesty_pushed_at?: string | null
           check_in: string
           check_out: string
           contact_id?: string | null
@@ -1819,6 +2408,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          channel?: string | null
+          external_id?: string | null
+          external_ref?: string | null
+          guesty_pushed_at?: string | null
           check_in?: string
           check_out?: string
           contact_id?: string | null
@@ -1872,8 +2465,11 @@ export type Database = {
           created_at: string
           delta: number
           id: string
+          method: string | null
+          order_id: string | null
           product_id: string
           type: string
+          unit_price: number | null
         }
         Insert: {
           amount?: number | null
@@ -1882,8 +2478,11 @@ export type Database = {
           created_at?: string
           delta: number
           id?: string
+          method?: string | null
+          order_id?: string | null
           product_id: string
           type: string
+          unit_price?: number | null
         }
         Update: {
           amount?: number | null
@@ -1892,8 +2491,11 @@ export type Database = {
           created_at?: string
           delta?: number
           id?: string
+          method?: string | null
+          order_id?: string | null
           product_id?: string
           type?: string
+          unit_price?: number | null
         }
         Relationships: [
           {
@@ -2800,6 +3402,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      shop_recount_stock: {
+        Args: never;
+        Returns: undefined;
+      };
+      shop_report: {
+        Args: { p_from: string; p_to: string };
+        Returns: Json;
+      };
       apply_for_membership: {
         Args: {
           p_building: string
@@ -2841,8 +3451,43 @@ export type Database = {
       };
       my_court_bookings: {
         Args: never;
-        Returns: { court: string; date: string; end_time: string; id: string; start_time: string }[];
+        Returns: {
+          court: string; date: string; end_time: string; id: string; start_time: string;
+          token: string; player_token: string | null; amount: number | null; currency: string;
+          paid: boolean; open_match: boolean;
+        }[];
       };
+      public_courts: {
+        Args: never;
+        Returns: {
+          id: string; name: string; sport: string; open_time: string; close_time: string;
+          slot_minutes: number; price: number | null; currency: string; description: string | null;
+          max_players: number;
+        }[];
+      };
+      public_court_day: {
+        Args: { p_date: string };
+        Returns: {
+          court_id: string; start_time: string; end_time: string; kind: string; title: string | null;
+          booking_id: string | null; open_match: boolean; level_min: number | null; level_max: number | null;
+          spots: number | null; players: number | null; host: string | null; share: number | null;
+          currency: string | null;
+        }[];
+      };
+      public_open_matches: {
+        Args: never;
+        Returns: {
+          booking_id: string; court: string; sport: string; date: string; start_time: string; end_time: string;
+          level_min: number | null; level_max: number | null; spots: number; players: number; host: string;
+          share: number; currency: string;
+        }[];
+      };
+      court_booking_by_token: { Args: { p_token: string }; Returns: Json };
+      hold_court: { Args: { p: Json }; Returns: Json };
+      join_court_match: { Args: { p: Json }; Returns: Json };
+      cancel_court_by_token: { Args: { p_token: string }; Returns: string };
+      court_price: { Args: { p_court: string; p_minutes: number; p_contact: string | null }; Returns: number };
+      org_now: { Args: never; Returns: string };
       court_day: {
         Args: { p_date: string };
         Returns: { court_id: string; end_time: string; id: string; mine: boolean; start_time: string }[];
@@ -2910,26 +3555,54 @@ export type Database = {
       };
       can_work_gate: { Args: never; Returns: boolean };
       is_estate_staff: { Args: never; Returns: boolean };
-      org_now: { Args: never; Returns: string };
       my_pass_token: { Args: never; Returns: string | null };
-      log_pass_entry: { Args: { p_token: string }; Returns: string };
       pass_by_token: {
         Args: { p_token: string };
         Returns: {
           contact_id: string;
+          membership_id: string | null;
           holder: string;
+          photo_path: string | null;
           tier: string | null;
           tier_name: string | null;
-          period: string;
-          membership_status: string | null;
+          period: string | null;
+          state: string;
           valid_from: string | null;
           valid_until: string | null;
-          state: string;
+          activate_by: string | null;
+          checked_in_at: string | null;
+          last_entry_at: string | null;
           can_log: boolean;
           is_mine: boolean;
-          last_entry_at: string | null;
         }[];
       };
+      gate_check_in: {
+        Args: { p_token: string };
+        Returns: { ok: boolean; state: string; entered_at: string | null }[];
+      };
+      log_gate_scan: { Args: { p_token: string }; Returns: undefined };
+      gate_search: {
+        Args: { q: string };
+        Returns: {
+          contact_id: string;
+          name: string;
+          photo_path: string | null;
+          phone_hint: string | null;
+          pass_token: string;
+          tier_name: string | null;
+          state: string;
+          valid_until: string | null;
+        }[];
+      };
+      rotate_pass_token: { Args: { p_contact: string }; Returns: string };
+      rotate_my_pass_token: { Args: never; Returns: string };
+      set_membership: {
+        Args: { p_contact: string; p_tier: string; p_status: string; p_starts: string | null; p_ends: string | null };
+        Returns: string | null;
+      };
+      refresh_membership_caches: { Args: never; Returns: number };
+      has_access_today: { Args: { cid: string }; Returns: boolean };
+      is_portal_member: { Args: { cid: string }; Returns: boolean };
       book_session: {
         Args: {
           p_email: string;
@@ -3034,6 +3707,9 @@ export type Database = {
           instagram: string | null;
           open_to_connect: boolean;
           is_me: boolean;
+          cities: string[];
+          phone: string | null;
+          photo_path: string | null;
         }[];
       };
       member_names: {
@@ -3073,6 +3749,10 @@ export type Database = {
           show_in_directory: boolean;
           discount_name: string | null;
           discount_percent: number | null;
+          cities: string[];
+          phone: string | null;
+          photo_path: string | null;
+          onboarded_at: string | null;
         }[];
       };
       insert_sample_posts: { Args: { p_posts: Json }; Returns: string[] };
@@ -3095,14 +3775,37 @@ export type Database = {
       };
       update_my_profile: {
         Args: {
+          p_name: string | null;
           p_bio: string | null;
           p_interests: string[];
-          p_city_id: string | null;
+          p_cities: string[];
+          p_phone: string | null;
           p_instagram: string | null;
           p_open_to_connect: boolean;
           p_show_in_directory: boolean;
         };
         Returns: undefined;
+      };
+      complete_my_onboarding: {
+        Args: {
+          p_name: string | null;
+          p_bio: string | null;
+          p_cities: string[];
+          p_phone: string | null;
+          p_instagram: string | null;
+          p_open_to_connect: boolean;
+        };
+        Returns: undefined;
+      };
+      session_attendees: {
+        Args: { p_offering_id: string; p_from: string; p_to: string };
+        Returns: {
+          id: string;
+          session_date: string;
+          name: string;
+          photo_path: string | null;
+          is_me: boolean;
+        }[];
       };
       org_today: { Args: never; Returns: string };
       public_org: {
@@ -3114,6 +3817,15 @@ export type Database = {
           timezone: string;
         }[];
       };
+      import_stripe_charge: { Args: { p: Json }; Returns: Json }
+      record_stripe_payment: {
+        Args: { p: Json }
+        Returns: { contact_id: string; created: boolean; payment_id: string }[]
+      }
+      refund_stripe_payment: {
+        Args: { p_amount: number; p_currency: string; p_intent: string; p_refund_id: string }
+        Returns: string
+      }
       save_sequence: {
         Args: {
           p_id: string | null;

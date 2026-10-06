@@ -11,7 +11,8 @@ const TIME = /^\d{2}:\d{2}$/;
 
 const refresh = () => {
   revalidatePath("/events/courts");
-  revalidatePath("/portal/courts");
+  revalidatePath("/portal/schedule");
+  revalidatePath("/courts", "layout");
 };
 
 /** Book a court slot for someone, or edit / cancel a booking. */
@@ -36,6 +37,7 @@ export async function saveCourtBooking(_prev: ActionResult, data: FormData): Pro
     contact_id: field(data, "contact_id"),
     players: players ? Math.min(8, Math.max(1, players)) : null,
     notes: field(data, "notes"),
+    paid: data.get("paid") === "on",
   };
   if (id) {
     const { error } = await supabase.from("court_bookings").update(row).eq("id", id);
@@ -66,6 +68,8 @@ export async function saveCourt(_prev: ActionResult, data: FormData): Promise<Ac
   const close = field(data, "close_time") ?? "20:00";
   if (!TIME.test(open) || !TIME.test(close) || close <= open) return fail("Closing time must be after opening time.");
   const sport = field(data, "sport");
+  const price = Number(field(data, "price") ?? "");
+  const currency = field(data, "currency");
   const row = {
     name,
     sport: SPORTS.some(([k]) => k === sport) ? sport! : "padel",
@@ -73,6 +77,10 @@ export async function saveCourt(_prev: ActionResult, data: FormData): Promise<Ac
     close_time: close,
     slot_minutes: Math.min(240, Math.max(15, Number(field(data, "slot_minutes")) || 60)),
     active: data.get("active") === "on",
+    price: Number.isFinite(price) && price >= 0 ? price : 0,
+    currency: currency === "USD" ? "USD" : "CRC",
+    description: field(data, "description"),
+    max_players: Math.min(8, Math.max(2, Number(field(data, "max_players")) || 4)),
   };
   const { error } = id
     ? await supabase.from("courts").update(row).eq("id", id)
