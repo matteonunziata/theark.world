@@ -40,3 +40,28 @@ export const fmtMoney = (n: number | null | undefined, cur = "CRC") => {
   const s = Math.abs(v).toLocaleString("en-US");
   return (v < 0 ? "−" : "") + (cur === "USD" ? "$" : "₡") + s;
 };
+
+/** How a sale was paid, at the till. */
+export const SHOP_METHODS = [
+  ["cash", "Cash"],
+  ["sinpe", "SINPE Móvil"],
+  ["card", "Card"],
+  ["transfer", "Bank transfer"],
+  ["other", "Other"],
+] as const;
+export type ShopMethod = (typeof SHOP_METHODS)[number][0];
+export const shopMethodName = (k: string | null | undefined) =>
+  SHOP_METHODS.find((m) => m[0] === k)?.[1] ?? "Not noted";
+
+/** "₡1.2M", "₡850k", "₡640": money where there's no room for digits. */
+export const fmtCompact = (n: number | null | undefined, cur = "CRC") => {
+  const v = Math.abs(Number(n || 0));
+  const trim = (s: string) => s.replace(/\.0$/, "");
+  const s =
+    v >= 1e6
+      ? `${trim((v / 1e6).toFixed(v >= 1e7 ? 0 : 1))}M`
+      : v >= 1e3
+        ? `${trim((v / 1e3).toFixed(v >= 1e5 ? 0 : 1))}k`
+        : String(Math.round(v));
+  return (Number(n) < 0 ? "−" : "") + (cur === "USD" ? "$" : "₡") + s;
+};

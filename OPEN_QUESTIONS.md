@@ -61,3 +61,11 @@
 - **Leads from GHL.** New GHL contacts are added as plain contacts with no pipeline stage. Should they land on the membership waitlist (like `/join`), or get a stage from a GHL tag?
 - **Conversations and calendars.** GHL also has SMS/WhatsApp conversations and calendars. Worth bringing messages into the CRM profile, or bookings into Schedule?
 - **Sync timing.** Daily on Vercel Hobby. The webhook covers GHL → ARK OS right away; ARK OS → GHL is right away only after a CRM save (needs `SUPABASE_SERVICE_ROLE_KEY`). Fine, or upgrade to Pro for every 15 minutes?
+
+## Round 13: Farm shop
+
+- **Shopify orders.** Online orders on thearkfarm.shop don't reach ARK OS, so the Overview is the till only. Pull Shopify orders in (Admin API token, like the GHL integration) so online and in-person sales sit in one report?
+- **Shop sales into Finance.** Shop revenue isn't posted to the Finance ledger. A daily or weekly summary entry under the Farm shop business line, created automatically, or keep entering deposits by hand?
+- **Member prices.** No product has a member price yet, so the member share on the Overview just shows who bought while an active member. Set member prices on the products that should have one (the drawer has the field).
+- **Costs.** Products have no cost price, so there's no margin figure. Worth adding a cost per unit, at least for bought-in goods?
+- **Till hardware.** Is the till a phone or a laptop at the counter? The Sales tab works on both, but a barcode scanner or a card reader would change what gets built next.

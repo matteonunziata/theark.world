@@ -2001,8 +2001,11 @@ export type Database = {
           created_at: string
           delta: number
           id: string
+          method: string | null
+          order_id: string | null
           product_id: string
           type: string
+          unit_price: number | null
         }
         Insert: {
           amount?: number | null
@@ -2011,8 +2014,11 @@ export type Database = {
           created_at?: string
           delta: number
           id?: string
+          method?: string | null
+          order_id?: string | null
           product_id: string
           type: string
+          unit_price?: number | null
         }
         Update: {
           amount?: number | null
@@ -2021,8 +2027,11 @@ export type Database = {
           created_at?: string
           delta?: number
           id?: string
+          method?: string | null
+          order_id?: string | null
           product_id?: string
           type?: string
+          unit_price?: number | null
         }
         Relationships: [
           {
@@ -2929,6 +2938,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      shop_recount_stock: {
+        Args: never;
+        Returns: undefined;
+      };
+      shop_report: {
+        Args: { p_from: string; p_to: string };
+        Returns: Json;
+      };
       apply_for_membership: {
         Args: {
           p_building: string
