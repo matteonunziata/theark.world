@@ -4,10 +4,17 @@ import { requireStaff } from "@/lib/auth";
 import { siteUrl } from "@/lib/email";
 import { daysAgo, fmtAmount, stripeLive } from "@/lib/stripe";
 import { CopyField } from "./copy-field";
+import { ImportPanel } from "./import-panel";
 
 export const metadata: Metadata = { title: "Stripe" };
 
-const KIND: Record<string, string> = { pass: "Pass", membership: "Membership", ticket: "Ticket", court: "Court" };
+const KIND: Record<string, string> = {
+  pass: "Pass",
+  membership: "Membership",
+  ticket: "Ticket",
+  court: "Court",
+  other: "Imported",
+};
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-GB", {
@@ -21,12 +28,13 @@ const when = (iso: string) =>
 export default async function StripePage() {
   const { supabase, staff } = await requireStaff("settings");
   const since = daysAgo(30);
-  const [{ data: payments }, origin] = await Promise.all([
+  const [{ data: payments }, { count: imported }, origin] = await Promise.all([
     supabase
       .from("payments")
       .select("id, kind, status, name, email, description, amount, currency, refunded_amount, paid_at, live, contact_id")
       .order("paid_at", { ascending: false })
       .limit(50),
+    supabase.from("payments").select("id", { count: "exact", head: true }).eq("source", "import"),
     siteUrl(),
   ]);
   const key = !!process.env.STRIPE_SECRET_KEY;
@@ -133,6 +141,8 @@ export default async function StripePage() {
             </div>
           </div>
         </section>
+
+        {on && staff.role === "admin" && <ImportPanel imported={imported ?? 0} live={live} />}
 
         <section className="panel">
           <div className="panel-h">
