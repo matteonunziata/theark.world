@@ -78,7 +78,7 @@
 - **Costs.** Products have no cost price, so there's no margin figure. Worth adding a cost per unit, at least for bought-in goods?
 - **Till hardware.** Is the till a phone or a laptop at the counter? The Sales tab works on both, but a barcode scanner or a card reader would change what gets built next.
 
-## Round 14: Stripe
+## Round 15: Stripe
 
 - **Stripe account.** It's The Ark World, LLC (test mode for now). The test webhook `ark-os` points at https://theark-world.vercel.app/api/webhooks/stripe (API version 2026-09-30). A live-mode webhook is needed at launch. Which currency does it pay out in? Charges are made in colones.
 - **Keys to switch it on.** In Vercel: `STRIPE_SECRET_KEY` (sk_test_… for now), `STRIPE_WEBHOOK_SECRET` (from the webhook in Stripe → Developers → Webhooks, address shown in Settings → Integrations → Stripe) and `SUPABASE_SERVICE_ROLE_KEY`. Also turn on "Email customers about successful payments" in Stripe so people get receipts.

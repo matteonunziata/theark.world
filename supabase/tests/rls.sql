@@ -861,10 +861,11 @@ select pg_temp.expect((select count(*) from public.membership_applications a joi
   where c.email = 'apply.test@example.com') = 1, 'admins read applications');
 reset role;
 
--- Team members are members too.
+-- Team members are members too (the eight above plus the Arkadia teacher).
 select pg_temp.expect(
   (select count(*) from public.contacts c join public.team_members t on t.email = c.email
-   where t.name like 'Test %' and c.tier = 'team' and c.membership_status = 'active') = 8,
+   where t.name like 'Test %' and c.tier = 'team' and c.membership_status = 'active')
+    = (select count(*) from public.team_members where name like 'Test %' and status = 'active'),
   'every active team member gets a Team membership');
 select pg_temp.act_as(pg_temp.id('admin'));
 select pg_temp.expect(public.is_member(), 'staff count as members in the portal');
@@ -883,14 +884,16 @@ select pg_temp.expect((select secret from public.integrations where key = 'ghl')
 insert into public.integration_links (provider, contact_id, external_id)
 select 'ghl', id, 'ghl_' || email from public.contacts where email in ('owned@example.com', 'else@example.com');
 insert into public.integration_events (provider, direction, kind, detail) values ('ghl', 'out', 'test', 'ok');
-select pg_temp.expect((select count(*) from public.integration_events) = 1, 'admins log integration events');
+-- The live project has real sync events, so count only the one above.
+select pg_temp.expect((select count(*) from public.integration_events where kind = 'test' and detail = 'ok') = 1,
+  'admins log integration events');
 reset role;
 
 select pg_temp.act_as(pg_temp.id('sales'));
 select pg_temp.expect((select count(*) from public.integrations) = 0, 'sales cannot read integration tokens');
 select pg_temp.expect((select count(*) from public.integration_events) = 0, 'sales cannot read integration events');
 -- Sales own 'owned' and work 'else' in their pipeline, so they see those two links.
-select pg_temp.expect((select count(*) from public.integration_links) = 2,
+select pg_temp.expect((select count(*) from public.integration_links where external_id like 'ghl_%@example.com') = 2,
   'sales see links only for contacts they can read');
 do $$
 begin

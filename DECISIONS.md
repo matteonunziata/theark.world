@@ -183,7 +183,7 @@ Newest at the bottom of each section.
 - **Sample sales were seeded** by migration (thirteen weeks, deliveries on Tuesdays and Fridays, weekends busier, a slow upward trend, some orders by the sample members). Forty-four products were switched to counted stock for it. The rows are in `sample_records`; "Remove sample data" deletes them and calls `shop_recount_stock()` to rebuild the counts from what's left. The counted flag and alert levels stay.
 - **Shared charts.** `BarList` and `Columns` moved from marketing to `src/components/charts.tsx`, joined by `TimeSeries` (SVG columns with a money axis). `RangePicker` moved to `src/components/range-picker.tsx` and takes presets.
 
-## Round 14: Stripe (2026-10-05)
+## Round 15: Stripe (2026-10-05)
 
 - **Stripe Checkout, hosted by Stripe, in test mode until launch.** ARK OS makes a Checkout session and sends the person to Stripe; card details never touch ARK OS. One-time payments only (`mode: payment`), priced on the fly with `price_data`, so nothing has to be set up as products in Stripe first. Amounts are charged in the tier's or ticket's own currency (colones by default).
 - **Keys live in the environment, not in Settings.** `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` go in Vercel, unlike the GHL token. A payment key is more sensitive than a CRM token and Vercel already holds the other secrets. Settings → Integrations → Stripe shows which keys are set, test or live, the webhook address, and recent payments. Online payment switches on only when `SUPABASE_SERVICE_ROLE_KEY` is set as well, because recording a payment needs it.
