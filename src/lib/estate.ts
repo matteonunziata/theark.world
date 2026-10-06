@@ -63,6 +63,7 @@ export const STAY_SOURCES = [
   ["direct", "Direct"],
   ["airbnb", "Airbnb"],
   ["booking", "Booking.com"],
+  ["guesty", "Guesty"],
   ["owner", "Owner"],
   ["other", "Other"],
 ] as const;

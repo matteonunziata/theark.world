@@ -4,6 +4,8 @@ import { ratePrice } from "@/lib/crm";
 import { fmtDate } from "@/lib/dates";
 import { sendPassEmail, siteUrl } from "@/lib/email";
 import { sendPortalWelcome } from "@/lib/portal-welcome";
+import { notify } from "@/lib/slack";
+import { paymentMessage } from "@/lib/slack-format";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Stripe Checkout (hosted). ARK OS makes a Checkout session for a pass, a
@@ -148,6 +150,26 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
     } catch (e) {
       console.error("After-payment email failed", cs.id, e);
     }
+  }
+  if (data.created) {
+    // Slack hears about it once, from whichever of the webhook or the return page got here first.
+    await notify(
+      admin,
+      "payment",
+      paymentMessage(
+        {
+          kind,
+          amount: fmtAmount(amount, currency),
+          name: meta.name || cs.customer_details?.name || null,
+          email,
+          description: meta.description ?? null,
+          live: cs.livemode,
+          contactId: data.contact_id,
+        },
+        await siteUrl(),
+      ),
+      { contact_id: data.contact_id },
+    );
   }
   return { state: "paid", kind, created: data.created, contactId: data.contact_id, meta, amount, currency };
 }

@@ -957,5 +957,24 @@ a.mk-tr:hover{background:var(--surface-2)}
   .orow > :nth-child(3),.orow > :nth-child(4),.lrow > :nth-child(3),.lrow > :nth-child(4){display:none}
 }
 
+/* Guesty settings: which home each listing is */
+.integ-map{list-style:none;margin:0;padding:0;font-size:14px}
+.integ-map li{display:grid;grid-template-columns:1fr minmax(180px,260px) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.integ-map li:first-child{border-top:0}
+.integ-map .who{display:flex;flex-direction:column;gap:2px;min-width:0}
+.integ-map .who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.integ-map li.unlinked .who b{color:var(--muted)}
+.integ-map select{width:100%}
+@media (max-width: 640px){.integ-map li{grid-template-columns:1fr;gap:6px}}
+
 /* Stripe settings: the key checklist has no time column */
 .integ-log.checks li{grid-template-columns:auto 1fr}
+.integ-rules{list-style:none;margin:0 0 14px;padding:0}
+.integ-rules li{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.integ-rules li:first-child{border-top:0}
+.integ-rules .check{align-items:flex-start;gap:10px}
+.integ-rules .check input{margin-top:4px}
+.integ-rules .check span{display:flex;flex-direction:column;gap:2px}
+.integ-rules .check small{color:var(--muted);font-size:12.5px}
+.integ-rules input[type=text],.integ-rules input:not([type]){font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+@media (max-width:640px){.integ-rules li{grid-template-columns:1fr}}

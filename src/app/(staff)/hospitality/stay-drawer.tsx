@@ -51,6 +51,19 @@ export function StayDrawer({
       }
     >
       {stay && <input type="hidden" name="id" value={stay.id} />}
+      {stay?.source === "guesty" && (
+        <p className="note" style={{ marginTop: 0 }}>
+          Booked on {stay.channel ?? "Guesty"} through Guesty{stay.external_ref ? ` (${stay.external_ref})` : ""}. Dates,
+          guest, status and payment come from Guesty at each sync, so change those there
+          {stay.external_id ? (
+            <>
+              {" "}
+              (<a href={`https://app.guesty.com/reservations/${stay.external_id}`} target="_blank" rel="noreferrer">open in Guesty</a>)
+            </>
+          ) : null}
+          . Notes stay as you write them here.
+        </p>
+      )}
       <div className="grid2">
         <div className="fld">
           <label htmlFor="st-lot">Home</label>

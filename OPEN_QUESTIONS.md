@@ -88,3 +88,14 @@
 - **Pay before booking?** Paid event tickets still hold a spot unpaid (pay now, later, or at the desk). Should public events with a price require payment before the spot is held?
 - **Meals, courts and stays** aren't on Stripe yet. Meals keep their payment links; courts have no price; stays are confirmed by hand. The same checkout can take any of them once prices are set.
 - **Ambassador and Founding.** Ambassador has no price, so it gets no payment link. Founding is ₡100,000 a month at the rack rate. Is that still what Founding members pay?
+
+## Round 16: Guesty
+
+- **Open API access.** Guesty's Open API is a paid add-on on some plans. Settings → Integrations → Marketplace → Guesty Open API, create an application, and paste its client id and secret into Settings → Integrations → Guesty. Reading listings and reservations is enough for "Guesty → ARK OS"; "Both ways" needs calendar write access.
+- **Field names are from the docs, not a live run.** The first "Sync now" will tell. If Recent activity shows a problem ("Guesty said: …"), send me the message. The two likely spots are the `filters` syntax on reservations and the shape of `money` and `guest`.
+- **Publish the imported homes on /stay?** Now that Guesty's bookings block the calendar here, the eleven imported homes could be published, with requests from `/stay` landing as inquiries for the team to confirm (and "Both ways" blocking the nights in Guesty on confirmation). Or keep sending people to the Guesty booking site?
+- **Date changes after a push.** With "Both ways", if a stay booked here moves to other dates after its nights were blocked in Guesty, the new nights are blocked but the old ones aren't freed (ARK OS doesn't keep the old range). Deleting a pushed stay doesn't free its nights either; cancel it first, sync, then delete. Worth keeping the pushed range to fix both?
+- **Guest contacts.** Every Guesty guest with an email now becomes a CRM contact. Over a season that's a lot of one-time guests. Fine (they're a marketing list), or add them only as a stay and not as a contact?
+- **Money.** Guesty's `totalPrice` is what the guest pays, in the listing currency. Only USD and CRC are kept; anything else leaves the total empty. Should the stay record the host payout (after channel fees) instead?
+- **Webhook on the Hobby plan.** Guesty retries eight times over a day and disables an endpoint after five days of failures, so a long outage means re-registering from the Guesty page ("New address", then "Register in Guesty").
+

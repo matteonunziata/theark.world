@@ -2,6 +2,8 @@
 
 import { type ActionResult, fail, field, friendly, ok } from "@/lib/action-result";
 import { getViewer } from "@/lib/auth";
+import { notifyLater } from "@/lib/slack";
+import { applicationMessage } from "@/lib/slack-format";
 
 const list = (data: FormData, name: string) =>
   data
@@ -15,7 +17,7 @@ export async function applyForMembership(_prev: ActionResult, data: FormData): P
   // A hidden field people don't see; bots tend to fill it in.
   if (field(data, "website")) return ok("Application received");
   const { supabase } = await getViewer();
-  const { error } = await supabase.rpc("apply_for_membership", {
+  const { data: contactId, error } = await supabase.rpc("apply_for_membership", {
     p_first: field(data, "first_name") ?? "",
     p_last: field(data, "last_name") ?? "",
     p_email: field(data, "email") ?? "",
@@ -33,5 +35,17 @@ export async function applyForMembership(_prev: ActionResult, data: FormData): P
     p_tried_day_pass: field(data, "tried_day_pass") === "yes",
   });
   if (error) return fail(friendly(error));
+
+  // Tell the team on Slack, once the response is out.
+  const a = {
+    name: `${field(data, "first_name") ?? ""} ${field(data, "last_name") ?? ""}`.trim(),
+    email: field(data, "email") ?? "",
+    phone: field(data, "phone"),
+    plan: field(data, "plan") ?? "",
+    invitedBy: field(data, "invited_by"),
+    why: field(data, "why_join"),
+    contactId: contactId ?? null,
+  };
+  notifyLater("application", (origin) => applicationMessage(a, origin), { contact_id: contactId ?? null });
   return ok("Application received");
 }

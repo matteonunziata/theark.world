@@ -7,18 +7,33 @@ export const metadata: Metadata = { title: "Integrations" };
 
 export default async function IntegrationsPage() {
   const { supabase } = await requireStaff("settings");
-  const [{ data: ghl }, { count: linked }, { count: paid }] = await Promise.all([
+  const [{ data: ghl }, { count: linked }, { data: guesty }, { count: homes }, { count: guestyStays }, { count: paid }, { data: slack }, { count: posted }] = await Promise.all([
     supabase.from("integrations").select("enabled, connected_at, last_sync_at, last_error").eq("key", "ghl").maybeSingle(),
     supabase.from("integration_links").select("contact_id", { count: "exact", head: true }).eq("provider", "ghl"),
+    supabase.from("integrations").select("enabled, connected_at, last_sync_at, last_error").eq("key", "guesty").maybeSingle(),
+    supabase.from("lots").select("id", { count: "exact", head: true }).not("guesty_listing_id", "is", null),
+    supabase.from("stays").select("id", { count: "exact", head: true }).eq("source", "guesty"),
     supabase
       .from("payments")
       .select("id", { count: "exact", head: true })
       .gte("paid_at", daysAgo(30)),
+    supabase.from("integrations").select("enabled, connected_at, last_error, account_name, rules").eq("key", "slack").maybeSingle(),
+    supabase
+      .from("integration_events")
+      .select("id", { count: "exact", head: true })
+      .eq("provider", "slack")
+      .eq("ok", true)
+      .in("kind", ["notify", "digest"])
+      .gte("created_at", daysAgo(30)),
   ]);
+  const slackOn = !!slack?.connected_at && slack.enabled;
+  const slackKinds = Object.values((slack?.rules ?? {}) as Record<string, { on?: boolean }>).filter((r) => r?.on).length;
   const stripeOn = !!process.env.STRIPE_SECRET_KEY && !!process.env.SUPABASE_SERVICE_ROLE_KEY;
   const stripeHook = !!process.env.STRIPE_WEBHOOK_SECRET;
   const connected = !!ghl?.connected_at;
   const status = !connected ? "Not connected" : ghl.enabled ? "On" : "Connected, paused";
+  const guestyOn = !!guesty?.connected_at;
+  const guestyStatus = !guestyOn ? "Not connected" : guesty.enabled ? "On" : "Connected, paused";
   return (
     <>
       <div className="cards">
@@ -36,6 +51,24 @@ export default async function IntegrationsPage() {
             <span>{ghl?.last_error ? "Needs attention" : connected ? "Manage" : "Set up"}</span>
           </div>
         </Link>
+        <Link href="/settings/integrations/guesty" className="card integ">
+          <div className="top">
+            <span className={`status-dot${guestyOn && guesty.enabled ? " on" : ""}`}>{guestyStatus}</span>
+          </div>
+          <h3>Guesty</h3>
+          <p>
+            Bring reservations from Guesty (Airbnb, Booking.com and the booking site) into Hospitality as stays, link
+            guests to the CRM, and block nights booked here on the Guesty calendar.
+          </p>
+          <div className="meta">
+            <span>
+              {guestyOn
+                ? `${homes ?? 0} home${homes === 1 ? "" : "s"} linked, ${guestyStays ?? 0} stay${guestyStays === 1 ? "" : "s"}`
+                : "Needs an Open API client"}
+            </span>
+            <span>{guesty?.last_error ? "Needs attention" : guestyOn ? "Manage" : "Set up"}</span>
+          </div>
+        </Link>
         <Link href="/settings/integrations/stripe" className="card integ">
           <div className="top">
             <span className={`status-dot${stripeOn ? " on" : ""}`}>
@@ -50,6 +83,28 @@ export default async function IntegrationsPage() {
           <div className="meta">
             <span>{stripeOn ? `${paid ?? 0} payment${paid === 1 ? "" : "s"} in 30 days` : "Needs the Stripe keys"}</span>
             <span>{stripeOn && !stripeHook ? "Needs the webhook" : stripeOn ? "Manage" : "Set up"}</span>
+          </div>
+        </Link>
+        <Link href="/settings/integrations/slack" className="card integ">
+          <div className="top">
+            <span className={`status-dot${slackOn ? " on" : ""}`}>
+              {!slack?.connected_at ? "Not connected" : slack.enabled ? "On" : "Connected, paused"}
+            </span>
+          </div>
+          <h3>Slack</h3>
+          <p>
+            Hear about applications, bookings, payments and requests in the team’s Slack as they happen, and get a
+            morning digest of the day ahead.
+          </p>
+          <div className="meta">
+            <span>
+              {slack?.connected_at
+                ? `${slack.account_name ? `${slack.account_name} · ` : ""}${posted ?? 0} message${posted === 1 ? "" : "s"} in 30 days`
+                : "Needs a Slack app’s bot token"}
+            </span>
+            <span>
+              {slack?.last_error ? "Needs attention" : slackOn && !slackKinds ? "Nothing switched on" : slack?.connected_at ? "Manage" : "Set up"}
+            </span>
           </div>
         </Link>
       </div>
