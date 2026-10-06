@@ -864,6 +864,44 @@ select pg_temp.expect(
   (select membership_status from public.contacts where email = 'crew@theark.world') = 'expired',
   'leaving the team ends the Team membership');
 
+-- Integrations ---------------------------------------------------------------
+
+select pg_temp.act_as(pg_temp.id('admin'));
+update public.integrations set location_id = 'loc_test', secret = 'pit-test', enabled = true where key = 'ghl';
+select pg_temp.expect((select secret from public.integrations where key = 'ghl') = 'pit-test',
+  'admins manage integrations');
+insert into public.integration_links (provider, contact_id, external_id)
+select 'ghl', id, 'ghl_' || email from public.contacts where email in ('owned@example.com', 'else@example.com');
+insert into public.integration_events (provider, direction, kind, detail) values ('ghl', 'out', 'test', 'ok');
+select pg_temp.expect((select count(*) from public.integration_events) = 1, 'admins log integration events');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('sales'));
+select pg_temp.expect((select count(*) from public.integrations) = 0, 'sales cannot read integration tokens');
+select pg_temp.expect((select count(*) from public.integration_events) = 0, 'sales cannot read integration events');
+-- Sales own 'owned' and work 'else' in their pipeline, so they see those two links.
+select pg_temp.expect((select count(*) from public.integration_links) = 2,
+  'sales see links only for contacts they can read');
+do $$
+begin
+  update public.integrations set enabled = false where key = 'ghl';
+  if exists (select 1 from public.integrations) then
+    raise exception 'RLS test failed: sales changed an integration';
+  end if;
+end $$;
+reset role;
+
+do $$
+declare r text;
+begin
+  foreach r in array array['lead', 'facilitator', 'shop', 'crew', 'security', 'marketing', 'member'] loop
+    perform pg_temp.act_as(pg_temp.id(r));
+    perform pg_temp.expect((select count(*) from public.integrations) = 0, r || ' cannot read integrations');
+    perform pg_temp.expect((select count(*) from public.integration_events) = 0, r || ' cannot read integration events');
+    reset role;
+  end loop;
+end $$;
+
 select 'All RLS tests passed' as result;
 
 rollback;

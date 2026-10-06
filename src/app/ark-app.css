@@ -881,3 +881,23 @@ a.mk-tr:hover{background:var(--surface-2)}
   font-family:var(--body)
 }
 .ark-type h1,.ark-type h2,.ark-type h3{font-family:var(--display);font-weight:500;letter-spacing:-.005em}
+
+/* integrations (Settings) */
+.card.integ{text-decoration:none;color:inherit;display:block}
+.card.integ .top{justify-content:flex-end}
+.integ-page .camp-head .status-dot{margin-top:4px}
+.integ-page .form-card{margin-top:0}
+.integ-page .form-card .panel-h{margin-bottom:16px}
+.integ-page .panel{margin-top:14px}
+.integ-copy{display:flex;gap:8px}
+.integ-copy input{flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+.integ-example{margin:4px 0 12px;font-size:14px}
+.integ-example summary{cursor:pointer;color:var(--muted)}
+.integ-example pre{margin:8px 0 0;padding:12px 14px;background:var(--surface-2);border-radius:10px;font-size:12.5px;overflow:auto}
+.integ-log{list-style:none;margin:0;padding:0;font-size:14px}
+.integ-log li{display:grid;grid-template-columns:110px auto 1fr;gap:10px;align-items:baseline;padding:8px 0;border-top:1px solid var(--line)}
+.integ-log li:first-child{border-top:0}
+.integ-log .when{color:var(--muted);font-size:12.5px;white-space:nowrap}
+.integ-log .tag-sm{margin:0}
+.integ-log li.bad .what{color:var(--danger)}
+@media (max-width: 640px){.integ-log li{grid-template-columns:1fr;gap:2px}}

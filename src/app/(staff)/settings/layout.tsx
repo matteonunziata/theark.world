@@ -24,6 +24,7 @@ export default async function SettingsLayout({
           { href: "/settings/cities", label: "Cities" },
           { href: "/settings/access", label: "Access levels" },
           { href: "/settings/organization", label: "Organization" },
+          { href: "/settings/integrations", label: "Integrations" },
         ]}
       />
       {children}

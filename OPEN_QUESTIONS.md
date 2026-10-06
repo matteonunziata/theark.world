@@ -53,3 +53,11 @@
 - **Checking the day pass.** Applicants say whether they've come on a day pass; ARK OS can't check it while passes are sold through the payment links. Fine as a self-declared answer for now?
 - **Switch on the sign-in hook in Supabase.** `public.hook_before_user_created` isn't connected (Authentication → Hooks → Before User Created). The app now checks every email first, but a direct call to Supabase could still create a login with no access. Connecting the hook closes that. A test login, nobody-here@example.com, was created before the fix; delete it in Authentication → Users.
 - **Team in member lists.** Staff now count as members, so they appear in Memberships with the Team tier and in the "members" marketing list. Keep them in the marketing list, or leave Team out of member emails?
+
+## Round 12: Integrations
+
+- **GHL token.** Make a private integration in the sub-account (Settings → Private Integrations) with the contacts read and write scopes (locations read is optional, it only lets the page show the sub-account name), then paste it with the Location ID in Settings → Integrations → GoHighLevel. The search filter syntax for pulls follows GHL's docs but hasn't run against a live sub-account yet; if "Sync now" reports a problem on the way in, send me the message from Recent activity.
+- **Which GHL fields matter?** Right now name, email, phone and source go out, and tags carry tier, status and pipeline stage. Should custom fields in GHL (lot, city, interests, renewal date) be filled too? And should a GHL pipeline mirror the memberships pipeline?
+- **Leads from GHL.** New GHL contacts are added as plain contacts with no pipeline stage. Should they land on the membership waitlist (like `/join`), or get a stage from a GHL tag?
+- **Conversations and calendars.** GHL also has SMS/WhatsApp conversations and calendars. Worth bringing messages into the CRM profile, or bookings into Schedule?
+- **Sync timing.** Daily on Vercel Hobby. The webhook covers GHL → ARK OS right away; ARK OS → GHL is right away only after a CRM save (needs `SUPABASE_SERVICE_ROLE_KEY`). Fine, or upgrade to Pro for every 15 minutes?

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import {
   type ActionResult,
   fail,
@@ -13,6 +14,8 @@ import { CHANNELS, merge, MSTATUS, PIPELINES, PTYPES } from "@/lib/crm";
 import { aiEnabled, draftStep, draftWorkflow } from "@/lib/ai";
 import { sendWorkflowEmail } from "@/lib/email";
 import { IMPORT_MAX, type ImportRow } from "@/lib/csv";
+import { pushContact } from "@/lib/ghl";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -20,6 +23,16 @@ const refresh = () => {
   revalidatePath("/crm", "layout");
   revalidatePath("/memberships", "layout");
 };
+
+// After a save, send the person to GHL (Settings → Integrations) once the
+// response is out. Needs the service role key; without it the daily sync
+// and "Sync now" catch up.
+const syncOut = (contactId: string) =>
+  after(async () => {
+    const admin = createAdminClient();
+    if (!admin) return;
+    await pushContact(admin, contactId).catch(() => {});
+  });
 
 export async function saveContact(
   _prev: ActionResult,
@@ -78,20 +91,24 @@ export async function saveContact(
       return fail(friendly(error));
     }
     refresh();
+    syncOut(id);
     return ok("Changes saved");
   }
-  const { error } = await supabase
+  const { data: created, error } = await supabase
     .from("contacts")
     .insert({
       ...row,
       owner_id: isAdmin ? field(data, "owner_id") : staff.id,
       created_by: staff.id,
-    });
+    })
+    .select("id")
+    .single();
   if (error) {
     if (error.code === "23505") return fail("Someone already has that email.");
     return fail(friendly(error));
   }
   refresh();
+  if (created) syncOut(created.id);
   return ok(`${name} added`);
 }
 

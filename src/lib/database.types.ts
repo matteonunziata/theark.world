@@ -817,6 +817,135 @@ export type Database = {
           },
         ]
       }
+      integration_events: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          detail: string
+          direction: string
+          id: string
+          kind: string
+          ok: boolean
+          provider: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          detail: string
+          direction: string
+          id?: string
+          kind: string
+          ok?: boolean
+          provider: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          detail?: string
+          direction?: string
+          id?: string
+          kind?: string
+          ok?: boolean
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_events_provider_fkey"
+            columns: ["provider"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      integration_links: {
+        Row: {
+          contact_id: string
+          external_id: string
+          provider: string
+          synced_at: string
+        }
+        Insert: {
+          contact_id: string
+          external_id: string
+          provider: string
+          synced_at?: string
+        }
+        Update: {
+          contact_id?: string
+          external_id?: string
+          provider?: string
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_links_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_links_provider_fkey"
+            columns: ["provider"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      integrations: {
+        Row: {
+          connected_at: string | null
+          created_at: string
+          direction: string
+          enabled: boolean
+          key: string
+          last_error: string | null
+          last_sync_at: string | null
+          location_id: string | null
+          secret: string | null
+          tag: string
+          updated_at: string
+          webhook_secret: string
+        }
+        Insert: {
+          connected_at?: string | null
+          created_at?: string
+          direction?: string
+          enabled?: boolean
+          key: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          location_id?: string | null
+          secret?: string | null
+          tag?: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Update: {
+          connected_at?: string | null
+          created_at?: string
+          direction?: string
+          enabled?: boolean
+          key?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          location_id?: string | null
+          secret?: string | null
+          tag?: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Relationships: []
+      }
       listing_photos: {
         Row: {
           caption: string | null
