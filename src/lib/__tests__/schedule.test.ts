@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addDays, dayLabel, weekStart } from "@/lib/dates";
-import { occurrences, sessions, type Offering } from "@/lib/schedule";
+import { occurrences, priceLabel, sessions, type Offering, type TicketType } from "@/lib/schedule";
 import { nextStep, stepDue } from "@/lib/sequences";
 
 const base: Offering = {
@@ -87,5 +87,18 @@ describe("sequences", () => {
   it("finds the next unsent step", () => {
     expect(nextStep(steps, [0])).toBe(1);
     expect(nextStep(steps, [0, 1, 2])).toBe(-1);
+  });
+});
+
+describe("priceLabel", () => {
+  const o = { id: "o1", access: "members" } as Offering;
+  const t = (x: Partial<TicketType>) => ({ offering_id: "o1", price: 0, currency: "CRC", payment_link: null, ...x }) as TicketType;
+  it("keeps classes included for members", () => {
+    expect(priceLabel(o, [])).toBe("Included for members");
+    expect(priceLabel(o, [t({ price: 5000 })])).toBe("Included for members");
+  });
+  it("marks meals paid by link as paid separately", () => {
+    expect(priceLabel(o, [t({ payment_link: "https://pay.example/x" })])).toBe("Paid separately");
+    expect(priceLabel(o, [t({ payment_link: "https://pay.example/x", price: 6000 })])).toBe("₡6,000");
   });
 });

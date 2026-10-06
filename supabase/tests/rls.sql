@@ -132,8 +132,10 @@ select pg_temp.expect(pg_temp.hook('email', 'member@example.com') = '{}',
   'hook allows active members by magic link');
 select pg_temp.expect(pg_temp.hook('email', 'owned@example.com') ? 'error',
   'hook rejects contacts without a membership');
-select pg_temp.expect(pg_temp.hook('email', 'admin@theark.world') ? 'error',
-  'hook rejects staff using magic link');
+select pg_temp.expect(pg_temp.hook('email', 'admin@theark.world') = '{}',
+  'hook allows team members by email link');
+select pg_temp.expect(pg_temp.hook('email', 'not-on-team@theark.world') ? 'error',
+  'hook rejects email links for theark.world addresses not on the team');
 select pg_temp.expect(pg_temp.hook('github', 'admin@theark.world') ? 'error',
   'hook rejects other providers');
 
@@ -823,6 +825,44 @@ select pg_temp.expect((select count(*) from public.content_items) = 0, 'anon can
 reset role;
 select pg_temp.expect((select stage from public.contact_stages s join public.contacts c on c.id = s.contact_id
   where c.email = 'signup.test@example.com') = 'waitlist', 'signups land on the membership waitlist');
+
+-- Membership applications: anyone can apply, only staff can read them.
+select pg_temp.act_as(null);
+select pg_temp.expect(public.apply_for_membership('Apply', 'Test', 'apply.test@example.com', '+506 8888 0000',
+  'quarter', null, 'Building', 'Why', 'Bring', array['Co-Work'], array['Ana'], '', '', '') is not null,
+  'anyone can apply for membership');
+select pg_temp.expect((select count(*) from public.membership_applications) = 0, 'anon cannot read applications');
+reset role;
+select pg_temp.expect((select stage from public.contact_stages s join public.contacts c on c.id = s.contact_id
+  where c.email = 'apply.test@example.com') = 'applied', 'applicants land on Applied');
+
+do $$
+declare r text;
+begin
+  foreach r in array array['shop', 'crew', 'member'] loop
+    perform pg_temp.act_as(pg_temp.id(r));
+    perform pg_temp.expect((select count(*) from public.membership_applications) = 0, r || ' cannot read applications');
+    reset role;
+  end loop;
+end $$;
+
+select pg_temp.act_as(pg_temp.id('admin'));
+select pg_temp.expect((select count(*) from public.membership_applications a join public.contacts c on c.id = a.contact_id
+  where c.email = 'apply.test@example.com') = 1, 'admins read applications');
+reset role;
+
+-- Team members are members too.
+select pg_temp.expect(
+  (select count(*) from public.contacts c join public.team_members t on t.email = c.email
+   where t.name like 'Test %' and c.tier = 'team' and c.membership_status = 'active') = 8,
+  'every active team member gets a Team membership');
+select pg_temp.act_as(pg_temp.id('admin'));
+select pg_temp.expect(public.is_member(), 'staff count as members in the portal');
+reset role;
+update public.team_members set status = 'inactive' where email = 'crew@theark.world';
+select pg_temp.expect(
+  (select membership_status from public.contacts where email = 'crew@theark.world') = 'expired',
+  'leaving the team ends the Team membership');
 
 -- Integrations ---------------------------------------------------------------
 
