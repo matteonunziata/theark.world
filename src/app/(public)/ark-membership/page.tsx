@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ArkFonts } from "@/components/ark-fonts";
 import { getViewer } from "@/lib/auth";
 import { dow, todayIn } from "@/lib/dates";
+import { passStripePrice, stripeReady } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Calculator } from "./calculator";
 import { APPLY_URL, passUrl } from "./plans";
 import { Pricing } from "./pricing";
@@ -74,6 +76,21 @@ const FAQ = [
 export default async function MembershipPage() {
   const { supabase } = await getViewer();
   const { data: classes } = await supabase.rpc("public_class_schedule");
+  // Day and week passes show the price of their Stripe product.
+  const passPrices: Record<string, { amount: number; currency: string }> = {};
+  const admin = createAdminClient();
+  if (admin && stripeReady()) {
+    const { data: tiers } = await admin
+      .from("membership_tiers")
+      .select("key, name, price, currency, stripe_price_id")
+      .in("key", ["day", "week"]);
+    await Promise.all(
+      (tiers ?? []).map(async (t) => {
+        const sp = await passStripePrice(admin, t).catch(() => null);
+        if (sp && sp.amount > 0) passPrices[t.key] = sp;
+      }),
+    );
+  }
 
   return (
     <div className="mship">
@@ -216,7 +233,7 @@ export default async function MembershipPage() {
         <p className="ms-eyebrow">Santa Teresa · Costa Rica</p>
         <h2>Choose your rhythm</h2>
         <p className="ms-prose">Find the right way to belong to The ARK.</p>
-        <Pricing />
+        <Pricing passPrices={passPrices} />
       </section>
 
       <section className="ms-sec tint">

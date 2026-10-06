@@ -89,9 +89,12 @@ export default async function PaymentDone({ searchParams }: PageProps<"/pay/done
   const first = (contact?.name ?? r.meta.name ?? "").trim().split(/\s+/)[0];
 
   if (r.kind === "ticket") {
-    return box("Paid", "ok", `Thank you${first ? `, ${first}` : ""}`, (
+    return box("Paid", "ok", r.meta.held ? `You’re booked${first ? `, ${first}` : ""}` : `Thank you${first ? `, ${first}` : ""}`, (
       <>
-        <p className="muted">{paid} Your ticket is ready; show it to security when you arrive.</p>
+        <p className="muted">
+          {paid} {r.meta.held ? "Your booking is confirmed and your ticket is on its way to your inbox." : "Your ticket is ready;"}{" "}
+          Show it to security when you arrive.
+        </p>
         {r.meta.token && <p><Link className="btn primary" href={`/t/${r.meta.token}`}>View your ticket</Link></p>}
       </>
     ));

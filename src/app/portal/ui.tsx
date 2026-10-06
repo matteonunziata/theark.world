@@ -87,16 +87,13 @@ export const whatsappHref = (p: Pick<DirEntry, "name" | "phone">, from?: string 
 export function PersonCard({
   p,
   why,
-  shared = [],
   meName,
 }: {
   p: DirEntry;
   why?: string;
-  shared?: string[];
   /** The viewer's name, for the first line of the WhatsApp message. */
   meName?: string | null;
 }) {
-  const sharedSet = new Set(shared.map((s) => s.toLowerCase()));
   const wa = !p.is_me && p.open_to_connect ? whatsappHref(p, meName) : "";
   return (
     <article className="pv-person">
@@ -110,16 +107,7 @@ export function PersonCard({
         </div>
       </div>
       {why && <div className="why">{why}</div>}
-      {p.bio && <p className="bio">{p.bio}</p>}
-      {p.interests.length > 0 && (
-        <div className="pv-tags">
-          {p.interests.slice(0, 6).map((i) => (
-            <span key={i} className={`pv-tag ${sharedSet.has(i.toLowerCase()) ? "match" : ""}`}>
-              {i}
-            </span>
-          ))}
-        </div>
-      )}
+      {p.bio ? <p className="bio">{p.bio}</p> : <p className="bio muted">Hasn’t written a bio yet.</p>}
       <div style={{ display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap" }}>
         {wa && (
           <a className="pv-btn sm" href={wa} target="_blank" rel="noopener noreferrer">

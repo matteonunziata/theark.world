@@ -9,13 +9,12 @@ export type Plan = {
   badge?: string;
   discount: number; // % off courts, events & Farm products
   guests: number; // guest passes a month
-  payLink?: string; // the old MightySales link, used until Stripe is on
   note?: string;
 };
 
 /** Memberships start with an application; passes go straight to payment. */
 export const APPLY_URL = "/ark-membership/apply";
-/** The pass page takes payment on Stripe, or forwards to the old payment link until Stripe is on. */
+/** The pass page takes payment on Stripe. */
 export const passUrl = (key: string) => `/ark-membership/pass/${key}`;
 export const planHref = (p: Plan) => (p.kind === "pass" ? passUrl(p.key) : `${APPLY_URL}?plan=${p.key}`);
 
@@ -28,7 +27,6 @@ export const PLANS: Plan[] = [
     kind: "pass",
     discount: 0,
     guests: 0,
-    payLink: "https://links.mightysales.io/payment-link/6ab163b79f7ff2c808a76c62",
     perks: ["Full access, 8am to 8pm", "Shala classes", "The Spa Deck", "The ARK House coworking"],
   },
   {
@@ -39,7 +37,6 @@ export const PLANS: Plan[] = [
     kind: "pass",
     discount: 0,
     guests: 0,
-    payLink: "https://links.mightysales.io/payment-link/6ab16d3ef426560dbc2f174b",
     perks: ["Everything in the Day Pass", "Valid for seven days"],
   },
   {

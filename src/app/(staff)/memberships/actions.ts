@@ -9,6 +9,7 @@ import {
   ok,
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
+import { listStripePrices } from "@/lib/stripe";
 
 const PERIODS = ["day", "week", "month", "quarter", "half", "year", "once"];
 
@@ -49,10 +50,19 @@ export async function saveTier(
       .filter(Boolean),
     active: data.get("active") !== "no",
   };
+  // A Stripe product sets the price; the amount shown everywhere is Stripe's.
+  const stripePriceId = field(data, "stripe_price_id");
+  if (stripePriceId) {
+    const sp = (await listStripePrices().catch(() => [])).find((x) => x.priceId === stripePriceId);
+    if (!sp) return fail("That Stripe product isn’t available any more. Pick another.");
+    row.price = sp.amount;
+    row.currency = sp.currency === "USD" ? "USD" : "CRC";
+  }
   const { error } = existing
-    ? await supabase.from("membership_tiers").update(row).eq("key", existing)
+    ? await supabase.from("membership_tiers").update({ ...row, stripe_price_id: stripePriceId }).eq("key", existing)
     : await supabase.from("membership_tiers").insert({
         ...row,
+        stripe_price_id: stripePriceId,
         key: name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "tier",
         position: 99,
       });

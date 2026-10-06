@@ -9,6 +9,7 @@ import {
   ok,
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
+import { listStripePrices } from "@/lib/stripe";
 import { dow } from "@/lib/dates";
 import { sendTicketEmail } from "@/lib/email";
 
@@ -88,9 +89,23 @@ export async function saveOffering(
       currency: data.getAll("t_cur")[i] === "USD" ? "USD" : "CRC",
       qty: Number(data.getAll("t_qty")[i] || 0) || null,
       payment_link: String(data.getAll("t_link")[i] ?? "").trim() || null,
+      // Meals: the booking is a hold until it's paid.
+      pay_first: String(data.getAll("t_when")[i] ?? "") === "first",
+      stripe_price_id: String(data.getAll("t_stripe")[i] ?? "").trim() || null,
       position: i,
     }))
     .filter((t) => t.name);
+  // A Stripe product sets the price; the amount shown everywhere is Stripe's.
+  const chosen = tickets.filter((t) => t.stripe_price_id);
+  if (chosen.length) {
+    const prices = await listStripePrices().catch(() => []);
+    for (const t of chosen) {
+      const sp = prices.find((x) => x.priceId === t.stripe_price_id);
+      if (!sp) return fail("That Stripe product isn’t available any more. Pick another.");
+      t.price = sp.amount;
+      t.currency = sp.currency;
+    }
+  }
   if (tickets.some((t) => t.payment_link && !t.payment_link.startsWith("https://"))) {
     return fail("Payment links need to start with https://");
   }

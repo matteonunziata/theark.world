@@ -32,7 +32,7 @@ export default async function PortalHome() {
     me
       ? supabase
           .from("registrations")
-          .select("id, session_date, qr_token, offering:offerings(title, start_time, end_time, location)")
+          .select("id, session_date, qr_token, status, offering:offerings(title, start_time, end_time, location)")
           .or(`user_id.eq.${p.user!.id},contact_id.eq.${me.id}`)
           .order("session_date")
       : Promise.resolve({ data: [] as never[] }),
@@ -50,7 +50,7 @@ export default async function PortalHome() {
     .slice(0, 2);
   const people = (dir.data ?? []).filter((x) => !x.is_me);
   const suggested = suggestions(people, me, 3);
-  const upcoming = (myRegs.data ?? []).filter((r) => r.session_date >= today && r.offering);
+  const upcoming = (myRegs.data ?? []).filter((r) => r.session_date >= today && r.offering && r.status === "confirmed");
   const next = upcoming[0];
   const cover = coverUrl(city?.cover_path);
   const first = (me?.name ?? p.staff?.name ?? "").split(/\s+/)[0];
@@ -185,7 +185,7 @@ export default async function PortalHome() {
             <h3 style={{ fontSize: 20, margin: "8px 0 12px" }}>People you might like to meet</h3>
             <div className="pv-grid">
               {suggested.map((s) => (
-                <PersonCard key={s.p.id} p={s.p} why={reason(s)} shared={s.shared} meName={me?.name} />
+                <PersonCard key={s.p.id} p={s.p} why={reason(s)} meName={me?.name} />
               ))}
             </div>
           </>

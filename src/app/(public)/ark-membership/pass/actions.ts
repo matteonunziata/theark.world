@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { type ActionResult, fail, field } from "@/lib/action-result";
-import { createCheckout, stripeReady } from "@/lib/stripe";
+import { createCheckout, passStripePrice, stripeReady } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -24,10 +24,13 @@ export async function buyPass(_prev: ActionResult, data: FormData): Promise<Acti
   if (!admin || !stripeReady()) return fail("Online payment isn’t open yet. Please pay at reception.");
   const { data: tier } = await admin
     .from("membership_tiers")
-    .select("key, name, price, currency, active")
+    .select("key, name, price, currency, active, stripe_price_id")
     .eq("key", plan)
     .maybeSingle();
-  if (!tier?.active || !Number(tier.price)) return fail("This pass isn’t on sale right now.");
+  if (!tier?.active) return fail("This pass isn’t on sale right now.");
+  // The charge is the Stripe product for this pass (Day Pass, Week Pass).
+  const sp = await passStripePrice(admin, tier);
+  if (!sp) return fail("This pass isn’t on sale right now.");
 
   let url: string;
   try {
@@ -35,8 +38,7 @@ export async function buyPass(_prev: ActionResult, data: FormData): Promise<Acti
       kind: "pass",
       title: tier.name,
       description: `Full access to The ARK, 8am to 8pm, ${plan === "week" ? "seven days in a row" : "one day"}. Starts at your first check-in; use within 90 days.`,
-      amount: Number(tier.price),
-      currency: tier.currency,
+      priceId: sp.priceId,
       email,
       meta: {
         tier: tier.key,
