@@ -15,7 +15,12 @@ export default async function CourtsPage({ searchParams }: PageProps<"/events/co
   const date = typeof d === "string" && ISO.test(d) ? d : today;
   const [{ data: courts }, { data: bookings }, { data: offerings }, { data: cancels }, { data: people }] = await Promise.all([
     supabase.from("courts").select("*").order("position").order("name"),
-    supabase.from("court_bookings").select("*").eq("date", date).eq("status", "booked").order("start_time"),
+    supabase
+      .from("court_bookings")
+      .select("*")
+      .eq("date", date)
+      .or(`status.eq.booked,and(status.eq.held,held_until.gt.${new Date().toISOString()})`)
+      .order("start_time"),
     supabase.from("offerings").select("*").eq("status", "published").ilike("location", "%court%"),
     supabase.from("session_cancellations").select("offering_id, session_date").eq("session_date", date),
     // Only the contacts this person may see (RLS); facilitators type names in.

@@ -9,6 +9,8 @@ import {
   ok,
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
+import { notifyLater } from "@/lib/slack";
+import { taskMessage } from "@/lib/slack-format";
 import { PRIORITIES, STATUSES, TASK_KINDS } from "@/lib/tasks";
 
 const pick = <T extends readonly (readonly [string, string])[]>(
@@ -48,12 +50,29 @@ export async function saveTask(
     location: field(data, "location"),
     status: pick(STATUSES, field(data, "status"), "backlog"),
   };
+  const { data: before } = id
+    ? await supabase.from("tasks").select("assignee_id").eq("id", id).maybeSingle()
+    : { data: null };
   const { error } = id
     ? await supabase.from("tasks").update(row).eq("id", id)
     : await supabase.from("tasks").insert({ ...row, created_by: staff.id });
   if (error) return fail(friendly(error));
   revalidatePath("/operations", "layout");
   revalidatePath("/dashboard");
+
+  // Someone new is on it (and it isn't the person saving): a word on Slack.
+  if (row.assignee_id && row.assignee_id !== before?.assignee_id && row.assignee_id !== staff.id) {
+    const { data: who } = await supabase.from("team_members").select("name").eq("id", row.assignee_id).maybeSingle();
+    const t = {
+      title,
+      assignee: who?.name ?? "someone",
+      by: staff.name,
+      dueDate: row.due_date,
+      priority: row.priority,
+      description: row.description,
+    };
+    notifyLater("task", (origin) => taskMessage(t, origin));
+  }
   return ok(id ? "Changes saved" : "Task added");
 }
 

@@ -321,7 +321,10 @@ a.seq-card{display:block;color:var(--ink);text-decoration:none}
 .scan-title{font-family:var(--display);font-weight:700;font-size:clamp(38px,11vw,72px);line-height:1;letter-spacing:-.02em}
 .scan-name{font-size:clamp(20px,6vw,30px);font-weight:600;margin-top:8px}
 .scan-detail{font-size:18px;opacity:.9;max-width:520px}
-.scan-tap{position:absolute;bottom:28px;font-size:14px;opacity:.7}
+.scan-act{margin-top:22px}
+.scan-act .btn{font-size:22px;font-weight:600;padding:18px 44px;border-radius:999px;background:#fff;color:#14281C;border:0;box-shadow:0 6px 24px rgb(0 0 0 / .18)}
+.scan-act .btn:disabled{opacity:.7}
+.scan-tap{position:absolute;bottom:28px;font:inherit;font-size:15px;color:#fff;opacity:.75;background:none;border:0;padding:10px 18px;cursor:pointer}
 @keyframes scan-in{from{opacity:0}to{opacity:1}}
 @keyframes scan-pop{from{transform:scale(.5)}to{transform:scale(1)}}
 @media (prefers-reduced-motion: reduce){.scan,.scan-mark{animation:none}}
@@ -576,6 +579,7 @@ a.seq-card{display:block;color:var(--ink);text-decoration:none}
 .court-slot.taken{cursor:pointer;background:color-mix(in srgb,var(--clay) 12%,var(--surface));border-color:color-mix(in srgb,var(--clay) 40%,var(--line))}
 .court-slot.taken .muted{font-size:12.5px}
 .court-slot.class{background:var(--surface-2);color:var(--muted)}
+.court-slot.taken.held{border-style:dashed;background:color-mix(in srgb,var(--sun) 18%,var(--surface))}
 .court-row{grid-template-columns:1fr auto}
 
 /* Contact activity (CRM profile) */
@@ -956,3 +960,25 @@ a.mk-tr:hover{background:var(--surface-2)}
   .orow,.lrow{grid-template-columns:1fr auto}
   .orow > :nth-child(3),.orow > :nth-child(4),.lrow > :nth-child(3),.lrow > :nth-child(4){display:none}
 }
+
+/* Guesty settings: which home each listing is */
+.integ-map{list-style:none;margin:0;padding:0;font-size:14px}
+.integ-map li{display:grid;grid-template-columns:1fr minmax(180px,260px) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.integ-map li:first-child{border-top:0}
+.integ-map .who{display:flex;flex-direction:column;gap:2px;min-width:0}
+.integ-map .who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.integ-map li.unlinked .who b{color:var(--muted)}
+.integ-map select{width:100%}
+@media (max-width: 640px){.integ-map li{grid-template-columns:1fr;gap:6px}}
+
+/* Stripe settings: the key checklist has no time column */
+.integ-log.checks li{grid-template-columns:auto 1fr}
+.integ-rules{list-style:none;margin:0 0 14px;padding:0}
+.integ-rules li{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.integ-rules li:first-child{border-top:0}
+.integ-rules .check{align-items:flex-start;gap:10px}
+.integ-rules .check input{margin-top:4px}
+.integ-rules .check span{display:flex;flex-direction:column;gap:2px}
+.integ-rules .check small{color:var(--muted);font-size:12.5px}
+.integ-rules input[type=text],.integ-rules input:not([type]){font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+@media (max-width:640px){.integ-rules li{grid-template-columns:1fr}}

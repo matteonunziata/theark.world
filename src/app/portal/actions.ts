@@ -12,6 +12,8 @@ import {
 import { getViewer } from "@/lib/auth";
 import { splitList } from "@/lib/connect";
 import { sendGuestPassEmail } from "@/lib/email";
+import { notifyLater } from "@/lib/slack";
+import { guestMessage } from "@/lib/slack-format";
 
 async function viewer() {
   const v = await getViewer();
@@ -71,12 +73,15 @@ export async function inviteGuest(
   });
   if (error || !token) return fail(friendly(error));
 
+  const { data: me } = await v.supabase.rpc("my_member_profile").maybeSingle();
+  if (date) {
+    const g = { guest: name ?? "", host: me?.name ?? "A member", date };
+    notifyLater("guest", (origin) => guestMessage(g, origin));
+  }
+
   let emailed = false;
   if (email && date) {
-    const [{ data: me }, { data: org }] = await Promise.all([
-      v.supabase.rpc("my_member_profile").maybeSingle(),
-      v.supabase.rpc("public_org").maybeSingle(),
-    ]);
+    const { data: org } = await v.supabase.rpc("public_org").maybeSingle();
     emailed = await sendGuestPassEmail({
       to: email,
       guest: name ?? "",
@@ -105,7 +110,7 @@ export async function bookCourt(courtId: string, date: string, start: string) {
   if (error) return fail(friendly(error));
   revalidatePath("/portal/schedule");
   revalidatePath("/events/courts");
-  return ok("Booked. Court time is settled at reception for now.");
+  return ok("Booked. Pay from your bookings above, or settle at reception.");
 }
 
 export async function cancelCourt(id: string) {
@@ -124,4 +129,14 @@ export async function setPhoto(path: string | null) {
   if (error) return fail(friendly(error));
   revalidatePath("/portal", "layout");
   return ok(path ? "Photo saved" : "Photo removed");
+}
+
+/** A new pass code for the signed-in member; the old QR stops working at once. */
+export async function replaceMyPass(): Promise<ActionResult> {
+  const v = await viewer();
+  if (!v.memberId) return fail("Only members have a member pass.");
+  const { error } = await v.supabase.rpc("rotate_my_pass_token");
+  if (error) return fail(friendly(error));
+  revalidatePath("/portal", "layout");
+  return ok("You have a new pass code. Save the new one to your photos.");
 }

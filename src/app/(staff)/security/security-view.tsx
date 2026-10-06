@@ -6,6 +6,7 @@ import { Avatar } from "@/components/avatar";
 import { useToast } from "@/components/toast";
 import { fmtTime } from "@/lib/dates";
 import { checkIn } from "../events/actions";
+import { MemberSearch } from "./member-search";
 
 type Row = {
   id: string;
@@ -50,6 +51,8 @@ export function SecurityView({ rows, now, guests }: { rows: Row[]; now: string; 
 
   return (
     <>
+      <MemberSearch />
+      <h2 className="section-title" style={{ marginTop: 28 }}>Today’s bookings</h2>
       <div className="toolbar">
         <input
           className="field-in search"

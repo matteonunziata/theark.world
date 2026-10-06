@@ -9,13 +9,50 @@ export type Court = {
   slot_minutes: number;
 };
 
+/** A court as the public page sees it: with its price per slot. */
+export type PublicCourt = Court & {
+  price: number | null;
+  currency: string;
+  description: string | null;
+  max_players: number;
+};
+
 export const SPORTS = [
   ["padel", "Padel"],
   ["pickleball", "Pickleball"],
 ] as const;
 
+export const sportName = (k: string) => SPORTS.find(([x]) => x === k)?.[1] ?? k;
+
 export const BOOKING_DAYS = 14;
 export const PER_DAY = 2;
+/** Minutes a slot is held while someone pays. Mirrors hold_court(). */
+export const HOLD_MINUTES = 20;
+/** The longest booking, in minutes. Mirrors court_slot_end(). */
+export const MAX_MINUTES = 120;
+
+/**
+ * Self-assessed playing level, on Playtomic's 0–7 scale so people can carry
+ * their number over. Stored as the middle of the band.
+ */
+export const LEVELS = [
+  [0.5, "New to the game", "First times on court"],
+  [1.5, "Beginner", "Knows the rules, rallies a bit"],
+  [2.5, "Improver", "Plays regularly, building consistency"],
+  [3.5, "Intermediate", "Reliable rallies, some tactics"],
+  [4.5, "Advanced", "Competitive club player"],
+  [5.5, "Expert", "Tournament level"],
+] as const;
+
+export const levelName = (n: number | null | undefined) => {
+  if (n === null || n === undefined) return "";
+  const found = LEVELS.find(([v]) => Math.abs(v - Number(n)) < 0.5);
+  return found ? found[1] : `Level ${n}`;
+};
+
+/** "2.5–4.5" for a match's level range. */
+export const levelRange = (min: number | null | undefined, max: number | null | undefined) =>
+  min === null || min === undefined || max === null || max === undefined ? "" : `${Number(min)}–${Number(max)}`;
 
 const toMin = (t: string) => {
   const [h, m] = t.split(":").map(Number);
@@ -32,6 +69,23 @@ export function slots(c: Pick<Court, "open_time" | "close_time" | "slot_minutes"
   }
   return out;
 }
+
+/** The lengths a booking can have on this court, in minutes (one slot up to two hours). */
+export function durations(c: Pick<Court, "slot_minutes">) {
+  const out: number[] = [];
+  for (let m = c.slot_minutes; m <= MAX_MINUTES; m += c.slot_minutes) out.push(m);
+  return out;
+}
+
+/** "1 hour", "1½ hours", "2 hours", "45 min". */
+export const durationLabel = (minutes: number) => {
+  if (minutes % 60 === 0) return `${minutes / 60} hour${minutes === 60 ? "" : "s"}`;
+  if (minutes === 90) return "1½ hours";
+  return `${minutes} min`;
+};
+
+/** "HH:MM" plus minutes. */
+export const addMinutes = (t: string, minutes: number) => toTime(toMin(t) + minutes);
 
 /** Do two "HH:MM" ranges overlap? */
 export const overlapsTime = (a: { start: string; end: string }, b: { start: string; end: string }) =>
@@ -60,3 +114,22 @@ export function classAt(
 }
 
 export const hhmm = (t: string) => t.slice(0, 5);
+
+/** What a booking of this length costs, from the price per slot (before any discount). */
+export function courtPrice(c: Pick<PublicCourt, "price" | "slot_minutes" | "currency">, minutes: number) {
+  const n = Number(c.price ?? 0) * (minutes / c.slot_minutes);
+  return c.currency === "USD" ? Math.round(n * 100) / 100 : Math.round(n);
+}
+
+/** Each player's share of a court, split evenly. */
+export const share = (amount: number, spots: number, currency: string) =>
+  currency === "USD" ? Math.round((amount / spots) * 100) / 100 : Math.round(amount / spots);
+
+/** ₡20,000 or $40. */
+export const courtMoney = (amount: number | null | undefined, currency: string) => {
+  const n = Number(amount ?? 0);
+  if (!n) return "Free";
+  return currency === "USD"
+    ? `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`
+    : `₡${Math.round(n).toLocaleString("en-US")}`;
+};

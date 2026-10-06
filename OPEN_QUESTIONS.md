@@ -77,3 +77,48 @@
 - **Member prices.** No product has a member price yet, so the member share on the Overview just shows who bought while an active member. Set member prices on the products that should have one (the drawer has the field).
 - **Costs.** Products have no cost price, so there's no margin figure. Worth adding a cost per unit, at least for bought-in goods?
 - **Till hardware.** Is the till a phone or a laptop at the counter? The Sales tab works on both, but a barcode scanner or a card reader would change what gets built next.
+
+## Round 15: Stripe
+
+- **Stripe account.** It's The Ark World, LLC (test mode for now). The test webhook `ark-os` points at https://theark-world.vercel.app/api/webhooks/stripe (API version 2026-09-30). A live-mode webhook is needed at launch. Which currency does it pay out in? Charges are made in colones.
+- **Keys to switch it on.** In Vercel: `STRIPE_SECRET_KEY` (sk_test_… for now), `STRIPE_WEBHOOK_SECRET` (from the webhook in Stripe → Developers → Webhooks, address shown in Settings → Integrations → Stripe) and `SUPABASE_SERVICE_ROLE_KEY`. Also turn on "Email customers about successful payments" in Stripe so people get receipts.
+- **Subscriptions or prepaid terms?** Memberships are paid one term at a time, from a link or the portal. Should Monthly renew automatically on the card instead? That needs Stripe Billing, plus decisions on cancelling, failed cards, and how pausing works.
+- **Pause rules** are still not enforced. With prepaid terms, a pause is staff moving the renewal date. Fine?
+- **MightySales links.** Once Stripe is live, the pass pages stop using them. Should the MightySales products be switched off then, so no one pays twice?
+- **Pay before booking?** Paid event tickets still hold a spot unpaid (pay now, later, or at the desk). Should public events with a price require payment before the spot is held?
+- **Meals, courts and stays** aren't on Stripe yet. Meals keep their payment links; courts have no price; stays are confirmed by hand. The same checkout can take any of them once prices are set.
+- **Ambassador and Founding.** Ambassador has no price, so it gets no payment link. Founding is ₡100,000 a month at the rack rate. Is that still what Founding members pay?
+
+## Round 16: Guesty
+
+- **Open API access.** Guesty's Open API is a paid add-on on some plans. Settings → Integrations → Marketplace → Guesty Open API, create an application, and paste its client id and secret into Settings → Integrations → Guesty. Reading listings and reservations is enough for "Guesty → ARK OS"; "Both ways" needs calendar write access.
+- **Field names are from the docs, not a live run.** The first "Sync now" will tell. If Recent activity shows a problem ("Guesty said: …"), send me the message. The two likely spots are the `filters` syntax on reservations and the shape of `money` and `guest`.
+- **Publish the imported homes on /stay?** Now that Guesty's bookings block the calendar here, the eleven imported homes could be published, with requests from `/stay` landing as inquiries for the team to confirm (and "Both ways" blocking the nights in Guesty on confirmation). Or keep sending people to the Guesty booking site?
+- **Date changes after a push.** With "Both ways", if a stay booked here moves to other dates after its nights were blocked in Guesty, the new nights are blocked but the old ones aren't freed (ARK OS doesn't keep the old range). Deleting a pushed stay doesn't free its nights either; cancel it first, sync, then delete. Worth keeping the pushed range to fix both?
+- **Guest contacts.** Every Guesty guest with an email now becomes a CRM contact. Over a season that's a lot of one-time guests. Fine (they're a marketing list), or add them only as a stay and not as a contact?
+- **Money.** Guesty's `totalPrice` is what the guest pays, in the listing currency. Only USD and CRC are kept; anything else leaves the total empty. Should the stay record the host payout (after channel fees) instead?
+- **Webhook on the Hobby plan.** Guesty retries eight times over a day and disables an endpoint after five days of failures, so a long outage means re-registering from the Guesty page ("New address", then "Register in Guesty").
+
+
+## Round 18: Memberships and the gate
+
+- **One check-in a day for everyone.** "Passes can't be used twice" is applied to monthly and annual members too: a member who steps out for lunch and comes back scans red "Already checked in at 9:12 AM", and security waves them through by sight. Fine, or should members with a month or longer be re-admitted on the same day?
+- **Two unused passes.** If someone holds an unused day pass and an unused week pass, the first check-in uses the one that expires first (then the day pass before the week pass). Tell me if you'd rather security chose.
+- **Cached statuses.** The tier and status shown on CRM profiles, in GHL tags and in the Memberships list roll over at the daily cron (7:00). Gate and portal access never wait for it. On Vercel Pro the cron could run every 15 minutes.
+- **The sign-in hook** is still not connected in Supabase (Authentication → Hooks → Before User Created → `public.hook_before_user_created`). Until it is, pass holders are only kept out of the portal by the app's own check.
+
+## Round 18: Courts online
+
+- **Prices.** ₡20,000 (padel) and ₡12,000 (pickleball) an hour are placeholders. What are the real rates, and is there an evening rate (lights) or a 90-minute price? Courts take any slot length; 90 minutes would need 30-minute slots on the court.
+- **Unfilled open matches.** Playtomic cancels and refunds an open match that hasn't filled a few hours before it starts. Here the match stays on the court with whoever is in, each having paid only their share, so the club carries the gap. Options: let it run (today), auto-cancel at N hours before (needs a cron that runs more than once a day, so the Pro plan), or make the host pay the full court if it doesn't fill.
+- **Refunds are by hand.** A cancellation within the rules doesn't refund on its own; someone refunds it in the Stripe dashboard and the webhook does the rest. Should ARK OS refund automatically on a within-policy cancellation (one Stripe API call per player)?
+- **Hold that outlives its slot.** If someone takes more than 20 minutes to pay and the slot was taken in the meantime, the payment is still recorded, the booking stays expired, and a note is added to it for a refund. Stripe's Checkout page itself stays open for 24 hours, so a longer hold (or a Checkout `expires_at` of 30 minutes, Stripe's minimum) would shrink the window.
+- **Levels never change.** Playtomic adjusts a rating from results. Recording scores and adjusting levels is a next step if open matches take off.
+- **Members' discount.** The public page applies the member's active discount only when they're signed in (the email field is then fixed to their membership email). A member who books signed out pays the full price. Fine, or should an email that matches an active member get the discount anyway?
+- **Court bookers in the CRM.** Every visitor who books becomes a contact (source "Courts"), like Guesty guests. Keep, or add them only to the booking?
+
+## Round 19: Importing past Stripe payments
+
+- **Which business line?** Imported payments are sorted by keywords in their description, and anything unclear goes to Other. After the first import, look at Finance → Other: if many share a description, tell me and I'll add it to the rules.
+- **Adding buyers to the CRM.** The import links payments to people already in the CRM and adds nobody. Should past buyers who aren't in the CRM be added as contacts (tagged "Stripe"), or kept out?
+- **Fees on new payments.** Imported payments bring Stripe's fees into Finance; payments taken through ARK OS's checkout don't yet. Add them there too, so the monthly fee expense is complete?

@@ -37,8 +37,9 @@ export default async function SecurityPage() {
           <h1>Security</h1>
           <p className="lede">
             Scan any ticket, member pass or guest pass with your phone camera.
-            The screen turns green when they can come in. You can also look up
-            the code printed under the QR, or check people in from the lists.
+            The screen turns green when they can come in; tap Check in to let
+            them through. If a code won’t scan, find the person by name or
+            phone, or look up the code printed under the QR.
           </p>
         </div>
       </div>

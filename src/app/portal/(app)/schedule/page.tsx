@@ -26,7 +26,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/portal/
     <>
       <div className="pv-sec-h" style={{ marginBottom: 16 }}>
         <div>
-          <h1 style={{ fontSize: 40, margin: 0 }}>Schedule</h1>
+          <h1 className="pv-h1">Schedule</h1>
           <p>
             {tab === "courts"
               ? "Book the padel or pickleball court, up to two weeks ahead."

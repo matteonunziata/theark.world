@@ -172,8 +172,10 @@ export function ContactDrawer({
           </div>
         </div>
         <p className="note" style={{ marginTop: -6 }}>
-          Members with an active tier and an email can sign in to the members
-          portal.
+          Members of a month or longer with an email can sign in to the members
+          portal. Day and week passes work at the gate only. Changing the tier
+          ends the current membership and starts the new one; leave the end
+          date empty for open-ended.
         </p>
         <div className="subhead">Land</div>
         <div className="grid2">

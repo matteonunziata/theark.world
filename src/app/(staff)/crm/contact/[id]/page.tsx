@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
+import { siteUrl } from "@/lib/email";
+import { fmtAmount, stripeReady, TERM_NAME, termPrice } from "@/lib/stripe";
 import { ProfileView } from "./profile-view";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -10,7 +12,7 @@ export default async function ContactPage({
 }: PageProps<"/crm/contact/[id]">) {
   const { id } = await params;
   const { supabase, staff } = await requireStaff("crm");
-  const [contact, notes, stages, enrollments, sequences, owners, org, tiers, discounts, activity] =
+  const [contact, notes, stages, enrollments, sequences, owners, org, tiers, discounts, activity, memberships] =
     await Promise.all([
       supabase.from("contacts").select("*").eq("id", id).maybeSingle(),
       supabase
@@ -37,6 +39,11 @@ export default async function ContactPage({
       supabase.from("membership_tiers").select("key, name, price, price_ff, currency, period, active, guest_passes").order("position"),
       supabase.from("discounts").select("id, name, percent, active").order("name"),
       supabase.rpc("contact_activity", { cid: id }),
+      supabase
+        .from("memberships")
+        .select("id, tier, status, starts_on, ends_on, activate_by, source")
+        .eq("contact_id", id)
+        .order("created_at", { ascending: false }),
     ]);
   if (!contact.data) {
     return (
@@ -49,9 +56,22 @@ export default async function ContactPage({
       </>
     );
   }
+  // A Stripe link for the member's next term, at their rate and discount.
+  const c = contact.data;
+  const tier = (tiers.data ?? []).find((t) => t.key === c.tier);
+  const disc = (discounts.data ?? []).find((d) => d.id === c.discount_id && d.active);
+  const term = tier && tier.key !== "team" && c.email && stripeReady() ? termPrice(tier, c.rate, disc?.percent) : null;
+  const pay =
+    term && tier
+      ? {
+          url: `${await siteUrl()}/pay/membership/${c.pay_token}`,
+          label: `${fmtAmount(term, tier.currency)} for ${TERM_NAME[tier.period]}`,
+        }
+      : null;
   return (
     <ProfileView
       contact={contact.data}
+      pay={pay}
       notes={(notes.data ?? []).map((n) => ({
         id: n.id,
         body: n.body,
@@ -75,6 +95,7 @@ export default async function ContactPage({
       tiers={tiers.data ?? []}
       discounts={discounts.data ?? []}
       activity={activity.data ?? []}
+      memberships={memberships.data ?? []}
       currency={org.data?.currency ?? "CRC"}
       now={new Date().toISOString()}
       role={staff.role}
