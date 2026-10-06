@@ -46,7 +46,7 @@ function describe(status: number, json: unknown) {
   let msg = "";
   if (json && typeof json === "object") {
     const j = json as Record<string, unknown>;
-    const m = j.message ?? j.error ?? j.error_description;
+    const m = j.message ?? j.errorSummary ?? j.error ?? j.error_description;
     msg = Array.isArray(m) ? m.join(", ") : typeof m === "string" ? m : "";
   }
   if (status === 401 || status === 403) return "Guesty didn’t accept the token. Check the client id and secret.";
@@ -88,7 +88,11 @@ export async function fetchToken(clientId: string, secret: string) {
       throw new GuestyError(429, "Guesty allows five new tokens a day, and that’s used up. Try again tomorrow.");
     }
     if (res.status === 400 || res.status === 401 || res.status === 403) {
-      throw new GuestyError(res.status, "Guesty didn’t accept the client id and secret.");
+      const why = describe(res.status, json);
+      throw new GuestyError(
+        res.status,
+        `Guesty didn’t accept the client id and secret.${why.startsWith("Guesty said:") ? ` ${why}` : ""} Copy both again from the Open API application in Guesty, with no spaces around them.`,
+      );
     }
     throw new GuestyError(res.status, describe(res.status, json));
   }
