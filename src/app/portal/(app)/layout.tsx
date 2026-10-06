@@ -1,3 +1,4 @@
+import { ArkFonts } from "@/components/ark-fonts";
 import { initials } from "@/components/avatar";
 import { BookingModalProvider } from "../booking-modal";
 import { ToastProvider } from "@/components/toast";
@@ -16,7 +17,8 @@ export default async function PortalLayout({ children }: LayoutProps<"/portal">)
     : { count: 0 };
   return (
     <ToastProvider>
-      <div className="pv">
+      <ArkFonts />
+      <div className="pv ark-type">
         <BookingModalProvider>
         <PortalShell
           cities={p.cities.map((c) => ({ id: c.id, name: c.name }))}
@@ -24,6 +26,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/portal">)
           initials={initials(p.me?.name ?? p.staff?.name ?? "")}
           unread={count ?? 0}
           isStaff={!!p.staff}
+          isMember={!!p.memberId}
         >
           {children}
         </PortalShell>

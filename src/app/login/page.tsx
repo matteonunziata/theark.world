@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
@@ -25,25 +24,23 @@ export default async function LoginPage({
         <div className="auth-brand">
           <Logo tone="dark" height={34} />
         </div>
-        <h1>Team sign-in</h1>
+        <h1>Sign in</h1>
         <p>
-          Enter your @theark.world email and we’ll send you a link to sign in.
+          Enter your email and we’ll send you a link to sign in. The same
+          sign-in works for the team, facilitators and members.
         </p>
         {typeof error === "string" && (
           <p className="auth-err" role="alert">
             {error}
           </p>
         )}
-        <MagicLinkForm next="/" domain="theark.world" />
+        <MagicLinkForm next="/" />
         {GOOGLE && (
           <>
             <p className="auth-or">or</p>
             <GoogleButton />
           </>
         )}
-        <p className="auth-foot">
-          A member? <Link href="/portal/login">Go to the members portal</Link>
-        </p>
       </div>
     </main>
   );

@@ -12,6 +12,7 @@ import {
   type Owner,
   type TierOption,
 } from "../contact-drawer";
+import { ImportDrawer } from "./import-drawer";
 
 const FILTERS = [
   ["", "Everyone"],
@@ -36,6 +37,7 @@ export function PeopleView({
   const [type, setType] = useState("");
   const [q, setQ] = useState("");
   const drawer = useDrawer<Contact>();
+  const [importing, setImporting] = useState(false);
   const canEdit = role === "admin" || role === "sales";
 
   const needle = q.trim().toLowerCase();
@@ -76,6 +78,11 @@ export function PeopleView({
           onChange={(e) => setQ(e.target.value)}
         />
         {canEdit && (
+          <button type="button" className="btn" onClick={() => setImporting(true)}>
+            Import CSV
+          </button>
+        )}
+        {canEdit && (
           <button type="button" className="btn primary" onClick={drawer.openNew}>
             Add {type === "steward" ? "steward" : type === "member" ? "member" : "contact"}
           </button>
@@ -94,9 +101,14 @@ export function PeopleView({
                 on the land. Anyone you’re in conversation with.
               </p>
               {canEdit && (
-                <button type="button" className="btn primary" onClick={drawer.openNew}>
-                  Add the first one
-                </button>
+                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                  <button type="button" className="btn primary" onClick={drawer.openNew}>
+                    Add the first one
+                  </button>
+                  <button type="button" className="btn" onClick={() => setImporting(true)}>
+                    Import a CSV
+                  </button>
+                </div>
               )}
             </>
           )}
@@ -133,6 +145,10 @@ export function PeopleView({
             {list.length} {list.length === 1 ? "person" : "people"}
           </p>
         </>
+      )}
+
+      {canEdit && (
+        <ImportDrawer open={importing} onClose={() => setImporting(false)} type={type} />
       )}
 
       <ContactDrawer
