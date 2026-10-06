@@ -46,7 +46,7 @@ alter table public.court_bookings
   add column level_max numeric(3, 1) check (level_max between 0 and 7),
   add column spots smallint check (spots between 2 and 8),
   add column held_until timestamptz,
-  constraint court_bookings_open_match_check
+  add constraint court_bookings_open_match_check
     check (not open_match or (level is not null and spots is not null and amount is not null));
 
 -- A hold counts as taken until it expires.
@@ -612,10 +612,11 @@ $$;
 
 -- Stripe -------------------------------------------------------------------
 
--- record_stripe_payment learns the court kind: the player's row is paid and
--- in, the booking goes from held to booked, and the court is marked paid once
--- everyone's share is in. Court income isn't linked to the person (their
--- booking already shows on their profile).
+-- record_stripe_payment learns the court kind (on top of the memberships
+-- version): the player's row is paid and in, the booking goes from held to
+-- booked, and the court is marked paid once everyone's share is in. Court
+-- income isn't linked to the person (their booking already shows on their
+-- profile).
 create or replace function public.record_stripe_payment(p jsonb)
 returns table (payment_id uuid, contact_id uuid, created boolean)
 language plpgsql
@@ -641,9 +642,8 @@ declare
   v_start date := greatest(coalesce(nullif(p ->> 'start_date', '')::date, public.org_today()), public.org_today());
   v_existing public.payments;
   t public.membership_tiers;
-  cur public.membership_tiers;
-  c public.contacts;
   pl public.court_players;
+  v_prev date;
   v_starts date;
   v_ends date;
   v_months int;
@@ -698,37 +698,13 @@ begin
     if not found then
       raise exception 'Unknown tier %.', v_tier using errcode = 'P0001';
     end if;
-    select * into c from public.contacts where id = v_contact for update;
-    select * into cur from public.membership_tiers where key = c.tier;
+    perform 1 from public.contacts where id = v_contact for update;
   end if;
 
   if v_kind = 'pass' then
     if t.period not in ('day', 'week') then
       raise exception '% isn''t a pass.', t.name using errcode = 'P0001';
     end if;
-    v_starts := v_start;
-    v_ends := case when t.period = 'week' then v_start + 6 else v_start end;
-    if c.membership_status = 'active' and cur.key is not null
-      and cur.period not in ('day', 'week', 'once')
-      and (c.renews_on is null or c.renews_on >= v_ends) then
-      -- Already a member for those days: the payment is kept, the membership left alone.
-      null;
-    elsif c.membership_status = 'active' and cur.period in ('day', 'week')
-      and c.member_since is not null and c.renews_on is not null
-      and c.renews_on >= v_starts - 1 and c.member_since <= v_ends + 1 then
-      -- A pass that runs into the new one: one stretch from the first day to the last.
-      update public.contacts set
-        tier = case when cur.period = 'week' and t.period = 'day' then cur.key else t.key end,
-        member_since = least(c.member_since, v_starts),
-        renews_on = greatest(c.renews_on, v_ends)
-      where id = v_contact;
-    else
-      update public.contacts set
-        tier = t.key, membership_status = 'active',
-        member_since = v_starts, renews_on = v_ends
-      where id = v_contact;
-    end if;
-
   elsif v_kind = 'membership' then
     v_months := case t.period
       when 'month' then 1 when 'quarter' then 3 when 'half' then 6 when 'year' then 12
@@ -736,47 +712,19 @@ begin
     if v_months is null then
       raise exception '% can''t be paid as a membership term.', t.name using errcode = 'P0001';
     end if;
-    -- Paying before the renewal date extends from it; otherwise the term starts today.
-    v_starts := case
-      when c.tier = t.key and c.membership_status = 'active'
-        and c.renews_on is not null and c.renews_on >= v_today then c.renews_on
-      else v_today
-    end;
-    v_ends := (v_starts + make_interval(months => v_months))::date;
-    update public.contacts set
-      tier = t.key, membership_status = 'active',
-      member_since = coalesce(c.member_since, v_today),
-      renews_on = v_ends
-    where id = v_contact;
-    insert into public.contact_stages (contact_id, pipeline, stage)
-    values (v_contact, 'memberships', 'active')
-    on conflict (contact_id, pipeline) do update set stage = 'active', updated_at = now();
-
-  elsif v_kind = 'court' then
-    update public.court_players
-    set paid = true, paid_at = now(), status = 'in', held_until = null
-    where id = v_player;
-    begin
-      update public.court_bookings b set
-        status = case when b.status in ('held', 'booked', 'expired') then 'booked' else b.status end,
-        held_until = null,
-        paid = (select coalesce(sum(x.amount) filter (where x.paid), 0) >= coalesce(b.amount, 0)
-                from public.court_players x where x.booking_id = b.id),
-        paid_at = case when b.paid_at is null then now() else b.paid_at end
-      where b.id = v_booking;
-    exception when exclusion_violation then
-      -- The hold ran out and someone else took the slot while they were
-      -- paying. The payment is kept so the team can refund it.
-      update public.court_bookings
-      set notes = concat_ws(E'\n', notes, 'Paid after the hold expired and the slot was taken. Refund from Stripe.')
-      where id = v_booking;
-    end;
-
-  else
+    -- Paid while a membership still runs: the new term follows it.
+    select max(m.ends_on) into v_prev
+    from public.memberships m
+    join public.membership_tiers mt on mt.key = m.tier
+    where m.contact_id = v_contact and m.status in ('active', 'cancelled', 'paused')
+      and mt.period not in ('day', 'week') and m.tier <> 'team'
+      and m.ends_on is not null and m.ends_on >= v_start;
+    v_starts := case when v_prev is not null then v_prev + 1 else v_start end;
+    v_ends := (v_starts + make_interval(months => v_months))::date - 1;
+  elsif v_kind = 'ticket' then
     if v_reg is null then
       raise exception 'A ticket payment needs its booking.' using errcode = 'P0001';
     end if;
-    update public.registrations set paid = true where id = v_reg;
   end if;
 
   -- Finance. Ticket and court income isn't linked to the person: the booking
@@ -810,12 +758,45 @@ begin
     v_session, v_intent, coalesce((p ->> 'live')::boolean, false)
   ) returning id into v_id;
 
+  if v_kind = 'pass' then
+    insert into public.memberships (contact_id, tier, status, activate_by, source, payment_id)
+    values (v_contact, t.key, 'unused', v_today + 90, 'stripe', v_id);
+  elsif v_kind = 'membership' then
+    insert into public.memberships (contact_id, tier, status, starts_on, ends_on, source, payment_id)
+    values (v_contact, t.key, 'active', v_starts, v_ends, 'stripe', v_id);
+    insert into public.contact_stages (contact_id, pipeline, stage)
+    values (v_contact, 'memberships', 'active')
+    on conflict (contact_id, pipeline) do update set stage = 'active', updated_at = now();
+  elsif v_kind = 'court' then
+    update public.court_players
+    set paid = true, paid_at = now(), status = 'in', held_until = null
+    where id = v_player;
+    begin
+      update public.court_bookings b set
+        status = case when b.status in ('held', 'booked', 'expired') then 'booked' else b.status end,
+        held_until = null,
+        paid = (select coalesce(sum(x.amount) filter (where x.paid), 0) >= coalesce(b.amount, 0)
+                from public.court_players x where x.booking_id = b.id),
+        paid_at = case when b.paid_at is null then now() else b.paid_at end
+      where b.id = v_booking;
+    exception when exclusion_violation then
+      -- The hold ran out and someone else took the slot while they were
+      -- paying. The payment is kept so the team can refund it.
+      update public.court_bookings
+      set notes = concat_ws(E'\n', notes, 'Paid after the hold expired and the slot was taken. Refund from Stripe.')
+      where id = v_booking;
+    end;
+  else
+    update public.registrations set paid = true where id = v_reg;
+  end if;
+
   return query select v_id, v_contact, true;
 end;
 $$;
 
--- A full refund of a court payment takes the player out of the match (and
--- cancels the booking when it was the host's).
+-- A full refund ends what was bought that moment (user decision); for a court
+-- it takes the player out of the match, and cancels the booking when it was
+-- the host's. A partial refund only posts to Finance.
 create or replace function public.refund_stripe_payment(
   p_intent text, p_refund_id text, p_amount numeric, p_currency text
 )
@@ -828,6 +809,7 @@ declare
   pay public.payments;
   f public.finance_entries;
   pl public.court_players;
+  v_full boolean;
 begin
   select * into pay from public.payments where payment_intent = p_intent for update;
   if not found then
@@ -847,24 +829,30 @@ begin
     'expense', public.org_today(), f.business_line_id, 'Refunds', f.party,
     'Refund: ' || pay.description, p_amount, upper(p_currency), 'card', p_refund_id, 'paid'
   );
+  v_full := pay.refunded_amount + p_amount >= pay.amount;
   update public.payments set
     refunded_amount = refunded_amount + p_amount,
-    status = case when refunded_amount + p_amount >= amount then 'refunded' else status end,
-    refunded_at = case when refunded_amount + p_amount >= amount then now() else refunded_at end
+    status = case when v_full then 'refunded' else status end,
+    refunded_at = case when v_full then now() else refunded_at end
   where id = pay.id;
-  if pay.refunded_amount + p_amount >= pay.amount then
+  if v_full then
     if pay.kind = 'ticket' and pay.registration_id is not null then
       update public.registrations set paid = false where id = pay.registration_id;
-    elsif pay.kind = 'court' and pay.court_player_id is not null then
+    end if;
+    if pay.kind = 'court' and pay.court_player_id is not null then
       select * into pl from public.court_players where id = pay.court_player_id;
       update public.court_players set paid = false, status = 'out' where id = pl.id;
       if pl.host then
         update public.court_bookings set status = 'cancelled', paid = false where id = pl.booking_id;
-        update public.court_players set status = 'out' where booking_id = pl.booking_id and status in ('in', 'held');
+        update public.court_players set status = 'out'
+        where booking_id = pl.booking_id and status in ('in', 'held');
       else
-        update public.court_bookings b set paid = false where b.id = pl.booking_id;
+        update public.court_bookings set paid = false where id = pl.booking_id;
       end if;
     end if;
+    update public.memberships set
+      status = 'revoked', revoked_at = now(), revoke_reason = 'Refunded on Stripe'
+    where payment_id = pay.id and status <> 'revoked';
   end if;
   return pay.id;
 end;
