@@ -1870,6 +1870,10 @@ export type Database = {
       }
       payments: {
         Row: {
+          charge_id: string | null
+          fee: number | null
+          fee_currency: string | null
+          source: string
           amount: number
           contact_id: string | null
           created_at: string
@@ -1888,7 +1892,7 @@ export type Database = {
           refunded_amount: number
           refunded_at: string | null
           registration_id: string | null
-          session_id: string
+          session_id: string | null
           starts_on: string | null
           status: string
           tier: string | null
@@ -1896,6 +1900,10 @@ export type Database = {
           court_player_id: string | null
         }
         Insert: {
+          charge_id?: string | null
+          fee?: number | null
+          fee_currency?: string | null
+          source?: string
           amount: number
           contact_id?: string | null
           created_at?: string
@@ -1914,7 +1922,7 @@ export type Database = {
           refunded_amount?: number
           refunded_at?: string | null
           registration_id?: string | null
-          session_id: string
+          session_id?: string | null
           starts_on?: string | null
           status?: string
           tier?: string | null
@@ -1922,6 +1930,10 @@ export type Database = {
           court_player_id?: string | null
         }
         Update: {
+          charge_id?: string | null
+          fee?: number | null
+          fee_currency?: string | null
+          source?: string
           amount?: number
           contact_id?: string | null
           created_at?: string
@@ -1940,7 +1952,7 @@ export type Database = {
           refunded_amount?: number
           refunded_at?: string | null
           registration_id?: string | null
-          session_id?: string
+          session_id?: string | null
           starts_on?: string | null
           status?: string
           tier?: string | null
@@ -3805,6 +3817,7 @@ export type Database = {
           timezone: string;
         }[];
       };
+      import_stripe_charge: { Args: { p: Json }; Returns: Json }
       record_stripe_payment: {
         Args: { p: Json }
         Returns: { contact_id: string; created: boolean; payment_id: string }[]
