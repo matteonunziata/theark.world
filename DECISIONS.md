@@ -173,7 +173,11 @@ Newest at the bottom of each section.
 - **The welcome email.** When a CRM save leaves someone with an email on an active membership of a month or longer (`portalWelcomeTier`: any tier whose period isn't day or week, except Team), ARK OS emails them once: "Your members portal is ready", with a sign-in link that lands on `/portal/welcome` (a magic link when `SUPABASE_SERVICE_ROLE_KEY` is set, else the sign-in page). `contacts.welcome_sent_at` records it; the profile's Contact panel shows Portal status (not welcomed, welcomed on…, profile set up on…) with a Send / Resend button for admins and sales. Passes bought through the MightySales links still don't reach ARK OS, so the email goes out when staff record the membership in the CRM.
 - **Who's going.** Members (and staff) see which directory members are booked into each date of a class or event, as avatars and first names, plus "and N more" for guests and members outside the directory (`session_attendees`). Shown in the booking panel on the event page and in the portal's booking modal. Public visitors see only the count.
 
+<<<<<<< HEAD
 ## Round 13 (2026-10-05): Farm shop till and overview
+=======
+## Round 14 (2026-10-05): Farm shop till and overview
+>>>>>>> origin/main
 
 - **The farm shop has three tabs: Overview, Sales, Products & stock.** Overview is the analytics page (a lean Shopify-style report); Sales is the till and the ledger; Products & stock is the catalog that was there before, with the low-stock filter reachable as `/shop/products?low=1`.
 - **Sales are orders.** A sale recorded on the Sales tab can have several lines; they share `stock_movements.order_id`, each line keeps the `unit_price` it was charged at (the member price for active members, when the product has one) and the sale notes how it was paid (`method`: cash, SINPE, card, transfer, other). Deliveries work the same way for restocks. Older one-line sales without an order id count as an order each. "Sold to" still links the sale to a CRM profile.
@@ -182,6 +186,7 @@ Newest at the bottom of each section.
 - **Sales tab:** every movement in a range (sales, deliveries, adjustments) grouped by order, searchable, with a CSV export of the lines shown, and the "Record a sale" and "Delivery" drawers. The list is capped at 1,000 rows, so narrow the range for a full export of a busy quarter.
 - **Sample sales were seeded** by migration (thirteen weeks, deliveries on Tuesdays and Fridays, weekends busier, a slow upward trend, some orders by the sample members). Forty-four products were switched to counted stock for it. The rows are in `sample_records`; "Remove sample data" deletes them and calls `shop_recount_stock()` to rebuild the counts from what's left. The counted flag and alert levels stay.
 - **Shared charts.** `BarList` and `Columns` moved from marketing to `src/components/charts.tsx`, joined by `TimeSeries` (SVG columns with a money axis). `RangePicker` moved to `src/components/range-picker.tsx` and takes presets.
+<<<<<<< HEAD
 
 ## Round 14: Stripe (2026-10-05)
 
@@ -193,3 +198,5 @@ Newest at the bottom of each section.
 - **Tickets: book, then pay.** Booking still holds the spot, as before. A ticket with a price and no outside payment link gets "Pay ₡X now" after booking and on the ticket page (`/pay/ticket/{token}`). Paying marks the booking paid. Tickets with an outside link (breakfast, lunch) keep using it.
 - **Counted once.** Ticket income goes to Finance without a person, because the paid booking already shows on the profile. Pass and membership income is linked to the person.
 - **Refunds** come in through the `refund.created` webhook, once per Stripe refund. Each adds a Finance expense (category Refunds). When the whole amount is back, the payment is marked refunded and a ticket goes back to unpaid. Passes and memberships aren't changed by a refund; staff decide.
+=======
+>>>>>>> origin/main

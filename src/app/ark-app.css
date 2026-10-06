@@ -956,6 +956,9 @@ a.mk-tr:hover{background:var(--surface-2)}
   .orow,.lrow{grid-template-columns:1fr auto}
   .orow > :nth-child(3),.orow > :nth-child(4),.lrow > :nth-child(3),.lrow > :nth-child(4){display:none}
 }
+<<<<<<< HEAD
 
 /* Stripe settings: the key checklist has no time column */
 .integ-log.checks li{grid-template-columns:auto 1fr}
+=======
+>>>>>>> origin/main

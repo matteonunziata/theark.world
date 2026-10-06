@@ -1,29 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { addDays } from "@/lib/dates";
-
-export type Preset = [label: string, from: string, to: string];
-
-/** The marketing presets: a month, a quarter, the calendar quarter so far. */
-export function quarterPresets(today: string): Preset[] {
-  const q = Math.floor((Number(today.slice(5, 7)) - 1) / 3) * 3 + 1;
-  const quarter = `${today.slice(0, 4)}-${String(q).padStart(2, "0")}-01`;
-  return [
-    ["Last 30 days", addDays(today, -29), today],
-    ["Last 90 days", addDays(today, -89), today],
-    ["This quarter", quarter, today],
-  ];
-}
-
-/** The shop presets: this week, a month, a quarter. */
-export function recentPresets(today: string): Preset[] {
-  return [
-    ["Last 7 days", addDays(today, -6), today],
-    ["Last 30 days", addDays(today, -29), today],
-    ["Last 90 days", addDays(today, -89), today],
-  ];
-}
+import { type Preset, quarterPresets } from "@/lib/range-presets";
 
 /** Date range for analytics, kept in the URL alongside any other filters. */
 export function RangePicker({

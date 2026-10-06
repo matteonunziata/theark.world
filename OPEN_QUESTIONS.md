@@ -70,13 +70,18 @@
 - **WhatsApp numbers.** Members who were added before onboarding may have a phone in the CRM already; it becomes visible to other members as soon as they are open to connecting (the default). Should existing members be asked first, by setting `open_to_connect` to false until they finish onboarding?
 - **Team members in the portal.** Staff and facilitators skip the onboarding gate but can fill the same fields under Me. Should they be asked too, so they show up with a photo and bio?
 
+<<<<<<< HEAD
 ## Round 13: Farm shop
+=======
+## Round 14: Farm shop
+>>>>>>> origin/main
 
 - **Shopify orders.** Online orders on thearkfarm.shop don't reach ARK OS, so the Overview is the till only. Pull Shopify orders in (Admin API token, like the GHL integration) so online and in-person sales sit in one report?
 - **Shop sales into Finance.** Shop revenue isn't posted to the Finance ledger. A daily or weekly summary entry under the Farm shop business line, created automatically, or keep entering deposits by hand?
 - **Member prices.** No product has a member price yet, so the member share on the Overview just shows who bought while an active member. Set member prices on the products that should have one (the drawer has the field).
 - **Costs.** Products have no cost price, so there's no margin figure. Worth adding a cost per unit, at least for bought-in goods?
 - **Till hardware.** Is the till a phone or a laptop at the counter? The Sales tab works on both, but a barcode scanner or a card reader would change what gets built next.
+<<<<<<< HEAD
 
 ## Round 14: Stripe
 
@@ -88,3 +93,5 @@
 - **Pay before booking?** Paid event tickets still hold a spot unpaid (pay now, later, or at the desk). Should public events with a price require payment before the spot is held?
 - **Meals, courts and stays** aren't on Stripe yet. Meals keep their payment links; courts have no price; stays are confirmed by hand. The same checkout can take any of them once prices are set.
 - **Ambassador and Founding.** Ambassador has no price, so it gets no payment link. Founding is ₡100,000 a month at the rack rate. Is that still what Founding members pay?
+=======
+>>>>>>> origin/main
