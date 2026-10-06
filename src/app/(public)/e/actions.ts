@@ -3,11 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { fail, friendly } from "@/lib/action-result";
 import { sendTicketEmail } from "@/lib/email";
+import { stripeReady } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { loadEvent } from "./load";
 
 export type BookingResult =
-  | { ok: true; token: string; emailed: boolean; paymentLink: string | null; price: string | null }
+  | {
+      ok: true;
+      token: string;
+      emailed: boolean;
+      paymentLink: string | null;
+      /** Pay on Stripe (ARK OS's own checkout) when the ticket has a price and no outside link. */
+      payUrl: string | null;
+      price: string | null;
+    }
   | { ok: false; error: string };
 
 /** Public and member booking. All checks happen in book_session. */
@@ -72,6 +81,7 @@ export async function bookSession(input: {
     emailed,
     // A link without a price (meals) still needs paying.
     paymentLink: tt?.payment_link ?? null,
+    payUrl: paid && !tt.payment_link && stripeReady() ? `/pay/ticket/${data.qr_token}` : null,
     price: paid
       ? tt.currency === "USD"
         ? `$${Number(tt.price).toLocaleString("en-US")}`

@@ -34,7 +34,7 @@ const SCHEMA = {
   lot_household: "people living on a lot: id, lot_id, name, relation, contact_id, lives_on_site",
   lot_maintenance: "id, lot_id, title, category, status, performed_on, cost, currency",
   products: "farm shop: id, name, category, unit, price, member_price, stock, low_at, active, track_stock, online",
-  stock_movements: "id, product_id, type (sale|restock|adjusted), delta (negative for sales), contact_id (buyer, when known), amount (sale value, CRC), created_at",
+  stock_movements: "id, product_id, type (sale|restock|adjusted), delta (negative for sales), order_id (lines sold together), unit_price, amount (sale value, CRC), method (cash|sinpe|card|transfer|other), contact_id (buyer, when known), created_at",
   finance_entries: "id, kind (income|expense), entry_date, business_line_id, category, party, description, amount, currency, method, status (paid|unpaid), due_date, contact_id",
   finance_months: "monthly summary: month, membership, events, shop, fnb, land, other, expenses, cash, ar, ap",
   business_lines: "id, name",

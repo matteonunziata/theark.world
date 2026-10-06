@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { tierName, tierPrice } from "@/lib/crm";
-import { dayLabel, fmtDate, timeRange, todayIn } from "@/lib/dates";
+import { addDays, dayLabel, fmtDate, timeRange, todayIn } from "@/lib/dates";
 import { loadPortal } from "@/lib/portal";
+import { fmtAmount, stripeReady, TERM_NAME, termPrice } from "@/lib/stripe";
 import { PhotoField } from "./photo-field";
 import { ProfileForm } from "./profile-form";
 
@@ -26,6 +27,10 @@ export default async function Me() {
       : Promise.resolve({ data: null }),
     me ? p.supabase.rpc("my_rate") : Promise.resolve({ data: null }),
   ]);
+
+  // Paying ahead online: memberships paid by term, once Stripe is on.
+  const term = me && tier && tier.key !== "team" && stripeReady() ? termPrice(tier, rate, me.discount_percent) : null;
+  const dueSoon = !me?.renews_on || me.renews_on <= addDays(today, 30);
 
   if (!me) {
     return (
@@ -102,6 +107,21 @@ export default async function Me() {
                 </>
               )}
             </dl>
+            {term && (
+              <div style={{ marginTop: 16 }}>
+                {/* A route handler that sends the member on to Stripe, so a plain link, not <Link>. */}
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+                <a className={`pv-btn${dueSoon ? "" : " ghost"}`} href="/pay/membership/me">
+                  {me.membership_status === "active" ? "Pay for the next" : "Pay for"} {TERM_NAME[tier!.period]},{" "}
+                  {fmtAmount(term, tier!.currency)}
+                </a>
+                <p style={{ margin: "8px 0 0", color: "var(--pv-muted)", fontSize: 14 }}>
+                  {me.membership_status === "active" && me.renews_on
+                    ? "Paying early adds the time to the end of your current membership."
+                    : "Your membership starts as soon as the payment goes through."}
+                </p>
+              </div>
+            )}
             {tier && tier.perks.length > 0 && (
               <div className="pv-tags" style={{ marginTop: 14 }}>
                 {tier.perks.map((x) => (

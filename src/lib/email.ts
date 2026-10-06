@@ -176,6 +176,44 @@ ${detailRows([
   });
 }
 
+/** After a day or week pass is paid on Stripe: the pass, with its QR code. */
+export async function sendPassEmail(m: {
+  to: string;
+  name: string;
+  what: string;
+  from: string;
+  until: string | null;
+  url: string;
+  orgName: string;
+}) {
+  if (!emailConfigured()) return false;
+  const png = await QRCode.toBuffer(m.url, { width: 360, margin: 1 });
+  const first = m.name.trim().split(/\s+/)[0] ?? "";
+  const when = m.until ? `${m.from} to ${m.until}` : m.from;
+  return sendEmail({
+    to: m.to,
+    subject: `Your ${m.what.toLowerCase()} for ${m.orgName}`,
+    parts: {
+      orgName: m.orgName,
+      preheader: `Your pass for ${when}.`,
+      eyebrow: m.what,
+      heading: `See you soon, ${esc(first)}`,
+      body: `<p style="margin:0 0 16px">Thank you, your payment went through. Show this code to security when you arrive, 8am to 8pm.</p>
+${detailRows([
+  ["Pass", esc(m.what)],
+  ["When", esc(when)],
+])}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 6px">
+<img src="cid:pass-qr" width="200" height="200" alt="Pass QR code" style="display:block;border:0">
+</td></tr></table>`,
+      cta: { label: "Open your pass", href: m.url },
+      footnote: "Your receipt comes separately from Stripe.",
+    },
+    text: `Hi ${first},\n\nThank you, your payment went through. Your ${m.what.toLowerCase()} is for ${when}. Show your pass to security when you arrive: ${m.url}\n\nYour receipt comes separately from Stripe.`,
+    attachments: [{ filename: "pass.png", content: png, contentId: "pass-qr" }],
+  });
+}
+
 /** The sign-in email in the ARK look: a button, and a code for another device. */
 export async function sendSignInEmail(m: { to: string; link: string; code: string; team: boolean }) {
   return sendEmail({

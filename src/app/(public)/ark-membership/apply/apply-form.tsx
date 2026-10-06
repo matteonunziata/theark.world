@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { startTransition, useActionState, useRef, useState } from "react";
 import type { ActionResult } from "@/lib/action-result";
-import { money, PLANS } from "../plans";
+import { money, PLANS, passUrl } from "../plans";
 import { applyForMembership } from "./actions";
 
 const STEPS = ["Start here", "Why The ARK", "What you bring", "Your place here"];
@@ -59,12 +59,12 @@ export function ApplyForm({ plan: initialPlan, utm }: { plan: string; utm: Recor
         return setStepError("Let us know if you’ve spent a day here on a day pass.");
       }
       if (needsDayPass) {
-        window.location.href = dayPass.payLink!;
+        window.location.assign(passUrl(dayPass.key));
         return;
       }
       // Passes need no application.
-      if (chosen.payLink) {
-        window.location.href = chosen.payLink;
+      if (chosen.kind === "pass") {
+        window.location.assign(passUrl(chosen.key));
         return;
       }
     }
@@ -145,7 +145,7 @@ export function ApplyForm({ plan: initialPlan, utm }: { plan: string; utm: Recor
               <span>
                 <b>{LABELS[p.key] ?? p.name}</b>
                 <span className="ms-where">{money(p.price, "CRC")}</span>
-                {p.payLink && <em>No application needed — pay and go</em>}
+                {p.kind === "pass" && <em>No application needed — pay and go</em>}
               </span>
             </label>
           ))}
@@ -253,7 +253,7 @@ export function ApplyForm({ plan: initialPlan, utm }: { plan: string; utm: Recor
           <button type="button" className="ms-btn solid" onClick={next}>
             {step === 1 && needsDayPass
               ? "Buy a day pass first"
-              : step === 1 && chosen?.payLink
+              : step === 1 && chosen?.kind === "pass"
                 ? "Continue to payment"
                 : "Continue"}
           </button>
