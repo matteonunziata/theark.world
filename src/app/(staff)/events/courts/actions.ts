@@ -8,6 +8,7 @@ import { SPORTS } from "@/lib/courts";
 const BOOKERS = ["admin", "lead", "sales", "facilitator"];
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TIME = /^\d{2}:\d{2}$/;
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 const refresh = () => {
   revalidatePath("/events/courts");
@@ -39,16 +40,22 @@ export async function saveCourtBooking(_prev: ActionResult, data: FormData): Pro
     notes: field(data, "notes"),
     paid: data.get("paid") === "on",
   };
-  if (id) {
-    const { error } = await supabase.from("court_bookings").update(row).eq("id", id);
-    if (error) return fail(friendly(error));
-    refresh();
-    return ok("Saved");
-  }
   const courtId = field(data, "court_id");
   const date = field(data, "date");
   const start = field(data, "start_time");
   const end = field(data, "end_time");
+  if (id) {
+    // Moving or resizing is optional: the form sends the slot only when it can be changed.
+    const moved = courtId && date && start && end;
+    if (moved && (!DATE.test(date) || !TIME.test(start) || !TIME.test(end) || end <= start)) return fail("The end must be after the start.");
+    const { error } = await supabase
+      .from("court_bookings")
+      .update(moved ? { ...row, court_id: courtId, date, start_time: start, end_time: end } : row)
+      .eq("id", id);
+    if (error) return fail(error.code === "23P01" ? "That time is already booked. Pick another." : friendly(error));
+    refresh();
+    return ok("Saved");
+  }
   if (!courtId || !date || !start || !end || !TIME.test(start) || !TIME.test(end)) return fail("Pick a slot.");
   const { error } = await supabase
     .from("court_bookings")
@@ -69,6 +76,12 @@ export async function saveCourt(_prev: ActionResult, data: FormData): Promise<Ac
   if (!TIME.test(open) || !TIME.test(close) || close <= open) return fail("Closing time must be after opening time.");
   const sport = field(data, "sport");
   const price = Number(field(data, "price") ?? "");
+  // Longer lengths: empty means the slot price scaled by length.
+  const longer = (k: string) => {
+    const v = field(data, k);
+    const n = v === null ? NaN : Number(v);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  };
   const currency = field(data, "currency");
   const row = {
     name,
@@ -78,6 +91,8 @@ export async function saveCourt(_prev: ActionResult, data: FormData): Promise<Ac
     slot_minutes: Math.min(240, Math.max(15, Number(field(data, "slot_minutes")) || 60)),
     active: data.get("active") === "on",
     price: Number.isFinite(price) && price >= 0 ? price : 0,
+    price_90: longer("price_90"),
+    price_120: longer("price_120"),
     currency: currency === "USD" ? "USD" : "CRC",
     description: field(data, "description"),
     max_players: Math.min(8, Math.max(2, Number(field(data, "max_players")) || 4)),

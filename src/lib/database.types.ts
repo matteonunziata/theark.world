@@ -505,6 +505,8 @@ export type Database = {
           slot_minutes: number
           sport: string
           price: number | null
+          price_90: number | null
+          price_120: number | null
           currency: string
           description: string | null
           max_players: number
@@ -520,6 +522,8 @@ export type Database = {
           slot_minutes?: number
           sport?: string
           price?: number | null
+          price_90?: number | null
+          price_120?: number | null
           currency?: string
           description?: string | null
           max_players?: number
@@ -535,6 +539,8 @@ export type Database = {
           slot_minutes?: number
           sport?: string
           price?: number | null
+          price_90?: number | null
+          price_120?: number | null
           currency?: string
           description?: string | null
           max_players?: number
@@ -3452,8 +3458,8 @@ export type Database = {
         Args: never;
         Returns: {
           id: string; name: string; sport: string; open_time: string; close_time: string;
-          slot_minutes: number; price: number | null; currency: string; description: string | null;
-          max_players: number;
+          slot_minutes: number; price: number | null; price_90: number | null; price_120: number | null;
+          currency: string; description: string | null; max_players: number;
         }[];
       };
       public_court_day: {

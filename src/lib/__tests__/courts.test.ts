@@ -30,9 +30,9 @@ describe("courts online", () => {
   const padel = { price: 20000, slot_minutes: 60, currency: "CRC" };
 
   it("offers one slot up to two hours", () => {
-    expect(durations({ slot_minutes: 60 })).toEqual([60, 120]);
+    expect(durations({ slot_minutes: 60 })).toEqual([60, 90, 120]);
     expect(durations({ slot_minutes: 30 })).toEqual([30, 60, 90, 120]);
-    expect(durations({ slot_minutes: 90 })).toEqual([90]);
+    expect(durations({ slot_minutes: 90 })).toEqual([90, 120]);
   });
 
   it("prices a booking from the price per slot", () => {
@@ -40,6 +40,8 @@ describe("courts online", () => {
     expect(courtPrice(padel, 120)).toBe(40000);
     expect(courtPrice({ price: 25, slot_minutes: 30, currency: "USD" }, 90)).toBe(75);
     expect(courtPrice({ price: null, slot_minutes: 60, currency: "CRC" }, 60)).toBe(0);
+    const card = { price: 15000, price_90: 23000, price_120: 30000, slot_minutes: 60, currency: "CRC" };
+    expect([60, 90, 120].map((m) => courtPrice(card, m))).toEqual([15000, 23000, 30000]);
   });
 
   it("splits a court evenly between players", () => {

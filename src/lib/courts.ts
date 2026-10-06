@@ -12,6 +12,8 @@ export type Court = {
 /** A court as the public page sees it: with its price per slot. */
 export type PublicCourt = Court & {
   price: number | null;
+  price_90: number | null;
+  price_120: number | null;
   currency: string;
   description: string | null;
   max_players: number;
@@ -70,10 +72,11 @@ export function slots(c: Pick<Court, "open_time" | "close_time" | "slot_minutes"
   return out;
 }
 
-/** The lengths a booking can have on this court, in minutes (one slot up to two hours). */
+/** The lengths a booking can have on this court, in minutes: half-hour steps from one slot up to two hours. */
 export function durations(c: Pick<Court, "slot_minutes">) {
+  const step = c.slot_minutes % 30 === 0 ? 30 : c.slot_minutes;
   const out: number[] = [];
-  for (let m = c.slot_minutes; m <= MAX_MINUTES; m += c.slot_minutes) out.push(m);
+  for (let m = c.slot_minutes; m <= MAX_MINUTES; m += step) out.push(m);
   return out;
 }
 
@@ -115,9 +118,16 @@ export function classAt(
 
 export const hhmm = (t: string) => t.slice(0, 5);
 
-/** What a booking of this length costs, from the price per slot (before any discount). */
-export function courtPrice(c: Pick<PublicCourt, "price" | "slot_minutes" | "currency">, minutes: number) {
-  const n = Number(c.price ?? 0) * (minutes / c.slot_minutes);
+/**
+ * What a booking of this length costs (before any discount): the court's own
+ * price for 1½ and 2 hours when set, otherwise the slot price scaled by length.
+ */
+export function courtPrice(
+  c: Pick<PublicCourt, "price" | "slot_minutes" | "currency"> & Partial<Pick<PublicCourt, "price_90" | "price_120">>,
+  minutes: number,
+) {
+  const set = minutes === 90 ? c.price_90 : minutes === 120 ? c.price_120 : null;
+  const n = set !== null && set !== undefined ? Number(set) : Number(c.price ?? 0) * (minutes / c.slot_minutes);
   return c.currency === "USD" ? Math.round(n * 100) / 100 : Math.round(n);
 }
 
