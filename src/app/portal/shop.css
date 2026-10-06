@@ -1,0 +1,25 @@
+.pv .sh-bar { margin-bottom: 12px; }
+.pv .sh-search { width: 100%; max-width: 420px; padding: 11px 16px; border-radius: 999px; border: 1px solid var(--pv-line); background: var(--pv-paper); color: var(--pv-ink); font: inherit; }
+.pv .sh-grid { margin-top: 20px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.pv .sh-card { cursor: default; }
+.pv .sh-card:hover { transform: none; }
+.pv .sh-img { aspect-ratio: 1 / 1; background-color: var(--pv-bg); background-image: none; }
+.pv .sh-opt { margin-top: 6px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--pv-line); background: var(--pv-paper); color: var(--pv-ink); font: inherit; font-size: 14px; }
+.pv .sh-foot { align-items: center; }
+.pv .sh-price b { color: var(--pv-ink); font-size: 16px; margin-right: 6px; }
+.pv .sh-price s { color: var(--pv-muted); font-size: 13px; }
+.pv .sh-empty { color: var(--pv-muted); padding: 32px 0; }
+.pv .sh-sheet { position: fixed; inset: 0; z-index: 60; display: flex; justify-content: flex-end; }
+.pv .sh-scrim { position: absolute; inset: 0; border: 0; background: rgba(17, 26, 20, 0.5); cursor: pointer; }
+.pv .sh-panel { position: relative; width: min(420px, 100%); height: 100%; overflow-y: auto; background: var(--pv-bg); border-left: 1px solid var(--pv-line); padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.pv .sh-ph { display: flex; justify-content: space-between; align-items: center; }
+.pv .sh-ph h2 { margin: 0; font-size: 24px; }
+.pv .sh-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.pv .sh-lines li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--pv-line); }
+.pv .sh-qty { display: flex; align-items: center; gap: 10px; }
+.pv .sh-qty button { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--pv-line); background: var(--pv-paper); color: var(--pv-ink); font-size: 18px; cursor: pointer; }
+.pv .sh-qty button:disabled { opacity: 0.4; cursor: default; }
+.pv .sh-pf { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+.pv .sh-pf .sub { margin: 0; font-size: 13.5px; color: var(--pv-muted); }
+.pv .sh-total { display: flex; justify-content: space-between; font-size: 17px; }
+.pv .pv-pills button.pv-pill { font: inherit; cursor: pointer; }
