@@ -121,3 +121,9 @@
 
 - **Shopify: should Founding, Ambassador and Team get member10?** They have a 10% discount on their tier, so the sync tags them. The ask named only 1, 3, 6 months and Annual. Set the tier's discount to 0 in Memberships → Tiers to exclude one.
 - **Shopify: should the codes combine with other discounts or exclude sale items?** They currently apply to everything and combine only with free shipping.
+
+## Round 19: Importing past Stripe payments
+
+- **Which business line?** Imported payments are sorted by keywords in their description, and anything unclear goes to Other. After the first import, look at Finance → Other: if many share a description, tell me and I'll add it to the rules.
+- **Adding buyers to the CRM.** The import links payments to people already in the CRM and adds nobody. Should past buyers who aren't in the CRM be added as contacts (tagged "Stripe"), or kept out?
+- **Fees on new payments.** Imported payments bring Stripe's fees into Finance; payments taken through ARK OS's checkout don't yet. Add them there too, so the monthly fee expense is complete?
