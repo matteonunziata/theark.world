@@ -258,3 +258,19 @@ export function weekdayRows(weekdays: Report["weekdays"], pick: (w: Report["week
     return { label: dowLabel(d), value: w ? pick(w) : 0, note: w ? `${w.orders} order${w.orders === 1 ? "" : "s"}` : undefined };
   });
 }
+
+/** Start of a Costa Rica calendar day as an ISO timestamp (no daylight saving there). */
+export const crStart = (day: string) => new Date(`${day}T00:00:00-06:00`).toISOString();
+
+/** "Oct 5, 2:59pm" in Costa Rica time. */
+export const fmtWhen = (iso: string) =>
+  new Date(iso)
+    .toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/Costa_Rica",
+    })
+    .replace(" AM", "am")
+    .replace(" PM", "pm");

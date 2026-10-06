@@ -369,6 +369,16 @@ values ((select id from public.products where name = 'Eggs'), 'sale', -3,
 select pg_temp.expect(
   (select stock from public.products where name = 'Eggs') = 7,
   'shop records a sale and stock follows');
+select pg_temp.expect(
+  (public.shop_report(current_date - 1, current_date + 1)->'totals'->>'orders')::int = 1
+  and (public.shop_report(current_date - 1, current_date + 1)->'totals'->>'revenue')::numeric = 9000,
+  'shop sees the sales report at the product price');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('sales'));
+select pg_temp.expect(
+  (public.shop_report(current_date - 1, current_date + 1)->'totals'->>'orders')::int = 0,
+  'sales cannot see the sales report');
 reset role;
 
 select pg_temp.act_as(pg_temp.id('sales'));

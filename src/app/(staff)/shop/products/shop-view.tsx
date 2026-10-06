@@ -6,7 +6,7 @@ import { CoverField } from "@/components/cover-field";
 import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
 import { useToast } from "@/components/toast";
 import type { Tables } from "@/lib/database.types";
-import { CATEGORIES, fmtMoney, lowState, productImage } from "@/lib/shop";
+import { CATEGORIES, fmtMoney, lowState, productImage, SHOP_METHODS } from "@/lib/shop";
 import { recordStock, saveProduct, syncFromWebsite } from "../actions";
 
 type Product = Tables<"products">;
@@ -17,15 +17,17 @@ export function ShopView({
   moves,
   currency,
   canEdit,
+  initialLow = false,
 }: {
   products: Product[];
   moves: Move[];
   currency: string;
   canEdit: boolean;
+  initialLow?: boolean;
 }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
-  const [lowOnly, setLowOnly] = useState(false);
+  const [lowOnly, setLowOnly] = useState(initialLow);
   const drawer = useDrawer<Product>();
   const [syncing, startSync] = useTransition();
   const toast = useToast();
@@ -194,12 +196,13 @@ function ProductDrawer({
 }) {
   const [qty, setQty] = useState("1");
   const [buyer, setBuyer] = useState<Person | null>(null);
+  const [method, setMethod] = useState<string>("cash");
   const [track, setTrack] = useState(p?.track_stock ?? true);
   const [pending, start] = useTransition();
   const toast = useToast();
   const quick = (type: "sale" | "restock") =>
     start(async () => {
-      const r = await recordStock(p!.id, type, Number(qty), type === "sale" ? buyer?.id : null);
+      const r = await recordStock(p!.id, type, Number(qty), type === "sale" ? buyer?.id : null, method);
       toast(r.ok ? (r.message ?? "") : (r.error ?? ""));
       if (r.ok) onClose();
     });
@@ -298,19 +301,30 @@ function ProductDrawer({
           {canEdit && p.track_stock && (
             <>
               <div className="subhead">Quick stock change</div>
-              <div className="grid2" style={{ alignItems: "end" }}>
-                <div className="fld" style={{ marginBottom: 0 }}>
+              <div className="grid2">
+                <div className="fld">
                   <label htmlFor="q-amt">Quantity</label>
                   <input id="q-amt" type="number" min={0} step="any" value={qty} onChange={(e) => setQty(e.target.value)} />
                 </div>
-                <div className="adj">
-                  <button type="button" className="btn" disabled={pending} onClick={() => quick("sale")}>
-                    Record a sale
-                  </button>
-                  <button type="button" className="btn" disabled={pending} onClick={() => quick("restock")}>
-                    Restock
-                  </button>
+                <div className="fld">
+                  <label htmlFor="q-method">Paid by</label>
+                  <select id="q-method" value={method} onChange={(e) => setMethod(e.target.value)}>
+                    {SHOP_METHODS.map(([k, n]) => (
+                      <option key={k} value={k}>{n}</option>
+                    ))}
+                  </select>
                 </div>
+              </div>
+              <div className="adj">
+                <button type="button" className="btn" disabled={pending} onClick={() => quick("sale")}>
+                  Record a sale
+                </button>
+                <button type="button" className="btn" disabled={pending} onClick={() => quick("restock")}>
+                  Restock
+                </button>
+                <span className="muted" style={{ fontSize: 13, alignSelf: "center" }}>
+                  Several products at once: use the Sales tab.
+                </span>
               </div>
               <div style={{ marginTop: 12 }}>
                 <PersonPicker
