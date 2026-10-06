@@ -19,7 +19,7 @@ import {
 import { dayLabel, fmtDate, todayIn } from "@/lib/dates";
 import { nextStep, stepDue } from "@/lib/sequences";
 import { type Activity, ActivityPanel } from "./activity-panel";
-import { addNote, enroll, setStage, updateEnrollment } from "../../actions";
+import { addNote, enroll, sendWelcome, setStage, updateEnrollment } from "../../actions";
 import {
   type Contact,
   ContactDrawer,
@@ -305,6 +305,28 @@ export function ProfileView({
                   <dt>Pass</dt>
                   <dd>
                     <a href={`/p/${c.pass_token}?look=1`} target="_blank" rel="noreferrer">Open member pass</a>
+                  </dd>
+                  <dt>Portal</dt>
+                  <dd>
+                    {c.onboarded_at
+                      ? `Profile set up ${fmtDate(c.onboarded_at.slice(0, 10), { month: "short", day: "numeric" })}`
+                      : c.welcome_sent_at
+                        ? `Welcome email sent ${fmtDate(c.welcome_sent_at.slice(0, 10), { month: "short", day: "numeric" })}, not set up yet`
+                        : "Not welcomed yet"}
+                    {canEdit && c.email && c.membership_status === "active" && (
+                      <>
+                        <br />
+                        <button
+                          type="button"
+                          className="btn"
+                          style={{ marginTop: 6 }}
+                          disabled={pending}
+                          onClick={() => run(() => sendWelcome(c.id))}
+                        >
+                          {c.welcome_sent_at ? "Resend welcome email" : "Send welcome email"}
+                        </button>
+                      </>
+                    )}
                   </dd>
                 </>
               )}

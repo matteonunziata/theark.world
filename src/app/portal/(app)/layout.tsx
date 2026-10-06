@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { ArkFonts } from "@/components/ark-fonts";
 import { initials } from "@/components/avatar";
 import { BookingModalProvider } from "../booking-modal";
@@ -8,23 +9,15 @@ import { PortalShell } from "../portal-shell";
 
 export default async function PortalLayout({ children }: LayoutProps<"/portal">) {
   const p = await loadPortal();
-  const { count } = p.memberId
-    ? await p.supabase
-        .from("messages")
-        .select("id", { count: "exact", head: true })
-        .eq("recipient_id", p.memberId)
-        .is("read_at", null)
-    : { count: 0 };
+  // New members set up their profile first. Staff looking in are left alone.
+  if (p.me && !p.me.onboarded_at && !p.staff) redirect("/portal/welcome");
   return (
     <ToastProvider>
       <ArkFonts />
       <div className="pv ark-type">
         <BookingModalProvider>
         <PortalShell
-          cities={p.cities.map((c) => ({ id: c.id, name: c.name }))}
-          cityId={p.city?.id ?? null}
           initials={initials(p.me?.name ?? p.staff?.name ?? "")}
-          unread={count ?? 0}
           isStaff={!!p.staff}
           isMember={!!p.memberId}
         >

@@ -15,6 +15,7 @@ import { aiEnabled, draftStep, draftWorkflow } from "@/lib/ai";
 import { sendWorkflowEmail } from "@/lib/email";
 import { IMPORT_MAX, type ImportRow } from "@/lib/csv";
 import { pushContact } from "@/lib/ghl";
+import { sendPortalWelcome } from "@/lib/portal-welcome";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -33,6 +34,22 @@ const syncOut = (contactId: string) =>
     if (!admin) return;
     await pushContact(admin, contactId).catch(() => {});
   });
+
+// A membership of a month or longer that has just become active gets the
+// portal welcome email, once. The save succeeds either way.
+async function welcomeIfNew(supabase: Parameters<typeof sendPortalWelcome>[0], id: string) {
+  const r = await sendPortalWelcome(supabase, id).catch(() => null);
+  return r?.sent ? ` Welcome email sent to ${r.email}.` : "";
+}
+
+/** Send (or resend) the portal welcome email to a member. */
+export async function sendWelcome(contactId: string): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("admin", "sales");
+  const r = await sendPortalWelcome(supabase, contactId, { force: true });
+  if (!r.sent) return fail(r.reason);
+  refresh();
+  return ok(`Welcome email sent to ${r.email}`);
+}
 
 export async function saveContact(
   _prev: ActionResult,
@@ -90,9 +107,10 @@ export async function saveContact(
       if (error.code === "23505") return fail("Someone already has that email.");
       return fail(friendly(error));
     }
+    const welcomed = await welcomeIfNew(supabase, id);
     refresh();
     syncOut(id);
-    return ok("Changes saved");
+    return ok(`Changes saved.${welcomed}`);
   }
   const { data: created, error } = await supabase
     .from("contacts")
@@ -107,9 +125,10 @@ export async function saveContact(
     if (error.code === "23505") return fail("Someone already has that email.");
     return fail(friendly(error));
   }
+  const welcomed = created ? await welcomeIfNew(supabase, created.id) : "";
   refresh();
   if (created) syncOut(created.id);
-  return ok(`${name} added`);
+  return ok(`${name} added.${welcomed}`);
 }
 
 /**

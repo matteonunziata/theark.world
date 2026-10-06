@@ -5,37 +5,31 @@ import { useState } from "react";
 import type { DirEntry } from "@/lib/connect";
 import { PersonCard } from "../../ui";
 
-type Person = DirEntry & { cityName?: string; shared: string[] };
+type Person = DirEntry & { shared: string[] };
 
 export function PeopleFilter({
   people,
   suggested,
-  cityId,
-  cityName,
-  canMessage,
+  meName,
   meHasProfile,
 }: {
   people: Person[];
   suggested: { id: string; why: string }[];
-  cityId: string | null;
-  cityName: string;
-  canMessage: boolean;
+  meName: string | null;
   meHasProfile: boolean;
 }) {
-  const [tab, setTab] = useState<"here" | "suggested" | "all">(suggested.length ? "suggested" : "here");
+  const [tab, setTab] = useState<"suggested" | "all">(suggested.length ? "suggested" : "all");
   const [q, setQ] = useState("");
   const needle = q.trim().toLowerCase();
   const why = new Map(suggested.map((s) => [s.id, s.why]));
   const base =
-    tab === "here"
-      ? people.filter((p) => p.city_id === cityId)
-      : tab === "suggested"
-        ? suggested.map((s) => people.find((p) => p.id === s.id)).filter((p): p is Person => !!p)
-        : people;
+    tab === "suggested"
+      ? suggested.map((s) => people.find((p) => p.id === s.id)).filter((p): p is Person => !!p)
+      : people;
   const list = base.filter(
     (p) =>
       !needle ||
-      [p.name, p.bio, p.cityName, ...p.interests].some((v) => String(v ?? "").toLowerCase().includes(needle)),
+      [p.name, p.bio, ...p.cities, ...p.interests].some((v) => String(v ?? "").toLowerCase().includes(needle)),
   );
 
   return (
@@ -44,9 +38,6 @@ export function PeopleFilter({
         <button type="button" className="pv-pill" aria-pressed={tab === "suggested"} onClick={() => setTab("suggested")}>
           Suggested for you
         </button>
-        <button type="button" className="pv-pill" aria-pressed={tab === "here"} onClick={() => setTab("here")}>
-          In {cityName || "your city"}
-        </button>
         <button type="button" className="pv-pill" aria-pressed={tab === "all"} onClick={() => setTab("all")}>
           Everyone
         </button>
@@ -54,7 +45,7 @@ export function PeopleFilter({
           className="pv-input"
           style={{ maxWidth: 260, marginLeft: "auto", padding: "8px 14px", borderRadius: 999 }}
           type="search"
-          placeholder="Search names or interests"
+          placeholder="Search names, cities or interests"
           aria-label="Search members"
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -62,18 +53,14 @@ export function PeopleFilter({
       </div>
       {tab === "suggested" && !meHasProfile && (
         <p style={{ color: "var(--pv-muted)", marginTop: -6 }}>
-          <Link href="/portal/me" style={{ color: "var(--pv-sea)" }}>Add your interests</Link> and we’ll
+          <Link href="/portal/me" style={{ color: "var(--pv-sea)" }}>Add your interests and cities</Link> and we’ll
           suggest people who share them.
         </p>
       )}
       {!list.length ? (
         <div className="pv-empty">
-          <h3>{tab === "here" ? `No one in ${cityName || "this city"} yet` : "No one to show"}</h3>
-          <p>
-            {tab === "here"
-              ? "When members say they’re here, they’ll show up. Try Everyone."
-              : "Try another tab or a different search."}
-          </p>
+          <h3>No one to show</h3>
+          <p>{tab === "suggested" ? "Try Everyone, or a different search." : "Try a different search."}</p>
         </div>
       ) : (
         <div className="pv-grid">
@@ -81,10 +68,9 @@ export function PeopleFilter({
             <PersonCard
               key={p.id}
               p={p}
-              cityName={p.cityName}
               why={tab === "suggested" ? why.get(p.id) : undefined}
               shared={p.shared}
-              canMessage={canMessage}
+              meName={meName}
             />
           ))}
         </div>

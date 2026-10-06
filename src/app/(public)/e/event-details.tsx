@@ -31,6 +31,7 @@ export function EventDetails({
         capacity: o.capacity,
       }}
       sessions={ev.sessions}
+      attendees={ev.attendees}
       counts={ev.counts}
       tickets={tickets}
       highlight={date}

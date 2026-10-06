@@ -902,6 +902,80 @@ begin
   end loop;
 end $$;
 
+-- Onboarding, WhatsApp and who's going ------------------------------------------------
+
+update public.contacts set phone = '+50688880001', cities = array['Santa Teresa', 'Lisbon']
+where email = 'member2@example.com';
+insert into public.registrations (offering_id, session_date, contact_id, name, source)
+select id, public.org_today() + 3, (select id from public.contacts where email = 'member2@example.com'),
+  'Second member', 'portal'
+from public.offerings where title = 'Open event';
+insert into public.registrations (offering_id, session_date, name, email, source)
+select id, public.org_today() + 3, 'Walk-in guest', 'guest@example.com', 'public'
+from public.offerings where title = 'Open event';
+
+select pg_temp.act_as(pg_temp.id('member'));
+select pg_temp.expect(
+  (select phone from public.member_directory() where name = 'Second member') = '+50688880001'
+  and (select cities from public.member_directory() where name = 'Second member') = array['Santa Teresa', 'Lisbon'],
+  'members open to connecting share their WhatsApp number and cities');
+select pg_temp.expect(
+  (select phone from public.member_directory() where name = 'Closed member') is null
+  and (select instagram from public.member_directory() where name = 'Closed member') is null,
+  'members closed to connecting keep their number private');
+select pg_temp.expect(
+  (select array_agg(name) from public.session_attendees(
+    (select id from public.offerings where title = 'Open event'),
+    public.org_today(), public.org_today() + 30)) = array['Second member'],
+  'members see which directory members are going, never public guests');
+select pg_temp.expect((select onboarded_at from public.my_member_profile()) is null,
+  'a new member has not onboarded yet');
+select public.complete_my_onboarding('Test member', '+50688880002', '@testmember', 'Hello',
+  array['Santa Teresa'], true);
+select pg_temp.expect(
+  (select onboarded_at is not null and phone = '+50688880002' and cities = array['Santa Teresa']
+   from public.my_member_profile()),
+  'finishing onboarding saves the profile and marks the member onboarded');
+select public.update_my_profile('Test member', '+50688880002', 'Hello again', array['surfing'],
+  array['Santa Teresa', 'Berlin'], null, true, true);
+select pg_temp.expect(
+  (select bio = 'Hello again' and cities = array['Santa Teresa', 'Berlin'] from public.my_member_profile()),
+  'members update their own profile');
+do $$
+begin
+  perform public.update_my_profile('', null, null, '{}', '{}', null, true, true);
+  raise exception 'RLS test failed: a blank name was accepted';
+exception when raise_exception then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(null);
+do $$
+begin
+  perform public.session_attendees(
+    (select id from public.offerings where title = 'Open event'),
+    public.org_today(), public.org_today() + 30);
+  raise exception 'RLS test failed: anon can list attendees';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(pg_temp.id('outsider'));
+select pg_temp.expect(
+  (select count(*) from public.session_attendees(
+    (select id from public.offerings where title = 'Open event'),
+    public.org_today(), public.org_today() + 30)) = 0,
+  'people outside the membership see no attendees');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('facilitator'));
+select pg_temp.expect(
+  (select count(*) from public.session_attendees(
+    (select id from public.offerings where title = 'Open event'),
+    public.org_today(), public.org_today() + 30)) = 1,
+  'staff see who is going too');
+reset role;
+
 select 'All RLS tests passed' as result;
 
 rollback;

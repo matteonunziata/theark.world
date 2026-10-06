@@ -12,7 +12,7 @@ export default async function Me() {
   const p = await loadPortal();
   const { me } = p;
   const today = todayIn(p.timezone);
-  const [{ data: regs }, { data: tier }, { data: rate }, { data: photo }] = await Promise.all([
+  const [{ data: regs }, { data: tier }, { data: rate }] = await Promise.all([
     me
       ? p.supabase
           .from("registrations")
@@ -25,7 +25,6 @@ export default async function Me() {
       ? p.supabase.from("membership_tiers").select("*").eq("key", me.tier).maybeSingle()
       : Promise.resolve({ data: null }),
     me ? p.supabase.rpc("my_rate") : Promise.resolve({ data: null }),
-    me ? p.supabase.rpc("my_photo") : Promise.resolve({ data: null }),
   ]);
 
   if (!me) {
@@ -50,19 +49,20 @@ export default async function Me() {
           <section className="pv-panel">
             <h2>Your profile</h2>
             <p style={{ marginTop: -6, color: "var(--pv-muted)" }}>
-              What other members see. Your email and phone are never shown.
+              What other members see. Your email is never shown; your WhatsApp number only if you’re open to it.
             </p>
-            <PhotoField name={me.name} initial={photo ?? null} />
+            <PhotoField name={me.name} initial={me.photo_path} />
             <ProfileForm
               me={{
+                name: me.name,
+                phone: me.phone,
                 bio: me.bio,
                 interests: me.interests,
-                city_id: me.city_id,
+                cities: me.cities,
                 instagram: me.instagram,
                 open_to_connect: me.open_to_connect,
                 show_in_directory: me.show_in_directory,
               }}
-              cities={p.cities.map((c) => ({ id: c.id, name: c.name }))}
             />
           </section>
         </div>

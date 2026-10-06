@@ -7,17 +7,17 @@ import { saveProfile } from "../../actions";
 
 export function ProfileForm({
   me,
-  cities,
 }: {
   me: {
+    name: string;
+    phone: string | null;
     bio: string | null;
     interests: string[];
-    city_id: string | null;
+    cities: string[];
     instagram: string | null;
     open_to_connect: boolean;
     show_in_directory: boolean;
   };
-  cities: { id: string; name: string }[];
 }) {
   const toast = useToast();
   const [state, action, pending] = useActionState(saveProfile, { ok: false } as ActionResult);
@@ -29,17 +29,22 @@ export function ProfileForm({
   return (
     <form className="pv-form" action={action}>
       <div>
-        <label htmlFor="pf-city">Where you are now</label>
-        <select id="pf-city" name="city_id" className="pv-input" defaultValue={me.city_id ?? ""}>
-          <option value="">Not saying</option>
-          {cities.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+        <label htmlFor="pf-name">Your name</label>
+        <input id="pf-name" name="name" className="pv-input" defaultValue={me.name} required minLength={2} autoComplete="name" />
+      </div>
+      <div>
+        <label htmlFor="pf-phone">WhatsApp number</label>
+        <input id="pf-phone" name="phone" className="pv-input" type="tel" defaultValue={me.phone ?? ""} placeholder="+506 8888 8888" autoComplete="tel" />
+        <div className="hint">With the country code. Shared with other members only if you’re open to hearing from them.</div>
       </div>
       <div>
         <label htmlFor="pf-bio">A few lines about you</label>
         <textarea id="pf-bio" name="bio" className="pv-input" rows={4} maxLength={600} defaultValue={me.bio ?? ""} placeholder="What you do, what you love, what you’re looking for here" />
+      </div>
+      <div>
+        <label htmlFor="pf-cities">Cities you spend time in</label>
+        <input id="pf-cities" name="cities" className="pv-input" defaultValue={me.cities.join(", ")} placeholder="Santa Teresa, Lisbon, New York" />
+        <div className="hint">Separate with commas. We use these to suggest people who are often in the same places.</div>
       </div>
       <div>
         <label htmlFor="pf-int">Interests</label>
@@ -61,10 +66,11 @@ export function ProfileForm({
       <label className="pv-switch">
         <input type="checkbox" name="open_to_connect" defaultChecked={me.open_to_connect} />
         <span>
-          <b>Open to messages and introductions</b>
+          <b>Open to hearing from members</b>
           <br />
           <span style={{ color: "var(--pv-muted)" }}>
-            Members can message you, and we may suggest you to people who share your interests.
+            Members see a “Message on WhatsApp” button and your Instagram, and we may suggest you to people
+            who share your interests or cities.
           </span>
         </span>
       </label>

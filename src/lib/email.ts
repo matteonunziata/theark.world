@@ -192,3 +192,35 @@ export async function sendSignInEmail(m: { to: string; link: string; code: strin
     text: `Sign in to The ARK: ${m.link}\n\nOr enter this code on the sign-in page: ${m.code}\n\nIt works once and expires in an hour. If you didn't ask for it, you can ignore this email.`,
   });
 }
+
+/** The welcome after a membership of a month or longer starts: a sign-in
+ * link that lands on the portal's quick set-up. */
+export async function sendPortalWelcomeEmail(m: {
+  to: string;
+  name: string;
+  /** A magic link when the service role key is set, else the sign-in page. */
+  link: string;
+  signsIn: boolean;
+  orgName: string;
+}) {
+  const origin = await siteUrl();
+  const first = m.name.trim().split(/\s+/)[0] ?? "";
+  const login = `${origin}/portal/login`;
+  return sendEmail({
+    to: m.to,
+    subject: `Welcome to ${m.orgName}. Your members portal is ready`,
+    parts: {
+      orgName: m.orgName,
+      preheader: "Your membership is active. Two minutes to set up your profile.",
+      eyebrow: "Members portal",
+      heading: `Welcome, ${esc(first)}`,
+      body: `<p style="margin:0 0 16px">Your membership is active. The members portal is where you book classes and court time, see who else is going, and meet the other members.</p>
+<p style="margin:0 0 18px">Start by setting up your profile: a photo, a few lines about you, and the cities you spend time in. It takes two minutes.</p>`,
+      cta: { label: "Set up your profile", href: m.link },
+      footnote: m.signsIn
+        ? `The button signs you in on its own. If it has stopped working, sign in at <a href="${login}" style="color:${BRAND.sea}">${esc(login.replace(/^https?:\/\//, ""))}</a> with this email and we’ll send you a fresh link.`
+        : `Sign in with this email address, no password needed. We’ll send you a link each time.`,
+    },
+    text: `Hi ${first},\n\nYour membership at ${m.orgName} is active. The members portal is where you book classes and court time, see who else is going, and meet the other members.\n\nSet up your profile here: ${m.link}\n\n${m.signsIn ? `If the link has stopped working, sign in at ${login} with this email and we'll send you a fresh one.` : "Sign in with this email address, no password needed."}`,
+  });
+}
