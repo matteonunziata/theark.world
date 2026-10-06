@@ -1180,6 +1180,12 @@ begin
   raise exception 'RLS test failed: anon can refund a payment';
 exception when insufficient_privilege then null;
 end $$;
+do $$
+begin
+  perform public.import_stripe_charge('{"charge_id": "ch_x", "amount": 1, "currency": "USD"}');
+  raise exception 'RLS test failed: anon can import a Stripe charge';
+exception when insufficient_privilege then null;
+end $$;
 reset role;
 
 -- Courts online: anyone holds a court, joins an open match, cancels by token ---

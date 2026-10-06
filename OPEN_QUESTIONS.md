@@ -116,3 +116,9 @@
 - **Levels never change.** Playtomic adjusts a rating from results. Recording scores and adjusting levels is a next step if open matches take off.
 - **Members' discount when signed out.** The tier discount applies only when the member is signed in (the email field is then fixed to their membership email). A member who books signed out pays the full price. Fine, or should an email that matches an active member get the discount anyway?
 - **Court bookers in the CRM.** Every visitor who books becomes a contact (source "Courts"), like Guesty guests. Keep, or add them only to the booking?
+
+## Round 19: Importing past Stripe payments
+
+- **Which business line?** Imported payments are sorted by keywords in their description, and anything unclear goes to Other. After the first import, look at Finance → Other: if many share a description, tell me and I'll add it to the rules.
+- **Adding buyers to the CRM.** The import links payments to people already in the CRM and adds nobody. Should past buyers who aren't in the CRM be added as contacts (tagged "Stripe"), or kept out?
+- **Fees on new payments.** Imported payments bring Stripe's fees into Finance; payments taken through ARK OS's checkout don't yet. Add them there too, so the monthly fee expense is complete?
