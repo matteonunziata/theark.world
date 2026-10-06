@@ -901,3 +901,58 @@ a.mk-tr:hover{background:var(--surface-2)}
 .integ-log .tag-sm{margin:0}
 .integ-log li.bad .what{color:var(--danger)}
 @media (max-width: 640px){.integ-log li{grid-template-columns:1fr;gap:2px}}
+
+/* farm shop: overview, till, ledger */
+.shop-kpis{grid-template-columns:repeat(6,1fr)}
+.kpi .delta{display:inline-block;font-size:12.5px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);margin-right:4px}
+.kpi .delta.up{color:var(--leaf);background:color-mix(in srgb,var(--leaf) 12%,var(--surface))}
+.kpi .delta.down{color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,var(--surface))}
+.shop-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:14px;margin-bottom:14px}
+.shop-grid .panel{margin-top:0}
+.panel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.panel-grid .panel{margin-top:0}
+.chart h2{font-size:17px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.chart h2 .mini{color:var(--leaf);font-weight:600}
+.att{list-style:none;margin:0;padding:0}
+.att li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;align-items:baseline}
+.att li:first-child{border-top:0}
+.att .st{font-size:12.5px;font-weight:600;white-space:nowrap}
+.att .st.out{color:var(--danger)}.att .st.low{color:var(--clay)}.att .st.soon{color:var(--muted)}
+.orow{grid-template-columns:140px minmax(200px,2.4fr) 1.2fr 110px 110px}
+.orow .amt{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.orow .sum{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.orow .meta{font-size:12.5px;color:var(--muted)}
+.lrow{grid-template-columns:140px minmax(200px,2.4fr) 1.2fr 100px 110px}
+.lrow .amt{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.lrow .amt.in{color:var(--leaf)}
+.lrow .sum{min-width:0}
+.lrow .sum b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .sum .lines{font-size:13px;color:var(--muted);margin:4px 0 0;padding:0;list-style:none}
+.lrow .meta{font-size:12.5px;color:var(--muted)}
+.ledger-sum{display:flex;gap:18px;flex-wrap:wrap;font-size:13.5px;color:var(--muted);margin:-4px 0 12px}
+.ledger-sum b{color:var(--ink)}
+.till-search{position:relative}
+.till-hits{list-style:none;margin:4px 0 0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface);max-height:220px;overflow:auto}
+.till-hits li button{display:flex;justify-content:space-between;width:100%;gap:10px;text-align:left;background:none;border:0;padding:8px 12px;font:inherit;cursor:pointer;color:inherit}
+.till-hits li button:hover{background:var(--surface-2)}
+.till-hits .muted{font-size:12.5px;white-space:nowrap}
+.till-lines{display:grid;gap:8px;margin:12px 0}
+.till-line{display:grid;grid-template-columns:minmax(0,1fr) 84px 96px 28px;gap:8px;align-items:center;font-size:14px}
+.till-line.plain{grid-template-columns:minmax(0,1fr) 84px 28px}
+.till-line .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.till-line .nm small{display:block;color:var(--muted);font-size:12px}
+.till-line input{width:100%;margin:0}
+.till-line .sub{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.till-line .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:4px}
+.till-total{display:flex;justify-content:space-between;font-weight:700;font-size:16px;padding:10px 0;border-top:1px solid var(--line);margin-bottom:12px}
+.method-pills{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 14px}
+.method-pills label{position:relative;border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-weight:600;font-size:13.5px;cursor:pointer}
+.method-pills label:has(input:checked){background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.method-pills input{position:absolute;opacity:0;width:0;height:0}
+@media (max-width: 1100px){.shop-kpis{grid-template-columns:repeat(3,1fr)}}
+@media (max-width: 860px){
+  .shop-kpis{grid-template-columns:1fr 1fr}
+  .shop-grid,.panel-grid{grid-template-columns:1fr}
+  .orow,.lrow{grid-template-columns:1fr auto}
+  .orow > :nth-child(3),.orow > :nth-child(4),.lrow > :nth-child(3),.lrow > :nth-child(4){display:none}
+}

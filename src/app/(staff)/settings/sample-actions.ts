@@ -389,6 +389,10 @@ export async function removeSampleData(): Promise<ActionResult> {
     const { error } = await (supabase.from(table) as any).delete().in(key, ids);
     if (error) return fail(friendly(error));
   }
+  // Stock only moves through the ledger, so rebuild the counts without the sample rows.
+  if (data.some((r) => r.table_name === "stock_movements")) {
+    await supabase.rpc("shop_recount_stock");
+  }
   await supabase.from("sample_records").delete().neq("table_name", "");
   revalidatePath("/", "layout");
   return ok("Sample data removed");
