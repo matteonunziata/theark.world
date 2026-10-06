@@ -1,9 +1,9 @@
 /* eslint-disable @next/next/no-img-element -- the logo is a static file */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ArkFonts } from "@/components/ark-fonts";
-import { stripeReady } from "@/lib/stripe";
+import { passStripePrice, stripeReady } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { money, PLANS } from "../../plans";
 import { PassForm } from "../pass-form";
@@ -19,25 +19,31 @@ export default async function PassPage({ params }: PageProps<"/ark-membership/pa
   const passes = PLANS.filter((p) => p.kind === "pass");
   const asked = passes.find((p) => p.key === plan);
   if (!asked) notFound();
-  // Until Stripe is switched on, passes are sold through the old payment links.
   const admin = createAdminClient();
-  if (!admin || !stripeReady()) {
-    if (asked.payLink) redirect(asked.payLink);
-    notFound();
-  }
-  const { data: tiers } = await admin
-    .from("membership_tiers")
-    .select("key, price, currency, active")
-    .in("key", passes.map((p) => p.key));
-  const onSale = passes
-    .map((p) => ({ p, t: tiers?.find((t) => t.key === p.key) }))
-    .filter(({ t }) => t?.active && Number(t.price) > 0)
-    .map(({ p, t }) => ({
-      key: p.key,
-      name: p.name,
-      price: t!.currency === "USD" ? `$${Number(t!.price).toLocaleString("en-US")}` : money(Number(t!.price), "CRC"),
-      note: p.key === "week" ? "seven days in a row" : "one day, 8am to 8pm",
-    }));
+  const { data: tiers } =
+    admin && stripeReady()
+      ? await admin
+          .from("membership_tiers")
+          .select("key, name, price, currency, active, stripe_price_id")
+          .in("key", passes.map((p) => p.key))
+      : { data: null };
+  // Each pass is a Stripe product; its price is Stripe's.
+  const onSale = (
+    await Promise.all(
+      passes.map(async (p) => {
+        const t = tiers?.find((x) => x.key === p.key);
+        if (!admin || !t?.active) return null;
+        const sp = await passStripePrice(admin, t);
+        if (!sp || !(sp.amount > 0)) return null;
+        return {
+          key: p.key,
+          name: p.name,
+          price: sp.currency === "USD" ? `$${sp.amount.toLocaleString("en-US")}` : money(sp.amount, "CRC"),
+          note: p.key === "week" ? "seven days in a row" : "one day, 8am to 8pm",
+        };
+      }),
+    )
+  ).filter((x) => x !== null);
   if (!onSale.length) notFound();
 
   return (

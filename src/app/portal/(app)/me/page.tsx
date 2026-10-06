@@ -17,7 +17,7 @@ export default async function Me() {
     me
       ? p.supabase
           .from("registrations")
-          .select("id, session_date, qr_token, checked_in_at, offering:offerings(title, start_time, end_time, location)")
+          .select("id, session_date, qr_token, checked_in_at, status, hold_until, offering:offerings(title, start_time, end_time, location)")
           .or(`user_id.eq.${p.user!.id},contact_id.eq.${me.id}`)
           .gte("session_date", today)
           .order("session_date")
@@ -151,7 +151,15 @@ export default async function Me() {
                         {dayLabel(r.session_date, today)}, {timeRange(r.offering)}
                       </span>
                     </span>
-                    <span className="pv-btn ghost sm">{r.checked_in_at ? "Checked in" : "Ticket"}</span>
+                    <span className="pv-btn ghost sm">
+                      {r.status === "held"
+                        ? r.hold_until && new Date(r.hold_until) <= new Date()
+                          ? "Not paid in time"
+                          : "Awaiting payment"
+                        : r.checked_in_at
+                          ? "Checked in"
+                          : "Ticket"}
+                    </span>
                   </Link>
                 ) : null,
               )

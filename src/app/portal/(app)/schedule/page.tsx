@@ -71,11 +71,12 @@ export default async function SchedulePage({ searchParams }: PageProps<"/portal/
     p.me
       ? p.supabase
           .from("registrations")
-          .select("offering_id, session_date")
+          .select("offering_id, session_date, status")
           .or(`user_id.eq.${p.user!.id},contact_id.eq.${p.me.id}`)
+          .eq("status", "confirmed")
           .gte("session_date", from)
           .lte("session_date", to)
-      : Promise.resolve({ data: [] as { offering_id: string; session_date: string }[] }),
+      : Promise.resolve({ data: [] as { offering_id: string; session_date: string; status: string }[] }),
   ]);
   const list = sessions(
     (offerings.data ?? []).filter((o) => o.kind !== "expedition" && (!p.city || !o.city_id || o.city_id === p.city.id)),

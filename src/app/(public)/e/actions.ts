@@ -18,6 +18,8 @@ export type BookingResult =
       /** Pay on Stripe (ARK OS's own checkout) when the ticket has a price and no outside link. */
       payUrl: string | null;
       price: string | null;
+      /** Meals: the spot is held, and confirmed only once it's paid. */
+      held: boolean;
     }
   | { ok: false; error: string };
 
@@ -52,15 +54,17 @@ export async function bookSession(input: {
   const { data: tt } = input.ticketTypeId
     ? await supabase
         .from("ticket_types")
-        .select("payment_link, price, currency")
+        .select("payment_link, price, currency, pay_first, stripe_price_id")
         .eq("id", input.ticketTypeId)
         .maybeSingle()
     : { data: null };
   const { data: org } = await supabase.rpc("public_org").maybeSingle();
 
+  // A pay-first ticket is a hold: the ticket and the Slack note wait for the payment.
+  const held = !!tt?.pay_first;
   let emailed = false;
   const to = input.email.trim().toLowerCase();
-  if (t) {
+  if (t && !held) {
     // Members book with the email on their record.
     const { data: user } = await supabase.auth.getUser();
     emailed = await sendTicketEmail({
@@ -82,7 +86,7 @@ export async function bookSession(input: {
       ? `$${Number(tt.price).toLocaleString("en-US")}`
       : `₡${Number(tt.price).toLocaleString("en-US")}`
     : null;
-  if (t) {
+  if (t && !held) {
     const b = {
       holder: t.holder,
       title: t.title,
@@ -95,14 +99,16 @@ export async function bookSession(input: {
     };
     notifyLater("booking", (origin) => bookingMessage(b, origin));
   }
+  // Stripe takes meals and priced tickets; an outside link is only the fallback while Stripe is off.
+  const payUrl = tt && stripeReady() && (held || (paid && !tt.payment_link)) ? `/pay/ticket/${data.qr_token}` : null;
   return {
     ok: true,
     token: data.qr_token,
     emailed,
-    // A link without a price (meals) still needs paying.
-    paymentLink: tt?.payment_link ?? null,
-    payUrl: paid && !tt.payment_link && stripeReady() ? `/pay/ticket/${data.qr_token}` : null,
+    paymentLink: payUrl ? null : (tt?.payment_link ?? null),
+    payUrl,
     price,
+    held,
   };
 }
 

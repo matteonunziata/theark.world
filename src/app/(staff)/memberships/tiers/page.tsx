@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { requireStaff } from "@/lib/auth";
+import { listStripePrices, stripeReady } from "@/lib/stripe";
 import { TiersView } from "./tiers-view";
 
 export const metadata: Metadata = { title: "Tiers & pricing" };
@@ -13,8 +14,10 @@ export default async function TiersPage() {
       supabase.rpc("tier_counts"),
       supabase.from("contacts").select("discount_id").not("discount_id", "is", null),
     ]);
+  const stripePrices = stripeReady() ? await listStripePrices().catch(() => []) : [];
   return (
     <TiersView
+      stripePrices={stripePrices}
       tiers={tiers ?? []}
       discounts={discounts ?? []}
       counts={Object.fromEntries((counts ?? []).map((c) => [c.tier, Number(c.active)]))}

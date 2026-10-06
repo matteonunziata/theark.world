@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { money, planHref, PLANS } from "./plans";
+import { CRC_PER_USD, money, planHref, PLANS } from "./plans";
 
-export function Pricing() {
+export function Pricing({ passPrices = {} }: { passPrices?: Record<string, { amount: number; currency: string }> }) {
   const [cur, setCur] = useState<"CRC" | "USD">("CRC");
   return (
     <>
@@ -16,7 +16,13 @@ export function Pricing() {
       </div>
       <p className="ms-fine">USD prices are approximate. Checkout is in Costa Rican colones.</p>
       <div className="ms-plans">
-        {PLANS.map((p) => (
+        {PLANS.map((plan) => {
+          // A pass with a Stripe product shows Stripe's price, in colones for the view.
+          const sp = passPrices[plan.key];
+          const p = sp
+            ? { ...plan, price: sp.currency === "USD" ? sp.amount * CRC_PER_USD : sp.amount }
+            : plan;
+          return (
           <article key={p.key} className={`ms-plan${p.badge ? " feature" : ""}`}>
             {p.badge && <span className="ms-badge">{p.badge}</span>}
             <h3>{p.name}</h3>
@@ -34,7 +40,8 @@ export function Pricing() {
               {p.kind === "pass" ? "Buy a pass" : "Apply for membership"}
             </a>
           </article>
-        ))}
+          );
+        })}
       </div>
     </>
   );

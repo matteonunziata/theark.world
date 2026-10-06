@@ -1284,6 +1284,43 @@ select pg_temp.expect(
   (select status from public.court_bookings where id = pg_temp.id('web_hold')) = 'cancelled',
   'the cancelled booking is marked cancelled');
 
+-- Meals: a hold until paid --------------------------------------------------------------
+insert into _ids values ('lunch', gen_random_uuid()), ('meal', gen_random_uuid());
+insert into public.offerings (id, kind, title, start_date, access, status, capacity)
+values (pg_temp.id('lunch'), 'event', 'Lunch', public.org_today(), 'everyone', 'published', 2);
+insert into public.ticket_types (id, offering_id, name, price, currency, pay_first, position)
+values (pg_temp.id('meal'), pg_temp.id('lunch'), 'Lunch', 6000, 'CRC', true, 0);
+
+select pg_temp.act_as(null);
+select set_config('test.meal', (select qr_token from public.book_session(pg_temp.id('lunch'), public.org_today(), 'Diner', 'diner@example.com', pg_temp.id('meal'))), true);
+select pg_temp.expect((select state from public.ticket_by_token(current_setting('test.meal'))) = 'unpaid', 'a meal booking waits for payment');
+select pg_temp.expect((select sum(taken) from public.session_counts(pg_temp.id('lunch'), public.org_today(), public.org_today())) = 1, 'a live hold takes a spot');
+reset role;
+select pg_temp.expect((select status = 'held' and hold_until > now() from public.registrations where qr_token = current_setting('test.meal')), 'the hold has a time limit');
+
+select pg_temp.act_as(pg_temp.id('security'));
+do $$
+begin
+  perform public.check_in(current_setting('test.meal'));
+  raise exception 'RLS test failed: an unpaid meal was checked in';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+reset role;
+
+update public.registrations set paid = true where qr_token = current_setting('test.meal');
+select pg_temp.expect((select status = 'confirmed' and hold_until is null from public.registrations where qr_token = current_setting('test.meal')), 'payment confirms the hold');
+
+select pg_temp.act_as(null);
+select set_config('test.meal2', (select qr_token from public.book_session(pg_temp.id('lunch'), public.org_today(), 'Late', 'late@example.com', pg_temp.id('meal'))), true);
+reset role;
+update public.registrations set hold_until = now() - interval '1 minute' where qr_token = current_setting('test.meal2');
+select pg_temp.expect((select state from public.ticket_by_token(current_setting('test.meal2'))) = 'lapsed', 'an unpaid hold lapses');
+select pg_temp.expect((select sum(taken) from public.session_counts(pg_temp.id('lunch'), public.org_today(), public.org_today())) = 1, 'a lapsed hold frees its spot');
+select pg_temp.act_as(null);
+select pg_temp.expect((select count(*) from public.book_session(pg_temp.id('lunch'), public.org_today(), 'Late', 'late@example.com', pg_temp.id('meal'))) = 1, 'the same person can book again after a lapse');
+reset role;
+
 select 'All RLS tests passed' as result;
 
 rollback;

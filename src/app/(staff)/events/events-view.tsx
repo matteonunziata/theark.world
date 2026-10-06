@@ -32,6 +32,7 @@ import {
   setPaid,
   toggleSession,
 } from "./actions";
+import type { StripePrice } from "@/lib/stripe";
 import type { EventsData } from "./data";
 
 const LOCATIONS = ["The Shala", "Spa deck", "Cowork lounge", "Courts", "Gym", "The House", "Farm"];
@@ -50,7 +51,8 @@ export function EventsView({
   registrations,
   team,
   cities,
-}: EventsData & { mode: "week" | "all"; weekStart: string; today: string }) {
+  stripePrices,
+}: EventsData & { mode: "week" | "all"; weekStart: string; today: string; stripePrices: StripePrice[] }) {
   const offering = useDrawer<Offering>();
   const [newKind, setNewKind] = useState<Kind>("class");
   const [session, setSession] = useState<{ id: string; date: string } | null>(null);
@@ -228,6 +230,7 @@ export function EventsView({
         team={team}
         cities={cities}
         tickets={tickets.filter((t) => t.offering_id === offering.item?.id)}
+        stripePrices={stripePrices}
         canEdit={offering.item ? canManage(offering.item) : canCreate}
         canDelete={canCreate}
         today={today}
@@ -270,6 +273,7 @@ function OfferingDrawer({
   team,
   cities,
   tickets,
+  stripePrices,
   canEdit,
   canDelete,
   today,
@@ -281,6 +285,7 @@ function OfferingDrawer({
   team: Person[];
   cities: City[];
   tickets: TicketType[];
+  stripePrices: StripePrice[];
   canEdit: boolean;
   canDelete: boolean;
   today: string;
@@ -480,7 +485,8 @@ function OfferingDrawer({
         </div>
         <p className="subhint">
           Add ticket types for paid or guest entry. Leave empty if it’s free or
-          included in membership. Payment links open after someone books.
+          included in membership. “Pay to confirm” holds the spot until it’s paid (meals);
+          a Stripe product sets the price.
         </p>
         {rows.map((t) => (
           <div className="trow" key={t.key}>
@@ -492,8 +498,20 @@ function OfferingDrawer({
               <option value="USD">$ USD</option>
             </select>
             <input name="t_qty" type="number" min={1} placeholder="No limit" defaultValue={t.qty ?? ""} aria-label="Quantity per session" />
+            <select name="t_when" aria-label="When to pay" defaultValue={t.pay_first ? "first" : "after"}>
+              <option value="after">Pay after booking</option>
+              <option value="first">Pay to confirm</option>
+            </select>
+            <select name="t_stripe" aria-label="Stripe product" defaultValue={t.stripe_price_id ?? ""}>
+              <option value="">{stripePrices.length ? "No Stripe product (use the price above)" : "Stripe isn’t set up"}</option>
+              {stripePrices.map((sp) => (
+                <option key={sp.priceId} value={sp.priceId}>
+                  {sp.name}, {money(sp.amount, sp.currency)}
+                </option>
+              ))}
+            </select>
             <div className="full">
-              <input name="t_link" type="url" placeholder="Outside payment link (optional). Leave empty to take payment on Stripe" defaultValue={t.payment_link ?? ""} aria-label="Payment link" />
+              <input name="t_link" type="url" placeholder="Outside payment link, only used while Stripe is off" defaultValue={t.payment_link ?? ""} aria-label="Payment link" />
               <button type="button" className="btn ghost" onClick={() => setRows(rows.filter((x) => x.key !== t.key))}>
                 Remove
               </button>
@@ -678,6 +696,11 @@ function SessionDrawer({
                   {r.email || "No email"}
                   {t ? `, ${t.name}` : ", member"}
                   {r.source !== "staff" ? ", booked online" : ""}
+                  {r.status === "held"
+                    ? r.hold_until && new Date(r.hold_until) <= new Date()
+                      ? ", hold lapsed unpaid"
+                      : ", held until paid"
+                    : ""}
                 </span>
               </div>
               {canManage && t && Number(t.price) > 0 && (

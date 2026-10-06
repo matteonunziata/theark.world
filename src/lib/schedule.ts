@@ -96,8 +96,8 @@ export function priceLabel(o: Offering, tickets: TicketType[]) {
   const t = tickets.filter((x) => x.offering_id === o.id);
   if (!t.length) return o.access === "members" ? "Included for members" : "Free";
   const min = t.reduce((a, b) => (Number(b.price) < Number(a.price) ? b : a));
-  // Meals: everyone pays through a payment link, members too.
-  if (t.every((x) => x.payment_link)) return Number(min.price) ? money(min.price, min.currency) : "Paid separately";
+  // Meals: everyone pays when they book, members too.
+  if (t.every((x) => x.pay_first)) return Number(min.price) ? money(min.price, min.currency) : "Paid when you book";
   if (o.access === "members") return "Included for members";
   return t.length > 1 && Number(min.price)
     ? `From ${money(min.price, min.currency)}`

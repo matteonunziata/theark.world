@@ -87,6 +87,7 @@ export function BookingPanel({
   });
   const [result, setResult] = useState<BookingResult | null>(null);
   const [pending, start] = useTransition();
+  const [leaving, setLeaving] = useState(false);
 
   const taken = (d: string) =>
     counts.filter((c) => c.session_date === d).reduce((n, c) => n + Number(c.taken), 0);
@@ -99,6 +100,49 @@ export function BookingPanel({
             Number(counts.find((c) => c.session_date === d && c.ticket_type_id === t.id)?.taken ?? 0),
         )
       : null;
+
+  if (result?.ok && result.held) {
+    // Meals: the spot is held until it's paid. Online, that means straight to Stripe.
+    return (
+      <section className="panel">
+        <div className="done-msg">
+          <p className="muted">{leaving ? "Taking you to payment…" : "Your spot is held"}</p>
+          <p className="big">{o.title}</p>
+          <p>
+            {picked && dayLabel(picked, today)}, {timeRange(o)}
+          </p>
+          {result.payUrl ? (
+            <>
+              <p className="muted">
+                Your booking is confirmed once the payment goes through. The spot is held for 30 minutes.
+              </p>
+              <p>
+                <a className="btn primary" href={result.payUrl}>
+                  {result.price ? `Pay ${result.price}` : "Pay now"}
+                </a>
+              </p>
+            </>
+          ) : result.paymentLink ? (
+            <>
+              <p className="muted">Pay through the link and we’ll confirm your booking once the payment is in.</p>
+              <p>
+                <a className="btn primary" href={result.paymentLink} target="_blank" rel="noopener noreferrer">
+                  {result.price ? `Pay ${result.price}` : `Pay for ${o.title.toLowerCase()}`}
+                </a>
+              </p>
+            </>
+          ) : (
+            <p className="muted">Pay at the front desk and we’ll confirm your booking.</p>
+          )}
+          <p>
+            <Link className="btn" href={`/t/${result.token}`}>
+              View your booking
+            </Link>
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   if (result?.ok) {
     return (
@@ -157,8 +201,9 @@ export function BookingPanel({
 
   if (picked) {
     const firstOpen = tickets.find((t) => ticketLeft(t, picked) !== 0);
-    // Meals and the like: everyone, members included, pays through the link.
-    const paidByLink = tickets.length > 0 && tickets.every((t) => t.payment_link);
+    // Meals and the like: everyone, members included, pays when booking.
+    const payFirst = tickets.length > 0 && tickets.every((t) => t.pay_first);
+    const payFirstPrice = payFirst && firstOpen && Number(firstOpen.price) > 0 ? money(firstOpen.price, firstOpen.currency) : null;
     return (
       <section className="panel">
         <h2>Book {o.title}</h2>
@@ -187,6 +232,10 @@ export function BookingPanel({
               });
               setResult(r);
               if (r.ok) onBooked?.();
+              if (r.ok && r.held && r.payUrl) {
+                setLeaving(true);
+                window.location.assign(r.payUrl);
+              }
             });
           }}
         >
@@ -204,11 +253,12 @@ export function BookingPanel({
             </>
           )}
           <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: -9999 }} />
-          {paidByLink && firstOpen ? (
+          {payFirst && firstOpen ? (
             <>
               <input type="hidden" name="ticket" value={firstOpen.id} />
               <p className="note" style={{ marginTop: 0 }}>
-                {o.title} is paid separately. After you book, you’ll get a link to pay.
+                {o.title} is paid when you book{payFirstPrice ? ` (${payFirstPrice})` : ""}. You’ll go to the payment page
+                next, and your spot is confirmed once the payment goes through.
               </p>
             </>
           ) : tickets.length > 0 && (
@@ -249,7 +299,7 @@ export function BookingPanel({
               Other dates
             </button>
             <button type="submit" className="btn primary" disabled={pending}>
-              {pending ? "Booking…" : "Confirm booking"}
+              {pending ? "Booking…" : payFirst ? "Book and pay" : "Confirm booking"}
             </button>
           </div>
         </form>

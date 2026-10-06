@@ -68,7 +68,6 @@ export function PeopleFilter({
               key={p.id}
               p={p}
               why={tab === "suggested" ? why.get(p.id) : undefined}
-              shared={p.shared}
               meName={meName}
             />
           ))}

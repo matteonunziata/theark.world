@@ -2,13 +2,14 @@ import "server-only";
 import Stripe from "stripe";
 import { ratePrice } from "@/lib/crm";
 import { fmtDate } from "@/lib/dates";
-import { sendCourtEmail, sendPassEmail, siteUrl } from "@/lib/email";
+import { sendCourtEmail, sendPassEmail, sendTicketEmail, siteUrl } from "@/lib/email";
+import { bookingMessage } from "@/lib/slack-format";
 import { sendPortalWelcome } from "@/lib/portal-welcome";
 import { notify } from "@/lib/slack";
 import { paymentMessage } from "@/lib/slack-format";
 import { createAdminClient } from "@/lib/supabase/admin";
-
 import { pushContact as pushToShopify } from "@/lib/shopify";
+
 // Stripe Checkout (hosted). ARK OS makes a Checkout session for a pass, a
 // membership term, a ticket or a court slot and sends the person to Stripe. When Stripe
 // says it's paid (the webhook, or the return page, whichever comes first),
@@ -56,14 +57,45 @@ export const TERM_NAME: Record<string, string> = {
   year: "a year",
 };
 
+/** One-time prices in the Stripe account, with the product they belong to. */
+export type StripePrice = { priceId: string; productId: string; name: string; amount: number; currency: string };
+
+export async function listStripePrices(): Promise<StripePrice[]> {
+  const s = stripe();
+  if (!s) return [];
+  const out: StripePrice[] = [];
+  for await (const pr of s.prices.list({ active: true, type: "one_time", expand: ["data.product"], limit: 100 })) {
+    const product = pr.product;
+    if (!product || typeof product === "string" || product.deleted || !product.active || pr.unit_amount == null) continue;
+    out.push({
+      priceId: pr.id,
+      productId: product.id,
+      name: pr.nickname ? `${product.name} (${pr.nickname})` : product.name,
+      amount: pr.unit_amount / 100,
+      currency: pr.currency.toUpperCase(),
+    });
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** The Stripe product that shares a ticket's name (Breakfast, Lunch), if there is one. */
+export async function findStripePrice(name: string): Promise<StripePrice | null> {
+  const n = name.trim().toLowerCase();
+  if (!n) return null;
+  const all = await listStripePrices();
+  return all.find((p) => p.name.toLowerCase() === n) ?? all.find((p) => p.name.toLowerCase().startsWith(n)) ?? null;
+}
+
 /** Start a Checkout session and return Stripe's URL for it. */
 export async function createCheckout(i: {
   kind: PaymentKind;
   /** What the person sees on Stripe, e.g. "Day pass, Tue 7 Oct". */
   title: string;
   description?: string;
-  amount: number;
-  currency: string;
+  /** A price that already exists in Stripe (a product); amount and currency are then Stripe's. */
+  priceId?: string | null;
+  amount?: number;
+  currency?: string;
   email?: string | null;
   /** Kept on the session; record_stripe_payment() reads it back. */
   meta: Record<string, string | null | undefined>;
@@ -74,17 +106,20 @@ export async function createCheckout(i: {
   const origin = await siteUrl();
   const metadata: Record<string, string> = { kind: i.kind };
   for (const [k, v] of Object.entries(i.meta)) if (v) metadata[k] = v.slice(0, 500);
+  if (!i.priceId && !(i.amount && i.currency)) throw new Error("Nothing to charge.");
   const session = await s.checkout.sessions.create({
     mode: "payment",
     line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: i.currency.toLowerCase(),
-          unit_amount: toMinor(i.amount),
-          product_data: { name: i.title, ...(i.description ? { description: i.description } : {}) },
-        },
-      },
+      i.priceId
+        ? { quantity: 1, price: i.priceId }
+        : {
+            quantity: 1,
+            price_data: {
+              currency: i.currency!.toLowerCase(),
+              unit_amount: toMinor(i.amount!),
+              product_data: { name: i.title, ...(i.description ? { description: i.description } : {}) },
+            },
+          },
     ],
     ...(i.email ? { customer_email: i.email } : {}),
     payment_intent_data: {
@@ -162,11 +197,23 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
       console.error("After-payment email failed", cs.id, e);
     }
   }
+  // A paid membership that has started gets its Shopify member tag now, not at midnight.
+  if (data.created && kind === "membership" && data.contact_id) {
+    await pushToShopify(admin, data.contact_id).catch((e) => console.error("Shopify push failed", cs.id, e));
+  }
   if (data.created && kind === "court" && meta.token) {
     try {
       await sendCourtEmail(admin, meta.token);
     } catch (e) {
       console.error("After-payment email failed", cs.id, e);
+    }
+  }
+  // A held booking (meals) is confirmed by the payment: the ticket goes out now.
+  if (data.created && kind === "ticket" && meta.held && meta.token) {
+    try {
+      await emailTicketAfterPayment(admin, meta.token, fmtAmount(amount, currency));
+    } catch (e) {
+      console.error("After-payment ticket email failed", cs.id, e);
     }
   }
   if (data.created) {
@@ -203,6 +250,49 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
     amount,
     currency,
   };
+}
+
+async function emailTicketAfterPayment(
+  admin: NonNullable<ReturnType<typeof createAdminClient>>,
+  token: string,
+  price: string,
+) {
+  const [{ data: t }, { data: org }, { data: r }] = await Promise.all([
+    admin.rpc("ticket_by_token", { p_token: token }).maybeSingle(),
+    admin.rpc("public_org").maybeSingle(),
+    admin.from("registrations").select("email, offering_id").eq("qr_token", token).maybeSingle(),
+  ]);
+  if (!t || !r?.email) return;
+  const orgName = org?.name ?? "The ARK";
+  await sendTicketEmail({
+    to: r.email,
+    holder: t.holder,
+    title: t.title,
+    sessionDate: t.session_date,
+    startTime: t.start_time,
+    endTime: t.end_time,
+    location: t.location,
+    token,
+    orgName,
+  });
+  const origin = await siteUrl();
+  await notify(
+    admin,
+    "booking",
+    bookingMessage(
+      {
+        holder: t.holder,
+        title: t.title,
+        date: t.session_date,
+        startTime: t.start_time,
+        endTime: t.end_time,
+        location: t.location,
+        price,
+        offeringId: r.offering_id,
+      },
+      origin,
+    ),
+  );
 }
 
 /** The pass bought with a payment: what it is and when it must be used by. */
@@ -258,4 +348,25 @@ export function termPrice(
   if (base === null || base === undefined || !TERM_MONTHS[tier.period]) return null;
   const n = Number(base) * (1 - Number(discountPercent ?? 0) / 100);
   return tier.currency === "USD" ? Math.round(n * 100) / 100 : Math.round(n);
+}
+
+/**
+ * The Stripe price a pass tier charges. Uses the one saved on the tier; else
+ * finds the product with the tier's name ("Day Pass") and remembers it, with
+ * its amount and currency. Null when Stripe has no such product.
+ */
+export async function passStripePrice(
+  admin: NonNullable<ReturnType<typeof createAdminClient>>,
+  tier: { key: string; name: string; price: number | null; currency: string; stripe_price_id: string | null },
+): Promise<{ priceId: string; amount: number; currency: string } | null> {
+  if (tier.stripe_price_id) {
+    return { priceId: tier.stripe_price_id, amount: Number(tier.price ?? 0), currency: tier.currency };
+  }
+  const found = await findStripePrice(tier.name).catch(() => null);
+  if (!found) return null;
+  await admin
+    .from("membership_tiers")
+    .update({ stripe_price_id: found.priceId, price: found.amount, currency: found.currency })
+    .eq("key", tier.key);
+  return { priceId: found.priceId, amount: found.amount, currency: found.currency };
 }

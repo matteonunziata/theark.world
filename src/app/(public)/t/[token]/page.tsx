@@ -22,6 +22,8 @@ const STATE: Record<string, [string, string]> = {
   used: ["used", "Checked in"],
   expired: ["bad", "Expired"],
   cancelled: ["bad", "Session cancelled"],
+  unpaid: ["soon", "Awaiting payment"],
+  lapsed: ["bad", "Not paid in time"],
 };
 
 export default async function TicketPage({ params, searchParams }: PageProps<"/t/[token]">) {
@@ -79,6 +81,8 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
           upcoming: { title: "Not today", detail: `This ticket is for ${day}` },
           expired: { title: "Expired", detail: `This ticket was for ${day}` },
           cancelled: { title: "Cancelled", detail: `${t.title} was cancelled` },
+          unpaid: { title: "Not paid", detail: "This booking is confirmed once it’s paid" },
+          lapsed: { title: "Not paid in time", detail: "The hold lapsed; they need to book again" },
         }[t.state] ?? { title: "Not valid", detail: "" });
 
   return (
@@ -117,10 +121,21 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
                 : "Member, included"}
             </span>
           </p>
-          {stripeReady() && !t.paid && Number(t.price) > 0 && ["valid", "upcoming", "early"].includes(t.state) && (
+          {t.state === "unpaid" && (
+            <p className="muted" style={{ margin: "8px 0 0", fontSize: 14 }}>
+              Your spot is held. It’s confirmed once the payment goes through.
+            </p>
+          )}
+          {t.state === "lapsed" && (
+            <p className="muted" style={{ margin: "8px 0 0", fontSize: 14 }}>
+              This booking wasn’t paid in time, so the spot was released.{" "}
+              <Link href={`/e/${t.offering_id}`} style={{ color: "var(--sea)" }}>Book again</Link>.
+            </p>
+          )}
+          {stripeReady() && !t.paid && (Number(t.price) > 0 || t.state === "unpaid") && ["valid", "upcoming", "early", "unpaid"].includes(t.state) && (
             <p style={{ margin: "12px 0 0" }}>
               <a className="btn primary" href={`/pay/ticket/${token}`}>
-                Pay {money(t.price, t.currency)}
+                {Number(t.price) > 0 ? `Pay ${money(t.price, t.currency)}` : "Pay now"}
               </a>
             </p>
           )}

@@ -1641,6 +1641,7 @@ export type Database = {
           description: string | null
           guest_passes: number
           court_discount: number
+          stripe_price_id: string | null
           key: string
           name: string
           pause_rule: string | null
@@ -1658,6 +1659,7 @@ export type Database = {
           description?: string | null
           guest_passes?: number
           court_discount?: number
+          stripe_price_id?: string | null
           key: string
           name: string
           pause_rule?: string | null
@@ -1675,6 +1677,7 @@ export type Database = {
           description?: string | null
           guest_passes?: number
           court_discount?: number
+          stripe_price_id?: string | null
           key?: string
           name?: string
           pause_rule?: string | null
@@ -2148,6 +2151,8 @@ export type Database = {
           session_date: string
           source: string
           ticket_emailed_at: string | null
+          status: string
+          hold_until: string | null
           ticket_type_id: string | null
           user_id: string | null
         }
@@ -2165,6 +2170,8 @@ export type Database = {
           session_date: string
           source?: string
           ticket_emailed_at?: string | null
+          status?: string
+          hold_until?: string | null
           ticket_type_id?: string | null
           user_id?: string | null
         }
@@ -2182,6 +2189,8 @@ export type Database = {
           session_date?: string
           source?: string
           ticket_emailed_at?: string | null
+          status?: string
+          hold_until?: string | null
           ticket_type_id?: string | null
           user_id?: string | null
         }
@@ -2819,6 +2828,8 @@ export type Database = {
           name: string
           offering_id: string
           payment_link: string | null
+          pay_first: boolean
+          stripe_price_id: string | null
           position: number
           price: number
           qty: number | null
@@ -2829,6 +2840,8 @@ export type Database = {
           name: string
           offering_id: string
           payment_link?: string | null
+          pay_first?: boolean
+          stripe_price_id?: string | null
           position?: number
           price?: number
           qty?: number | null
@@ -2839,6 +2852,8 @@ export type Database = {
           name?: string
           offering_id?: string
           payment_link?: string | null
+          pay_first?: boolean
+          stripe_price_id?: string | null
           position?: number
           price?: number
           qty?: number | null

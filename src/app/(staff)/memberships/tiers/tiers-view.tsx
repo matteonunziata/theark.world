@@ -3,6 +3,7 @@
 import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
 import type { Tables } from "@/lib/database.types";
 import { PERIODS, tierClass, tierPrice } from "@/lib/crm";
+import type { StripePrice } from "@/lib/stripe";
 import { saveDiscount, saveTier } from "../actions";
 
 type Tier = Tables<"membership_tiers">;
@@ -14,12 +15,14 @@ export function TiersView({
   counts,
   discountUse,
   canEdit,
+  stripePrices,
 }: {
   tiers: Tier[];
   discounts: Discount[];
   counts: Record<string, number>;
   discountUse: Record<string, number>;
   canEdit: boolean;
+  stripePrices: StripePrice[];
 }) {
   const tier = useDrawer<Tier>();
   const disc = useDrawer<Discount>();
@@ -150,6 +153,17 @@ export function TiersView({
               <option value="USD">$ USD</option>
             </select>
           </div>
+        </div>
+        <div className="fld">
+          <label htmlFor="tr-stripe">Stripe product (day and week passes)</label>
+          <select id="tr-stripe" name="stripe_price_id" defaultValue={tier.item?.stripe_price_id ?? ""}>
+            <option value="">Find by the tier’s name</option>
+            {stripePrices.map((sp) => (
+              <option key={sp.priceId} value={sp.priceId}>
+                {sp.name} · {sp.currency === "USD" ? "$" : "₡"}{sp.amount.toLocaleString("en-US")}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
           <div className="fld">
