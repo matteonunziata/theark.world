@@ -189,6 +189,10 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
       { contact_id: data.contact_id },
     );
   }
+  // A paid membership that has started gets its Shopify member tag now, not at midnight.
+  if (data.created && kind === "membership" && data.contact_id) {
+    await pushToShopify(admin, data.contact_id).catch((e) => console.error("Shopify push failed", cs.id, e));
+  }
   return {
     state: "paid",
     kind,
@@ -197,10 +201,6 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
     paymentId: data.payment_id,
     meta,
     amount,
-  // A paid membership that has started gets its Shopify member tag now, not at midnight.
-  if (data.created && kind === "membership" && data.contact_id) {
-    await pushToShopify(admin, data.contact_id).catch((e) => console.error("Shopify push failed", cs.id, e));
-  }
     currency,
   };
 }
