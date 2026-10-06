@@ -19,7 +19,7 @@ import {
 import { dayLabel, fmtDate, todayIn } from "@/lib/dates";
 import { nextStep, stepDue } from "@/lib/sequences";
 import { type Activity, ActivityPanel } from "./activity-panel";
-import { addNote, enroll, sendWelcome, setStage, updateEnrollment } from "../../actions";
+import { addNote, enroll, replacePass, sendWelcome, setStage, updateEnrollment } from "../../actions";
 import {
   type Contact,
   ContactDrawer,
@@ -35,6 +35,24 @@ import {
 
 type Note = { id: string; body: string; created_at: string; author: string | null };
 
+type Membership = {
+  id: string;
+  tier: string;
+  status: string;
+  starts_on: string | null;
+  ends_on: string | null;
+  activate_by: string | null;
+  source: string;
+};
+
+const MEMBERSHIP_STATUS: Record<string, string> = {
+  unused: "Not used yet",
+  active: "Active",
+  paused: "Paused",
+  cancelled: "Cancelled, runs to the end",
+  revoked: "Ended early",
+};
+
 export function ProfileView({
   contact: c,
   pay,
@@ -46,6 +64,7 @@ export function ProfileView({
   tiers,
   discounts,
   activity,
+  memberships,
   currency,
   now,
   role,
@@ -62,6 +81,7 @@ export function ProfileView({
   tiers: TierOption[];
   discounts: DiscountOption[];
   activity: Activity[];
+  memberships: Membership[];
   currency: string;
   now: string;
   role: string;
@@ -308,6 +328,22 @@ export function ProfileView({
                   <dt>Pass</dt>
                   <dd>
                     <a href={`/p/${c.pass_token}?look=1`} target="_blank" rel="noreferrer">Open member pass</a>
+                    {canEdit && (
+                      <>
+                        <br />
+                        <button
+                          type="button"
+                          className="btn"
+                          style={{ marginTop: 6 }}
+                          disabled={pending}
+                          onClick={() => {
+                            if (confirm("Make a new pass code? The old QR stops working at once.")) run(() => replacePass(c.id));
+                          }}
+                        >
+                          Replace pass code
+                        </button>
+                      </>
+                    )}
                   </dd>
                   {pay && canEdit && (
                     <>
@@ -375,6 +411,37 @@ export function ProfileView({
                 </>
               )}
             </dl>
+            {memberships.length > 0 && (
+              <>
+                <h3 style={{ margin: "16px 0 6px", fontSize: 13, textTransform: "uppercase", letterSpacing: ".04em", color: "var(--muted)" }}>
+                  Memberships and passes
+                </h3>
+                <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 6 }}>
+                  {memberships.map((m) => {
+                    const f = (d: string) => fmtDate(d, { month: "short", day: "numeric", year: "numeric" });
+                    const when = m.starts_on
+                      ? m.ends_on && m.ends_on !== m.starts_on
+                        ? `${f(m.starts_on)} to ${f(m.ends_on)}`
+                        : m.ends_on
+                          ? f(m.starts_on)
+                          : `from ${f(m.starts_on)}`
+                      : m.activate_by
+                        ? `use by ${f(m.activate_by)}`
+                        : "";
+                    return (
+                      <li key={m.id} style={{ fontSize: 14, display: "flex", gap: 8, flexWrap: "wrap", opacity: m.status === "revoked" ? 0.6 : 1 }}>
+                        <span className={`tier ${tierClass(m.tier)}`}>{tierName(m.tier)}</span>
+                        <span>{when}</span>
+                        <span className="muted">
+                          {MEMBERSHIP_STATUS[m.status] ?? m.status}
+                          {m.source === "stripe" ? ", paid on Stripe" : m.source === "team" ? ", team" : ""}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
           </section>
           <section className="panel">
             <h2>Interests</h2>

@@ -110,7 +110,7 @@ export async function bookCourt(courtId: string, date: string, start: string) {
   if (error) return fail(friendly(error));
   revalidatePath("/portal/schedule");
   revalidatePath("/events/courts");
-  return ok("Booked. Court time is settled at reception for now.");
+  return ok("Booked. Pay from your bookings above, or settle at reception.");
 }
 
 export async function cancelCourt(id: string) {
@@ -129,4 +129,14 @@ export async function setPhoto(path: string | null) {
   if (error) return fail(friendly(error));
   revalidatePath("/portal", "layout");
   return ok(path ? "Photo saved" : "Photo removed");
+}
+
+/** A new pass code for the signed-in member; the old QR stops working at once. */
+export async function replaceMyPass(): Promise<ActionResult> {
+  const v = await viewer();
+  if (!v.memberId) return fail("Only members have a member pass.");
+  const { error } = await v.supabase.rpc("rotate_my_pass_token");
+  if (error) return fail(friendly(error));
+  revalidatePath("/portal", "layout");
+  return ok("You have a new pass code. Save the new one to your photos.");
 }

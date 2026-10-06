@@ -211,23 +211,27 @@ security definer
 set search_path = ''
 as $$
   select b.court_id, b.start_time, b.end_time, 'booking', null::text,
-    case when b.open_match and b.status = 'booked' then b.id end,
-    b.open_match and b.status = 'booked',
-    case when b.open_match then b.level_min end,
-    case when b.open_match then b.level_max end,
-    case when b.open_match then b.spots::int end,
-    case when b.open_match then
+    case when b.open then b.id end,
+    b.open,
+    case when b.open then b.level_min end,
+    case when b.open then b.level_max end,
+    case when b.open then b.spots::int end,
+    case when b.open then
       (select count(*)::int from public.court_players p
        where p.booking_id = b.id and (p.status = 'in' or (p.status = 'held' and p.held_until > now())))
     end,
-    case when b.open_match then split_part(trim(b.name), ' ', 1) end,
-    case when b.open_match then
+    case when b.open then split_part(trim(b.name), ' ', 1) end,
+    case when b.open then
       round(b.amount / b.spots, case when b.currency = 'USD' then 2 else 0 end)
     end,
     b.currency
-  from public.court_bookings b
-  where b.date = p_date
-    and (b.status = 'booked' or (b.status = 'held' and b.held_until > now()))
+  from (
+    -- An open match is only shown as one once the host has paid.
+    select x.*, x.open_match and x.status = 'booked' as open
+    from public.court_bookings x
+    where x.date = p_date
+      and (x.status = 'booked' or (x.status = 'held' and x.held_until > now()))
+  ) b
   union all
   select c.id, o.start_time, o.end_time, 'class', o.title,
     null, false, null, null, null, null, null, null, null

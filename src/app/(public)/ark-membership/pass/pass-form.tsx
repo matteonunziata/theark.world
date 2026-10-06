@@ -7,13 +7,9 @@ import { buyPass } from "./actions";
 export function PassForm({
   plans,
   initial,
-  today,
-  last,
 }: {
   plans: { key: string; name: string; price: string; note: string }[];
   initial: string;
-  today: string;
-  last: string;
 }) {
   const [state, action, pending] = useActionState(buyPass, { ok: false } as ActionResult);
   const [plan, setPlan] = useState(initial);
@@ -46,10 +42,6 @@ export function PassForm({
             <input id="p-email" name="email" type="email" autoComplete="email" required />
           </div>
         </div>
-        <div className="ms-f">
-          <label htmlFor="p-start">{plan === "week" ? "First day" : "Day of your visit"}</label>
-          <input id="p-start" name="start" type="date" min={today} max={last} defaultValue={today} required />
-        </div>
       </fieldset>
       {!state.ok && state.error && (
         <div className="ms-error" role="alert">
@@ -63,7 +55,8 @@ export function PassForm({
         </button>
       </div>
       <p className="ms-fine ms-center">
-        You’ll pay on Stripe, then get your pass by email. Show it to security when you arrive.
+        You’ll pay on Stripe, then get your pass by email. No date to pick: it starts the first time security checks
+        you in, any day in the next three months.
       </p>
     </form>
   );

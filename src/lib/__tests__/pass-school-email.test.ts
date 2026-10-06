@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { arkEmail, textToHtml } from "@/lib/email-template";
-import { passCode, passValidity } from "@/lib/pass";
+import { passCode, passOk, passReason, passValidity } from "@/lib/pass";
 import { scheduleFor } from "@/lib/school";
 
 describe("member passes", () => {
@@ -9,15 +9,34 @@ describe("member passes", () => {
   });
 
   it("describes what the pass covers", () => {
-    expect(passValidity({ tier_name: "Day pass", period: "day", valid_from: "2026-10-04", valid_until: "2026-10-04" })).toBe(
-      "Day pass, Oct 4, 2026",
+    expect(
+      passValidity({ tier_name: "Day pass", period: "day", valid_from: "2026-10-04", valid_until: "2026-10-04", activate_by: "2027-01-02" }),
+    ).toBe("Day pass, Oct 4, 2026");
+    expect(passValidity({ tier_name: "Day pass", period: "day", valid_from: null, valid_until: null, activate_by: "2027-01-04" })).toBe(
+      "Day pass, use by Jan 4, 2027",
     );
-    expect(passValidity({ tier_name: "Annual", period: "year", valid_from: null, valid_until: null })).toBe(
+    expect(passValidity({ tier_name: "Annual", period: "year", valid_from: null, valid_until: null, activate_by: null })).toBe(
       "Annual, any day, any hour",
     );
-    expect(passValidity({ tier_name: "Standard", period: "month", valid_from: null, valid_until: "2027-08-24" })).toBe(
+    expect(passValidity({ tier_name: "Standard", period: "month", valid_from: null, valid_until: "2027-08-24", activate_by: null })).toBe(
       "Standard, until Aug 24, 2027",
     );
+  });
+
+  it("tells security why the screen is green or red", () => {
+    const base = { tier_name: "Week pass", period: "week", valid_from: null, valid_until: null, activate_by: null };
+    expect(passReason({ ...base, state: "expired", valid_until: "2026-10-03" })).toBe("Expired Oct 3");
+    expect(passReason({ ...base, state: "expired", activate_by: "2027-01-04" })).toBe("Not used by Jan 4");
+    expect(passReason({ ...base, state: "not_started", valid_from: "2026-10-12" })).toBe("Starts Oct 12");
+    expect(passReason({ ...base, state: "unused", activate_by: "2027-01-04" })).toBe("Week pass, first visit. Use by Jan 4");
+    expect(passReason({ ...base, state: "checked_in", checked_in_at: "2026-10-05T15:12:00Z" })).toBe(
+      "Already checked in at 9:12 AM",
+    );
+    expect(passReason({ ...base, state: "valid", valid_from: "2026-10-05", valid_until: "2026-10-11" })).toBe(
+      "Week pass, until Oct 11",
+    );
+    expect(passOk("unused")).toBe(true);
+    expect(passOk("checked_in")).toBe(false);
   });
 });
 

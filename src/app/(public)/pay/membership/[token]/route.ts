@@ -3,10 +3,11 @@ import { createCheckout, stripeReady, TERM_NAME, termPrice } from "@/lib/stripe"
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Pay for the next membership term on Stripe. Staff copy this link from the
-// CRM profile (it carries the member's pass token); members use
-// /pay/membership/me from the portal. The price is read when the link is
-// opened: the member's tier, at their rate, less their discount. Paying
-// activates the membership (or extends it from the renewal date).
+// CRM profile (it carries the member's pay token, not their pass token, so
+// a forwarded link never shares the pass); members use /pay/membership/me
+// from the portal. The price is read when the link is opened: the member's
+// tier, at their rate, less their discount. Paying starts the membership,
+// or adds a term after the current one ends.
 
 export async function GET(request: Request, ctx: RouteContext<"/pay/membership/[token]">) {
   const { token } = await ctx.params;
@@ -24,7 +25,7 @@ export async function GET(request: Request, ctx: RouteContext<"/pay/membership/[
     if (!memberId) return problem("member");
     q = q.eq("id", memberId);
   } else {
-    q = q.eq("pass_token", token);
+    q = q.eq("pay_token", token);
   }
   const { data: c } = await q.maybeSingle();
   if (!c) return problem("member");

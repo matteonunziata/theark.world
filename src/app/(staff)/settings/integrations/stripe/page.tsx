@@ -7,7 +7,7 @@ import { CopyField } from "./copy-field";
 
 export const metadata: Metadata = { title: "Stripe" };
 
-const KIND: Record<string, string> = { pass: "Pass", membership: "Membership", ticket: "Ticket" };
+const KIND: Record<string, string> = { pass: "Pass", membership: "Membership", ticket: "Ticket", court: "Court" };
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-GB", {
