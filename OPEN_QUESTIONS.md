@@ -39,3 +39,11 @@
 - **Team sign-in by email link.** The sign-in hook still turns down new @theark.world accounts that use an email link ("Team members sign in with Google"), while the team sign-in page now offers an email link. That only affects staff signing in for the first time. Should the hook allow email links for anyone on the team?
 - **Photos for check-in.** Members add their own photo. Should staff be able to add one from the CRM too (for members who never open the portal), and should a photo be required to join?
 - **QR code destination.** Posters link to the class page, where members pick a date. Should scanning on the day go straight to today's session instead?
+
+## Round 11: Integrations
+
+- **GHL token.** Make a private integration in the sub-account (Settings → Private Integrations) with the contacts read and write scopes (locations read is optional, it only lets the page show the sub-account name), then paste it with the Location ID in Settings → Integrations → GoHighLevel. The search filter syntax for pulls follows GHL's docs but hasn't run against a live sub-account yet; if "Sync now" reports a problem on the way in, send me the message from Recent activity.
+- **Which GHL fields matter?** Right now name, email, phone and source go out, and tags carry tier, status and pipeline stage. Should custom fields in GHL (lot, city, interests, renewal date) be filled too? And should a GHL pipeline mirror the memberships pipeline?
+- **Leads from GHL.** New GHL contacts are added as plain contacts with no pipeline stage. Should they land on the membership waitlist (like `/join`), or get a stage from a GHL tag?
+- **Conversations and calendars.** GHL also has SMS/WhatsApp conversations and calendars. Worth bringing messages into the CRM profile, or bookings into Schedule?
+- **Sync timing.** Daily on Vercel Hobby. The webhook covers GHL → ARK OS right away; ARK OS → GHL is right away only after a CRM save (needs `SUPABASE_SERVICE_ROLE_KEY`). Fine, or upgrade to Pro for every 15 minutes?
