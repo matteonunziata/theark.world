@@ -116,3 +116,8 @@
 - **Levels never change.** Playtomic adjusts a rating from results. Recording scores and adjusting levels is a next step if open matches take off.
 - **Members' discount when signed out.** The tier discount applies only when the member is signed in (the email field is then fixed to their membership email). A member who books signed out pays the full price. Fine, or should an email that matches an active member get the discount anyway?
 - **Court bookers in the CRM.** Every visitor who books becomes a contact (source "Courts"), like Guesty guests. Keep, or add them only to the booking?
+- **Meal products in Stripe.** The first meal payment looks for active one-time Stripe products named exactly "Breakfast" and "Lunch" (then by prefix). If the products are named differently, pick them once in Schedule → the class → Tickets → Stripe product. The 30-minute hold matches Stripe's shortest Checkout expiry; fine, or shorter for busy meals?
+
+
+- **Shopify: should Founding, Ambassador and Team get member10?** They have a 10% discount on their tier, so the sync tags them. The ask named only 1, 3, 6 months and Annual. Set the tier's discount to 0 in Memberships → Tiers to exclude one.
+- **Shopify: should the codes combine with other discounts or exclude sale items?** They currently apply to everything and combine only with free shipping.

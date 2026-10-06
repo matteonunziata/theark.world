@@ -8,6 +8,7 @@ import { notify } from "@/lib/slack";
 import { paymentMessage } from "@/lib/slack-format";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+import { pushContact as pushToShopify } from "@/lib/shopify";
 // Stripe Checkout (hosted). ARK OS makes a Checkout session for a pass, a
 // membership term, a ticket or a court slot and sends the person to Stripe. When Stripe
 // says it's paid (the webhook, or the return page, whichever comes first),
@@ -196,6 +197,10 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
     paymentId: data.payment_id,
     meta,
     amount,
+  // A paid membership that has started gets its Shopify member tag now, not at midnight.
+  if (data.created && kind === "membership" && data.contact_id) {
+    await pushToShopify(admin, data.contact_id).catch((e) => console.error("Shopify push failed", cs.id, e));
+  }
     currency,
   };
 }

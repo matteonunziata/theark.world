@@ -15,6 +15,7 @@ import { aiEnabled, draftStep, draftWorkflow } from "@/lib/ai";
 import { sendWorkflowEmail } from "@/lib/email";
 import { IMPORT_MAX, type ImportRow } from "@/lib/csv";
 import { pushContact } from "@/lib/ghl";
+import { pushContact as pushToShopify } from "@/lib/shopify";
 import { sendPortalWelcome } from "@/lib/portal-welcome";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -33,6 +34,8 @@ const syncOut = (contactId: string) =>
     const admin = createAdminClient();
     if (!admin) return;
     await pushContact(admin, contactId).catch(() => {});
+    // Memberships change here too: Shopify's member tags follow them.
+    await pushToShopify(admin, contactId).catch(() => {});
   });
 
 // A membership of a month or longer that has just become active gets the

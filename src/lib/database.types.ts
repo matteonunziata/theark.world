@@ -1218,6 +1218,8 @@ export type Database = {
           account_name: string | null
           channel: string | null
           rules: Json
+          shop_domain: string | null
+          settings: Json
           connected_at: string | null
           created_at: string
           direction: string
@@ -1241,6 +1243,8 @@ export type Database = {
           account_name?: string | null
           channel?: string | null
           rules?: Json
+          shop_domain?: string | null
+          settings?: Json
           connected_at?: string | null
           created_at?: string
           direction?: string
@@ -1264,6 +1268,8 @@ export type Database = {
           account_name?: string | null
           channel?: string | null
           rules?: Json
+          shop_domain?: string | null
+          settings?: Json
           connected_at?: string | null
           created_at?: string
           direction?: string
