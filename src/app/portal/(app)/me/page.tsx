@@ -3,6 +3,7 @@ import Link from "next/link";
 import { tierName, tierPrice } from "@/lib/crm";
 import { dayLabel, fmtDate, timeRange, todayIn } from "@/lib/dates";
 import { loadPortal } from "@/lib/portal";
+import { PhotoField } from "./photo-field";
 import { ProfileForm } from "./profile-form";
 
 export const metadata: Metadata = { title: "Me" };
@@ -11,7 +12,7 @@ export default async function Me() {
   const p = await loadPortal();
   const { me } = p;
   const today = todayIn(p.timezone);
-  const [{ data: regs }, { data: tier }, { data: rate }] = await Promise.all([
+  const [{ data: regs }, { data: tier }, { data: rate }, { data: photo }] = await Promise.all([
     me
       ? p.supabase
           .from("registrations")
@@ -24,6 +25,7 @@ export default async function Me() {
       ? p.supabase.from("membership_tiers").select("*").eq("key", me.tier).maybeSingle()
       : Promise.resolve({ data: null }),
     me ? p.supabase.rpc("my_rate") : Promise.resolve({ data: null }),
+    me ? p.supabase.rpc("my_photo") : Promise.resolve({ data: null }),
   ]);
 
   if (!me) {
@@ -50,6 +52,7 @@ export default async function Me() {
             <p style={{ marginTop: -6, color: "var(--pv-muted)" }}>
               What other members see. Your email and phone are never shown.
             </p>
+            <PhotoField name={me.name} initial={photo ?? null} />
             <ProfileForm
               me={{
                 bio: me.bio,

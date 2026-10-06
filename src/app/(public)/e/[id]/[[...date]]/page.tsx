@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { PortalHead } from "@/components/portal-head";
 import { getViewer } from "@/lib/auth";
 import { EventDetails } from "../../event-details";
@@ -16,10 +17,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : { title: "Event" };
 }
 
-export default async function EventPage({ params }: Props) {
+export default async function EventPage({ params, searchParams }: Props) {
   const { id, date } = await params;
+  const { qr } = await searchParams;
   const picked = date?.[0] ?? null;
   const { event: ev, staff, memberId, orgName } = await loadEvent(id, picked);
+  // Scanned from a class poster: members-only classes are hidden until
+  // sign-in, so go straight there and come back to book.
+  if (!ev && qr && !staff && !memberId) redirect(`/portal/login?next=/e/${id}`);
   const head = (
     <PortalHead
       name={orgName}

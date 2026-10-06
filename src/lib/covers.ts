@@ -7,3 +7,7 @@ export const coverUrl = (path: string | null | undefined) =>
     : path.startsWith("/") || path.startsWith("https://")
       ? path
       : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/covers/${path}`;
+
+/** A member's profile photo (public `avatars` bucket). */
+export const avatarUrl = (path: string | null | undefined) =>
+  path ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${path}` : null;

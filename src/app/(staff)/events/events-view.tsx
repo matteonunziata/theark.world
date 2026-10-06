@@ -101,6 +101,9 @@ export function EventsView({
         )}
         {canCreate && (
           <div className="head-actions" style={{ marginLeft: "auto" }}>
+            <a className="btn" href="/qr" target="_blank" rel="noopener noreferrer">
+              Class QR codes
+            </a>
             <button type="button" className="btn" onClick={() => startNew("event")}>
               New event
             </button>
@@ -540,6 +543,14 @@ function OfferingDrawer({
           <>
             <div className="subhead">Share</div>
             <ShareLink path={`/e/${o.id}`} />
+            {o.kind === "class" && (
+              <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--muted)" }}>
+                <a href={`/qr/${o.id}`} target="_blank" rel="noopener noreferrer">
+                  Print the QR code poster
+                </a>{" "}
+                for outside the space. Members scan it to book.
+              </p>
+            )}
           </>
         )}
       </fieldset>

@@ -12,7 +12,11 @@ import { createBrowserClient } from "@supabase/ssr";
  */
 export function Confirm({ next }: { next: string }) {
   const [error, setError] = useState("");
-  const back = next.startsWith("/portal") || next.startsWith("/e/") ? "/portal/login" : "/login";
+  const back = next.startsWith("/classes")
+    ? "/facilitator"
+    : next.startsWith("/portal") || next.startsWith("/e/")
+      ? "/portal/login"
+      : "/login";
 
   useEffect(() => {
     const hash = new URLSearchParams(window.location.hash.slice(1));

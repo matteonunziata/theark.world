@@ -170,6 +170,7 @@ export type Database = {
           open_to_connect: boolean
           owner_id: string | null
           pass_token: string
+          photo_path: string | null
           phone: string | null
           rate: string
           renews_on: string | null
@@ -205,6 +206,7 @@ export type Database = {
           open_to_connect?: boolean
           owner_id?: string | null
           pass_token?: string
+          photo_path?: string | null
           phone?: string | null
           rate?: string
           renews_on?: string | null
@@ -240,6 +242,7 @@ export type Database = {
           open_to_connect?: boolean
           owner_id?: string | null
           pass_token?: string
+          photo_path?: string | null
           phone?: string | null
           rate?: string
           renews_on?: string | null
@@ -2988,6 +2991,22 @@ export type Database = {
       };
       insert_sample_posts: { Args: { p_posts: Json }; Returns: string[] };
       set_my_city: { Args: { p_city_id: string | null }; Returns: undefined };
+      set_my_photo: { Args: { p_path: string | null }; Returns: undefined };
+      my_photo: { Args: never; Returns: string | null };
+      session_roster: {
+        Args: { p_offering_id: string; p_date: string };
+        Returns: {
+          registration_id: string;
+          name: string;
+          photo_path: string | null;
+          tier: string | null;
+          is_member: boolean;
+          source: string;
+          paid: boolean;
+          qr_token: string;
+          checked_in_at: string | null;
+        }[];
+      };
       update_my_profile: {
         Args: {
           p_bio: string | null;

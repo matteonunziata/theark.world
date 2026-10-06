@@ -33,7 +33,14 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Refreshes the auth token; do not remove.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Facilitators have their own sign-in page.
+  if (!user && request.nextUrl.pathname.startsWith("/classes")) {
+    return NextResponse.redirect(new URL("/facilitator", request.url));
+  }
 
   return response;
 }

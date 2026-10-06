@@ -306,6 +306,38 @@ exception when insufficient_privilege then null;
 end $$;
 reset role;
 
+-- Facilitator roster and member photos ----------------------------------------------
+
+select pg_temp.act_as(pg_temp.id('facilitator'));
+select pg_temp.expect((select count(*) from public.session_roster(
+  (select id from public.offerings where title = 'Members class'),
+  public.org_today() + 3)) = 1, 'facilitators see who booked their class');
+select pg_temp.expect((select count(*) from public.session_roster(
+  (select id from public.offerings where title = 'Open event'),
+  public.org_today())) = 0, 'facilitators do not see other sessions'' rosters');
+reset role;
+select pg_temp.act_as(pg_temp.id('shop'));
+select pg_temp.expect((select count(*) from public.session_roster(
+  (select id from public.offerings where title = 'Members class'),
+  public.org_today() + 3)) = 0, 'shop staff do not see class rosters');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('member'));
+select public.set_my_photo(pg_temp.id('member')::text || '/me.jpg');
+select pg_temp.expect(public.my_photo() = pg_temp.id('member')::text || '/me.jpg',
+  'members set their own photo');
+do $$
+begin
+  perform public.set_my_photo(gen_random_uuid()::text || '/me.jpg');
+  raise exception 'RLS test failed: member used someone else''s photo path';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+reset role;
+select pg_temp.expect(public.hook_before_user_created(
+  '{"user":{"email":"nobody.facilitates@example.com","app_metadata":{"provider":"email"}}}') ? 'error',
+  'email sign-in still needs a facilitator record or a membership');
+
 select pg_temp.act_as(null);
 select pg_temp.expect((select state from public.ticket_by_token(
   current_setting('test.token'))) = 'used',

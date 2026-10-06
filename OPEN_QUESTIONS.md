@@ -32,3 +32,10 @@
 - **Where the waitlist form lives.** The signup page is `/join` on ARK OS. If theark.world (Squarespace) already has a waitlist form, should it post here instead, or link to `/join`?
 - **Application form.** The automation links to https://theark.world/apply as a placeholder. What's the real application link?
 - **Who's the strategist?** Add them in Settings → Team with the Marketing access level.
+
+## Round 10: Facilitators
+
+- **Facilitator emails.** Jordan, Jonathan, Stephanie and Alejandro have no email in Settings → Team, so they can't sign in yet. Add the email each of them uses.
+- **Team sign-in by email link.** The sign-in hook still turns down new @theark.world accounts that use an email link ("Team members sign in with Google"), while the team sign-in page now offers an email link. That only affects staff signing in for the first time. Should the hook allow email links for anyone on the team?
+- **Photos for check-in.** Members add their own photo. Should staff be able to add one from the CRM too (for members who never open the portal), and should a photo be required to join?
+- **QR code destination.** Posters link to the class page, where members pick a date. Should scanning on the day go straight to today's session instead?
