@@ -26,7 +26,7 @@ const API_VERSION = "2026-07";
 /** Stop starting new customers after this long, so a run ends inside the cron's limit. */
 const BUDGET_MS = 45_000;
 /** What the app needs. write_* includes read_*. */
-const SCOPES = ["write_customers", "write_discounts"];
+const SCOPES = ["write_customers", "write_discounts", "write_orders"];
 
 export class ShopifyError extends Error {
   constructor(
@@ -534,3 +534,67 @@ export async function pushContact(sb: Sb, contactId: string) {
     await logEvent(sb, { direction: "out", kind: "push", ok: false, detail: `${email}: ${errorText(e)}`, contact_id: contactId });
   }
 }
+
+// Orders from the member portal ------------------------------------------------------
+
+type PortalOrder = Tables<"portal_shop_orders">;
+type PortalLine = { id: string; name: string; label: string | null; qty: number; list: number; unit: number };
+
+/**
+ * Put a paid portal order into Shopify as an already-paid order, so stock and
+ * picking stay there. Each line carries the member price the member paid
+ * (rather than asking Shopify to work the discount out again), the order is
+ * tagged for pickup, and Shopify's own receipt email is off (Stripe sent one).
+ * Never throws: a failure is kept on the order for the team to see.
+ */
+export async function pushOrder(sb: Sb, orderId: string) {
+  const fail = async (message: string) => {
+    await sb.from("portal_shop_orders").update({ shopify_error: message }).eq("id", orderId);
+    await logEvent(sb, { direction: "out", kind: "push", ok: false, detail: `Order ${orderId.slice(0, 8)}: ${message}` });
+  };
+  try {
+    const { data: o } = await sb.from("portal_shop_orders").select("*").eq("id", orderId).maybeSingle();
+    if (!o || o.status !== "paid") return;
+    if (o.shopify_order_id) return;
+    const i = await getIntegration(sb);
+    if (!ready(i)) return fail("Shopify isn’t connected, so this order was not sent. Pick it from the ledger or send it by hand.");
+    const { data: c } = await sb.from("contacts").select("name, email").eq("id", o.contact_id).maybeSingle();
+    const token = await tokenFor(sb, i);
+    const [first, ...rest] = (c?.name ?? "").trim().split(/\s+/).filter(Boolean);
+    const money = (n: number) => ({ shopMoney: { amount: n.toFixed(2), currencyCode: o.currency } });
+    const lines = o.lines as unknown as PortalLine[];
+    const total = lines.reduce((n, l) => n + l.unit * l.qty, 0);
+    const d = await graphql<{ orderCreate: { order: { id: string; name: string } | null; userErrors: UserErrors } }>(
+      i.shop_domain,
+      token,
+      `mutation($order: OrderCreateOrderInput!, $options: OrderCreateOptionsInput) {
+        orderCreate(order: $order, options: $options) { order { id name } userErrors { field message } }
+      }`,
+      {
+        order: {
+          email: c?.email || undefined,
+          customer: c?.email ? { toUpsert: { email: c.email, firstName: first || undefined, lastName: rest.join(" ") || undefined } } : undefined,
+          currency: o.currency,
+          financialStatus: "PAID",
+          lineItems: lines.map((l) => ({ variantId: `gid://shopify/ProductVariant/${l.id}`, quantity: l.qty, priceSet: money(l.unit) })),
+          transactions: [{ kind: "SALE", status: "SUCCESS", gateway: "Stripe (ARK OS)", amountSet: money(total) }],
+          tags: ["ark-portal", "pickup", ...(o.discount_percent > 0 ? [`member${o.discount_percent}`] : [])],
+          note: `Paid in the ARK member portal. Pick up at The ARK.${o.discount_percent > 0 ? ` Member discount ${o.discount_percent}% already taken off each price.` : ""} ARK OS order ${o.id}.`,
+          sourceName: "ark-portal",
+        },
+        options: { inventoryBehavior: "DECREMENT_STOCK", sendReceipt: false, sendFulfillmentReceipt: false },
+      },
+    );
+    userErrors(d.orderCreate.userErrors);
+    if (!d.orderCreate.order) throw new ShopifyError(500, "Shopify didn’t create the order.");
+    await sb
+      .from("portal_shop_orders")
+      .update({ shopify_order_id: d.orderCreate.order.id, shopify_order_name: d.orderCreate.order.name, shopify_error: null })
+      .eq("id", orderId);
+    await logEvent(sb, { direction: "out", kind: "push", ok: true, detail: `Order ${d.orderCreate.order.name} created in Shopify (${plural(lines.length, "line")}, paid).`, contact_id: o.contact_id });
+  } catch (e) {
+    await fail(errorText(e));
+  }
+}
+
+export type { PortalOrder };

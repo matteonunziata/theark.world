@@ -128,3 +128,6 @@
 - **Adding buyers to the CRM.** The import links payments to people already in the CRM and adds nobody. Should past buyers who aren't in the CRM be added as contacts (tagged "Stripe"), or kept out?
 - **Fees on new payments.** Imported payments bring Stripe's fees into Finance; payments taken through ARK OS's checkout don't yet. Add them there too, so the monthly fee expense is complete?
 - **Portal shop: should the catalog refresh by itself?** It only changes when someone runs "Sync from website" in the shop's Products tab, so a product that sells out in Shopify can still show in the portal until then. A nightly sync would fix that.
+- **Portal shop: delivery?** Orders are pickup at The ARK only. Delivery would need an address, a fee or Shopify's shipping rates, and a decision on who delivers.
+- **Portal shop: who is told to prepare the order?** A paid order shows in Slack's payments (if on), the shop ledger and Shopify (tagged `pickup`). A Slack message of its own, or a "ready for pickup" step, isn't built.
+- **Portal shop: stock.** Orders decrement Shopify's stock, but the portal only learns of sell-outs at the next "Sync from website", and a member can pay for something that sold out in between. Nothing refunds automatically.

@@ -46,3 +46,31 @@ describe("checkoutUrl", () => {
     expect(checkoutUrl([], { code: "member10" })).toBeNull();
   });
 });
+
+import { priceOrder } from "@/lib/shop-cart";
+
+describe("priceOrder", () => {
+  const catalog = [
+    { external_id: "48351634686106", name: "Green Pesto", product_group: "Green Pesto", variant: null, price: 4680 },
+    { external_id: "48351634686107", name: "Kombucha · Ginger", product_group: "Kombucha", variant: "Ginger", price: 2500 },
+  ];
+  it("prices from the catalog with the member's discount", () => {
+    const r = priceOrder(catalog, [{ id: "48351634686106", qty: 2 }, { id: "48351634686107", qty: 1 }], 20);
+    expect(r).toEqual({
+      lines: [
+        { id: "48351634686106", name: "Green Pesto", label: null, qty: 2, list: 4680, unit: 3744 },
+        { id: "48351634686107", name: "Kombucha", label: "Ginger", qty: 1, list: 2500, unit: 2000 },
+      ],
+      subtotal: 11860,
+      total: 9488,
+    });
+  });
+  it("refuses an empty basket or a product that is gone", () => {
+    expect(priceOrder(catalog, [], 10)).toHaveProperty("error");
+    expect(priceOrder(catalog, [{ id: "11111111111", qty: 1 }], 10)).toHaveProperty("error");
+  });
+  it("charges the full price to someone with no discount", () => {
+    const r = priceOrder(catalog, [{ id: "48351634686106", qty: 1 }], 0);
+    expect(r).toMatchObject({ total: 4680, subtotal: 4680 });
+  });
+});

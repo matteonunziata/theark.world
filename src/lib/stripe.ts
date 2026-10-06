@@ -8,6 +8,7 @@ import { sendPortalWelcome } from "@/lib/portal-welcome";
 import { notify } from "@/lib/slack";
 import { paymentMessage } from "@/lib/slack-format";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { settleShopOrder } from "@/lib/shop-order";
 import { pushContact as pushToShopify } from "@/lib/shopify";
 
 // Stripe Checkout (hosted). ARK OS makes a Checkout session for a pass, a
@@ -18,7 +19,7 @@ import { pushContact as pushToShopify } from "@/lib/shopify";
 // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, and SUPABASE_SERVICE_ROLE_KEY to
 // record the payment.
 
-export type PaymentKind = "pass" | "membership" | "ticket" | "court";
+export type PaymentKind = "pass" | "membership" | "ticket" | "court" | "shop";
 
 let client: Stripe | null = null;
 
@@ -160,13 +161,30 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
   const cs = await s.checkout.sessions.retrieve(sessionId);
   const meta = (cs.metadata ?? {}) as Record<string, string>;
   const kind = meta.kind as PaymentKind | undefined;
-  if (!kind || !["pass", "membership", "ticket", "court"].includes(kind)) return { state: "unknown" };
+  if (!kind || !["pass", "membership", "ticket", "court", "shop"].includes(kind)) return { state: "unknown" };
   if (cs.payment_status === "unpaid") return { state: cs.status === "complete" ? "pending" : "unpaid" };
 
   const amount = (cs.amount_total ?? 0) / 100;
   const currency = (cs.currency ?? "crc").toUpperCase();
   const email = cs.customer_details?.email ?? cs.customer_email ?? meta.email ?? null;
   const intent = typeof cs.payment_intent === "string" ? cs.payment_intent : (cs.payment_intent?.id ?? null);
+  if (kind === "shop") {
+    // A basket paid in the member portal: its own order table, not the payments recorder.
+    if (!meta.order_id) throw new Error(`Shop payment ${cs.id} has no order.`);
+    const r = await settleShopOrder(admin, meta.order_id, { id: cs.id, intent });
+    if (r.created) {
+      await notify(
+        admin,
+        "payment",
+        paymentMessage(
+          { kind, amount: fmtAmount(amount, currency), name: meta.name || cs.customer_details?.name || null, email, description: meta.description ?? null, live: cs.livemode, contactId: r.contactId },
+          await siteUrl(),
+        ),
+        { contact_id: r.contactId },
+      );
+    }
+    return { state: "paid", kind, created: r.created, contactId: r.contactId, paymentId: meta.order_id, meta, amount, currency };
+  }
   const { data, error } = await admin
     .rpc("record_stripe_payment", {
       p: {

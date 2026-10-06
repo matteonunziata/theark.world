@@ -2067,6 +2067,68 @@ export type Database = {
           },
         ]
       }
+      portal_shop_orders: {
+        Row: {
+          contact_id: string
+          created_at: string
+          currency: string
+          discount_percent: number
+          id: string
+          lines: Json
+          paid_at: string | null
+          shopify_error: string | null
+          shopify_order_id: string | null
+          shopify_order_name: string | null
+          status: string
+          stripe_payment_intent: string | null
+          stripe_session_id: string | null
+          subtotal: number
+          total: number
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          currency?: string
+          discount_percent?: number
+          id?: string
+          lines: Json
+          paid_at?: string | null
+          shopify_error?: string | null
+          shopify_order_id?: string | null
+          shopify_order_name?: string | null
+          status?: string
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
+          subtotal: number
+          total: number
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          currency?: string
+          discount_percent?: number
+          id?: string
+          lines?: Json
+          paid_at?: string | null
+          shopify_error?: string | null
+          shopify_order_id?: string | null
+          shopify_order_name?: string | null
+          status?: string
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
+          subtotal?: number
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_shop_orders_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean
@@ -3763,6 +3825,10 @@ export type Database = {
         }[];
       };
       can_message: { Args: { recipient: string }; Returns: boolean };
+      record_shop_order_paid: {
+        Args: { p_order: string; p_session: string; p_intent: string };
+        Returns: { created: boolean; contact_id: string }[];
+      };
       shop_catalog: {
         Args: never;
         Returns: {
