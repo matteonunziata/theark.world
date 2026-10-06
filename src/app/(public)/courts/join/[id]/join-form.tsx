@@ -12,7 +12,6 @@ export function JoinForm({
   share,
   currency,
   me,
-  isMember,
   online,
 }: {
   bookingId: string;
@@ -21,13 +20,12 @@ export function JoinForm({
   share: number;
   currency: string;
   me: { name: string; email: string; phone: string } | null;
-  isMember: boolean;
   online: boolean;
 }) {
   const router = useRouter();
   const allowed = LEVELS.filter(([v]) => v >= levelMin && v <= levelMax);
   const [level, setLevel] = useState<number>(allowed[0]?.[0] ?? levelMin);
-  const [pay, setPay] = useState<"online" | "reception">(online ? "online" : "reception");
+  const pay: "online" | "reception" = online ? "online" : "reception";
   const [result, setResult] = useState<CourtResult | null>(null);
   const [pending, start] = useTransition();
 
@@ -91,23 +89,6 @@ export function JoinForm({
           </span>
         </div>
       </div>
-      {online && isMember && share > 0 && (
-        <fieldset>
-          <legend>Payment</legend>
-          <div className="opts">
-            <label className={pay === "online" ? "on" : ""}>
-              <input type="radio" name="pay" checked={pay === "online"} onChange={() => setPay("online")} />
-              <b>Pay by card now</b>
-              <span>You’re in right away</span>
-            </label>
-            <label className={pay === "reception" ? "on" : ""}>
-              <input type="radio" name="pay" checked={pay === "reception"} onChange={() => setPay("reception")} />
-              <b>Settle at reception</b>
-              <span>Members only</span>
-            </label>
-          </div>
-        </fieldset>
-      )}
       <div className="total">
         <span>Your share</span>
         <b>{courtMoney(share, currency)}</b>

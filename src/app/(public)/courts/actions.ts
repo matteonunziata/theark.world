@@ -35,12 +35,8 @@ const refresh = () => {
   revalidatePath("/portal/schedule");
 };
 
-/** How this person may pay: online needs Stripe; reception is for members, or everyone while Stripe is off. */
-async function payMode(wanted: string | undefined, memberId: string | null) {
-  if (!stripeReady()) return "reception";
-  if (wanted === "reception" && memberId) return "reception";
-  return "online";
-}
+/** Everyone pays when they book (members with their discount). Only while Stripe is off is it settled at reception. */
+const payMode = () => (stripeReady() ? "online" : "reception");
 
 /** Hold or book a court for a visitor or a member. */
 export async function holdCourt(input: {
@@ -62,8 +58,8 @@ export async function holdCourt(input: {
   website?: string; // honeypot: real people leave it empty
 }): Promise<CourtResult> {
   if (input.website) return { ok: false, error: "Couldn’t book. Try again." };
-  const { supabase, memberId } = await getViewer();
-  const pay = await payMode(input.pay, memberId);
+  const { supabase } = await getViewer();
+  const pay = payMode();
   const { data, error } = await supabase.rpc("hold_court", {
     p: {
       court_id: input.courtId,
@@ -134,8 +130,8 @@ export async function joinMatch(input: {
   website?: string;
 }): Promise<CourtResult> {
   if (input.website) return { ok: false, error: "Couldn’t join. Try again." };
-  const { supabase, memberId } = await getViewer();
-  const pay = await payMode(input.pay, memberId);
+  const { supabase } = await getViewer();
+  const pay = payMode();
   const { data, error } = await supabase.rpc("join_court_match", {
     p: {
       booking_id: input.bookingId,

@@ -1628,6 +1628,7 @@ export type Database = {
           currency: string
           description: string | null
           guest_passes: number
+          court_discount: number
           key: string
           name: string
           pause_rule: string | null
@@ -1644,6 +1645,7 @@ export type Database = {
           currency?: string
           description?: string | null
           guest_passes?: number
+          court_discount?: number
           key: string
           name: string
           pause_rule?: string | null
@@ -1660,6 +1662,7 @@ export type Database = {
           currency?: string
           description?: string | null
           guest_passes?: number
+          court_discount?: number
           key?: string
           name?: string
           pause_rule?: string | null
@@ -3472,6 +3475,8 @@ export type Database = {
       };
       court_booking_by_token: { Args: { p_token: string }; Returns: Json };
       hold_court: { Args: { p: Json }; Returns: Json };
+      my_court_discount: { Args: never; Returns: number };
+      court_discount_for: { Args: { p_contact: string | null }; Returns: number };
       join_court_match: { Args: { p: Json }; Returns: Json };
       cancel_court_by_token: { Args: { p_token: string }; Returns: string };
       court_price: { Args: { p_court: string; p_minutes: number; p_contact: string | null }; Returns: number };

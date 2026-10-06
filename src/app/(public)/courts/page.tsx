@@ -20,11 +20,12 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 export default async function CourtsPage({ searchParams }: PageProps<"/courts">) {
   const sp = await searchParams;
   const { supabase, memberId, staff } = await getViewer();
-  const [{ data: org }, { data: courtsData }, { data: matches }, { data: me }] = await Promise.all([
+  const [{ data: org }, { data: courtsData }, { data: matches }, { data: me }, { data: discount }] = await Promise.all([
     supabase.rpc("public_org").maybeSingle(),
     supabase.rpc("public_courts"),
     supabase.rpc("public_open_matches"),
     memberId ? supabase.rpc("my_member_profile").maybeSingle() : Promise.resolve({ data: null }),
+    supabase.rpc("my_court_discount"),
   ]);
   const timezone = org?.timezone ?? "America/Costa_Rica";
   const today = todayIn(timezone);
@@ -54,7 +55,7 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
     return prices.length ? `${prices.join(" / ")} an hour` : "";
   };
   const member: Me | null = me
-    ? { name: me.name ?? "", email: me.email ?? "", phone: me.phone ?? "", discount: Number(me.discount_percent ?? 0) }
+    ? { name: me.name ?? "", email: me.email ?? "", phone: me.phone ?? "", discount: Number(discount ?? 0) }
     : null;
   const open = (matches ?? []).filter((m) => m.players < m.spots);
 
@@ -102,7 +103,7 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
             </li>
           )}
           <li>
-            Members <b>{member?.discount ? `${member.discount}% off` : "pay less"}</b>
+            Members <b>{member?.discount ? `${member.discount}% off` : "10% off"}</b>
           </li>
           <li>
             Book up to <b>two weeks ahead</b>
@@ -187,7 +188,6 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
             today={today}
             now={now}
             me={member}
-            isMember={!!memberId}
             online={stripeReady()}
           />
         )}
@@ -200,7 +200,7 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
             <ul>
               <li>Pick a court and a free hour, up to two weeks ahead, two slots a day.</li>
               <li>{stripeReady() ? "Pay by card to confirm. Your slot is held for 20 minutes while you pay." : "Book now and settle at reception when you arrive."}</li>
-              <li>Members get their tier’s discount; sign in first so it applies.</li>
+              <li>Members get their tier’s discount (10% on a monthly membership and longer, 20% on Annual); sign in first so it applies.</li>
               <li>Rackets, paddles and balls are at reception.</li>
             </ul>
           </div>

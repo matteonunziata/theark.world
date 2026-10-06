@@ -50,7 +50,6 @@ export function CourtBooker({
   today,
   now,
   me,
-  isMember,
   online,
 }: {
   courts: PublicCourt[];
@@ -59,7 +58,6 @@ export function CourtBooker({
   today: string;
   now: string;
   me: Me | null;
-  isMember: boolean;
   online: boolean;
 }) {
   const [pick, setPick] = useState<Pick | null>(null);
@@ -143,7 +141,6 @@ export function CourtBooker({
           day={day}
           date={date}
           me={me}
-          isMember={isMember}
           online={online}
           onClose={() => setPick(null)}
         />
@@ -157,7 +154,6 @@ function BookingForm({
   day,
   date,
   me,
-  isMember,
   online,
   onClose,
 }: {
@@ -165,7 +161,6 @@ function BookingForm({
   day: DayRow[];
   date: string;
   me: Me | null;
-  isMember: boolean;
   online: boolean;
   onClose: () => void;
 }) {
@@ -185,7 +180,7 @@ function BookingForm({
   const [spots, setSpots] = useState<number>(Math.min(4, c.max_players));
   const [levelMin, setLevelMin] = useState<number>(1.5);
   const [levelMax, setLevelMax] = useState<number>(3.5);
-  const [pay, setPay] = useState<"online" | "reception">(online ? "online" : "reception");
+  const pay: "online" | "reception" = online ? "online" : "reception";
   const [result, setResult] = useState<CourtResult | null>(null);
   const [pending, start] = useTransition();
 
@@ -352,23 +347,6 @@ function BookingForm({
           <textarea id="cb-notes" name="notes" rows={2} placeholder="Need rackets, a coach, a ball machine" />
         </div>
 
-        {online && isMember && (
-          <fieldset>
-            <legend>Payment</legend>
-            <div className="opts">
-              <label className={pay === "online" ? "on" : ""}>
-                <input type="radio" name="pay" checked={pay === "online"} onChange={() => setPay("online")} />
-                <b>Pay by card now</b>
-                <span>Confirmed right away</span>
-              </label>
-              <label className={pay === "reception" ? "on" : ""}>
-                <input type="radio" name="pay" checked={pay === "reception"} onChange={() => setPay("reception")} />
-                <b>Settle at reception</b>
-                <span>Members only</span>
-              </label>
-            </div>
-          </fieldset>
-        )}
 
         <div className="total">
           <span>

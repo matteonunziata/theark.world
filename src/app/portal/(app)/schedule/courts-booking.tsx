@@ -53,9 +53,14 @@ export function CourtsBooking({
   const days = Array.from({ length: BOOKING_DAYS + 1 }, (_, i) => addDays(today, i));
   const mineToday = taken.filter((t) => t.mine).length;
 
-  const run = async (key: string, fn: () => Promise<{ ok: boolean; message?: string; error?: string }>) => {
+  const run = async (key: string, fn: () => Promise<{ ok: boolean; message?: string; error?: string; payUrl?: string }>) => {
     setBusy(key);
     const r = await fn();
+    if (r.ok && r.payUrl) {
+      // The slot is held; pay on Stripe to confirm it.
+      window.location.assign(r.payUrl);
+      return;
+    }
     setBusy(null);
     toast(r.ok ? (r.message ?? "Done") : (r.error ?? "Something went wrong"));
   };
@@ -63,8 +68,8 @@ export function CourtsBooking({
   return (
     <>
       <p className="crt-note">
-        Court time is charged on top of your membership{discount ? `, with your ${discount}% discount` : ""}.
-        {online ? " Pay by card from your booking, or settle at reception." : " Settle at reception when you arrive."}{" "}
+        Court time is paid when you book{discount ? `, with your ${discount}% member discount` : ""}.
+        {online ? " You’ll go to the card payment; the slot is held for 20 minutes while you pay." : " Settle at reception when you arrive."}{" "}
         Up to {PER_DAY} slots a day. For a two-hour booking or an open match, use the{" "}
         <Link href="/courts">public courts page</Link>.
       </p>

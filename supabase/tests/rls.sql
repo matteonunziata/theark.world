@@ -834,10 +834,14 @@ reset role;
 -- Courts: staff book for anyone; members book their own slots ------------------
 
 insert into _ids values ('court', gen_random_uuid());
-insert into public.courts (id, name, sport, open_time, close_time, slot_minutes)
-values (pg_temp.id('court'), 'TEST court', 'padel', '06:00', '08:00', 30);
+insert into public.courts (id, name, sport, open_time, close_time, slot_minutes, price)
+values (pg_temp.id('court'), 'TEST court', 'padel', '06:00', '08:00', 30, 10000);
 
 select pg_temp.act_as(pg_temp.id('member'));
+select pg_temp.expect(public.my_court_discount() = 10, 'a Founding member gets the tier''s 10% off courts');
+select pg_temp.expect(
+  public.court_price(pg_temp.id('court'), 60, public.current_member_contact_id()) = 18000,
+  'court prices carry the tier discount');
 select pg_temp.expect(
   public.book_court(pg_temp.id('court'), public.org_today() + 3, '06:00') is not null,
   'members book a free slot');
