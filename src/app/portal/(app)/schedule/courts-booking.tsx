@@ -44,14 +44,10 @@ export function CourtsBooking({
 
   return (
     <>
-      <div className="pv-sec-h" style={{ marginBottom: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 40, margin: 0 }}>Courts</h1>
-          <p>
-            Book the padel or pickleball court, up to two weeks ahead. {PER_DAY} slots a day each.
-          </p>
-        </div>
-      </div>
+      <p className="crt-note">
+        Court time is charged separately from your membership, with your tier’s discount, and settled at
+        reception for now. Up to {PER_DAY} slots a day.
+      </p>
 
       {mine.length > 0 && (
         <section className="crt-mine">
@@ -81,7 +77,7 @@ export function CourtsBooking({
 
       <div className="sch-strip crt-days">
         {days.map((d) => (
-          <Link key={d} href={`/portal/courts?date=${d}`} aria-current={d === date ? "page" : undefined} className={d === today ? "today" : ""}>
+          <Link key={d} href={`/portal/schedule?tab=courts&date=${d}`} aria-current={d === date ? "page" : undefined} className={d === today ? "today" : ""}>
             <span>{DOW[new Date(`${d}T00:00:00Z`).getUTCDay()]}</span>
             <b>{Number(d.slice(8))}</b>
           </Link>
@@ -141,7 +137,7 @@ export function CourtsBooking({
         </div>
       )}
       {!isMember && (
-        <p className="muted" style={{ marginTop: 16 }}>You’re signed in as staff. Members book courts from here; staff book them in Schedule → Courts.</p>
+        <p className="muted" style={{ marginTop: 16 }}>You’re signed in as staff. Members book courts from here; staff book them in Schedule → Courts of the staff app.</p>
       )}
     </>
   );

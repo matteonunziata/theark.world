@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { useState, useTransition } from "react";
+import { initials } from "@/components/avatar";
+import { avatarColor } from "@/lib/connect";
+import { avatarUrl } from "@/lib/covers";
 import type { Tables } from "@/lib/database.types";
 import { dayLabel, timeRange } from "@/lib/dates";
 import { money } from "@/lib/schedule";
@@ -10,10 +13,39 @@ import { type BookingResult, bookSession } from "../../actions";
 
 type Ticket = Tables<"ticket_types">;
 type Count = { session_date: string; ticket_type_id: string | null; taken: number };
+type Attendee = { id: string; name: string; photo_path: string | null; is_me: boolean };
+
+/** Members who are booked into one date, with how many others are coming. */
+function Going({ list, taken }: { list: Attendee[]; taken: number }) {
+  const others = Math.max(0, taken - list.length);
+  if (!list.length && !others) return null;
+  const names = list.map((a) => (a.is_me ? "you" : a.name.split(/\s+/)[0]));
+  const text =
+    names.length === 0
+      ? `${others} going`
+      : `${names.slice(0, 3).join(", ")}${names.length > 3 ? ` +${names.length - 3}` : ""}${others ? ` and ${others} more` : ""} going`;
+  return (
+    <div className="ev-going" title={list.map((a) => a.name).join(", ")}>
+      <span className="avs">
+        {list.slice(0, 5).map((a) => {
+          const src = avatarUrl(a.photo_path);
+          return (
+            <span key={a.id} className="av" style={{ background: avatarColor(a.id) }} aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {src ? <img src={src} alt="" /> : initials(a.name)}
+            </span>
+          );
+        })}
+      </span>
+      <span>{text.charAt(0).toUpperCase() + text.slice(1)}</span>
+    </div>
+  );
+}
 
 export function BookingPanel({
   offering: o,
   sessions,
+  attendees = {},
   counts,
   tickets,
   highlight,
@@ -33,6 +65,8 @@ export function BookingPanel({
     capacity: number | null;
   };
   sessions: { date: string; cancelled: boolean }[];
+  /** Directory members booked per date; members and staff only. */
+  attendees?: Record<string, Attendee[]>;
   counts: Count[];
   tickets: Ticket[];
   highlight: string | null;
@@ -80,6 +114,7 @@ export function BookingPanel({
               ? "Your ticket is on its way to your inbox."
               : "Keep your ticket handy. Show it to security when you arrive."}
           </p>
+          {isMember && picked && <Going list={attendees[picked] ?? []} taken={taken(picked)} />}
           <p>
             <Link className="btn" href={`/t/${result.token}`}>
               View your ticket
@@ -122,6 +157,7 @@ export function BookingPanel({
           {dayLabel(picked, today)}, {timeRange(o)}
           {o.location ? ` at ${o.location}` : ""}
         </p>
+        {isMember && <Going list={attendees[picked] ?? []} taken={taken(picked)} />}
         {result && !result.ok && (
           <div className="form-error" role="alert">
             {result.error}
@@ -246,6 +282,7 @@ export function BookingPanel({
                         ? `, ${l} ${l === 1 ? "spot" : "spots"} left`
                         : ""}
                 </span>
+                {isMember && <Going list={attendees[s.date] ?? []} taken={taken(s.date)} />}
               </div>
               <button
                 type="button"

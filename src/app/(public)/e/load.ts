@@ -17,7 +17,7 @@ export async function loadEvent(id: string, date?: string | null) {
 
   const today = todayIn(org?.timezone);
   const to = addDays(today, 120);
-  const [{ data: tickets }, { data: cancels }, { data: counts }, { data: facs }] =
+  const [{ data: tickets }, { data: cancels }, { data: counts }, { data: facs }, { data: going }] =
     await Promise.all([
       supabase.from("ticket_types").select("*").eq("offering_id", o.id).order("position"),
       supabase
@@ -27,7 +27,14 @@ export async function loadEvent(id: string, date?: string | null) {
         .gte("session_date", today),
       supabase.rpc("session_counts", { p_offering_id: o.id, p_from: today, p_to: to }),
       supabase.rpc("facilitator_names"),
+      // Who else is going: members and staff only; the function returns
+      // nothing to anyone else.
+      memberId || staff
+        ? supabase.rpc("session_attendees", { p_offering_id: o.id, p_from: today, p_to: to })
+        : Promise.resolve({ data: [] as Attendee[] }),
     ]);
+  const attendees: Record<string, Attendee[]> = {};
+  for (const a of going ?? []) (attendees[a.session_date] ??= []).push(a);
   const all = sessions([o], cancels ?? [], today, to);
   const upcoming = all.slice(0, 8);
   // Keep the date someone picked, even when it's further out.
@@ -43,9 +50,12 @@ export async function loadEvent(id: string, date?: string | null) {
       tickets: tickets ?? [],
       counts: counts ?? [],
       sessions: upcoming.map((s) => ({ date: s.date, cancelled: s.cancelled })),
+      attendees,
       canBook: !!memberId || (o.kind !== "class" && o.access === "everyone"),
     },
   };
 }
+
+export type Attendee = { session_date: string; id: string; name: string; photo_path: string | null; is_me: boolean };
 
 export type LoadedEvent = NonNullable<Awaited<ReturnType<typeof loadEvent>>["event"]>;

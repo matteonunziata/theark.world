@@ -5,6 +5,7 @@ import { addDays, addMonths, DOW, fmtDate, fmtTime, monthLabel, timeRange, today
 import { monthGrid } from "@/lib/estate";
 import { loadPortal } from "@/lib/portal";
 import { KINDS, kindName, type Session, sessions } from "@/lib/schedule";
+import { CourtsSection } from "./courts-section";
 
 export const metadata: Metadata = { title: "Schedule" };
 
@@ -20,6 +21,37 @@ export default async function SchedulePage({ searchParams }: PageProps<"/portal/
   const sp = await searchParams;
   const p = await loadPortal();
   const today = todayIn(p.timezone);
+  const tab = sp.tab === "courts" ? "courts" : "classes";
+  const header = (
+    <>
+      <div className="pv-sec-h" style={{ marginBottom: 16 }}>
+        <div>
+          <h1 style={{ fontSize: 40, margin: 0 }}>Schedule</h1>
+          <p>
+            {tab === "courts"
+              ? "Book the padel or pickleball court, up to two weeks ahead."
+              : `Classes and gatherings${p.city ? ` in ${p.city.name}` : ""}. Tap one to sign up.`}
+          </p>
+        </div>
+      </div>
+      <div className="sch-views sch-tabs" role="group" aria-label="Schedule">
+        <Link href="/portal/schedule" aria-current={tab === "classes" ? "page" : undefined}>
+          Classes & events
+        </Link>
+        <Link href="/portal/schedule?tab=courts" aria-current={tab === "courts" ? "page" : undefined}>
+          Courts
+        </Link>
+      </div>
+    </>
+  );
+  if (tab === "courts") {
+    return (
+      <>
+        {header}
+        <CourtsSection p={p} date={typeof sp.date === "string" ? sp.date : undefined} />
+      </>
+    );
+  }
   const view: View = VIEWS.some(([v]) => v === sp.view) ? (sp.view as View) : "week";
   const date = typeof sp.date === "string" && ISO.test(sp.date) ? sp.date : today;
   const kind = typeof sp.kind === "string" && KINDS.some(([k]) => k === sp.kind) ? sp.kind : "";
@@ -92,13 +124,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/portal/
 
   return (
     <>
-      <div className="pv-sec-h" style={{ marginBottom: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 40, margin: 0 }}>Schedule</h1>
-          <p>Classes and gatherings{p.city ? ` in ${p.city.name}` : ""}. Tap one to sign up.</p>
-        </div>
-        <Link className="pv-btn ghost sm" href="/portal/courts">Book a court</Link>
-      </div>
+      {header}
 
       <div className="sch-bar">
         <div className="sch-views" role="group" aria-label="View">

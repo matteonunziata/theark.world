@@ -62,7 +62,15 @@
 - **Conversations and calendars.** GHL also has SMS/WhatsApp conversations and calendars. Worth bringing messages into the CRM profile, or bookings into Schedule?
 - **Sync timing.** Daily on Vercel Hobby. The webhook covers GHL → ARK OS right away; ARK OS → GHL is right away only after a CRM save (needs `SUPABASE_SERVICE_ROLE_KEY`). Fine, or upgrade to Pro for every 15 minutes?
 
-## Round 13: Farm shop
+## Round 13: Members portal onboarding
+
+- **Court payments.** Courts are an extra charge and still need Stripe. Until then the portal says court time is settled at reception. What's the price per slot (and per sport), and does the member discount apply to every tier? With a price on `courts` the portal could show it and, with Stripe, take payment at booking.
+- **Welcome email trigger.** It fires when staff save an active membership of a month or longer in the CRM, because pass and membership purchases happen on MightySales links outside ARK OS. Once Stripe (or a GHL purchase webhook) brings purchases in, the same send can run on the purchase itself.
+- **Magic link lifetime.** The welcome email's button is a Supabase magic link, which expires per the project's email OTP setting (one hour by default). Raise it in Supabase (Authentication → Email) to a day or so, since people open welcome emails later than sign-in emails.
+- **WhatsApp numbers.** Members who were added before onboarding may have a phone in the CRM already; it becomes visible to other members as soon as they are open to connecting (the default). Should existing members be asked first, by setting `open_to_connect` to false until they finish onboarding?
+- **Team members in the portal.** Staff and facilitators skip the onboarding gate but can fill the same fields under Me. Should they be asked too, so they show up with a photo and bio?
+
+## Round 14: Farm shop
 
 - **Shopify orders.** Online orders on thearkfarm.shop don't reach ARK OS, so the Overview is the till only. Pull Shopify orders in (Admin API token, like the GHL integration) so online and in-person sales sit in one report?
 - **Shop sales into Finance.** Shop revenue isn't posted to the Finance ledger. A daily or weekly summary entry under the Farm shop business line, created automatically, or keep entering deposits by hand?

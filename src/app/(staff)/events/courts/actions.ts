@@ -11,7 +11,7 @@ const TIME = /^\d{2}:\d{2}$/;
 
 const refresh = () => {
   revalidatePath("/events/courts");
-  revalidatePath("/portal/courts");
+  revalidatePath("/portal/schedule");
 };
 
 /** Book a court slot for someone, or edit / cancel a booking. */

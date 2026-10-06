@@ -1,27 +1,23 @@
 import "server-only";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { getViewer } from "@/lib/auth";
 
-export const CITY_COOKIE = "ark_city";
-
-/** Everything the portal shell needs: who's looking, and which city they're in. */
+/** Everything the portal shell needs: who's looking, and the club's home city. */
 export const loadPortal = cache(async () => {
   const v = await getViewer();
   if (!v.user) redirect("/portal/login");
   if (!v.memberId && !v.staff) redirect("/no-access");
   const { supabase } = v;
-  const [{ data: me }, { data: cities }, { data: org }, jar] = await Promise.all([
+  const [{ data: me }, { data: cities }, { data: org }] = await Promise.all([
     v.memberId ? supabase.rpc("my_member_profile").maybeSingle() : Promise.resolve({ data: null }),
     supabase.from("cities").select("*").eq("active", true).order("position").order("name"),
     supabase.rpc("public_org").maybeSingle(),
-    cookies(),
   ]);
   const list = cities ?? [];
   const home = list.find((c) => c.is_home) ?? list[0] ?? null;
-  const picked = me?.city_id ?? jar.get(CITY_COOKIE)?.value ?? null;
-  const city = list.find((c) => c.id === picked) ?? home;
+  // The schedule is the home city's unless a member's record says otherwise.
+  const city = list.find((c) => c.id === me?.city_id) ?? home;
   return {
     ...v,
     me,

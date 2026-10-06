@@ -170,6 +170,9 @@ export type Database = {
           open_to_connect: boolean
           owner_id: string | null
           pass_token: string
+          cities: string[]
+          onboarded_at: string | null
+          welcome_sent_at: string | null
           photo_path: string | null
           phone: string | null
           rate: string
@@ -206,6 +209,9 @@ export type Database = {
           open_to_connect?: boolean
           owner_id?: string | null
           pass_token?: string
+          cities?: string[]
+          onboarded_at?: string | null
+          welcome_sent_at?: string | null
           photo_path?: string | null
           phone?: string | null
           rate?: string
@@ -242,6 +248,9 @@ export type Database = {
           open_to_connect?: boolean
           owner_id?: string | null
           pass_token?: string
+          cities?: string[]
+          onboarded_at?: string | null
+          welcome_sent_at?: string | null
           photo_path?: string | null
           phone?: string | null
           rate?: string
@@ -3180,6 +3189,9 @@ export type Database = {
           instagram: string | null;
           open_to_connect: boolean;
           is_me: boolean;
+          cities: string[];
+          phone: string | null;
+          photo_path: string | null;
         }[];
       };
       member_names: {
@@ -3219,6 +3231,10 @@ export type Database = {
           show_in_directory: boolean;
           discount_name: string | null;
           discount_percent: number | null;
+          cities: string[];
+          phone: string | null;
+          photo_path: string | null;
+          onboarded_at: string | null;
         }[];
       };
       insert_sample_posts: { Args: { p_posts: Json }; Returns: string[] };
@@ -3241,14 +3257,37 @@ export type Database = {
       };
       update_my_profile: {
         Args: {
+          p_name: string | null;
           p_bio: string | null;
           p_interests: string[];
-          p_city_id: string | null;
+          p_cities: string[];
+          p_phone: string | null;
           p_instagram: string | null;
           p_open_to_connect: boolean;
           p_show_in_directory: boolean;
         };
         Returns: undefined;
+      };
+      complete_my_onboarding: {
+        Args: {
+          p_name: string | null;
+          p_bio: string | null;
+          p_cities: string[];
+          p_phone: string | null;
+          p_instagram: string | null;
+          p_open_to_connect: boolean;
+        };
+        Returns: undefined;
+      };
+      session_attendees: {
+        Args: { p_offering_id: string; p_from: string; p_to: string };
+        Returns: {
+          id: string;
+          session_date: string;
+          name: string;
+          photo_path: string | null;
+          is_me: boolean;
+        }[];
       };
       org_today: { Args: never; Returns: string };
       public_org: {
