@@ -3,12 +3,8 @@
 import { useMemo, useState } from "react";
 import { Drawer } from "@/components/drawer";
 import { type Person, PersonPicker } from "@/components/person-picker";
-<<<<<<< HEAD
-import { RangePicker, recentPresets } from "@/components/range-picker";
-=======
 import { RangePicker } from "@/components/range-picker";
 import { recentPresets } from "@/lib/range-presets";
->>>>>>> origin/main
 import { fmtMoney, SHOP_METHODS, shopMethodName } from "@/lib/shop";
 import { fmtWhen } from "@/lib/shop-report";
 import { recordDelivery, recordSale } from "../actions";
