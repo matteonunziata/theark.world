@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
+import { siteUrl } from "@/lib/email";
+import { fmtAmount, stripeReady, TERM_NAME, termPrice } from "@/lib/stripe";
 import { ProfileView } from "./profile-view";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -49,9 +51,22 @@ export default async function ContactPage({
       </>
     );
   }
+  // A Stripe link for the member's next term, at their rate and discount.
+  const c = contact.data;
+  const tier = (tiers.data ?? []).find((t) => t.key === c.tier);
+  const disc = (discounts.data ?? []).find((d) => d.id === c.discount_id && d.active);
+  const term = tier && tier.key !== "team" && c.email && stripeReady() ? termPrice(tier, c.rate, disc?.percent) : null;
+  const pay =
+    term && tier
+      ? {
+          url: `${await siteUrl()}/pay/membership/${c.pass_token}`,
+          label: `${fmtAmount(term, tier.currency)} for ${TERM_NAME[tier.period]}`,
+        }
+      : null;
   return (
     <ProfileView
       contact={contact.data}
+      pay={pay}
       notes={(notes.data ?? []).map((n) => ({
         id: n.id,
         body: n.body,

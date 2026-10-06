@@ -77,3 +77,14 @@
 - **Member prices.** No product has a member price yet, so the member share on the Overview just shows who bought while an active member. Set member prices on the products that should have one (the drawer has the field).
 - **Costs.** Products have no cost price, so there's no margin figure. Worth adding a cost per unit, at least for bought-in goods?
 - **Till hardware.** Is the till a phone or a laptop at the counter? The Sales tab works on both, but a barcode scanner or a card reader would change what gets built next.
+
+## Round 15: Stripe
+
+- **Stripe account.** It's The Ark World, LLC (test mode for now). The test webhook `ark-os` points at https://theark-world.vercel.app/api/webhooks/stripe (API version 2026-09-30). A live-mode webhook is needed at launch. Which currency does it pay out in? Charges are made in colones.
+- **Keys to switch it on.** In Vercel: `STRIPE_SECRET_KEY` (sk_test_… for now), `STRIPE_WEBHOOK_SECRET` (from the webhook in Stripe → Developers → Webhooks, address shown in Settings → Integrations → Stripe) and `SUPABASE_SERVICE_ROLE_KEY`. Also turn on "Email customers about successful payments" in Stripe so people get receipts.
+- **Subscriptions or prepaid terms?** Memberships are paid one term at a time, from a link or the portal. Should Monthly renew automatically on the card instead? That needs Stripe Billing, plus decisions on cancelling, failed cards, and how pausing works.
+- **Pause rules** are still not enforced. With prepaid terms, a pause is staff moving the renewal date. Fine?
+- **MightySales links.** Once Stripe is live, the pass pages stop using them. Should the MightySales products be switched off then, so no one pays twice?
+- **Pay before booking?** Paid event tickets still hold a spot unpaid (pay now, later, or at the desk). Should public events with a price require payment before the spot is held?
+- **Meals, courts and stays** aren't on Stripe yet. Meals keep their payment links; courts have no price; stays are confirmed by hand. The same checkout can take any of them once prices are set.
+- **Ambassador and Founding.** Ambassador has no price, so it gets no payment link. Founding is ₡100,000 a month at the rack rate. Is that still what Founding members pay?

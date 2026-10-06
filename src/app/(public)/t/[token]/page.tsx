@@ -9,6 +9,7 @@ import { getViewer } from "@/lib/auth";
 import { fmtDate, fmtTime, timeRange } from "@/lib/dates";
 import { siteUrl, ticketCode, ticketUrl } from "@/lib/email";
 import { kindName, money } from "@/lib/schedule";
+import { stripeReady } from "@/lib/stripe";
 import { walletEnabled } from "@/lib/wallet";
 import { CheckInButton, CopyTicketLink } from "./ticket-actions";
 
@@ -116,6 +117,13 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
                 : "Member, included"}
             </span>
           </p>
+          {stripeReady() && !t.paid && Number(t.price) > 0 && ["valid", "upcoming", "early"].includes(t.state) && (
+            <p style={{ margin: "12px 0 0" }}>
+              <a className="btn primary" href={`/pay/ticket/${token}`}>
+                Pay {money(t.price, t.currency)}
+              </a>
+            </p>
+          )}
           <span className={`state ${cls}`}>
             {t.state === "used" && t.checked_in_at
               ? `Checked in ${new Date(t.checked_in_at).toLocaleTimeString("en-US", {

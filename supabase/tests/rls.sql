@@ -861,10 +861,11 @@ select pg_temp.expect((select count(*) from public.membership_applications a joi
   where c.email = 'apply.test@example.com') = 1, 'admins read applications');
 reset role;
 
--- Team members are members too.
+-- Team members are members too (the eight above plus the Arkadia teacher).
 select pg_temp.expect(
   (select count(*) from public.contacts c join public.team_members t on t.email = c.email
-   where t.name like 'Test %' and c.tier = 'team' and c.membership_status = 'active') = 8,
+   where t.name like 'Test %' and c.tier = 'team' and c.membership_status = 'active')
+    = (select count(*) from public.team_members where name like 'Test %' and status = 'active'),
   'every active team member gets a Team membership');
 select pg_temp.act_as(pg_temp.id('admin'));
 select pg_temp.expect(public.is_member(), 'staff count as members in the portal');
@@ -883,14 +884,16 @@ select pg_temp.expect((select secret from public.integrations where key = 'ghl')
 insert into public.integration_links (provider, contact_id, external_id)
 select 'ghl', id, 'ghl_' || email from public.contacts where email in ('owned@example.com', 'else@example.com');
 insert into public.integration_events (provider, direction, kind, detail) values ('ghl', 'out', 'test', 'ok');
-select pg_temp.expect((select count(*) from public.integration_events) = 1, 'admins log integration events');
+-- The live project has real sync events, so count only the one above.
+select pg_temp.expect((select count(*) from public.integration_events where kind = 'test' and detail = 'ok') = 1,
+  'admins log integration events');
 reset role;
 
 select pg_temp.act_as(pg_temp.id('sales'));
 select pg_temp.expect((select count(*) from public.integrations) = 0, 'sales cannot read integration tokens');
 select pg_temp.expect((select count(*) from public.integration_events) = 0, 'sales cannot read integration events');
 -- Sales own 'owned' and work 'else' in their pipeline, so they see those two links.
-select pg_temp.expect((select count(*) from public.integration_links) = 2,
+select pg_temp.expect((select count(*) from public.integration_links where external_id like 'ghl_%@example.com') = 2,
   'sales see links only for contacts they can read');
 do $$
 begin
@@ -984,6 +987,55 @@ select pg_temp.expect(
     (select id from public.offerings where title = 'Open event'),
     public.org_today(), public.org_today() + 30)) = 1,
   'staff see who is going too');
+reset role;
+
+-- Stripe payments: only the server (service role) records them; staff read them.
+insert into public.payments (kind, contact_id, name, email, description, amount, currency, session_id)
+select 'membership', id, name, email, 'Test payment', 130000, 'CRC', 'cs_test_rls'
+from public.contacts where email = 'member@example.com';
+
+select pg_temp.act_as(pg_temp.id('admin'));
+select pg_temp.expect(
+  (select count(*) from public.payments where session_id = 'cs_test_rls') = 1,
+  'admins read payments');
+do $$
+begin
+  perform public.record_stripe_payment('{"session_id": "cs_x", "kind": "pass"}');
+  raise exception 'RLS test failed: staff can record a payment';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(pg_temp.id('shop'));
+select pg_temp.expect((select count(*) from public.payments) = 0,
+  'shop staff can''t read payments');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('member'));
+select pg_temp.expect((select count(*) from public.payments) = 0,
+  'members can''t read payments, even their own');
+do $$
+begin
+  insert into public.payments (kind, description, amount, currency, session_id)
+  values ('pass', 'Free pass', 0, 'CRC', 'cs_forged');
+  raise exception 'RLS test failed: a member forged a payment';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(null);
+do $$
+begin
+  perform public.record_stripe_payment('{"session_id": "cs_x", "kind": "pass"}');
+  raise exception 'RLS test failed: anon can record a payment';
+exception when insufficient_privilege then null;
+end $$;
+do $$
+begin
+  perform public.refund_stripe_payment('pi_x', 're_x', 1, 'CRC');
+  raise exception 'RLS test failed: anon can refund a payment';
+exception when insufficient_privilege then null;
+end $$;
 reset role;
 
 select 'All RLS tests passed' as result;

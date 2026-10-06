@@ -134,7 +134,16 @@ export function BookingPanel({
             />
           )}
           <p />
-          {result.paymentLink ? (
+          {result.payUrl ? (
+            <>
+              <a className="btn primary" href={result.payUrl}>
+                Pay {result.price} now
+              </a>
+              <p className="muted" style={{ marginTop: 8 }}>
+                Your spot is held. You can also pay from your ticket later, or at the front desk.
+              </p>
+            </>
+          ) : result.paymentLink ? (
             <a className="btn primary" href={result.paymentLink} target="_blank" rel="noopener noreferrer">
               {result.price ? `Pay ${result.price}` : `Pay for ${o.title.toLowerCase()}`}
             </a>

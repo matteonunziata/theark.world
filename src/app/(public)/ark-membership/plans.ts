@@ -9,13 +9,15 @@ export type Plan = {
   badge?: string;
   discount: number; // % off courts, events & Farm products
   guests: number; // guest passes a month
-  payLink?: string; // passes are bought straight away
+  payLink?: string; // the old MightySales link, used until Stripe is on
   note?: string;
 };
 
 /** Memberships start with an application; passes go straight to payment. */
 export const APPLY_URL = "/ark-membership/apply";
-export const planHref = (p: Plan) => p.payLink ?? `${APPLY_URL}?plan=${p.key}`;
+/** The pass page takes payment on Stripe, or forwards to the old payment link until Stripe is on. */
+export const passUrl = (key: string) => `/ark-membership/pass/${key}`;
+export const planHref = (p: Plan) => (p.kind === "pass" ? passUrl(p.key) : `${APPLY_URL}?plan=${p.key}`);
 
 export const PLANS: Plan[] = [
   {

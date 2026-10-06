@@ -5,7 +5,7 @@ import { ArkFonts } from "@/components/ark-fonts";
 import { getViewer } from "@/lib/auth";
 import { dow, todayIn } from "@/lib/dates";
 import { Calculator } from "./calculator";
-import { APPLY_URL, PLANS } from "./plans";
+import { APPLY_URL, passUrl } from "./plans";
 import { Pricing } from "./pricing";
 import { Schedule } from "./schedule";
 import "./membership.css";
@@ -109,7 +109,7 @@ export default async function MembershipPage() {
             <Link href={APPLY_URL} className="ms-btn solid">
               Apply for membership
             </Link>
-            <a href={PLANS[0].payLink} className="ms-btn light">
+            <a href={passUrl("day")} className="ms-btn light">
               Buy a pass
             </a>
           </div>
