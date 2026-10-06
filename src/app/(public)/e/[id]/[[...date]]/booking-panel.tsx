@@ -99,14 +99,13 @@ export function BookingPanel({
             />
           )}
           <p />
-          {result.price &&
-            (result.paymentLink ? (
-              <a className="btn primary" href={result.paymentLink} target="_blank" rel="noopener noreferrer">
-                Pay {result.price}
-              </a>
-            ) : (
-              <p className="muted">Pay {result.price} at the front desk when you arrive.</p>
-            ))}
+          {result.paymentLink ? (
+            <a className="btn primary" href={result.paymentLink} target="_blank" rel="noopener noreferrer">
+              {result.price ? `Pay ${result.price}` : `Pay for ${o.title.toLowerCase()}`}
+            </a>
+          ) : (
+            result.price && <p className="muted">Pay {result.price} at the front desk when you arrive.</p>
+          )}
         </div>
       </section>
     );
@@ -114,6 +113,8 @@ export function BookingPanel({
 
   if (picked) {
     const firstOpen = tickets.find((t) => ticketLeft(t, picked) !== 0);
+    // Meals and the like: everyone, members included, pays through the link.
+    const paidByLink = tickets.length > 0 && tickets.every((t) => t.payment_link);
     return (
       <section className="panel">
         <h2>Book {o.title}</h2>
@@ -158,7 +159,14 @@ export function BookingPanel({
             </>
           )}
           <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: -9999 }} />
-          {tickets.length > 0 && (
+          {paidByLink && firstOpen ? (
+            <>
+              <input type="hidden" name="ticket" value={firstOpen.id} />
+              <p className="note" style={{ marginTop: 0 }}>
+                {o.title} is paid separately. After you book, you’ll get a link to pay.
+              </p>
+            </>
+          ) : tickets.length > 0 && (
             <fieldset className="fld" style={{ border: 0, padding: 0 }}>
               <legend style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 6 }}>Ticket</legend>
               <div className="tkpick">

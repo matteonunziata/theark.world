@@ -867,3 +867,17 @@ a.mk-tr:hover{background:var(--surface-2)}
   .qr-poster{max-width:none;min-height:100vh;margin:0;border-radius:0;justify-content:center;break-after:page}
   .qr-poster:last-child{break-after:auto}
 }
+
+/* CSV import */
+.imp-cols{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:9px;overflow:hidden;font-size:13.5px}
+.imp-cols li{display:flex;justify-content:space-between;gap:12px;padding:7px 11px;border-top:1px solid var(--line)}
+.imp-cols li:first-child{border-top:0}
+
+/* theark.world type (Playfair Display + DM Sans) for the members portal; see components/ark-fonts.tsx */
+.ark-type{
+  --body:"DM Sans","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --display:"Playfair Display",Georgia,serif;
+  --pv-serif:"Playfair Display",Georgia,serif;
+  font-family:var(--body)
+}
+.ark-type h1,.ark-type h2,.ark-type h3{font-family:var(--display);font-weight:500;letter-spacing:-.005em}

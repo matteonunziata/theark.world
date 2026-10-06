@@ -2,9 +2,9 @@
 
 import { emailConfigured, sendSignInEmail, siteUrl } from "@/lib/email";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const TEAM_DOMAIN = "theark.world";
 
 export type SignInResult =
   | { status: "sent" }
@@ -14,60 +14,36 @@ export type SignInResult =
 /**
  * Send a sign-in link in the ARK email template. Needs Resend and the
  * Supabase service-role key; without them the form falls back to Supabase's
- * own email. The before-user-created hook still guards account creation.
+ * own email. The before-user-created hook guards account creation too, once
+ * it is switched on in Supabase (Authentication, Hooks).
+ *
+ * One form for everyone: the email says who someone is. Anyone on the team
+ * (staff and facilitators, any email domain) or on an active membership can
+ * sign in, and `/` sends them to the right place.
  */
-export type Audience = "member" | "team" | "facilitator";
-
-export async function sendSignInLink(rawEmail: string, next: string, audience: Audience): Promise<SignInResult> {
-  const admin = createAdminClient();
-  if (!admin || !emailConfigured()) return { status: "fallback" };
-
+export async function sendSignInLink(rawEmail: string, next: string): Promise<SignInResult> {
   const email = rawEmail.trim().toLowerCase();
   if (!EMAIL.test(email)) return { status: "error", error: "Enter a valid email." };
-  const team = audience !== "member";
-  const isTeamEmail = email.endsWith(`@${TEAM_DOMAIN}`);
-  // Facilitators can use any email that's on their team record.
-  if (audience !== "facilitator" && team !== isTeamEmail) {
-    return {
-      status: "error",
-      error: team ? `Use your @${TEAM_DOMAIN} email.` : "Team members sign in on the team page.",
-    };
-  }
 
-  // The same rules as the sign-in hook, checked first so nobody gets an
-  // email that can't work.
-  const allowed =
-    audience === "facilitator"
-      ? await admin
-          .from("team_members")
-          .select("id")
-          .eq("email", email)
-          .eq("status", "active")
-          .eq("role", "facilitator")
-          .maybeSingle()
-      : team
-    ? await admin.from("team_members").select("id").eq("email", email).eq("status", "active").maybeSingle()
-    : await admin
-        .from("contacts")
-        .select("id")
-        .eq("email", email)
-        .not("tier", "is", null)
-        .eq("membership_status", "active")
-        .limit(1)
-        .maybeSingle();
-  if (!allowed.data) {
-    return {
-      status: "error",
-      error:
-        audience === "facilitator"
-          ? "This email isn’t on a facilitator’s team record. Ask an admin to add it in Settings, Team."
-          : team
-        ? "You haven’t been added to ARK OS yet. Ask an admin to add you in Settings, Team."
-        : "This email isn’t on an active membership. Write to us and we’ll sort it out.",
-    };
-  }
+  // The same rules as the sign-in hook, checked before any email goes out,
+  // even when Supabase sends it: nobody outside the team or the membership
+  // gets a link or a login.
+  const supabase = await createClient();
+  const { data: refusal, error: checkError } = await supabase.rpc("sign_in_check", { p_email: email });
+  if (checkError) return { status: "error", error: "Couldn’t check that email. Try again in a minute." };
+  if (refusal) return { status: "error", error: refusal };
 
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : team ? "/" : "/portal";
+  const admin = createAdminClient();
+  if (!admin || !emailConfigured()) return { status: "fallback" };
+  const { data: onTeam } = await admin
+    .from("team_members")
+    .select("id")
+    .eq("email", email)
+    .eq("status", "active")
+    .maybeSingle();
+  const team = !!onTeam;
+
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
   const { data, error } = await admin.auth.admin.generateLink({
     type: "magiclink",
     email,
