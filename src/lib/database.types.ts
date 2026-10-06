@@ -1547,6 +1547,110 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          contact_id: string | null
+          created_at: string
+          currency: string
+          description: string
+          email: string | null
+          ends_on: string | null
+          finance_entry_id: string | null
+          id: string
+          kind: string
+          live: boolean
+          name: string | null
+          paid_at: string
+          payment_intent: string | null
+          provider: string
+          refunded_amount: number
+          refunded_at: string | null
+          registration_id: string | null
+          session_id: string
+          starts_on: string | null
+          status: string
+          tier: string | null
+        }
+        Insert: {
+          amount: number
+          contact_id?: string | null
+          created_at?: string
+          currency: string
+          description: string
+          email?: string | null
+          ends_on?: string | null
+          finance_entry_id?: string | null
+          id?: string
+          kind: string
+          live?: boolean
+          name?: string | null
+          paid_at?: string
+          payment_intent?: string | null
+          provider?: string
+          refunded_amount?: number
+          refunded_at?: string | null
+          registration_id?: string | null
+          session_id: string
+          starts_on?: string | null
+          status?: string
+          tier?: string | null
+        }
+        Update: {
+          amount?: number
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string
+          email?: string | null
+          ends_on?: string | null
+          finance_entry_id?: string | null
+          id?: string
+          kind?: string
+          live?: boolean
+          name?: string | null
+          paid_at?: string
+          payment_intent?: string | null
+          provider?: string
+          refunded_amount?: number
+          refunded_at?: string | null
+          registration_id?: string | null
+          session_id?: string
+          starts_on?: string | null
+          status?: string
+          tier?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_finance_entry_id_fkey"
+            columns: ["finance_entry_id"]
+            isOneToOne: false
+            referencedRelation: "finance_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       posts: {
         Row: {
           author_contact_id: string | null
@@ -3299,6 +3403,14 @@ export type Database = {
           timezone: string;
         }[];
       };
+      record_stripe_payment: {
+        Args: { p: Json }
+        Returns: { contact_id: string; created: boolean; payment_id: string }[]
+      }
+      refund_stripe_payment: {
+        Args: { p_amount: number; p_currency: string; p_intent: string; p_refund_id: string }
+        Returns: string
+      }
       save_sequence: {
         Args: {
           p_id: string | null;

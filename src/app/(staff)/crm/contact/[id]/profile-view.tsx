@@ -37,6 +37,7 @@ type Note = { id: string; body: string; created_at: string; author: string | nul
 
 export function ProfileView({
   contact: c,
+  pay,
   notes,
   stages,
   enrollments,
@@ -51,6 +52,8 @@ export function ProfileView({
   orgName,
 }: {
   contact: Contact;
+  /** Stripe payment link for the next membership term, when Stripe is on. */
+  pay: { url: string; label: string } | null;
   notes: Note[];
   stages: { pipeline: string; stage: string }[];
   enrollments: Enrollment[];
@@ -306,6 +309,47 @@ export function ProfileView({
                   <dd>
                     <a href={`/p/${c.pass_token}?look=1`} target="_blank" rel="noreferrer">Open member pass</a>
                   </dd>
+                  {pay && canEdit && (
+                    <>
+                      <dt>Payment link</dt>
+                      <dd>
+                        {pay.label}
+                        <br />
+                        <span style={{ display: "inline-flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(pay.url);
+                                toast("Payment link copied");
+                              } catch {
+                                toast("Couldn’t copy. Open the link and copy it from the address bar.");
+                              }
+                            }}
+                          >
+                            Copy link
+                          </button>
+                          {c.phone && (
+                            <a
+                              className="btn"
+                              href={waLink(
+                                c.phone,
+                                `Hi ${c.name.split(/\s+/)[0]}, here is the link to pay for your ARK membership (${pay.label}): ${pay.url}`,
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Send on WhatsApp
+                            </a>
+                          )}
+                        </span>
+                        <span className="hint" style={{ display: "block", marginTop: 4 }}>
+                          Paying activates the membership, or adds a term from the renewal date.
+                        </span>
+                      </dd>
+                    </>
+                  )}
                   <dt>Portal</dt>
                   <dd>
                     {c.onboarded_at

@@ -986,6 +986,55 @@ select pg_temp.expect(
   'staff see who is going too');
 reset role;
 
+-- Stripe payments: only the server (service role) records them; staff read them.
+insert into public.payments (kind, contact_id, name, email, description, amount, currency, session_id)
+select 'membership', id, name, email, 'Test payment', 130000, 'CRC', 'cs_test_rls'
+from public.contacts where email = 'member@example.com';
+
+select pg_temp.act_as(pg_temp.id('admin'));
+select pg_temp.expect(
+  (select count(*) from public.payments where session_id = 'cs_test_rls') = 1,
+  'admins read payments');
+do $$
+begin
+  perform public.record_stripe_payment('{"session_id": "cs_x", "kind": "pass"}');
+  raise exception 'RLS test failed: staff can record a payment';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(pg_temp.id('shop'));
+select pg_temp.expect((select count(*) from public.payments) = 0,
+  'shop staff can''t read payments');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('member'));
+select pg_temp.expect((select count(*) from public.payments) = 0,
+  'members can''t read payments, even their own');
+do $$
+begin
+  insert into public.payments (kind, description, amount, currency, session_id)
+  values ('pass', 'Free pass', 0, 'CRC', 'cs_forged');
+  raise exception 'RLS test failed: a member forged a payment';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+select pg_temp.act_as(null);
+do $$
+begin
+  perform public.record_stripe_payment('{"session_id": "cs_x", "kind": "pass"}');
+  raise exception 'RLS test failed: anon can record a payment';
+exception when insufficient_privilege then null;
+end $$;
+do $$
+begin
+  perform public.refund_stripe_payment('pi_x', 're_x', 1, 'CRC');
+  raise exception 'RLS test failed: anon can refund a payment';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
 select 'All RLS tests passed' as result;
 
 rollback;

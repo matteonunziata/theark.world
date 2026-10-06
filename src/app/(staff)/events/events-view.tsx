@@ -493,7 +493,7 @@ function OfferingDrawer({
             </select>
             <input name="t_qty" type="number" min={1} placeholder="No limit" defaultValue={t.qty ?? ""} aria-label="Quantity per session" />
             <div className="full">
-              <input name="t_link" type="url" placeholder="Payment link (optional), e.g. Stripe" defaultValue={t.payment_link ?? ""} aria-label="Payment link" />
+              <input name="t_link" type="url" placeholder="Outside payment link (optional). Leave empty to take payment on Stripe" defaultValue={t.payment_link ?? ""} aria-label="Payment link" />
               <button type="button" className="btn ghost" onClick={() => setRows(rows.filter((x) => x.key !== t.key))}>
                 Remove
               </button>
