@@ -23,3 +23,46 @@ describe("courts", () => {
     expect(classAt({ sport: "padel" }, slot, [{ ...padel, location: "The Shala" }])).toBeNull();
   });
 });
+
+import { addMinutes, courtMoney, courtPrice, durationLabel, durations, levelName, levelRange, share } from "@/lib/courts";
+
+describe("courts online", () => {
+  const padel = { price: 20000, slot_minutes: 60, currency: "CRC" };
+
+  it("offers one slot up to two hours", () => {
+    expect(durations({ slot_minutes: 60 })).toEqual([60, 120]);
+    expect(durations({ slot_minutes: 30 })).toEqual([30, 60, 90, 120]);
+    expect(durations({ slot_minutes: 90 })).toEqual([90]);
+  });
+
+  it("prices a booking from the price per slot", () => {
+    expect(courtPrice(padel, 60)).toBe(20000);
+    expect(courtPrice(padel, 120)).toBe(40000);
+    expect(courtPrice({ price: 25, slot_minutes: 30, currency: "USD" }, 90)).toBe(75);
+    expect(courtPrice({ price: null, slot_minutes: 60, currency: "CRC" }, 60)).toBe(0);
+  });
+
+  it("splits a court evenly between players", () => {
+    expect(share(20000, 4, "CRC")).toBe(5000);
+    expect(share(20000, 3, "CRC")).toBe(6667);
+    expect(share(45, 4, "USD")).toBe(11.25);
+  });
+
+  it("formats money and lengths", () => {
+    expect(courtMoney(20000, "CRC")).toBe("₡20,000");
+    expect(courtMoney(11.25, "USD")).toBe("$11.25");
+    expect(courtMoney(0, "CRC")).toBe("Free");
+    expect(durationLabel(60)).toBe("1 hour");
+    expect(durationLabel(90)).toBe("1½ hours");
+    expect(durationLabel(120)).toBe("2 hours");
+    expect(addMinutes("07:00", 90)).toBe("08:30");
+  });
+
+  it("names levels on the 0–7 scale", () => {
+    expect(levelName(2.5)).toBe("Improver");
+    expect(levelName(2.7)).toBe("Improver");
+    expect(levelName(null)).toBe("");
+    expect(levelRange(1.5, 3.5)).toBe("1.5–3.5");
+    expect(levelRange(null, 3)).toBe("");
+  });
+});

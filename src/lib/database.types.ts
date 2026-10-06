@@ -329,6 +329,17 @@ export type Database = {
           source: string
           start_time: string
           status: string
+          paid: boolean
+          paid_at: string | null
+          amount: number | null
+          currency: string
+          token: string
+          open_match: boolean
+          level: number | null
+          level_min: number | null
+          level_max: number | null
+          spots: number | null
+          held_until: string | null
         }
         Insert: {
           contact_id?: string | null
@@ -346,6 +357,17 @@ export type Database = {
           source?: string
           start_time: string
           status?: string
+          paid?: boolean
+          paid_at?: string | null
+          amount?: number | null
+          currency?: string
+          token?: string
+          open_match?: boolean
+          level?: number | null
+          level_min?: number | null
+          level_max?: number | null
+          spots?: number | null
+          held_until?: string | null
         }
         Update: {
           contact_id?: string | null
@@ -363,6 +385,17 @@ export type Database = {
           source?: string
           start_time?: string
           status?: string
+          paid?: boolean
+          paid_at?: string | null
+          amount?: number | null
+          currency?: string
+          token?: string
+          open_match?: boolean
+          level?: number | null
+          level_min?: number | null
+          level_max?: number | null
+          spots?: number | null
+          held_until?: string | null
         }
         Relationships: [
           {
@@ -388,6 +421,75 @@ export type Database = {
           },
         ]
       }
+      court_players: {
+        Row: {
+          amount: number
+          booking_id: string
+          contact_id: string | null
+          created_at: string
+          email: string | null
+          held_until: string | null
+          host: boolean
+          id: string
+          level: number | null
+          name: string
+          paid: boolean
+          paid_at: string | null
+          phone: string | null
+          status: string
+          token: string
+        }
+        Insert: {
+          amount?: number
+          booking_id: string
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          held_until?: string | null
+          host?: boolean
+          id?: string
+          level?: number | null
+          name: string
+          paid?: boolean
+          paid_at?: string | null
+          phone?: string | null
+          status?: string
+          token?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          held_until?: string | null
+          host?: boolean
+          id?: string
+          level?: number | null
+          name?: string
+          paid?: boolean
+          paid_at?: string | null
+          phone?: string | null
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "court_players_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "court_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "court_players_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courts: {
         Row: {
           active: boolean
@@ -399,6 +501,10 @@ export type Database = {
           position: number
           slot_minutes: number
           sport: string
+          price: number | null
+          currency: string
+          description: string | null
+          max_players: number
         }
         Insert: {
           active?: boolean
@@ -410,6 +516,10 @@ export type Database = {
           position?: number
           slot_minutes?: number
           sport?: string
+          price?: number | null
+          currency?: string
+          description?: string | null
+          max_players?: number
         }
         Update: {
           active?: boolean
@@ -421,6 +531,10 @@ export type Database = {
           position?: number
           slot_minutes?: number
           sport?: string
+          price?: number | null
+          currency?: string
+          description?: string | null
+          max_players?: number
         }
         Relationships: [
 
@@ -1661,6 +1775,8 @@ export type Database = {
           starts_on: string | null
           status: string
           tier: string | null
+          court_booking_id: string | null
+          court_player_id: string | null
         }
         Insert: {
           amount: number
@@ -1685,6 +1801,8 @@ export type Database = {
           starts_on?: string | null
           status?: string
           tier?: string | null
+          court_booking_id?: string | null
+          court_player_id?: string | null
         }
         Update: {
           amount?: number
@@ -1709,6 +1827,8 @@ export type Database = {
           starts_on?: string | null
           status?: string
           tier?: string | null
+          court_booking_id?: string | null
+          court_player_id?: string | null
         }
         Relationships: [
           {
@@ -3202,8 +3322,42 @@ export type Database = {
       };
       my_court_bookings: {
         Args: never;
-        Returns: { court: string; date: string; end_time: string; id: string; start_time: string }[];
+        Returns: {
+          court: string; date: string; end_time: string; id: string; start_time: string;
+          token: string; player_token: string | null; amount: number | null; currency: string;
+          paid: boolean; open_match: boolean;
+        }[];
       };
+      public_courts: {
+        Args: never;
+        Returns: {
+          id: string; name: string; sport: string; open_time: string; close_time: string;
+          slot_minutes: number; price: number | null; currency: string; description: string | null;
+          max_players: number;
+        }[];
+      };
+      public_court_day: {
+        Args: { p_date: string };
+        Returns: {
+          court_id: string; start_time: string; end_time: string; kind: string; title: string | null;
+          booking_id: string | null; open_match: boolean; level_min: number | null; level_max: number | null;
+          spots: number | null; players: number | null; host: string | null; share: number | null;
+          currency: string | null;
+        }[];
+      };
+      public_open_matches: {
+        Args: never;
+        Returns: {
+          booking_id: string; court: string; sport: string; date: string; start_time: string; end_time: string;
+          level_min: number | null; level_max: number | null; spots: number; players: number; host: string;
+          share: number; currency: string;
+        }[];
+      };
+      court_booking_by_token: { Args: { p_token: string }; Returns: Json };
+      hold_court: { Args: { p: Json }; Returns: Json };
+      join_court_match: { Args: { p: Json }; Returns: Json };
+      cancel_court_by_token: { Args: { p_token: string }; Returns: string };
+      court_price: { Args: { p_court: string; p_minutes: number; p_contact: string | null }; Returns: number };
       court_day: {
         Args: { p_date: string };
         Returns: { court_id: string; end_time: string; id: string; mine: boolean; start_time: string }[];

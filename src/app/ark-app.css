@@ -579,6 +579,7 @@ a.seq-card{display:block;color:var(--ink);text-decoration:none}
 .court-row{grid-template-columns:1fr auto}
 
 /* Contact activity (CRM profile) */
+.court-slot.taken.held{border-style:dashed;background:color-mix(in srgb,var(--sun) 18%,var(--surface))}
 .act-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .act-kpis > div{background:var(--surface-2);border-radius:12px;padding:10px 12px;min-width:0}
 .act-kpis span{display:block;color:var(--muted);font-size:12.5px}

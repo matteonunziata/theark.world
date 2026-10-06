@@ -8,7 +8,7 @@ export const KINDS = [
   ["application", "Membership applications", "Someone applies through the website."],
   ["lead", "New leads", "Someone joins the waitlist, or a lead comes in through GoHighLevel."],
   ["booking", "Bookings", "A spot is booked for a class or event."],
-  ["payment", "Payments", "A pass, membership or ticket is paid on Stripe."],
+  ["payment", "Payments", "A pass, membership, ticket or court is paid on Stripe."],
   ["stay", "Requests to stay", "A guest asks to stay in one of the homes."],
   ["guest", "Guest invites", "A member invites a guest for a day."],
   ["task", "Tasks assigned", "A task in Operations is given to someone."],
@@ -182,7 +182,7 @@ export function paymentMessage(
   p: { kind: string; amount: string; name?: string | null; email?: string | null; description?: string | null; live: boolean; contactId?: string | null },
   origin: string,
 ) {
-  const what = p.kind === "pass" ? "pass" : p.kind === "membership" ? "membership" : "ticket";
+  const what = p.kind === "pass" ? "pass" : p.kind === "membership" ? "membership" : p.kind === "court" ? "court" : "ticket";
   const who = p.name || p.email || "Someone";
   return message(
     `*Payment:* ${esc(p.amount)} for a ${what}${p.live ? "" : " _(test mode)_"}`,
@@ -305,4 +305,33 @@ export function digestMessage(d: Digest, origin: string): Message {
   blocks.push(context(footer));
   text.push(footer);
   return { text: text.join("\n\n"), blocks };
+}
+
+export function courtMessage(
+  b: {
+    holder: string;
+    court: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    minutes: number;
+    amount: string | null;
+    openMatch: boolean;
+    joined?: boolean;
+    status: string;
+  },
+  origin: string,
+) {
+  const when = `${b.date} ${b.startTime.slice(0, 5)}–${b.endTime.slice(0, 5)}`;
+  const head = b.joined
+    ? `*Joined an open match:* ${esc(b.holder)} on ${esc(b.court)}`
+    : `*Court booked:* ${esc(b.court)} by ${esc(b.holder)}${b.openMatch ? " (open match)" : ""}`;
+  return message(
+    head,
+    [
+      `${esc(when)} · ${b.minutes} min${b.amount ? ` · ${esc(b.amount)}` : ""}`,
+      b.status === "held" ? "Paying on Stripe now; the slot is held for 20 minutes." : null,
+    ],
+    link(`${origin}/events/courts?date=${b.date}`, "Open Courts"),
+  );
 }

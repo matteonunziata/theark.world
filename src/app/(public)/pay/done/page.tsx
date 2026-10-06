@@ -97,6 +97,17 @@ export default async function PaymentDone({ searchParams }: PageProps<"/pay/done
     ));
   }
 
+  if (r.kind === "court") {
+    return box("Paid", "ok", `See you on court${first ? `, ${first}` : ""}`, (
+      <>
+        <p className="muted">
+          {paid} Your court is booked.{emailConfigured() ? " The details are in your inbox too." : ""}
+        </p>
+        {r.meta.token && <p><Link className="btn primary" href={`/courts/b/${r.meta.token}`}>Open your booking</Link></p>}
+      </>
+    ));
+  }
+
   if (r.kind === "pass") {
     const when =
       contact?.renews_on && contact.renews_on !== contact.member_since

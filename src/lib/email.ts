@@ -262,3 +262,76 @@ export async function sendPortalWelcomeEmail(m: {
     text: `Hi ${first},\n\nYour membership at ${m.orgName} is active. The members portal is where you book classes and court time, see who else is going, and meet the other members.\n\nSet up your profile here: ${m.link}\n\n${m.signsIn ? `If the link has stopped working, sign in at ${login} with this email and we'll send you a fresh one.` : "Sign in with this email address, no password needed."}`,
   });
 }
+
+/**
+ * A court booking confirmation (or a joined open match), keyed by a booking
+ * or player token. Reads what the booking page shows and sends it to the
+ * person on that row. Returns false when email isn't configured or there is
+ * nobody to send to.
+ */
+export async function sendCourtEmail(
+  sb: { rpc: (fn: "court_booking_by_token", args: { p_token: string }) => PromiseLike<{ data: unknown }> },
+  token: string,
+) {
+  if (!emailConfigured()) return false;
+  const { data } = await sb.rpc("court_booking_by_token", { p_token: token });
+  const d = data as {
+    booking: {
+      court: string;
+      date: string;
+      start_time: string;
+      end_time: string;
+      open_match: boolean;
+      spots: number | null;
+      currency: string;
+    };
+    you: { token: string; host: boolean; name: string; email: string | null; amount: number; paid: boolean } | null;
+  } | null;
+  if (!d?.you?.email) return false;
+  const origin = await siteUrl();
+  const url = `${origin}/courts/b/${d.you.token}`;
+  const day = fmtDate(d.booking.date, { weekday: "long", month: "long", day: "numeric" });
+  const time = timeRange({ start_time: d.booking.start_time, end_time: d.booking.end_time });
+  const first = d.you.name.trim().split(/\s+/)[0] ?? "";
+  const amount =
+    d.booking.currency === "USD"
+      ? `$${Number(d.you.amount).toLocaleString("en-US", { maximumFractionDigits: 2 })}`
+      : `₡${Math.round(Number(d.you.amount)).toLocaleString("en-US")}`;
+  const what = d.booking.open_match ? (d.you.host ? "Your open match" : "You’re in the match") : "Your court";
+  const paidLine = d.you.paid
+    ? `${amount} paid.`
+    : Number(d.you.amount) > 0
+      ? `${amount} to settle at reception.`
+      : "";
+  const gcal = googleCalendarUrl({
+    title: `${d.booking.court} · The ARK`,
+    date: d.booking.date,
+    start: d.booking.start_time,
+    end: d.booking.end_time,
+    location: "The ARK, Santa Teresa",
+    details: `Your booking: ${url}`,
+  });
+  const link = `color:${BRAND.sea}`;
+  return sendEmail({
+    to: d.you.email,
+    subject: `${what}: ${d.booking.court}, ${fmtDate(d.booking.date)}`,
+    parts: {
+      orgName: "The ARK",
+      preheader: `${day}, ${time}.`,
+      eyebrow: "Courts",
+      heading: d.booking.court,
+      body: `<p style="margin:0 0 16px">Hi ${esc(first)}, you’re booked. ${esc(paidLine)}</p>
+${detailRows([
+  ["When", `${esc(day)}<br>${esc(time)}`],
+  ["Where", "The ARK, Santa Teresa"],
+  ...(d.booking.open_match
+    ? ([["Match", `Open match, ${d.booking.spots ?? 4} players. Share the page below to fill it.`]] as [string, string][])
+    : []),
+])}
+<p style="margin:16px 0 18px;font-size:14px;text-align:center">Add to <a href="${gcal}" style="${link}">Google Calendar</a> · <a href="${url}/calendar.ics" style="${link}">Apple or Outlook</a></p>`,
+      cta: { label: "Open your booking", href: url },
+      footnote: "Cancel from the booking page up to 24 hours before. Rackets and balls are at reception.",
+    },
+    text: `Hi ${first},\n\n${what}: ${d.booking.court}, ${day}, ${time}. ${paidLine}\n\nYour booking: ${url}\n\nSee you on court.`,
+  });
+}

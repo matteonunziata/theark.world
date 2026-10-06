@@ -1070,3 +1070,99 @@ reset role;
 select 'All RLS tests passed' as result;
 
 rollback;
+-- Courts online: anyone holds a court, joins an open match, cancels by token ---
+
+select pg_temp.act_as(null);
+select pg_temp.expect((select count(*) from public.public_courts() where name = 'TEST court') = 1,
+  'visitors see the courts');
+-- The TEST court is 06:00–08:00 in 30-minute slots; the member booked 06:00 and
+-- the facilitator 06:00–06:30 above, so 07:00 is free.
+insert into _ids values ('web_hold', (
+  public.hold_court(jsonb_build_object(
+    'court_id', pg_temp.id('court'), 'date', public.org_today() + 3, 'start', '07:00', 'minutes', 60,
+    'name', 'Web Visitor', 'email', 'visitor@example.com', 'open_match', true, 'level', 2.5, 'spots', 4,
+    'pay', 'online')) ->> 'id')::uuid);
+select pg_temp.expect(
+  (select status from public.court_bookings where id = pg_temp.id('web_hold')) is null,
+  'visitors cannot read bookings directly');
+reset role;
+select pg_temp.expect(
+  (select status from public.court_bookings where id = pg_temp.id('web_hold')) = 'held',
+  'a web booking paid online starts as a hold');
+select pg_temp.expect(
+  (select count(*) from public.court_players where booking_id = pg_temp.id('web_hold') and host and status = 'held') = 1,
+  'the host gets a held player row');
+select pg_temp.expect(
+  (select source from public.contacts where email = 'visitor@example.com') = 'Courts',
+  'a visitor joins the CRM from the courts page');
+-- A held slot blocks others.
+select pg_temp.act_as(null);
+do $$
+begin
+  perform public.hold_court(jsonb_build_object(
+    'court_id', pg_temp.id('court'), 'date', public.org_today() + 3, 'start', '07:30', 'minutes', 30,
+    'name', 'Other Visitor', 'email', 'other@example.com', 'pay', 'online'));
+  raise exception 'RLS test failed: a visitor booked over a held slot';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+-- Visitors see it as taken but not open (the host hasn't paid).
+select pg_temp.expect(
+  (select count(*) from public.public_court_day(public.org_today() + 3)
+   where court_id = pg_temp.id('court') and start_time = '07:00' and kind = 'booking' and not open_match) = 1,
+  'a hold shows as taken, not as an open match');
+reset role;
+-- Stripe says it's paid: the server records it, the booking is booked and the match opens.
+select public.record_stripe_payment(jsonb_build_object(
+  'session_id', 'cs_test_court', 'payment_intent', 'pi_test_court', 'kind', 'court',
+  'email', 'visitor@example.com', 'name', 'Web Visitor', 'amount', 5000, 'currency', 'CRC',
+  'court_player_id', (select id from public.court_players where booking_id = pg_temp.id('web_hold') and host),
+  'description', 'TEST court'));
+select pg_temp.expect(
+  (select status from public.court_bookings where id = pg_temp.id('web_hold')) = 'booked',
+  'a court payment books the held slot');
+select pg_temp.expect(
+  (select count(*) from public.payments where kind = 'court' and court_booking_id = pg_temp.id('web_hold')) = 1,
+  'court payments are kept');
+select pg_temp.expect(
+  (select count(*) from public.public_open_matches() where booking_id = pg_temp.id('web_hold') and players = 1 and spots = 4) = 1,
+  'a paid open match is listed for others');
+-- Someone joins at the right level, someone at the wrong level can't.
+select pg_temp.act_as(null);
+do $$
+begin
+  perform public.join_court_match(jsonb_build_object(
+    'booking_id', pg_temp.id('web_hold'), 'name', 'Too Good', 'email', 'pro@example.com', 'level', 5.5, 'pay', 'reception'));
+  raise exception 'RLS test failed: a player outside the level range joined';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+insert into _ids values ('web_join', (
+  public.join_court_match(jsonb_build_object(
+    'booking_id', pg_temp.id('web_hold'), 'name', 'Joiner One', 'email', 'joiner@example.com', 'level', 3.5, 'pay', 'reception')) ->> 'token'));
+select pg_temp.expect(
+  (select count(*) from public.public_open_matches() where booking_id = pg_temp.id('web_hold') and players = 2) = 1,
+  'joining counts the player');
+select pg_temp.expect(
+  (public.court_booking_by_token((select id::text from _ids where k = 'web_join')) -> 'you' ->> 'host') = 'false',
+  'a player token opens their own page');
+select pg_temp.expect(
+  jsonb_array_length(public.court_booking_by_token((select id::text from _ids where k = 'web_join')) -> 'players') = 2,
+  'the booking page lists the players');
+select pg_temp.expect(public.cancel_court_by_token((select id::text from _ids where k = 'web_join')) = 'player',
+  'a player leaves a match that is not full');
+select pg_temp.expect(
+  public.cancel_court_by_token((select token from public.court_bookings where id = pg_temp.id('web_hold'))) = 'booking',
+  'the host cancels the booking by token');
+do $$
+begin
+  perform public.cancel_court_by_token('not-a-token');
+  raise exception 'RLS test failed: an unknown token cancelled something';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+reset role;
+select pg_temp.expect(
+  (select status from public.court_bookings where id = pg_temp.id('web_hold')) = 'cancelled',
+  'the cancelled booking is marked cancelled');
+

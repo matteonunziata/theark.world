@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
 import type { Tables } from "@/lib/database.types";
 import { addDays, fmtDate } from "@/lib/dates";
-import { classAt, hhmm, slots, SPORTS } from "@/lib/courts";
+import { classAt, courtMoney, hhmm, levelRange, slots, SPORTS } from "@/lib/courts";
 import type { Offering } from "@/lib/schedule";
 import { saveCourt, saveCourtBooking } from "./actions";
 
@@ -85,18 +85,27 @@ export function CourtsView({
                 const b = bookings.find(
                   (x) => x.court_id === c.id && hhmm(x.start_time) < s.end && hhmm(x.end_time) > s.start,
                 );
+                const tags = b
+                  ? [
+                      b.status === "held" ? "paying now" : null,
+                      b.open_match ? `open match, level ${levelRange(b.level_min, b.level_max)}` : b.players ? `${b.players} players` : null,
+                      b.amount && Number(b.amount) > 0 ? (b.paid ? "paid" : `${courtMoney(Number(b.amount), b.currency)} unpaid`) : null,
+                      b.source === "portal" ? "portal" : b.source === "web" ? "website" : null,
+                    ].filter(Boolean)
+                  : [];
                 const cls = b ? null : classAt(c, s, classes);
                 const gone = past(s.start);
                 return b ? (
-                  <button key={s.start} type="button" className="court-slot taken" onClick={() => book.openItem(b)}>
+                  <button
+                    key={s.start}
+                    type="button"
+                    className={`court-slot taken ${b.status === "held" ? "held" : ""}`}
+                    onClick={() => book.openItem(b)}
+                  >
                     <span className="t">{s.start}</span>
                     <span>
                       <b>{b.name}</b>
-                      <span className="muted">
-                        {[b.players ? `${b.players} players` : null, b.source === "portal" ? "booked in the portal" : null]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </span>
+                      <span className="muted">{tags.join(" · ")}</span>
                     </span>
                   </button>
                 ) : cls ? (
@@ -125,8 +134,9 @@ export function CourtsView({
         </div>
       )}
       <p className="note">
-        Members book free slots themselves in the portal, up to two weeks ahead and two slots a day. Classes held at
-        the courts block them.
+        Anyone books and pays on the public page (<Link href="/courts" target="_blank">/courts</Link>), members in the portal
+        with their discount, up to two weeks ahead and two slots a day. A slot being paid for is held for 20 minutes.
+        Classes held at the courts block them.
       </p>
 
       <BookingDrawer
@@ -243,6 +253,24 @@ function BookingDrawer({
           <label htmlFor="cb-players">Players</label>
           <input id="cb-players" name="players" type="number" min={1} max={8} defaultValue={b?.players ?? ""} />
         </div>
+        {b && (
+          <div className="fld">
+            <label htmlFor="cb-paid">Payment</label>
+            <label className="check" style={{ minHeight: 42 }}>
+              <input id="cb-paid" type="checkbox" name="paid" defaultChecked={b.paid} />
+              Paid{b.amount && Number(b.amount) > 0 ? ` (${courtMoney(Number(b.amount), b.currency)})` : ""}
+            </label>
+            <span className="hint">
+              {b.status === "held"
+                ? "Being paid on Stripe right now."
+                : b.open_match
+                  ? `Open match, level ${levelRange(b.level_min, b.level_max)}, ${b.spots} players; each pays their share online.`
+                  : b.paid
+                    ? "Paid online or at reception."
+                    : "Tick when settled at reception."}
+            </span>
+          </div>
+        )}
       </div>
       <div className="fld">
         <label htmlFor="cb-notes">Notes</label>
@@ -292,7 +320,8 @@ function CourtsDrawer({ open, onClose, courts }: { open: boolean; onClose: () =>
                 {!x.active && <span className="ptype" style={{ marginLeft: 6 }}>Closed</span>}
               </span>
               <span className="muted">
-                {SPORTS.find(([k]) => k === x.sport)?.[1]} · {hhmm(x.open_time)}–{hhmm(x.close_time)} · {x.slot_minutes} min
+                {SPORTS.find(([k]) => k === x.sport)?.[1]} · {hhmm(x.open_time)}–{hhmm(x.close_time)} · {x.slot_minutes} min ·{" "}
+                {courtMoney(x.price, x.currency)}
               </span>
             </button>
           ))}
@@ -328,6 +357,28 @@ function CourtsDrawer({ open, onClose, courts }: { open: boolean; onClose: () =>
               <label htmlFor="ct-slot">Slot (minutes)</label>
               <input id="ct-slot" name="slot_minutes" type="number" min={15} max={240} step={15} defaultValue={c?.slot_minutes ?? 60} />
             </div>
+          </div>
+          <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+            <div className="fld">
+              <label htmlFor="ct-price">Price per slot</label>
+              <input id="ct-price" name="price" type="number" min={0} step="any" defaultValue={c?.price ?? ""} />
+            </div>
+            <div className="fld">
+              <label htmlFor="ct-currency">Currency</label>
+              <select id="ct-currency" name="currency" defaultValue={c?.currency ?? "CRC"}>
+                <option value="CRC">₡ colones</option>
+                <option value="USD">$ dollars</option>
+              </select>
+            </div>
+            <div className="fld">
+              <label htmlFor="ct-max">Max players</label>
+              <input id="ct-max" name="max_players" type="number" min={2} max={8} defaultValue={c?.max_players ?? 4} />
+            </div>
+          </div>
+          <div className="fld">
+            <label htmlFor="ct-desc">On the public page</label>
+            <input id="ct-desc" name="description" defaultValue={c?.description ?? ""} placeholder="Glass court, lights, rackets at reception" />
+            <span className="hint">Members pay the price less their tier’s discount. Shown on /courts.</span>
           </div>
           <label className="check">
             <input type="checkbox" name="active" defaultChecked={c?.active ?? true} />

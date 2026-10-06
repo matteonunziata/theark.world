@@ -110,7 +110,7 @@ export async function bookCourt(courtId: string, date: string, start: string) {
   if (error) return fail(friendly(error));
   revalidatePath("/portal/schedule");
   revalidatePath("/events/courts");
-  return ok("Booked. Court time is settled at reception for now.");
+  return ok("Booked. Pay from your bookings above, or settle at reception.");
 }
 
 export async function cancelCourt(id: string) {

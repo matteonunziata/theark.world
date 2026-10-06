@@ -2,6 +2,7 @@ import { BOOKING_DAYS } from "@/lib/courts";
 import { addDays, todayIn } from "@/lib/dates";
 import type { PortalData } from "@/lib/portal";
 import { sessions } from "@/lib/schedule";
+import { stripeReady } from "@/lib/stripe";
 import { CourtsBooking } from "./courts-booking";
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -12,7 +13,7 @@ export async function CourtsSection({ p, date: d }: { p: PortalData; date?: stri
   const last = addDays(today, BOOKING_DAYS);
   const date = d && ISO.test(d) && d >= today && d <= last ? d : today;
   const [{ data: courts }, { data: taken }, { data: offerings }, { data: cancels }, { data: mine }] = await Promise.all([
-    p.supabase.from("courts").select("id, name, sport, open_time, close_time, slot_minutes").eq("active", true).order("position"),
+    p.supabase.from("courts").select("id, name, sport, open_time, close_time, slot_minutes, price, currency").eq("active", true).order("position"),
     p.supabase.rpc("court_day", { p_date: date }),
     p.supabase.from("offerings").select("*").eq("status", "published").ilike("location", "%court%"),
     p.supabase.from("session_cancellations").select("offering_id, session_date").eq("session_date", date),
@@ -37,6 +38,8 @@ export async function CourtsSection({ p, date: d }: { p: PortalData; date?: stri
       today={today}
       now={now}
       isMember={!!p.memberId}
+      online={stripeReady()}
+      discount={Number(p.me?.discount_percent ?? 0)}
     />
   );
 }

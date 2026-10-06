@@ -99,3 +99,20 @@
 - **Money.** Guesty's `totalPrice` is what the guest pays, in the listing currency. Only USD and CRC are kept; anything else leaves the total empty. Should the stay record the host payout (after channel fees) instead?
 - **Webhook on the Hobby plan.** Guesty retries eight times over a day and disables an endpoint after five days of failures, so a long outage means re-registering from the Guesty page ("New address", then "Register in Guesty").
 
+
+## Round 18: Memberships and the gate
+
+- **One check-in a day for everyone.** "Passes can't be used twice" is applied to monthly and annual members too: a member who steps out for lunch and comes back scans red "Already checked in at 9:12 AM", and security waves them through by sight. Fine, or should members with a month or longer be re-admitted on the same day?
+- **Two unused passes.** If someone holds an unused day pass and an unused week pass, the first check-in uses the one that expires first (then the day pass before the week pass). Tell me if you'd rather security chose.
+- **Cached statuses.** The tier and status shown on CRM profiles, in GHL tags and in the Memberships list roll over at the daily cron (7:00). Gate and portal access never wait for it. On Vercel Pro the cron could run every 15 minutes.
+- **The sign-in hook** is still not connected in Supabase (Authentication → Hooks → Before User Created → `public.hook_before_user_created`). Until it is, pass holders are only kept out of the portal by the app's own check.
+
+## Round 18: Courts online
+
+- **Prices.** ₡20,000 (padel) and ₡12,000 (pickleball) an hour are placeholders. What are the real rates, and is there an evening rate (lights) or a 90-minute price? Courts take any slot length; 90 minutes would need 30-minute slots on the court.
+- **Unfilled open matches.** Playtomic cancels and refunds an open match that hasn't filled a few hours before it starts. Here the match stays on the court with whoever is in, each having paid only their share, so the club carries the gap. Options: let it run (today), auto-cancel at N hours before (needs a cron that runs more than once a day, so the Pro plan), or make the host pay the full court if it doesn't fill.
+- **Refunds are by hand.** A cancellation within the rules doesn't refund on its own; someone refunds it in the Stripe dashboard and the webhook does the rest. Should ARK OS refund automatically on a within-policy cancellation (one Stripe API call per player)?
+- **Hold that outlives its slot.** If someone takes more than 20 minutes to pay and the slot was taken in the meantime, the payment is still recorded, the booking stays expired, and a note is added to it for a refund. Stripe's Checkout page itself stays open for 24 hours, so a longer hold (or a Checkout `expires_at` of 30 minutes, Stripe's minimum) would shrink the window.
+- **Levels never change.** Playtomic adjusts a rating from results. Recording scores and adjusting levels is a next step if open matches take off.
+- **Members' discount.** The public page applies the member's active discount only when they're signed in (the email field is then fixed to their membership email). A member who books signed out pays the full price. Fine, or should an email that matches an active member get the discount anyway?
+- **Court bookers in the CRM.** Every visitor who books becomes a contact (source "Courts"), like Guesty guests. Keep, or add them only to the booking?

@@ -2,21 +2,21 @@ import "server-only";
 import Stripe from "stripe";
 import { ratePrice } from "@/lib/crm";
 import { fmtDate } from "@/lib/dates";
-import { sendPassEmail, siteUrl } from "@/lib/email";
+import { sendCourtEmail, sendPassEmail, siteUrl } from "@/lib/email";
 import { sendPortalWelcome } from "@/lib/portal-welcome";
 import { notify } from "@/lib/slack";
 import { paymentMessage } from "@/lib/slack-format";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Stripe Checkout (hosted). ARK OS makes a Checkout session for a pass, a
-// membership term or a ticket and sends the person to Stripe. When Stripe
+// membership term, a ticket or a court slot and sends the person to Stripe. When Stripe
 // says it's paid (the webhook, or the return page, whichever comes first),
 // public.record_stripe_payment() starts the pass or membership, marks the
 // ticket paid, and adds the income to Finance. Keys live in the environment:
 // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, and SUPABASE_SERVICE_ROLE_KEY to
 // record the payment.
 
-export type PaymentKind = "pass" | "membership" | "ticket";
+export type PaymentKind = "pass" | "membership" | "ticket" | "court";
 
 let client: Stripe | null = null;
 
@@ -115,7 +115,7 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
   const cs = await s.checkout.sessions.retrieve(sessionId);
   const meta = (cs.metadata ?? {}) as Record<string, string>;
   const kind = meta.kind as PaymentKind | undefined;
-  if (!kind || !["pass", "membership", "ticket"].includes(kind)) return { state: "unknown" };
+  if (!kind || !["pass", "membership", "ticket", "court"].includes(kind)) return { state: "unknown" };
   if (cs.payment_status === "unpaid") return { state: cs.status === "complete" ? "pending" : "unpaid" };
 
   const amount = (cs.amount_total ?? 0) / 100;
@@ -134,6 +134,7 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
         currency,
         contact_id: meta.contact_id ?? null,
         registration_id: meta.registration_id ?? null,
+        court_player_id: meta.court_player_id ?? null,
         tier: meta.tier ?? null,
         start_date: meta.start_date ?? null,
         description: meta.description ?? null,
@@ -147,6 +148,13 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
     try {
       if (kind === "pass") await emailPass(admin, data.contact_id, email);
       if (kind === "membership") await sendPortalWelcome(admin, data.contact_id);
+    } catch (e) {
+      console.error("After-payment email failed", cs.id, e);
+    }
+  }
+  if (data.created && kind === "court" && meta.token) {
+    try {
+      await sendCourtEmail(admin, meta.token);
     } catch (e) {
       console.error("After-payment email failed", cs.id, e);
     }

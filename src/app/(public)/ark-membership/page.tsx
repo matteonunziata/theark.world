@@ -88,6 +88,7 @@ export default async function MembershipPage() {
           <a href="#schedule">Schedule</a>
           <a href="#pricing">Pricing</a>
           <a href="#faq">FAQ</a>
+          <Link href="/courts">Courts</Link>
           <Link href="/portal/login" className="ms-btn small ms-login">
             Member log in
           </Link>
