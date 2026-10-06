@@ -14,7 +14,7 @@ export default async function People() {
     <>
       <div className="pv-sec-h" style={{ marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 40, margin: 0 }}>People</h1>
+          <h1 className="pv-h1">People</h1>
           <p>The members of The ARK. Say hello on WhatsApp to anyone who’s open to it.</p>
         </div>
       </div>

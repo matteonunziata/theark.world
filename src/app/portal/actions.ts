@@ -12,6 +12,8 @@ import {
 import { getViewer } from "@/lib/auth";
 import { splitList } from "@/lib/connect";
 import { sendGuestPassEmail } from "@/lib/email";
+import { notifyLater } from "@/lib/slack";
+import { guestMessage } from "@/lib/slack-format";
 
 async function viewer() {
   const v = await getViewer();
@@ -71,12 +73,15 @@ export async function inviteGuest(
   });
   if (error || !token) return fail(friendly(error));
 
+  const { data: me } = await v.supabase.rpc("my_member_profile").maybeSingle();
+  if (date) {
+    const g = { guest: name ?? "", host: me?.name ?? "A member", date };
+    notifyLater("guest", (origin) => guestMessage(g, origin));
+  }
+
   let emailed = false;
   if (email && date) {
-    const [{ data: me }, { data: org }] = await Promise.all([
-      v.supabase.rpc("my_member_profile").maybeSingle(),
-      v.supabase.rpc("public_org").maybeSingle(),
-    ]);
+    const { data: org } = await v.supabase.rpc("public_org").maybeSingle();
     emailed = await sendGuestPassEmail({
       to: email,
       guest: name ?? "",

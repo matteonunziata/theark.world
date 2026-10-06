@@ -826,6 +826,66 @@ export type Database = {
           },
         ]
       }
+      guesty_listings: {
+        Row: {
+          accommodates: number | null
+          active: boolean
+          base_price: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          beds: number | null
+          check_in_time: string | null
+          check_out_time: string | null
+          cleaning_fee: number | null
+          cover_url: string | null
+          currency: string | null
+          id: string
+          listed: boolean
+          min_nights: number | null
+          nickname: string | null
+          seen_at: string
+          title: string
+        }
+        Insert: {
+          accommodates?: number | null
+          active?: boolean
+          base_price?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          beds?: number | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          cleaning_fee?: number | null
+          cover_url?: string | null
+          currency?: string | null
+          id: string
+          listed?: boolean
+          min_nights?: number | null
+          nickname?: string | null
+          seen_at?: string
+          title: string
+        }
+        Update: {
+          accommodates?: number | null
+          active?: boolean
+          base_price?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          beds?: number | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          cleaning_fee?: number | null
+          cover_url?: string | null
+          currency?: string | null
+          id?: string
+          listed?: boolean
+          min_nights?: number | null
+          nickname?: string | null
+          seen_at?: string
+          title?: string
+        }
+        Relationships: []
+      }
       integration_events: {
         Row: {
           contact_id: string | null
@@ -912,6 +972,15 @@ export type Database = {
       }
       integrations: {
         Row: {
+          access_token: string | null
+          client_id: string | null
+          sync_details: boolean
+          token_expires_at: string | null
+          webhook_id: string | null
+          webhook_signing_secret: string | null
+          account_name: string | null
+          channel: string | null
+          rules: Json
           connected_at: string | null
           created_at: string
           direction: string
@@ -926,6 +995,15 @@ export type Database = {
           webhook_secret: string
         }
         Insert: {
+          access_token?: string | null
+          client_id?: string | null
+          sync_details?: boolean
+          token_expires_at?: string | null
+          webhook_id?: string | null
+          webhook_signing_secret?: string | null
+          account_name?: string | null
+          channel?: string | null
+          rules?: Json
           connected_at?: string | null
           created_at?: string
           direction?: string
@@ -940,6 +1018,15 @@ export type Database = {
           webhook_secret?: string
         }
         Update: {
+          access_token?: string | null
+          client_id?: string | null
+          sync_details?: boolean
+          token_expires_at?: string | null
+          webhook_id?: string | null
+          webhook_signing_secret?: string | null
+          account_name?: string | null
+          channel?: string | null
+          rules?: Json
           connected_at?: string | null
           created_at?: string
           direction?: string
@@ -1109,6 +1196,7 @@ export type Database = {
       }
       lots: {
         Row: {
+          guesty_listing_id: string | null
           aerial_path: string | null
           amenities: string[]
           bathrooms: number | null
@@ -1150,6 +1238,7 @@ export type Database = {
           zone: string | null
         }
         Insert: {
+          guesty_listing_id?: string | null
           aerial_path?: string | null
           amenities?: string[]
           bathrooms?: number | null
@@ -1191,6 +1280,7 @@ export type Database = {
           zone?: string | null
         }
         Update: {
+          guesty_listing_id?: string | null
           aerial_path?: string | null
           amenities?: string[]
           bathrooms?: number | null
@@ -2017,6 +2107,10 @@ export type Database = {
       }
       stays: {
         Row: {
+          channel: string | null
+          external_id: string | null
+          external_ref: string | null
+          guesty_pushed_at: string | null
           check_in: string
           check_out: string
           contact_id: string | null
@@ -2039,6 +2133,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          channel?: string | null
+          external_id?: string | null
+          external_ref?: string | null
+          guesty_pushed_at?: string | null
           check_in: string
           check_out: string
           contact_id?: string | null
@@ -2061,6 +2159,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          channel?: string | null
+          external_id?: string | null
+          external_ref?: string | null
+          guesty_pushed_at?: string | null
           check_in?: string
           check_out?: string
           contact_id?: string | null

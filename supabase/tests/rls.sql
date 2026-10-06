@@ -887,6 +887,16 @@ insert into public.integration_events (provider, direction, kind, detail) values
 -- The live project has real sync events, so count only the one above.
 select pg_temp.expect((select count(*) from public.integration_events where kind = 'test' and detail = 'ok') = 1,
   'admins log integration events');
+-- Slack shares the table: a token, a default channel and per-kind rules.
+update public.integrations
+set secret = 'xoxb-test', channel = '#ark-os', enabled = true,
+    rules = '{"booking": {"on": true, "channel": "#front-desk"}}'::jsonb
+where key = 'slack';
+select pg_temp.expect((select rules->'booking'->>'channel' from public.integrations where key = 'slack') = '#front-desk',
+  'admins manage Slack rules');
+insert into public.integration_events (provider, direction, kind, detail) values ('slack', 'out', 'notify', 'ok');
+select pg_temp.expect((select count(*) from public.integration_events where provider = 'slack' and kind = 'notify' and detail = 'ok') = 1,
+  'admins log Slack posts');
 reset role;
 
 select pg_temp.act_as(pg_temp.id('sales'));
@@ -914,6 +924,25 @@ begin
     reset role;
   end loop;
 end $$;
+
+-- Guesty listings: admins manage, estate staff read, others nothing.
+select pg_temp.act_as(pg_temp.id('admin'));
+insert into public.guesty_listings (id, title) values ('gl_test', 'Test cabin');
+reset role;
+select pg_temp.act_as(pg_temp.id('sales'));
+select pg_temp.expect((select count(*) from public.guesty_listings where id = 'gl_test') = 1,
+  'estate staff read Guesty listings');
+do $$
+begin
+  update public.guesty_listings set title = 'Changed' where id = 'gl_test';
+  if exists (select 1 from public.guesty_listings where id = 'gl_test' and title = 'Changed') then
+    raise exception 'RLS test failed: sales changed a Guesty listing';
+  end if;
+end $$;
+reset role;
+select pg_temp.act_as(pg_temp.id('shop'));
+select pg_temp.expect((select count(*) from public.guesty_listings) = 0, 'shop cannot read Guesty listings');
+reset role;
 
 -- Onboarding, WhatsApp and who's going ------------------------------------------------
 

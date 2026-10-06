@@ -42,8 +42,7 @@ export function PeopleFilter({
           Everyone
         </button>
         <input
-          className="pv-input"
-          style={{ maxWidth: 260, marginLeft: "auto", padding: "8px 14px", borderRadius: 999 }}
+          className="pv-input pv-search"
           type="search"
           placeholder="Search names, cities or interests"
           aria-label="Search members"

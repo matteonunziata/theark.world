@@ -1,6 +1,9 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables } from "@/lib/database.types";
+import { siteUrl } from "@/lib/email";
+import { notify } from "@/lib/slack";
+import { leadMessage } from "@/lib/slack-format";
 import {
   arkTags,
   canPush,
@@ -391,5 +394,18 @@ export async function receiveWebhook(sb: Sb, body: unknown) {
     detail: a.errors[0] ?? `${c.name ?? c.email ?? c.id}: ${what}.`,
     contact_id: link?.contact_id ?? null,
   });
+  // A brand-new lead is worth a word on Slack. Only from the webhook, one at a
+  // time; the daily pull can bring in hundreds and stays quiet.
+  if (a.created) {
+    await notify(
+      sb,
+      "lead",
+      leadMessage(
+        { name: c.name ?? c.email ?? c.id, email: c.email, phone: c.phone, via: "GoHighLevel", source: c.source, contactId: link?.contact_id },
+        await siteUrl(),
+      ),
+      { contact_id: link?.contact_id ?? null },
+    );
+  }
   return { ok: true as const, status: 200, message: what };
 }

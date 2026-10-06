@@ -45,7 +45,7 @@ export default async function Me() {
     <>
       <div className="pv-sec-h" style={{ marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 40, margin: 0 }}>{me.name}</h1>
+          <h1 className="pv-h1">{me.name}</h1>
           <p>{me.email}</p>
         </div>
       </div>

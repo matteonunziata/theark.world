@@ -158,6 +158,7 @@ function StayLine({
           {s.guests ? ` · ${s.guests} guests` : ""}
         </span>
       </span>
+      {s.source === "guesty" && <span className="tag-sm">{s.channel ?? "Guesty"}</span>}
       {s.status === "inquiry" ? (
         <span className="tag-sm low">Inquiry</span>
       ) : s.kind === "guest" && !s.paid && Number(s.total) > 0 ? (
@@ -335,7 +336,7 @@ function Timeline({
                       type="button"
                       className={`tl-stay ${s.kind} ${s.status}`}
                       style={{ gridColumn: `${a + 2} / ${b + 2}`, gridRow: 1 }}
-                      title={`${s.guest_name}, ${fmtDate(s.check_in)} – ${fmtDate(s.check_out)}`}
+                      title={`${s.guest_name}, ${fmtDate(s.check_in)} – ${fmtDate(s.check_out)}${s.source === "guesty" ? ` · ${s.channel ?? "Guesty"}` : ""}`}
                       onClick={() => onStay(s)}
                     >
                       {s.kind === "guest" ? s.guest_name : label(STAY_KINDS, s.kind)}

@@ -244,7 +244,7 @@ export function BookingPanel({
               </div>
             </fieldset>
           )}
-          <div style={{ display: "flex", gap: 10 }}>
+          <div className="book-acts">
             <button type="button" className="btn ghost" onClick={() => setPicked(null)}>
               Other dates
             </button>
