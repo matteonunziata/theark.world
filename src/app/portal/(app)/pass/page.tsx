@@ -3,8 +3,9 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { SaveImageButton } from "@/components/save-image";
 import { siteUrl } from "@/lib/email";
-import { PASS_STATE, passCode, passValidity } from "@/lib/pass";
+import { PASS_STATE, passCode, passOk, passValidity } from "@/lib/pass";
 import { loadPortal } from "@/lib/portal";
+import { ReplacePassButton } from "./replace-button";
 
 export const metadata: Metadata = { title: "Your pass" };
 
@@ -30,7 +31,8 @@ export default async function MyPass() {
 
   const url = `${await siteUrl()}/p/${token}`;
   const svg = await QRCode.toString(url, { type: "svg", margin: 0, color: { dark: "#21402D", light: "#FFFFFF" } });
-  const ok = pass.state === "valid";
+  const ok = passOk(pass.state);
+  const inToday = pass.state === "checked_in";
 
   return (
     <div className="pv-pass-wrap">
@@ -45,17 +47,19 @@ export default async function MyPass() {
           {/* QR markup generated on the server from our own URL. */}
           <div className="qr" dangerouslySetInnerHTML={{ __html: svg }} />
           <div className="code">{passCode(token)}</div>
-          <span className={`pv-pass-state ${ok ? "ok" : "no"}`}>{PASS_STATE[pass.state] ?? "Not valid"}</span>
+          <span className={`pv-pass-state ${ok || inToday ? "ok" : "no"}`}>{PASS_STATE[pass.state] ?? "Not valid"}</span>
         </div>
       </div>
       <div className="pv-pass-acts">
         <SaveImageButton href={`/p/${token}/image.png`} filename="ARK member pass.png" className="pv-btn" label="Save to Photos" />
         <Link className="pv-btn ghost" href={`/p/${token}`}>Open full screen</Link>
         <Link className="pv-btn ghost" href="/portal/guests">Invite a guest</Link>
+        <ReplacePassButton />
       </div>
       <p className="pv-pass-note">
-        Show the code to security{ok ? ", any time of day" : ""}. Saved to your photos, it works without
-        signal. Your class and event tickets are under <Link href="/portal/bookings">Bookings</Link>.
+        Show the code to security when you arrive; they check you in once a day. Saved to your photos, it works
+        without signal. If your phone is lost or you shared a screenshot, get a new code and the old one stops
+        working. Your class and event tickets are under <Link href="/portal/bookings">Bookings</Link>.
       </p>
     </div>
   );

@@ -13,5 +13,9 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
   if (!admin) return new Response("SUPABASE_SERVICE_ROLE_KEY is not set", { status: 503 });
   const result = await runDue(admin, await siteUrl());
-  return Response.json(result);
+  // Membership statuses cached on contacts roll over at midnight; access
+  // itself is always checked against the dates, this only keeps labels and
+  // GHL tags honest.
+  const { data: refreshed } = await admin.rpc("refresh_membership_caches");
+  return Response.json({ ...result, memberships_refreshed: refreshed ?? 0 });
 }

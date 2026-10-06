@@ -27,7 +27,10 @@ export async function sendPortalWelcome(
     .maybeSingle();
   if (!c) return { sent: false, reason: "Person not found." };
   if (!c.email) return { sent: false, reason: "They have no email address." };
-  if (!c.tier || c.membership_status !== "active") return { sent: false, reason: "Their membership isn’t active." };
+  // A membership paid for but starting later counts: they can set up their profile now.
+  if (!c.tier || !["active", "upcoming"].includes(c.membership_status)) {
+    return { sent: false, reason: "Their membership isn’t active." };
+  }
   const { data: tier } = await sb.from("membership_tiers").select("key, period").eq("key", c.tier).maybeSingle();
   if (!portalWelcomeTier(tier)) return { sent: false, reason: "Only memberships of a month or longer get the welcome email." };
   if (c.welcome_sent_at && !force) return { sent: false, reason: "Already sent." };

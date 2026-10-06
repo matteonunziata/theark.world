@@ -170,6 +170,7 @@ export type Database = {
           open_to_connect: boolean
           owner_id: string | null
           pass_token: string
+          pay_token: string
           cities: string[]
           onboarded_at: string | null
           welcome_sent_at: string | null
@@ -209,6 +210,7 @@ export type Database = {
           open_to_connect?: boolean
           owner_id?: string | null
           pass_token?: string
+          pay_token?: string
           cities?: string[]
           onboarded_at?: string | null
           welcome_sent_at?: string | null
@@ -248,6 +250,7 @@ export type Database = {
           open_to_connect?: boolean
           owner_id?: string | null
           pass_token?: string
+          pay_token?: string
           cities?: string[]
           onboarded_at?: string | null
           welcome_sent_at?: string | null
@@ -842,19 +845,28 @@ export type Database = {
           contact_id: string | null
           entered_at: string
           id: string
+          kind: string
           logged_by: string | null
+          membership_id: string | null
+          result: string
         }
         Insert: {
           contact_id?: string | null
           entered_at?: string
           id?: string
+          kind?: string
           logged_by?: string | null
+          membership_id?: string | null
+          result?: string
         }
         Update: {
           contact_id?: string | null
           entered_at?: string
           id?: string
+          kind?: string
           logged_by?: string | null
+          membership_id?: string | null
+          result?: string
         }
         Relationships: [
           {
@@ -867,6 +879,111 @@ export type Database = {
           {
             foreignKeyName: "gate_entries_logged_by_fkey"
             columns: ["logged_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memberships: {
+        Row: {
+          activate_by: string | null
+          activated_at: string | null
+          activated_by: string | null
+          cancelled_at: string | null
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          ends_on: string | null
+          id: string
+          notes: string | null
+          payment_id: string | null
+          revoke_reason: string | null
+          revoked_at: string | null
+          source: string
+          starts_on: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          activate_by?: string | null
+          activated_at?: string | null
+          activated_by?: string | null
+          cancelled_at?: string | null
+          contact_id: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          id?: string
+          notes?: string | null
+          payment_id?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          source?: string
+          starts_on?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          activate_by?: string | null
+          activated_at?: string | null
+          activated_by?: string | null
+          cancelled_at?: string | null
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          id?: string
+          notes?: string | null
+          payment_id?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          source?: string
+          starts_on?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "memberships_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_activated_by_fkey"
+            columns: ["activated_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "team_members"
             referencedColumns: ["id"]
@@ -3358,6 +3475,7 @@ export type Database = {
       join_court_match: { Args: { p: Json }; Returns: Json };
       cancel_court_by_token: { Args: { p_token: string }; Returns: string };
       court_price: { Args: { p_court: string; p_minutes: number; p_contact: string | null }; Returns: number };
+      org_now: { Args: never; Returns: string };
       court_day: {
         Args: { p_date: string };
         Returns: { court_id: string; end_time: string; id: string; mine: boolean; start_time: string }[];
@@ -3425,26 +3543,54 @@ export type Database = {
       };
       can_work_gate: { Args: never; Returns: boolean };
       is_estate_staff: { Args: never; Returns: boolean };
-      org_now: { Args: never; Returns: string };
       my_pass_token: { Args: never; Returns: string | null };
-      log_pass_entry: { Args: { p_token: string }; Returns: string };
       pass_by_token: {
         Args: { p_token: string };
         Returns: {
           contact_id: string;
+          membership_id: string | null;
           holder: string;
+          photo_path: string | null;
           tier: string | null;
           tier_name: string | null;
-          period: string;
-          membership_status: string | null;
+          period: string | null;
+          state: string;
           valid_from: string | null;
           valid_until: string | null;
-          state: string;
+          activate_by: string | null;
+          checked_in_at: string | null;
+          last_entry_at: string | null;
           can_log: boolean;
           is_mine: boolean;
-          last_entry_at: string | null;
         }[];
       };
+      gate_check_in: {
+        Args: { p_token: string };
+        Returns: { ok: boolean; state: string; entered_at: string | null }[];
+      };
+      log_gate_scan: { Args: { p_token: string }; Returns: undefined };
+      gate_search: {
+        Args: { q: string };
+        Returns: {
+          contact_id: string;
+          name: string;
+          photo_path: string | null;
+          phone_hint: string | null;
+          pass_token: string;
+          tier_name: string | null;
+          state: string;
+          valid_until: string | null;
+        }[];
+      };
+      rotate_pass_token: { Args: { p_contact: string }; Returns: string };
+      rotate_my_pass_token: { Args: never; Returns: string };
+      set_membership: {
+        Args: { p_contact: string; p_tier: string; p_status: string; p_starts: string | null; p_ends: string | null };
+        Returns: string | null;
+      };
+      refresh_membership_caches: { Args: never; Returns: number };
+      has_access_today: { Args: { cid: string }; Returns: boolean };
+      is_portal_member: { Args: { cid: string }; Returns: boolean };
       book_session: {
         Args: {
           p_email: string;

@@ -15,7 +15,9 @@ const MODEL = "claude-opus-5-5";
 // What the AI may query, and what each table holds. Members' private
 // messages are left out on purpose.
 const SCHEMA = {
-  contacts: "people in the CRM: id, type (contact|member|steward), name, email, phone, instagram, location, source, interests[], tier, membership_status (active|paused|inactive), member_since, renews_on, lot, resident, owner_id→team_members, city_id, bio, rate (rack|ff), discount_id, created_at",
+  contacts: "people in the CRM: id, type (contact|member|steward), name, email, phone, instagram, location, source, interests[], tier, membership_status (active|upcoming|paused|expired; a cache of the current memberships row), member_since, renews_on, lot, resident, owner_id→team_members, city_id, bio, rate (rack|ff), discount_id, created_at",
+  memberships: "one row per pass or membership term: id, contact_id, tier→membership_tiers, status (unused|active|paused|cancelled|revoked), starts_on, ends_on (inclusive, null = open-ended), activate_by (passes: last day for the first check-in), activated_at, source (stripe|staff|team|import), payment_id, created_at",
+  gate_entries: "scans at the gate: id, contact_id, membership_id, entered_at, logged_by→team_members, result (admitted|checked_in|paused|not_started|expired|inactive|not_found), kind (pass|ticket|guest)",
   contact_notes: "id, contact_id, author_id→team_members, body, created_at",
   contact_stages: "contact_id, pipeline, stage (where someone is in each sales pipeline)",
   enrollments: "workflow enrollments: id, contact_id, sequence_id, started_on, status",
@@ -38,7 +40,6 @@ const SCHEMA = {
   finance_entries: "id, kind (income|expense), entry_date, business_line_id, category, party, description, amount, currency, method, status (paid|unpaid), due_date, contact_id",
   finance_months: "monthly summary: month, membership, events, shop, fnb, land, other, expenses, cash, ar, ap",
   business_lines: "id, name",
-  gate_entries: "visits logged by security: id, contact_id, entered_at",
   guest_passes: "id, host_contact_id, guest_name, visit_date, status (invited|used|cancelled)",
   tasks: "operations: id, title, description, assignee_id→team_members, division_id, priority, kind, due_date, status, completed_at",
   divisions: "id, name, lead_id, is_school",

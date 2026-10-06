@@ -12,7 +12,7 @@ export default async function ContactPage({
 }: PageProps<"/crm/contact/[id]">) {
   const { id } = await params;
   const { supabase, staff } = await requireStaff("crm");
-  const [contact, notes, stages, enrollments, sequences, owners, org, tiers, discounts, activity] =
+  const [contact, notes, stages, enrollments, sequences, owners, org, tiers, discounts, activity, memberships] =
     await Promise.all([
       supabase.from("contacts").select("*").eq("id", id).maybeSingle(),
       supabase
@@ -39,6 +39,11 @@ export default async function ContactPage({
       supabase.from("membership_tiers").select("key, name, price, price_ff, currency, period, active, guest_passes").order("position"),
       supabase.from("discounts").select("id, name, percent, active").order("name"),
       supabase.rpc("contact_activity", { cid: id }),
+      supabase
+        .from("memberships")
+        .select("id, tier, status, starts_on, ends_on, activate_by, source")
+        .eq("contact_id", id)
+        .order("created_at", { ascending: false }),
     ]);
   if (!contact.data) {
     return (
@@ -59,7 +64,7 @@ export default async function ContactPage({
   const pay =
     term && tier
       ? {
-          url: `${await siteUrl()}/pay/membership/${c.pass_token}`,
+          url: `${await siteUrl()}/pay/membership/${c.pay_token}`,
           label: `${fmtAmount(term, tier.currency)} for ${TERM_NAME[tier.period]}`,
         }
       : null;
@@ -90,6 +95,7 @@ export default async function ContactPage({
       tiers={tiers.data ?? []}
       discounts={discounts.data ?? []}
       activity={activity.data ?? []}
+      memberships={memberships.data ?? []}
       currency={org.data?.currency ?? "CRC"}
       now={new Date().toISOString()}
       role={staff.role}

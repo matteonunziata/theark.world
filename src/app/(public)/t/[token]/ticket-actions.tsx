@@ -1,30 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { GateButton } from "@/components/gate-button";
 import { useToast } from "@/components/toast";
 import { checkIn } from "@/app/(staff)/events/actions";
 
 export function CheckInButton({ token, className = "btn primary" }: { token: string; className?: string }) {
-  const [pending, start] = useTransition();
-  const toast = useToast();
-  const router = useRouter();
-  return (
-    <button
-      type="button"
-      className={className}
-      disabled={pending}
-      onClick={() =>
-        start(async () => {
-          const r = await checkIn(token);
-          toast(r.ok ? (r.message ?? "") : (r.error ?? ""));
-          router.refresh();
-        })
-      }
-    >
-      {pending ? "Checking in…" : "Check in"}
-    </button>
-  );
+  return <GateButton token={token} action={checkIn} href={`/t/${token}?done=1`} className={className} />;
 }
 
 export function CopyTicketLink({ url }: { url: string }) {

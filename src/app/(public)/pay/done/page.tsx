@@ -4,7 +4,7 @@ import { PortalHead } from "@/components/portal-head";
 import { getViewer } from "@/lib/auth";
 import { fmtDate } from "@/lib/dates";
 import { emailConfigured } from "@/lib/email";
-import { type Fulfilled, fmtAmount, fulfillCheckout } from "@/lib/stripe";
+import { type Fulfilled, fmtAmount, fulfillCheckout, passFromPayment } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = { title: "Payment", robots: { index: false } };
@@ -109,14 +109,13 @@ export default async function PaymentDone({ searchParams }: PageProps<"/pay/done
   }
 
   if (r.kind === "pass") {
-    const when =
-      contact?.renews_on && contact.renews_on !== contact.member_since
-        ? `${day(contact.member_since)} to ${day(contact.renews_on)}`
-        : day(contact?.member_since ?? r.meta.start_date);
+    const pass = admin ? await passFromPayment(admin, r.paymentId) : null;
+    const covers = pass?.days === 7 ? "seven days in a row" : "one day";
     return box("Paid", "ok", `See you soon${first ? `, ${first}` : ""}`, (
       <>
         <p className="muted">
-          {paid} Your pass is good for {when}, 8am to 8pm.{" "}
+          {paid} Your {pass?.name.toLowerCase() ?? "pass"} covers {covers}, 8am to 8pm, starting the moment security checks
+          you in{pass?.activateBy ? `. Use it by ${day(pass.activateBy)}` : ""}.{" "}
           {emailConfigured() ? "We’ve emailed it to you too." : "Keep this page, or save the pass to your photos."}
         </p>
         {contact?.pass_token && (

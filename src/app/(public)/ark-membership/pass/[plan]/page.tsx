@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArkFonts } from "@/components/ark-fonts";
-import { addDays, todayIn } from "@/lib/dates";
 import { stripeReady } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { money, PLANS } from "../../plans";
@@ -40,7 +39,6 @@ export default async function PassPage({ params }: PageProps<"/ark-membership/pa
       note: p.key === "week" ? "seven days in a row" : "one day, 8am to 8pm",
     }));
   if (!onSale.length) notFound();
-  const today = todayIn();
 
   return (
     <div className="mship">
@@ -59,15 +57,10 @@ export default async function PassPage({ params }: PageProps<"/ark-membership/pa
         </Link>
         <h1>Spend a day with us</h1>
         <p className="ms-prose">
-          Cowork, the spa deck, the jungle gym and the day’s classes, 8am to 8pm. No application needed. Pick your day,
-          pay, and your pass arrives by email.
+          Cowork, the spa deck, the jungle gym and the day’s classes, 8am to 8pm. No application needed. Pay, and your
+          pass arrives by email. It starts the first time you check in at the gate, any day in the next three months.
         </p>
-        <PassForm
-          plans={onSale}
-          initial={onSale.some((p) => p.key === asked.key) ? asked.key : onSale[0].key}
-          today={today}
-          last={addDays(today, 60)}
-        />
+        <PassForm plans={onSale} initial={onSale.some((p) => p.key === asked.key) ? asked.key : onSale[0].key} />
       </main>
     </div>
   );

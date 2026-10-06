@@ -68,8 +68,10 @@ export async function saveContact(
   const name = field(data, "name");
   const email = field(data, "email")?.toLowerCase() ?? null;
   const type = field(data, "type") ?? "contact";
-  const tier = field(data, "tier");
+  const tier = field(data, "tier") ?? "";
   const status = field(data, "membership_status") ?? "active";
+  const since = field(data, "member_since");
+  const until = field(data, "renews_on");
   if (!name) return fail("Enter a name.");
   if (email && !EMAIL.test(email)) return fail("Enter a valid email.");
   if (!PTYPES.some((t) => t[0] === type)) return fail("Choose a type.");
@@ -78,12 +80,12 @@ export async function saveContact(
   // Sales own what they add; only admins hand contacts to someone else.
   const isAdmin = staff.role === "admin";
 
+  // Tier, status and dates live in memberships (set_membership below); the
+  // columns on the contact are a cache the database keeps itself.
   const row = {
     name,
     email,
     type,
-    tier,
-    membership_status: status,
     rate: field(data, "rate") === "ff" ? "ff" : "rack",
     phone: field(data, "phone"),
     instagram: field(data, "instagram"),
@@ -93,24 +95,47 @@ export async function saveContact(
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean),
-    member_since: field(data, "member_since"),
-    renews_on: field(data, "renews_on"),
     lot: field(data, "lot"),
     resident: data.get("resident") === "yes",
     discount_id: field(data, "discount_id"),
     ...(isAdmin ? { owner_id: field(data, "owner_id") } : {}),
   };
 
+  // Only touch the membership when the drawer changed it, so a Stripe or
+  // team membership isn't rewritten by an unrelated edit.
+  const setMembership = async (contactId: string, changed: boolean) => {
+    if (!changed) return "";
+    const { error } = await supabase.rpc("set_membership", {
+      p_contact: contactId,
+      p_tier: tier,
+      p_status: status,
+      p_starts: since,
+      p_ends: until,
+    });
+    return error ? ` The membership wasn’t changed: ${friendly(error)}` : "";
+  };
+
   if (id) {
+    const { data: before } = await supabase
+      .from("contacts")
+      .select("tier, membership_status, member_since, renews_on")
+      .eq("id", id)
+      .maybeSingle();
     const { error } = await supabase.from("contacts").update(row).eq("id", id);
     if (error) {
       if (error.code === "23505") return fail("Someone already has that email.");
       return fail(friendly(error));
     }
+    const changed =
+      !before ||
+      (before.tier ?? "") !== tier ||
+      (tier !== "" &&
+        (before.membership_status !== status || before.member_since !== since || before.renews_on !== until));
+    const problem = await setMembership(id, changed);
     const welcomed = await welcomeIfNew(supabase, id);
     refresh();
     syncOut(id);
-    return ok(`Changes saved.${welcomed}`);
+    return ok(`Changes saved.${problem}${welcomed}`);
   }
   const { data: created, error } = await supabase
     .from("contacts")
@@ -125,10 +150,20 @@ export async function saveContact(
     if (error.code === "23505") return fail("Someone already has that email.");
     return fail(friendly(error));
   }
+  const problem = created ? await setMembership(created.id, tier !== "") : "";
   const welcomed = created ? await welcomeIfNew(supabase, created.id) : "";
   refresh();
   if (created) syncOut(created.id);
-  return ok(`${name} added.${welcomed}`);
+  return ok(`${name} added.${problem}${welcomed}`);
+}
+
+/** A lost or shared pass: new code, old one stops working at once. */
+export async function replacePass(contactId: string): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("admin", "sales", "security");
+  const { error } = await supabase.rpc("rotate_pass_token", { p_contact: contactId });
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok("New pass code made. The old QR no longer works; they can open the new one from the portal.");
 }
 
 /**

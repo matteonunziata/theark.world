@@ -176,32 +176,38 @@ ${detailRows([
   });
 }
 
-/** After a day or week pass is paid on Stripe: the pass, with its QR code. */
+/**
+ * After a day or week pass is paid on Stripe: the pass, with its QR code.
+ * The pass has no dates yet; it starts at the first check-in at the gate.
+ */
 export async function sendPassEmail(m: {
   to: string;
   name: string;
   what: string;
-  from: string;
-  until: string | null;
+  /** 1 for a day pass, 7 for a week pass. */
+  days: number;
+  /** "Sunday, January 4", the last day the first visit can happen. */
+  useBy: string;
   url: string;
   orgName: string;
 }) {
   if (!emailConfigured()) return false;
   const png = await QRCode.toBuffer(m.url, { width: 360, margin: 1 });
   const first = m.name.trim().split(/\s+/)[0] ?? "";
-  const when = m.until ? `${m.from} to ${m.until}` : m.from;
+  const covers = m.days === 1 ? "one day, 8am to 8pm" : `${m.days} days in a row, 8am to 8pm`;
   return sendEmail({
     to: m.to,
     subject: `Your ${m.what.toLowerCase()} for ${m.orgName}`,
     parts: {
       orgName: m.orgName,
-      preheader: `Your pass for ${when}.`,
+      preheader: `Your pass is ready. It starts on your first visit; use it by ${m.useBy}.`,
       eyebrow: m.what,
       heading: `See you soon, ${esc(first)}`,
-      body: `<p style="margin:0 0 16px">Thank you, your payment went through. Show this code to security when you arrive, 8am to 8pm.</p>
+      body: `<p style="margin:0 0 16px">Thank you, your payment went through. Show this code to security when you arrive. Your pass starts the moment they check you in, and covers ${esc(covers)}.</p>
 ${detailRows([
   ["Pass", esc(m.what)],
-  ["When", esc(when)],
+  ["Covers", esc(covers)],
+  ["Use by", esc(m.useBy)],
 ])}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 6px">
 <img src="cid:pass-qr" width="200" height="200" alt="Pass QR code" style="display:block;border:0">
@@ -209,7 +215,7 @@ ${detailRows([
       cta: { label: "Open your pass", href: m.url },
       footnote: "Your receipt comes separately from Stripe.",
     },
-    text: `Hi ${first},\n\nThank you, your payment went through. Your ${m.what.toLowerCase()} is for ${when}. Show your pass to security when you arrive: ${m.url}\n\nYour receipt comes separately from Stripe.`,
+    text: `Hi ${first},\n\nThank you, your payment went through. Your ${m.what.toLowerCase()} covers ${covers}, starting the moment security checks you in. Use it by ${m.useBy}.\n\nShow your pass when you arrive: ${m.url}\n\nYour receipt comes separately from Stripe.`,
     attachments: [{ filename: "pass.png", content: png, contentId: "pass-qr" }],
   });
 }

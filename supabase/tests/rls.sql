@@ -579,21 +579,131 @@ select pg_temp.expect(
   'members get their own pass');
 do $$
 begin
-  perform public.log_pass_entry(current_setting('test.pass'));
-  raise exception 'RLS test failed: a member logged a gate entry';
+  perform public.gate_check_in(current_setting('test.pass'));
+  raise exception 'RLS test failed: a member checked themselves in at the gate';
 exception when insufficient_privilege then null;
 end $$;
 reset role;
 
 select pg_temp.act_as(pg_temp.id('security'));
 select pg_temp.expect(
-  public.log_pass_entry(current_setting('test.pass')) is not null,
-  'security logs member entries');
-select pg_temp.expect((select count(*) from public.gate_entries) >= 1, 'security reads gate entries');
+  (select ok from public.gate_check_in(current_setting('test.pass'))),
+  'security checks a member in');
+select pg_temp.expect(
+  (select state from public.gate_check_in(current_setting('test.pass'))) = 'checked_in'
+  and not (select ok from public.gate_check_in(current_setting('test.pass'))),
+  'a second check-in the same day is refused');
+select pg_temp.expect(
+  (select state from public.pass_by_token(current_setting('test.pass'))) = 'checked_in',
+  'the pass reads checked in for the rest of the day');
+-- Security can't read contacts, so the person comes from the pass itself.
+select pg_temp.expect(
+  (select count(*) from public.gate_entries e
+   where e.contact_id = (select contact_id from public.pass_by_token(current_setting('test.pass')))
+     and e.result = 'admitted') = 1
+  and (select count(*) from public.gate_entries e
+   where e.contact_id = (select contact_id from public.pass_by_token(current_setting('test.pass')))
+     and e.result = 'checked_in') >= 1,
+  'security reads gate entries, refused scans included');
+select pg_temp.expect(
+  (select count(*) from public.gate_search('Test mem')) = 1, 'security finds a pass by name');
 reset role;
 
 select pg_temp.act_as(pg_temp.id('sales'));
 select pg_temp.expect((select count(*) from public.gate_entries) = 0, 'sales cannot read gate entries');
+reset role;
+
+-- Day passes: no portal, start at the first check-in, one check-in a day, then over --
+
+insert into public.contacts (name, email) values ('Day Tripper', 'day@example.com');
+insert into public.memberships (contact_id, tier, status, activate_by, source)
+select id, 'day', 'unused', public.org_today() + 90, 'stripe'
+from public.contacts where email = 'day@example.com';
+select set_config('test.day', (select pass_token from public.contacts where email = 'day@example.com'), true);
+select pg_temp.expect(
+  not public.is_portal_member((select id from public.contacts where email = 'day@example.com')),
+  'a pass holder is not a portal member');
+select pg_temp.expect(public.sign_in_check('day@example.com') is not null, 'a pass holder cannot sign in');
+select pg_temp.expect(pg_temp.hook('email', 'day@example.com') ? 'error', 'hook rejects pass holders');
+select pg_temp.expect(
+  (select membership_status = 'upcoming' and tier = 'day' from public.contacts where email = 'day@example.com'),
+  'an unused pass shows as upcoming on the contact');
+select pg_temp.act_as(null);
+select pg_temp.expect(
+  (select state from public.pass_by_token(current_setting('test.day'))) = 'unused',
+  'an unused pass is ready for its first visit');
+reset role;
+select pg_temp.act_as(pg_temp.id('security'));
+select pg_temp.expect(
+  (select ok from public.gate_check_in(current_setting('test.day'))),
+  'the first check-in starts a day pass');
+select pg_temp.expect(
+  not (select ok from public.gate_check_in(current_setting('test.day'))),
+  'a day pass cannot be used twice');
+reset role;
+select pg_temp.expect(
+  (select m.starts_on = public.org_today() and m.ends_on = public.org_today() and m.status = 'active'
+   from public.memberships m join public.contacts c on c.id = m.contact_id where c.email = 'day@example.com'),
+  'a day pass runs for that day only');
+select pg_temp.expect(
+  public.has_access_today((select id from public.contacts where email = 'day@example.com')),
+  'a pass holder has access on the day');
+-- A week pass used eight days ago ended the day before yesterday.
+update public.memberships m set tier = 'week', starts_on = public.org_today() - 8, ends_on = public.org_today() - 2
+from public.contacts c where c.id = m.contact_id and c.email = 'day@example.com';
+select pg_temp.act_as(pg_temp.id('security'));
+select pg_temp.expect(
+  (select state = 'expired' and valid_until = public.org_today() - 2
+   from public.pass_by_token(current_setting('test.day'))),
+  'an old week pass reads expired with its last day');
+select pg_temp.expect(
+  not (select ok from public.gate_check_in(current_setting('test.day'))),
+  'an expired pass is refused');
+reset role;
+select pg_temp.expect(
+  (select membership_status from public.contacts where email = 'day@example.com') = 'expired',
+  'the contact shows expired once the pass is over');
+-- A pass never used in time.
+update public.memberships m set status = 'unused', starts_on = null, ends_on = null, activate_by = public.org_today() - 1
+from public.contacts c where c.id = m.contact_id and c.email = 'day@example.com';
+select pg_temp.act_as(null);
+select pg_temp.expect(
+  (select state from public.pass_by_token(current_setting('test.day'))) = 'expired',
+  'an unused pass past its use-by date is over');
+reset role;
+
+-- Staff set memberships through set_membership; the columns on contacts are a cache --
+
+select pg_temp.act_as(pg_temp.id('admin'));
+select pg_temp.expect(
+  public.set_membership((select id from public.contacts where email = 'owned@example.com'),
+    'standard', 'active', null, null) is not null,
+  'admins set a membership');
+select pg_temp.expect(
+  public.is_portal_member((select id from public.contacts where email = 'owned@example.com')),
+  'a set membership opens the portal');
+update public.contacts set tier = null where email = 'owned@example.com';
+select pg_temp.expect(
+  (select tier from public.contacts where email = 'owned@example.com') = 'standard',
+  'the cached tier cannot be changed by hand');
+-- Two statements: a stable check in the same statement would still see the
+-- snapshot from before the revoke.
+select pg_temp.expect(
+  public.set_membership((select id from public.contacts where email = 'owned@example.com'),
+    '', 'active', null, null) is null,
+  '"No membership" returns nothing to point at');
+select pg_temp.expect(
+  not public.is_portal_member((select id from public.contacts where email = 'owned@example.com')),
+  'no membership revokes what is current');
+reset role;
+select pg_temp.act_as(pg_temp.id('member'));
+do $$
+begin
+  perform public.set_membership((select id from public.contacts where email = 'owned@example.com'),
+    'standard', 'active', null, null);
+  raise exception 'RLS test failed: a member set a membership';
+exception when insufficient_privilege then null;
+end $$;
 reset role;
 
 -- Guest passes: members invite within their monthly allowance; only security lets guests in --
@@ -872,7 +982,8 @@ select pg_temp.expect(public.is_member(), 'staff count as members in the portal'
 reset role;
 update public.team_members set status = 'inactive' where email = 'crew@theark.world';
 select pg_temp.expect(
-  (select membership_status from public.contacts where email = 'crew@theark.world') = 'expired',
+  not public.is_portal_member((select id from public.contacts where email = 'crew@theark.world'))
+  and (select tier from public.contacts where email = 'crew@theark.world') is null,
   'leaving the team ends the Team membership');
 
 -- Integrations ---------------------------------------------------------------
@@ -1067,9 +1178,6 @@ exception when insufficient_privilege then null;
 end $$;
 reset role;
 
-select 'All RLS tests passed' as result;
-
-rollback;
 -- Courts online: anyone holds a court, joins an open match, cancels by token ---
 
 select pg_temp.act_as(null);
@@ -1166,3 +1274,6 @@ select pg_temp.expect(
   (select status from public.court_bookings where id = pg_temp.id('web_hold')) = 'cancelled',
   'the cancelled booking is marked cancelled');
 
+select 'All RLS tests passed' as result;
+
+rollback;

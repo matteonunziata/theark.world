@@ -100,7 +100,16 @@ export async function createCheckout(i: {
 }
 
 export type Fulfilled =
-  | { state: "paid"; kind: PaymentKind; created: boolean; contactId: string | null; meta: Record<string, string>; amount: number; currency: string }
+  | {
+      state: "paid";
+      kind: PaymentKind;
+      created: boolean;
+      contactId: string | null;
+      paymentId: string;
+      meta: Record<string, string>;
+      amount: number;
+      currency: string;
+    }
   | { state: "pending" | "unpaid" | "unknown" };
 
 /**
@@ -146,7 +155,7 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
 
   if (data.created && data.contact_id) {
     try {
-      if (kind === "pass") await emailPass(admin, data.contact_id, email);
+      if (kind === "pass") await emailPass(admin, data.contact_id, data.payment_id, email);
       if (kind === "membership") await sendPortalWelcome(admin, data.contact_id);
     } catch (e) {
       console.error("After-payment email failed", cs.id, e);
@@ -179,29 +188,56 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
       { contact_id: data.contact_id },
     );
   }
-  return { state: "paid", kind, created: data.created, contactId: data.contact_id, meta, amount, currency };
+  return {
+    state: "paid",
+    kind,
+    created: data.created,
+    contactId: data.contact_id,
+    paymentId: data.payment_id,
+    meta,
+    amount,
+    currency,
+  };
 }
 
-async function emailPass(admin: NonNullable<ReturnType<typeof createAdminClient>>, contactId: string, email: string | null) {
-  const { data: c } = await admin
-    .from("contacts")
-    .select("name, email, tier, member_since, renews_on, pass_token, membership_status")
-    .eq("id", contactId)
+/** The pass bought with a payment: what it is and when it must be used by. */
+export async function passFromPayment(admin: NonNullable<ReturnType<typeof createAdminClient>>, paymentId: string) {
+  const { data: m } = await admin
+    .from("memberships")
+    .select("tier, status, activate_by, starts_on, ends_on, tier_row:membership_tiers(name, period)")
+    .eq("payment_id", paymentId)
     .maybeSingle();
+  if (!m) return null;
+  const tier = m.tier_row as { name: string; period: string } | null;
+  return {
+    name: tier?.name ?? "Pass",
+    days: tier?.period === "week" ? 7 : 1,
+    status: m.status,
+    activateBy: m.activate_by,
+    startsOn: m.starts_on,
+    endsOn: m.ends_on,
+  };
+}
+
+// The pass has no dates yet: it starts at the first check-in at the gate.
+async function emailPass(
+  admin: NonNullable<ReturnType<typeof createAdminClient>>,
+  contactId: string,
+  paymentId: string,
+  email: string | null,
+) {
+  const { data: c } = await admin.from("contacts").select("name, email, pass_token").eq("id", contactId).maybeSingle();
   const to = c?.email ?? email;
   if (!c || !to) return;
-  const [{ data: tier }, { data: org }] = await Promise.all([
-    admin.from("membership_tiers").select("name, period").eq("key", c.tier ?? "").maybeSingle(),
-    admin.rpc("public_org").maybeSingle(),
-  ]);
+  const [pass, { data: org }] = await Promise.all([passFromPayment(admin, paymentId), admin.rpc("public_org").maybeSingle()]);
+  if (!pass?.activateBy) return;
   const origin = await siteUrl();
-  const day = (d: string | null) => (d ? fmtDate(d, { weekday: "long", month: "long", day: "numeric" }) : "");
   await sendPassEmail({
     to,
     name: c.name,
-    what: tier?.name ?? "Your pass",
-    from: day(c.member_since),
-    until: c.renews_on && c.renews_on !== c.member_since ? day(c.renews_on) : null,
+    what: pass.name,
+    days: pass.days,
+    useBy: fmtDate(pass.activateBy, { weekday: "long", month: "long", day: "numeric" }),
     url: `${origin}/p/${c.pass_token}`,
     orgName: org?.name ?? "The ARK",
   });

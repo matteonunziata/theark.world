@@ -26,24 +26,17 @@ const STATE: Record<string, [string, string]> = {
 
 export default async function TicketPage({ params, searchParams }: PageProps<"/t/[token]">) {
   const { token } = await params;
-  const { look } = await searchParams;
+  const { look, done } = await searchParams;
   const { supabase, staff } = await getViewer();
-  const [first, { data: org }] = await Promise.all([
+  const [{ data: t }, { data: org }] = await Promise.all([
     supabase.rpc("ticket_by_token", { p_token: token }).maybeSingle(),
     supabase.rpc("public_org").maybeSingle(),
   ]);
-  let t = first.data;
-  // Security scanning a valid ticket lets the person in: it's checked in right
-  // away, so scanning it again shows "Already used". Links inside the app add
-  // ?look=1 to open a ticket without checking it in.
-  let admitted = false;
-  if (t?.can_check_in && t.state === "valid" && !look) {
-    const { error } = await supabase.rpc("check_in", { p_token: token });
-    if (!error) {
-      admitted = true;
-      t = (await supabase.rpc("ticket_by_token", { p_token: token }).maybeSingle()).data ?? t;
-    }
-  }
+  // Security scans a ticket, sees green or red, and taps Check in (user
+  // decision: nobody is let in on the scan alone). The button reopens the
+  // page with ?done=1 so the screen reads "Checked in" rather than "Already
+  // used". Links inside the app add ?look=1 to open a ticket quietly.
+  const admitted = !!done && t?.state === "used";
   const orgName = org?.name ?? "The ARK";
   const head = (
     <PortalHead
@@ -76,9 +69,10 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
   const day = fmtDate(t.session_date, { weekday: "long", month: "long", day: "numeric" });
   const at = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: tz });
   // What security needs to know, in as few words as possible.
-  const scan: { title: string; detail: string } =
-    admitted || t.state === "valid"
-      ? { title: "Access approved", detail: `${t.title}, ${timeRange(t) || "today"}` }
+  const scan: { title: string; detail: string } = admitted
+    ? { title: "Checked in", detail: `${t.title}, ${timeRange(t) || "today"}` }
+    : t.state === "valid"
+      ? { title: "Valid", detail: `${t.title}, ${timeRange(t) || "today"}` }
       : ({
           used: { title: "Already used", detail: t.checked_in_at ? `Checked in at ${at(t.checked_in_at)}` : "" },
           early: { title: "Too early", detail: `Opens at ${fmtTime(t.gate_opens)}, an hour before ${t.title}` },
@@ -90,8 +84,14 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
   return (
     <>
       {head}
-      {t.can_check_in && !look && (
-        <ScanResult ok={admitted || t.state === "valid"} title={scan.title} name={t.holder} detail={scan.detail} />
+      {t.can_check_in && !look && (admitted || !done) && (
+        <ScanResult
+          ok={admitted || t.state === "valid"}
+          title={scan.title}
+          name={t.holder}
+          detail={scan.detail}
+          action={t.state === "valid" ? <CheckInButton token={token} /> : undefined}
+        />
       )}
       <div className="p-body">
         <div className="ticket">
