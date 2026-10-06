@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BarList, Columns, TimeSeries } from "@/components/charts";
-import { RangePicker, recentPresets } from "@/components/range-picker";
+import { RangePicker } from "@/components/range-picker";
+import { recentPresets } from "@/lib/range-presets";
 import { requireStaff } from "@/lib/auth";
 import { addDays, fmtDate, todayIn } from "@/lib/dates";
 import { fmtCompact, fmtMoney, lowState, shopMethodName } from "@/lib/shop";
