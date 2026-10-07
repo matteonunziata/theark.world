@@ -6,7 +6,8 @@ import { Shop, type Group } from "./shop";
 
 export const metadata: Metadata = { title: "Farm shop" };
 
-export default async function PortalShop() {
+export default async function PortalShop({ searchParams }: PageProps<"/portal/shop">) {
+  const { paid } = await searchParams;
   const p = await loadPortal();
   const [{ data: rows }, { data: pct }] = await Promise.all([
     p.supabase.rpc("shop_catalog"),
@@ -30,6 +31,8 @@ export default async function PortalShop() {
       percent={percent}
       code={levelForPercent(percent)?.code ?? null}
       email={p.me?.email ?? null}
+      payReady={!!p.memberId && !!process.env.STRIPE_SECRET_KEY && !!process.env.SUPABASE_SERVICE_ROLE_KEY}
+      justPaid={paid === "1"}
     />
   );
 }

@@ -35,3 +35,29 @@ export function checkoutUrl(lines: CartLine[], opts: { code?: string | null; ema
   const qs = q.toString();
   return `${SHOP_URL}/cart/${items.map((l) => `${l.id}:${l.qty}`).join(",")}${qs ? `?${qs}` : ""}`;
 }
+
+export type CatalogItem = { external_id: string; name: string; product_group: string; variant: string | null; price: number };
+export type OrderLine = { id: string; name: string; label: string | null; qty: number; list: number; unit: number };
+
+/**
+ * Price a basket from the catalog, never from what the browser says. Returns
+ * the lines with the list price and the member price of each, the totals, or
+ * a message when something in the basket isn't for sale any more.
+ */
+export type Priced = { error: string } | { error?: undefined; lines: OrderLine[]; subtotal: number; total: number };
+
+export function priceOrder(catalog: CatalogItem[], lines: unknown, percent: number): Priced {
+  const items = cleanCart(lines);
+  if (!items.length) return { error: "Your basket is empty." };
+  const byId = new Map(catalog.map((c) => [c.external_id, c]));
+  const out: OrderLine[] = [];
+  for (const l of items) {
+    const c = byId.get(l.id);
+    if (!c) return { error: "Something in your basket isn’t in the shop any more. Remove it and try again." };
+    const list = Number(c.price);
+    out.push({ id: l.id, name: c.product_group || c.name, label: c.variant, qty: l.qty, list, unit: memberPrice(list, percent) });
+  }
+  const subtotal = out.reduce((n, l) => n + l.list * l.qty, 0);
+  const total = out.reduce((n, l) => n + l.unit * l.qty, 0);
+  return { lines: out, subtotal, total };
+}

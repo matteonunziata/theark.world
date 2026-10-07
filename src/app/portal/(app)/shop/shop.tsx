@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useToast } from "@/components/toast";
+import { startShopCheckout } from "./actions";
 import { checkoutUrl, type CartLine, cleanCart, MAX_QTY, memberPrice } from "@/lib/shop-cart";
 
 export type Group = {
@@ -16,7 +18,23 @@ export type Group = {
 const KEY = "ark-shop-cart";
 const crc = (n: number) => `₡${n.toLocaleString("en-US")}`;
 
-export function Shop({ groups, percent, code, email }: { groups: Group[]; percent: number; code: string | null; email: string | null }) {
+export function Shop({
+  groups,
+  percent,
+  code,
+  email,
+  payReady,
+  justPaid,
+}: {
+  groups: Group[];
+  percent: number;
+  code: string | null;
+  email: string | null;
+  payReady: boolean;
+  justPaid: boolean;
+}) {
+  const toast = useToast();
+  const [paying, startPay] = useTransition();
   const [cart, setCart] = useState<CartLine[]>([]);
   const [open, setOpen] = useState(false);
   const [cat, setCat] = useState("");
@@ -28,10 +46,10 @@ export function Shop({ groups, percent, code, email }: { groups: Group[]; percen
   useEffect(() => {
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- the saved basket can only be read after hydration
-      setCart(cleanCart(JSON.parse(localStorage.getItem(KEY) ?? "[]")));
+      setCart(justPaid ? [] : cleanCart(JSON.parse(localStorage.getItem(KEY) ?? "[]")));
     } catch {}
     setReady(true);
-  }, []);
+  }, [justPaid]);
   useEffect(() => {
     if (!ready) return;
     try {
@@ -56,6 +74,12 @@ export function Shop({ groups, percent, code, email }: { groups: Group[]; percen
   const count = lines.reduce((n, l) => n + l.qty, 0);
   const total = lines.reduce((n, l) => n + memberPrice(l.price, percent) * l.qty, 0);
   const url = checkoutUrl(lines, { code, email });
+  const pay = () =>
+    startPay(async () => {
+      const r = await startShopCheckout(lines.map((l) => ({ id: l.id, qty: l.qty })));
+      if (r.ok && r.url) window.location.assign(r.url);
+      else toast(r.error ?? "Couldn’t start your order.");
+    });
 
   const add = (id: string, by = 1) =>
     setCart((c) => {
@@ -80,6 +104,7 @@ export function Shop({ groups, percent, code, email }: { groups: Group[]; percen
         </button>
       </div>
 
+      {justPaid && <p className="sh-ok" role="status">Thank you. Your order is paid. Pick it up at The ARK.</p>}
       <div className="sh-bar">
         <input className="sh-search" type="search" placeholder="Search the shop" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search the shop" />
       </div>
@@ -169,13 +194,27 @@ export function Shop({ groups, percent, code, email }: { groups: Group[]; percen
                   <span>Items</span>
                   <b>{crc(total)}</b>
                 </div>
-                <p className="sub">
-                  {code ? `Your ${percent}% member discount (${code}) is added at checkout. ` : ""}
-                  Delivery and the final total are worked out at checkout, which opens on thearkfarm.shop.
-                </p>
-                <a className="pv-btn" href={url ?? "#"} target="_blank" rel="noopener noreferrer">
-                  Check out
-                </a>
+                {payReady ? (
+                  <>
+                    <p className="sub">
+                      {percent ? `Your ${percent}% member discount is already taken off. ` : ""}
+                      Pay by card, then pick your order up at The ARK.
+                    </p>
+                    <button type="button" className="pv-btn" disabled={paying} onClick={pay}>
+                      {paying ? "Opening payment…" : `Pay ${crc(total)}`}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="sub">
+                      Paying in the portal isn’t open yet. You can check out on thearkfarm.shop
+                      {code ? `, where your ${percent}% member discount (${code}) is added` : ""}.
+                    </p>
+                    <a className="pv-btn" href={url ?? "#"} target="_blank" rel="noopener noreferrer">
+                      Check out on thearkfarm.shop
+                    </a>
+                  </>
+                )}
               </div>
             )}
           </div>

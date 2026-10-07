@@ -100,6 +100,17 @@ export default async function PaymentDone({ searchParams }: PageProps<"/pay/done
     ));
   }
 
+  if (r.kind === "shop") {
+    return box("Paid", "ok", `Thank you${first ? `, ${first}` : ""}`, (
+      <>
+        <p className="muted">
+          {paid} Your order is in. Pick it up at The ARK; we’ll have it ready.{emailConfigured() ? " Your receipt is in your inbox." : ""}
+        </p>
+        <p><Link className="btn primary" href="/portal/shop?paid=1">Back to the shop</Link></p>
+      </>
+    ));
+  }
+
   if (r.kind === "court") {
     return box("Paid", "ok", `See you on court${first ? `, ${first}` : ""}`, (
       <>

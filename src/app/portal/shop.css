@@ -23,3 +23,5 @@
 .pv .sh-pf .sub { margin: 0; font-size: 13.5px; color: var(--pv-muted); }
 .pv .sh-total { display: flex; justify-content: space-between; font-size: 17px; }
 .pv .pv-pills button.pv-pill { font: inherit; cursor: pointer; }
+.pv .sh-ok { background: var(--pv-green); color: var(--pv-cream); padding: 12px 16px; border-radius: 14px; margin: 0 0 16px; }
+.pv .pv-btn:disabled { opacity: 0.6; cursor: default; }

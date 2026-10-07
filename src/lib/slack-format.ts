@@ -182,7 +182,7 @@ export function paymentMessage(
   p: { kind: string; amount: string; name?: string | null; email?: string | null; description?: string | null; live: boolean; contactId?: string | null },
   origin: string,
 ) {
-  const what = p.kind === "pass" ? "pass" : p.kind === "membership" ? "membership" : p.kind === "court" ? "court" : "ticket";
+  const what = p.kind === "pass" ? "pass" : p.kind === "membership" ? "membership" : p.kind === "court" ? "court" : p.kind === "shop" ? "farm shop order (pick up at The ARK)" : "ticket";
   const who = p.name || p.email || "Someone";
   return message(
     `*Payment:* ${esc(p.amount)} for a ${what}${p.live ? "" : " _(test mode)_"}`,
