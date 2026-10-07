@@ -74,3 +74,27 @@ describe("priceOrder", () => {
     expect(r).toMatchObject({ total: 4680, subtotal: 4680 });
   });
 });
+
+import { basketTotals } from "@/lib/shop-cart";
+
+describe("basketTotals", () => {
+  it("shows the full price, the discount and a total that matches the charge", () => {
+    const lines = [
+      { id: "48351634686106", price: 4680, qty: 2 },
+      { id: "48351634686107", price: 950, qty: 1 },
+    ];
+    const t = basketTotals(lines, 20);
+    expect(t).toEqual({ subtotal: 10310, discount: 2062, total: 8248 });
+    const catalog = [
+      { external_id: "48351634686106", name: "Eggs", product_group: "Eggs", variant: "Dozen", price: 4680 },
+      { external_id: "48351634686107", name: "Basil", product_group: "Basil", variant: null, price: 950 },
+    ];
+    const charged = priceOrder(catalog, lines, 20);
+    if (charged.error !== undefined) throw new Error(charged.error);
+    expect([charged.subtotal, charged.total]).toEqual([t.subtotal, t.total]);
+  });
+
+  it("has no discount without a member price", () => {
+    expect(basketTotals([{ price: 950, qty: 3 }], 0)).toEqual({ subtotal: 2850, discount: 0, total: 2850 });
+  });
+});
