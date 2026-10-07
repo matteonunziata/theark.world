@@ -132,7 +132,7 @@
 - **Portal shop: who is told to prepare the order?** A paid order shows in Slack's payments (if on), the shop ledger and Shopify (tagged `pickup`). A Slack message of its own, or a "ready for pickup" step, isn't built.
 - **Portal shop: stock.** Orders decrement Shopify's stock, but the portal only learns of sell-outs at the next "Sync from website", and a member can pay for something that sold out in between. Nothing refunds automatically.
 
-- Applications: a one-month application still requires having used a day pass first, but every applicant now gets a free one. Drop that requirement so they can apply, then visit on the free pass? Should approving or declining email the applicant?
+- Applications: every applicant gets a free day pass and a one-month application no longer needs a paid one first. Should approving or declining email the applicant?
 
 ## Finance currency toggle
 - **Exchange rate.** It starts at ₡500 per $1, a placeholder. What rate should it use, and should it follow the bank's rate each month, or should each transaction keep the rate on its own date so past months stop moving?

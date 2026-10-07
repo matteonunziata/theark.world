@@ -43,7 +43,7 @@ const FAQ = [
   ],
   [
     "How do I apply?",
-    "Send us an application, then meet someone from our team. Membership is curated, so every long-term member is someone we’ve gotten to know. For a one-month membership, come for a day on a day pass first to see if it’s a good fit.",
+    "Send us an application, then meet someone from our team. Membership is curated, so every long-term member is someone we’ve gotten to know. Every application comes with a free day pass, emailed to you, so you can spend a day here while we get to know you.",
   ],
   [
     "What’s included?",

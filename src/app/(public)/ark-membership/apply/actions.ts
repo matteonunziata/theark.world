@@ -69,7 +69,6 @@ export async function applyForMembership(_prev: ActionResult, data: FormData): P
     p_source: field(data, "utm_source")?.slice(0, 120) ?? "",
     p_medium: field(data, "utm_medium")?.slice(0, 120) ?? "",
     p_campaign: field(data, "utm_campaign")?.slice(0, 120) ?? "",
-    p_tried_day_pass: field(data, "tried_day_pass") === "yes",
   });
   if (error) return fail(friendly(error));
 

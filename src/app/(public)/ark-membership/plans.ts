@@ -47,7 +47,6 @@ export const PLANS: Plan[] = [
     kind: "membership",
     discount: 10,
     guests: 4,
-    note: "Starts with a day pass, so you can see if it’s a good fit.",
     perks: ["Full access", "10% off courts, events & Farm products", "4 guest passes"],
   },
   {

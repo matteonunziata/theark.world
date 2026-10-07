@@ -21,12 +21,8 @@ export function ApplyForm({ plan: initialPlan, utm }: { plan: string; utm: Recor
   const [plan, setPlan] = useState(initialPlan);
   const [firstName, setFirstName] = useState("");
   const [stepError, setStepError] = useState("");
-  const [triedDayPass, setTriedDayPass] = useState<"" | "yes" | "no">("");
   const steps = useRef<(HTMLFieldSetElement | null)[]>([]);
   const chosen = PLANS.find((p) => p.key === plan);
-  const dayPass = PLANS.find((p) => p.key === "day")!;
-  // A month starts with a day pass, to see if it's a good fit.
-  const needsDayPass = plan === "month" && triedDayPass === "no";
 
   if (state.ok) {
     return (
@@ -55,13 +51,6 @@ export function ApplyForm({ plan: initialPlan, utm }: { plan: string; utm: Recor
     if (!fields.every((f) => f.reportValidity())) return;
     if (step === 1) {
       if (!chosen) return setStepError("Choose a pass or membership.");
-      if (plan === "month" && !triedDayPass) {
-        return setStepError("Let us know if you’ve spent a day here on a day pass.");
-      }
-      if (needsDayPass) {
-        window.location.assign(passUrl(dayPass.key));
-        return;
-      }
       // Passes need no application.
       if (chosen.kind === "pass") {
         window.location.assign(passUrl(chosen.key));
@@ -150,41 +139,6 @@ export function ApplyForm({ plan: initialPlan, utm }: { plan: string; utm: Recor
             </label>
           ))}
         </div>
-        {plan === "month" && (
-          <div className="ms-daypass">
-            <p className="ms-q">
-              A month starts with a day here. Have you already come to The ARK on a day pass?
-            </p>
-            <div className="ms-checks">
-              {(
-                [
-                  ["yes", "Yes, I’ve spent a day here"],
-                  ["no", "Not yet"],
-                ] as const
-              ).map(([v, label]) => (
-                <label key={v}>
-                  <input
-                    type="radio"
-                    name="tried_day_pass"
-                    value={v}
-                    checked={triedDayPass === v}
-                    onChange={() => {
-                      setTriedDayPass(v);
-                      setStepError("");
-                    }}
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
-            {needsDayPass && (
-              <p className="ms-fine">
-                Come for a day first and see if it’s a good fit. A day pass is{" "}
-                {money(dayPass.price, "CRC")}, and you can apply for a month after your visit.
-              </p>
-            )}
-          </div>
-        )}
         <div className="ms-f">
           <label htmlFor="a-invited">Who were you invited by?</label>
           <input id="a-invited" name="invited_by" placeholder="A name, if someone invited you" />
@@ -251,11 +205,7 @@ export function ApplyForm({ plan: initialPlan, utm }: { plan: string; utm: Recor
         )}
         {step < STEPS.length - 1 ? (
           <button type="button" className="ms-btn solid" onClick={next}>
-            {step === 1 && needsDayPass
-              ? "Buy a day pass first"
-              : step === 1 && chosen?.kind === "pass"
-                ? "Continue to payment"
-                : "Continue"}
+            {step === 1 && chosen?.kind === "pass" ? "Continue to payment" : "Continue"}
           </button>
         ) : (
           <button type="submit" className="ms-btn solid" disabled={pending}>
