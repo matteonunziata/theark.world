@@ -28,6 +28,7 @@ export default async function MembershipsLayout({ children }: LayoutProps<"/memb
         label="Memberships sections"
         items={[
           { href: "/memberships", label: "Members" },
+          { href: "/memberships/passes", label: "Passes" },
           { href: "/memberships/applications", label: count ? `Applications (${count})` : "Applications" },
           { href: "/memberships/tiers", label: "Tiers & pricing" },
         ]}
