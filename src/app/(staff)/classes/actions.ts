@@ -27,3 +27,29 @@ export async function undoCheckIn(registrationId: string, token: string) {
   revalidatePath(`/t/${token}`);
   return ok("Check-in undone");
 }
+
+export type MemberHit = { id: string; name: string; photo_path: string | null; tier: string | null };
+
+/** Members a facilitator can add to their own session. */
+export async function searchMembers(offeringId: string, date: string, query: string): Promise<MemberHit[]> {
+  const { supabase } = await staffOrThrow("admin", "lead", "facilitator");
+  const { data } = await supabase.rpc("search_members_for_class", {
+    p_offering_id: offeringId,
+    p_date: date,
+    p_query: query,
+  });
+  return data ?? [];
+}
+
+export async function addMemberToSession(offeringId: string, date: string, contactId: string) {
+  const { supabase } = await staffOrThrow("admin", "lead", "facilitator");
+  const { error } = await supabase.rpc("add_member_to_session", {
+    p_offering_id: offeringId,
+    p_date: date,
+    p_contact_id: contactId,
+  });
+  if (error) return fail(friendly(error));
+  revalidatePath(`/classes/${offeringId}/${date}`);
+  revalidatePath("/classes");
+  return ok("Added to the class");
+}

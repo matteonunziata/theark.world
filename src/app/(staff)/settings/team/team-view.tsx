@@ -242,6 +242,11 @@ function MemberDrawer({
               <input id="m-role" readOnly value="Security — the security console only" />
               <span className="hint">Security staff only see the Security page.</span>
             </>
+          ) : type === "facilitator" ? (
+            <>
+              <input id="m-role" readOnly value="Facilitator — their own classes and check-in" />
+              <span className="hint">Facilitators only see My classes.</span>
+            </>
           ) : (
             <select id="m-role" name="role" defaultValue={m?.role ?? "lead"}>
               {ROLES.map((r) => (
