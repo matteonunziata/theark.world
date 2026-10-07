@@ -317,3 +317,13 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Team stays** a (hidden) membership tier: staff are members through it, a trigger makes the membership when someone joins the team, and its court discount is unchanged.
 - Settings → Integrations → Shopify shows the code each tier gets.
 
+## Round 20: Shopify orders into ARK OS (2026-10-07)
+
+- **Direction:** ARK OS wins on conflicts (user decision). Online orders flow in; ARK OS data is never overwritten by Shopify's. Customers come in only through an order (user decision), never as a bulk import, after the GHL pull flooded the CRM.
+- **One row per Shopify order** in `shopify_orders`, kept current as the order changes (payment, cancellation, refund). `record_shopify_order()` is idempotent and keeps the sales ledger in step: while an order is paid and live its lines are `sale` rows in `stock_movements` (the member price actually paid, after line discounts, at the order's own time), so the shop Overview counts online and in-person sales together and local stock drops. If the order is later cancelled, voided or refunded in full, those rows are deleted again. A partial refund stays counted in full.
+- **Portal orders are never counted twice.** Orders tagged `ark-portal` are recorded but kept out of the ledger: they were already put there when Stripe confirmed payment.
+- **Starts from now.** The first run only sets the starting point (`integrations.settings.ordersSince`); no history is pulled in, so sales already counted by hand aren't doubled. Each run asks Shopify for orders changed since then, oldest first, and stops at the first failure so the next run resumes at the same order.
+- **Who the buyer is.** Matched to a contact by email (case-insensitive); if there is none, a contact of type `contact` with source `shopify` is made. New contacts are marked opted out of marketing unless Shopify says they subscribed.
+- **When it runs:** with the Shopify sync: nightly at 06:05 UTC and on "Sync now", after the tag sync (a failure in one doesn't stop the other). No webhooks yet.
+- **Needs** the app's `write_orders` scope (already required for portal orders; it includes read). Lines with no matching product are counted on the order, not the ledger.
+
