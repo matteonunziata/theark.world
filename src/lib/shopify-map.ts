@@ -23,7 +23,7 @@ export const ARK_TAGS = LEVELS.map((l) => l.tag);
 /**
  * Which code each membership tier gets, by tier (user decision, 2026-10-07):
  * the 1, 3 and 6-month memberships get member10 and the 12-month one gets
- * member20. Nothing else does: not passes, not Team, whatever its court discount.
+ * member20. Nothing else does: not passes, whatever its court discount.
  */
 export const TIER_CODE: Record<string, Level["code"]> = {
   standard: "member10",
@@ -55,7 +55,7 @@ export type MembershipRow = {
 /**
  * The level a person has on a day (YYYY-MM-DD, Costa Rica): the best of the
  * memberships that cover it. Only paid-up memberships on a tier that has a
- * code count; passes, Team, paused, ended and not-yet-started ones don't.
+ * code count; passes, paused, ended and not-yet-started ones don't.
  * Cancelled subscriptions run to their end date, like at the gate.
  */
 export function levelOn(rows: MembershipRow[], today: string): Level | null {

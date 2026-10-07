@@ -39,7 +39,7 @@ describe("levelOn", () => {
     for (const status of ["paused", "revoked", "unused"]) expect(levelOn([row({ status })], "2026-10-06")).toBeNull();
   });
   it("gives nothing for passes, Team or an unknown tier, whatever their court discount", () => {
-    for (const tier of ["day", "week", "team", "founding", "ambassador", ""]) expect(levelOn([row({ tier })], "2026-10-06")).toBeNull();
+    for (const tier of ["day", "week", "founding", "ambassador", ""]) expect(levelOn([row({ tier })], "2026-10-06")).toBeNull();
   });
 });
 
@@ -47,7 +47,6 @@ describe("levelForTier", () => {
   it("maps tiers to codes", () => {
     expect(levelForTier("annual")).toBe(m20);
     expect(levelForTier("half")).toBe(m10);
-    expect(levelForTier("team")).toBeNull();
     expect(levelForTier(null)).toBeNull();
   });
 });

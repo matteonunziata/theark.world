@@ -35,7 +35,7 @@ export async function GET(request: Request, ctx: RouteContext<"/pay/membership/[
     : { data: null };
   const percent = c.discount?.active ? Number(c.discount.percent) : 0;
   const amount = tier ? termPrice(tier, c.rate, percent) : null;
-  if (!tier || !amount || tier.key === "team") return problem("tier");
+  if (!tier || !amount) return problem("tier");
 
   try {
     const url = await createCheckout({

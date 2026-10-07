@@ -14,9 +14,8 @@ export function GoogleButton() {
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        // Show only theark.world accounts in Google's picker. The real check
-        // is the sign-in hook in the database.
-        queryParams: { hd: "theark.world", prompt: "select_account" },
+        // Any Google account. The real check is the sign-in hook in the database.
+        queryParams: { prompt: "select_account" },
       },
     });
     if (error) {
