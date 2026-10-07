@@ -4,7 +4,7 @@ import { useActionState, useEffect, useState, useTransition } from "react";
 import { useToast } from "@/components/toast";
 import type { ActionResult } from "@/lib/action-result";
 import type { Tables } from "@/lib/database.types";
-import { levelForPercent } from "@/lib/shopify-map";
+import { levelForTier } from "@/lib/shopify-map";
 import { disconnectShopify, saveShopify, setupShopifyDiscounts, syncShopifyNow, testShopify } from "./actions";
 
 type Event = Pick<Tables<"integration_events">, "id" | "direction" | "kind" | "ok" | "detail" | "created_at">;
@@ -181,12 +181,12 @@ export function ShopifyForm({
         </div>
         <ul className="integ-map">
           {tiers.map((t) => {
-            const l = levelForPercent(t.court_discount);
+            const l = levelForTier(t.key);
             return (
               <li key={t.key} className={l ? "" : "unlinked"}>
                 <div className="who">
                   <b>{t.name}</b>
-                  <span className="muted">{l ? `${l.percent}% off in the shop` : "No discount"}</span>
+                  <span className="muted">{l ? `${l.percent}% off in the shop` : "No code"}</span>
                 </div>
                 <span>{l ? l.code : "—"}</span>
               </li>

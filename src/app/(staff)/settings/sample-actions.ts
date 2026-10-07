@@ -179,10 +179,10 @@ export async function loadSampleData(): Promise<ActionResult> {
     ]);
 
     const people = [
-      ["Ana Lopez", "member", "founding", "ana@example.com", "+506 8888 1101", "Santa Teresa", ["yoga", "surfing", "sauna mornings"], "active", "Farm dinner in August"],
+      ["Ana Lopez", "member", "standard", "ana@example.com", "+506 8888 1101", "Santa Teresa", ["yoga", "surfing", "sauna mornings"], "active", "Farm dinner in August"],
       ["Ben Ortiz", "member", "standard", "ben@example.com", "+506 8888 1102", "Nomad, here until March", ["padel", "cowork", "music"], "active", "Referred by Ana"],
-      ["Clara Núñez", "member", "founding", "clara@example.com", "+506 8888 1103", "Mal País", ["breathwork", "regenerative farming"], "active", "ARK Day"],
-      ["Jonas Weber", "steward", "founding", "jonas@example.com", "+49 170 000 0004", "Lot 12, on-site", ["architecture", "permaculture"], "active", "Lot owner since 2025"],
+      ["Clara Núñez", "member", "standard", "clara@example.com", "+506 8888 1103", "Mal País", ["breathwork", "regenerative farming"], "active", "ARK Day"],
+      ["Jonas Weber", "steward", "standard", "jonas@example.com", "+49 170 000 0004", "Lot 12, on-site", ["architecture", "permaculture"], "active", "Lot owner since 2025"],
       ["Sofía Herrera", "steward", null, "sofia@example.com", "+506 8888 1105", "Lot 7", ["horses", "ceramics"], "active", "Lot owner"],
       ["Marcus Hill", "contact", null, "marcus@example.com", "+1 415 000 0006", "San Francisco, visiting Nov", ["investing", "trail running"], "active", "Instagram"],
       ["Lena Fischer", "contact", null, "lena@example.com", "+41 79 000 0007", "Zürich", ["yoga", "founder"], "active", "Waitlist form"],

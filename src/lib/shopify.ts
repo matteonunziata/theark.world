@@ -367,7 +367,7 @@ async function currentMembers(sb: Sb, today: string) {
     const { data, error } = await sb
       .from("memberships")
       .select(
-        "contact_id, status, starts_on, ends_on, contacts!memberships_contact_id_fkey(id, name, email), membership_tiers!memberships_tier_fkey(period, court_discount)",
+        "contact_id, status, starts_on, ends_on, tier, contacts!memberships_contact_id_fkey(id, name, email)",
       )
       .in("status", ["active", "cancelled"])
       .lte("starts_on", today)
@@ -379,10 +379,9 @@ async function currentMembers(sb: Sb, today: string) {
     const grouped = new Map<string, { name: string; email: string | null; rows: MembershipRow[] }>();
     for (const r of rows) {
       const c = Array.isArray(r.contacts) ? r.contacts[0] : r.contacts;
-      const t = Array.isArray(r.membership_tiers) ? r.membership_tiers[0] : r.membership_tiers;
-      if (!c || !t) continue;
+      if (!c) continue;
       const g = grouped.get(c.id) ?? { name: c.name, email: c.email, rows: [] as MembershipRow[] };
-      g.rows.push({ status: r.status, starts_on: r.starts_on, ends_on: r.ends_on, period: t.period, court_discount: t.court_discount });
+      g.rows.push({ status: r.status, starts_on: r.starts_on, ends_on: r.ends_on, tier: r.tier });
       grouped.set(c.id, g);
     }
     for (const [contact_id, g] of grouped) {
@@ -642,12 +641,9 @@ export async function pushContact(sb: Sb, contactId: string) {
     const token = await tokenFor(sb, i);
     const { data } = await sb
       .from("memberships")
-      .select("status, starts_on, ends_on, membership_tiers!memberships_tier_fkey(period, court_discount)")
+      .select("status, starts_on, ends_on, tier")
       .eq("contact_id", contactId);
-    const rows = (data ?? []).flatMap<MembershipRow>((m) => {
-      const t = Array.isArray(m.membership_tiers) ? m.membership_tiers[0] : m.membership_tiers;
-      return t ? [{ status: m.status, starts_on: m.starts_on, ends_on: m.ends_on, period: t.period, court_discount: t.court_discount }] : [];
-    });
+    const rows = (data ?? []).map<MembershipRow>((m) => ({ status: m.status, starts_on: m.starts_on, ends_on: m.ends_on, tier: m.tier }));
     const level = levelOn(rows, todayIn());
     const found = await customerByEmail(i.shop_domain, token, email);
     const [change] = diffTags({

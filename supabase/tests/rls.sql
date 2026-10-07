@@ -65,7 +65,7 @@ select pg_temp.expect(
 insert into public.contacts (id, name, email, tier) values
   (gen_random_uuid(), 'Owned by sales', 'owned@example.com', null),
   (gen_random_uuid(), 'Someone else', 'else@example.com', null),
-  (gen_random_uuid(), 'Test member', 'member@example.com', 'founding');
+  (gen_random_uuid(), 'Test member', 'member@example.com', 'standard');
 update public.contacts set owner_id = (
   select id from public.team_members where email = 'sales@theark.world'
 ) where email = 'owned@example.com';
@@ -708,7 +708,7 @@ reset role;
 
 -- Guest passes: members invite within their monthly allowance; only security lets guests in --
 
-update public.membership_tiers set guest_passes = 2 where key = 'founding';
+update public.membership_tiers set guest_passes = 2 where key = 'standard';
 select pg_temp.act_as(pg_temp.id('member'));
 select set_config('test.guest1', public.invite_guest('Guest One', '+506 1', null, public.org_today()), true);
 select set_config('test.guest2', public.invite_guest('Guest Two', null, 'two@example.com', public.org_today()), true);
@@ -838,7 +838,7 @@ insert into public.courts (id, name, sport, open_time, close_time, slot_minutes,
 values (pg_temp.id('court'), 'TEST court', 'padel', '06:00', '08:00', 30, 10000);
 
 select pg_temp.act_as(pg_temp.id('member'));
-select pg_temp.expect(public.my_court_discount() = 10, 'a Founding member gets the tier''s 10% off courts');
+select pg_temp.expect(public.my_court_discount() = 10, 'a Monthly member gets the tier''s 10% off courts');
 select pg_temp.expect(
   public.court_price(pg_temp.id('court'), 60, public.current_member_contact_id()) = 18000,
   'court prices carry the tier discount');

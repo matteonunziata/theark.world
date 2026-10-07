@@ -310,6 +310,13 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Files** go in a private `budgets` bucket, `{sector}/{budget}/{receipt|invoice|payment}/…`, readable by that sector and admins; 10 MB, photos or PDF.
 - **Test data** (migration `budgets_test_seed`): sectors "TEST – Farm sector" and "TEST – Events sector", a manager for each and a budget admin, all `test.*@theark.world` placeholders.
 
+## Round 21: Shopify codes go by tier (2026-10-07)
+
+- **Who gets a code is decided by the tier, not its court discount** (user decision). Monthly, 3 months and 6 months get `member10`; Annual gets `member20`. Day and week passes and **Team get none**, so the 18 staff memberships no longer carry a Shopify tag. The next sync takes the tags off them.
+- **Founding and Ambassador are gone as tiers** (user decision). Nobody was on either; the migration refuses to run if someone is. Court and guest-pass rules are unchanged for the tiers that remain.
+- **Team stays** a (hidden) membership tier: staff are members through it, a trigger makes the membership when someone joins the team, and its court discount is unchanged.
+- Settings → Integrations → Shopify shows the code each tier gets.
+
 ## Round 20: Shopify orders into ARK OS (2026-10-07)
 
 - **Direction:** ARK OS wins on conflicts (user decision). Online orders flow in; ARK OS data is never overwritten by Shopify's. Customers come in only through an order (user decision), never as a bulk import, after the GHL pull flooded the CRM.
