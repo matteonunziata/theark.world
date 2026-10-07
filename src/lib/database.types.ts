@@ -2973,6 +2973,71 @@ export type Database = {
           },
         ]
       }
+      shopify_orders: {
+        Row: {
+          cancelled_at: string | null
+          contact_id: string | null
+          currency: string
+          email: string | null
+          financial_status: string
+          id: string
+          ledgered: boolean
+          lines: Json
+          name: string
+          ordered_at: string
+          portal: boolean
+          shopify_id: string
+          tags: string[]
+          total: number
+          unmatched: number
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          contact_id?: string | null
+          currency?: string
+          email?: string | null
+          financial_status: string
+          id?: string
+          ledgered?: boolean
+          lines?: Json
+          name: string
+          ordered_at: string
+          portal?: boolean
+          shopify_id: string
+          tags?: string[]
+          total?: number
+          unmatched?: number
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          contact_id?: string | null
+          currency?: string
+          email?: string | null
+          financial_status?: string
+          id?: string
+          ledgered?: boolean
+          lines?: Json
+          name?: string
+          ordered_at?: string
+          portal?: boolean
+          shopify_id?: string
+          tags?: string[]
+          total?: number
+          unmatched?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopify_orders_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stays: {
         Row: {
           channel: string | null
@@ -4396,6 +4461,10 @@ export type Database = {
         }[];
       };
       can_message: { Args: { recipient: string }; Returns: boolean };
+      record_shopify_order: {
+        Args: { p: Json };
+        Returns: { action: string; unmatched: number }[];
+      };
       record_shop_order_paid: {
         Args: { p_order: string; p_session: string; p_intent: string };
         Returns: { created: boolean; contact_id: string }[];

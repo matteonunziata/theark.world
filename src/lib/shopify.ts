@@ -11,6 +11,7 @@ import {
   type MembershipRow,
   normEmail,
 } from "@/lib/shopify-map";
+import { contactName, type OrderNode, optedOutOfMarketing, toRecord } from "@/lib/shopify-orders-map";
 
 // Shopify sync. Who is a member goes out as customer tags (ark-member10,
 // ark-member20). The codes member10 and member20 in Shopify are limited to the
@@ -150,7 +151,12 @@ export async function testConnection(shop: string, token: string) {
 
 // Segments and discount codes ---------------------------------------------------------
 
-type Settings = { segments?: Record<string, string>; discounts?: Record<string, string> };
+type Settings = {
+  segments?: Record<string, string>;
+  discounts?: Record<string, string>;
+  /** Orders updated in Shopify at or after this have been brought in. */
+  ordersSince?: string;
+};
 const settingsOf = (i: Integration): Settings => (i.settings && typeof i.settings === "object" && !Array.isArray(i.settings) ? (i.settings as Settings) : {});
 
 async function ensureSegment(shop: string, token: string, level: Level) {
@@ -257,7 +263,7 @@ export async function setupDiscounts(sb: Sb, i: Integration & { shop_domain: str
     settings.discounts![level.code] = discountId;
     if (!had) made.push(level.code);
   }
-  await sb.from("integrations").update({ settings: settings as unknown as Json }).eq("key", "shopify");
+  await saveSettings(sb, settings);
   await logEvent(sb, {
     direction: "out",
     kind: "sync",
@@ -265,6 +271,15 @@ export async function setupDiscounts(sb: Sb, i: Integration & { shop_domain: str
     detail: made.length ? `Set up ${made.join(" and ")} in Shopify (a customer segment and a code each).` : "Checked the member10 and member20 codes in Shopify: all in place.",
   });
   return { made };
+}
+
+/** Merge into the saved settings, so the discount ids and the orders cursor never overwrite each other. */
+async function saveSettings(sb: Sb, patch: Settings) {
+  const fresh = await getIntegration(sb);
+  await sb
+    .from("integrations")
+    .update({ settings: { ...(fresh ? settingsOf(fresh) : {}), ...patch } as unknown as Json })
+    .eq("key", "shopify");
 }
 
 // Customers ---------------------------------------------------------------------------
@@ -395,9 +410,123 @@ async function link(sb: Sb, contactId: string, customerId: string) {
     .upsert({ provider: "shopify", contact_id: contactId, external_id: customerId, synced_at: new Date().toISOString() }, { onConflict: "provider,contact_id" });
 }
 
+// Orders from Shopify ---------------------------------------------------------------
+
+export type OrdersResult = {
+  /** First run: the clock is set, nothing is imported from before it. */
+  started: boolean;
+  imported: number;
+  reversed: number;
+  portal: number;
+  newContacts: number;
+  /** Lines in imported orders that match no product in the catalog. */
+  unmatched: number;
+  /** Orders still waiting for the next run (out of time or more pages). */
+  more: boolean;
+  errors: string[];
+};
+
+export const ordersLine = (o: OrdersResult) =>
+  o.started
+    ? "Online orders: counting from now."
+    : `Online orders: ${o.imported} counted, ${o.reversed} taken back out` +
+      `${o.portal ? `, ${o.portal} portal orders already in` : ""}${o.newContacts ? `, ${o.newContacts} new contacts` : ""}` +
+      `${o.unmatched ? `, ${plural(o.unmatched, "line")} matched no product` : ""}${o.more ? ", more waiting for the next run" : ""}`;
+
+const ORDER_FIELDS = `
+  id name email createdAt updatedAt cancelledAt displayFinancialStatus tags currencyCode paymentGatewayNames
+  totalPriceSet { shopMoney { amount } }
+  customer { id firstName lastName email emailMarketingConsent { marketingState } }
+  lineItems(first: 100) { nodes { quantity title variant { id } discountedTotalSet { shopMoney { amount } } } }`;
+
+const likeEscape = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
+
+/** The contact for an order's email, made if there isn't one (only people who ordered). */
+async function contactForOrder(sb: Sb, o: OrderNode, email: string): Promise<{ id: string; created: boolean }> {
+  const find = async () => (await sb.from("contacts").select("id").ilike("email", likeEscape(email)).limit(1).maybeSingle()).data?.id ?? null;
+  const have = await find();
+  if (have) return { id: have, created: false };
+  // Not mailed until they've said so in Shopify.
+  const { data, error } = await sb
+    .from("contacts")
+    .insert({ name: contactName(o), email, type: "contact", source: "shopify", email_opt_out: optedOutOfMarketing(o) })
+    .select("id")
+    .single();
+  if (error) {
+    const raced = await find();
+    if (raced) return { id: raced, created: false };
+    throw new Error(error.message);
+  }
+  return { id: data.id, created: true };
+}
+
+/**
+ * Bring online orders into ARK OS, oldest change first. A run picks up where
+ * the last stopped (orders changed since), so a payment, a cancellation or a
+ * refund after the order was first seen updates it. The very first run only
+ * sets the starting point: history isn't pulled in, so sales already counted
+ * by hand aren't counted twice.
+ */
+export async function pullOrders(sb: Sb, i: Integration & { shop_domain: string; secret: string }, token: string, started = Date.now()): Promise<OrdersResult> {
+  const r: OrdersResult = { started: false, imported: 0, reversed: 0, portal: 0, newContacts: 0, unmatched: 0, more: false, errors: [] };
+  const since = settingsOf(i).ordersSince;
+  if (!since) {
+    await saveSettings(sb, { ordersSince: new Date(started).toISOString() });
+    r.started = true;
+    return r;
+  }
+
+  let after: string | null = null;
+  let cursor = since;
+  outer: for (let page = 0; page < 20; page++) {
+    const d: { orders: { nodes: OrderNode[]; pageInfo: { hasNextPage: boolean; endCursor: string | null } } } = await graphql(
+      i.shop_domain,
+      token,
+      `query($q: String!, $after: String) {
+        orders(first: 50, query: $q, after: $after, sortKey: UPDATED_AT) { nodes {${ORDER_FIELDS}} pageInfo { hasNextPage endCursor } }
+      }`,
+      { q: `updated_at:>='${since}'`, after },
+    );
+    for (const node of d.orders.nodes) {
+      if (Date.now() - started > BUDGET_MS) {
+        r.more = true;
+        break outer;
+      }
+      try {
+        const rec = toRecord(node);
+        let contactId: string | null = null;
+        if (rec.email && !rec.portal) {
+          const c = await contactForOrder(sb, node, rec.email);
+          contactId = c.id;
+          if (c.created) r.newContacts++;
+          if (node.customer) await link(sb, c.id, node.customer.id);
+        }
+        const { data, error } = await sb.rpc("record_shopify_order", { p: { ...rec, contact_id: contactId } as unknown as Json }).single();
+        if (error || !data) throw new Error(error?.message ?? "no result");
+        if (data.action === "imported") {
+          r.imported++;
+          r.unmatched += data.unmatched;
+        } else if (data.action === "reversed") r.reversed++;
+        else if (data.action === "portal") r.portal++;
+        cursor = node.updatedAt;
+      } catch (e) {
+        // Stop here so the next run starts at this order again, in order.
+        r.errors.push(`Order ${node.name}: ${errorText(e)}`);
+        break outer;
+      }
+    }
+    if (!d.orders.pageInfo.hasNextPage) break;
+    after = d.orders.pageInfo.endCursor;
+    if (page === 19) r.more = true;
+  }
+  if (cursor !== since) await saveSettings(sb, { ordersSince: cursor });
+  return r;
+}
+
 // The sync ----------------------------------------------------------------------------
 
 export type SyncResult = {
+  orders: OrdersResult | null;
   members: number;
   tagged: number;
   untagged: number;
@@ -417,7 +546,7 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
   if (!ready(i)) return { error: "Shopify isn’t connected." };
   const started = Date.now();
   const startedAt = new Date().toISOString();
-  const r: SyncResult = { members: 0, tagged: 0, untagged: 0, created: 0, noEmail: 0, left: 0, errors: [] };
+  const r: SyncResult = { orders: null, members: 0, tagged: 0, untagged: 0, created: 0, noEmail: 0, left: 0, errors: [] };
 
   let token: string;
   try {
@@ -473,6 +602,15 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
     r.errors.push(errorText(e));
   }
 
+  // Online orders come in whether or not the tags could be set (a missing
+  // discount code, say, has nothing to do with them).
+  try {
+    r.orders = await pullOrders(sb, i, token, started);
+    r.errors.push(...r.orders.errors);
+  } catch (e) {
+    r.errors.push(`Orders: ${errorText(e)}`);
+  }
+
   await logEvent(sb, {
     direction: "out",
     kind: "sync",
@@ -480,6 +618,7 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
     detail:
       `${plural(r.members, "member")} entitled today. Tagged ${r.tagged} (${r.created} new in Shopify), took the tag off ${r.untagged}` +
       `${r.noEmail ? `, ${r.noEmail} without an email skipped` : ""}${r.left ? `, ${r.left} left for the next run` : ""}` +
+      `${r.orders ? ` ${ordersLine(r.orders)}` : ""}` +
       `${r.errors.length ? `, ${plural(r.errors.length, "failure")}: ${r.errors[0]}` : "."}`,
   });
   await sb
