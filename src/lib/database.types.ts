@@ -3763,6 +3763,20 @@ export type Database = {
         }[];
       };
       can_message: { Args: { recipient: string }; Returns: boolean };
+      shop_catalog: {
+        Args: never;
+        Returns: {
+          external_id: string;
+          name: string;
+          product_group: string;
+          variant: string | null;
+          category: string;
+          price: number;
+          image_url: string | null;
+          description: string | null;
+          web_url: string | null;
+        }[];
+      };
       my_member_profile: {
         Args: never;
         Returns: {
