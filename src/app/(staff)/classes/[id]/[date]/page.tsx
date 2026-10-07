@@ -3,11 +3,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/auth";
 import { dayLabel, fmtDate, timeRange, todayIn } from "@/lib/dates";
+import { AddMember } from "../../add-member";
 import { Roster } from "../../roster";
 
 export const metadata: Metadata = { title: "Check-in" };
 
-export default async function ClassCheckIn({ params }: { params: Promise<{ id: string; date: string }> }) {
+export default async function ClassCheckIn({
+  params,
+}: {
+  params: Promise<{ id: string; date: string }>;
+}) {
   const { id, date } = await params;
   const { staff, supabase } = await requireStaff("classes");
   const { data: org } = await supabase.rpc("public_org").maybeSingle();
@@ -41,7 +46,8 @@ export default async function ClassCheckIn({ params }: { params: Promise<{ id: s
           </p>
           <h1>{o.title}</h1>
           <p className="lede">
-            {dayLabel(date, today)}, {fmtDate(date, { month: "long", day: "numeric" })}
+            {dayLabel(date, today)},{" "}
+            {fmtDate(date, { month: "long", day: "numeric" })}
             {timeRange(o) && ` · ${timeRange(o)}`}
             {o.location && ` · ${o.location}`}
           </p>
@@ -56,18 +62,23 @@ export default async function ClassCheckIn({ params }: { params: Promise<{ id: s
           <p>Members can’t book it, and nobody needs checking in.</p>
         </div>
       ) : (
-        <Roster
-          rows={roster ?? []}
-          timezone={timezone}
-          canCheckIn={date === today}
-          note={
-            date === today
-              ? o.capacity
-                ? `${o.capacity} spots`
-                : undefined
-              : "Check-in opens on the day"
-          }
-        />
+        <>
+          <div style={{ marginBottom: 16 }}>
+            <AddMember offeringId={id} date={date} />
+          </div>
+          <Roster
+            rows={roster ?? []}
+            timezone={timezone}
+            canCheckIn={date === today}
+            note={
+              date === today
+                ? o.capacity
+                  ? `${o.capacity} spots`
+                  : undefined
+                : "Check-in opens on the day"
+            }
+          />
+        </>
       )}
     </div>
   );

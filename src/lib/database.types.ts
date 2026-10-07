@@ -4609,6 +4609,19 @@ export type Database = {
           checked_in_at: string | null;
         }[];
       };
+      search_members_for_class: {
+        Args: { p_offering_id: string; p_date: string; p_query: string };
+        Returns: {
+          id: string;
+          name: string;
+          photo_path: string | null;
+          tier: string | null;
+        }[];
+      };
+      add_member_to_session: {
+        Args: { p_offering_id: string; p_date: string; p_contact_id: string };
+        Returns: string;
+      };
       update_my_profile: {
         Args: {
           p_name: string | null;

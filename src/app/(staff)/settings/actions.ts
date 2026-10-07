@@ -33,8 +33,9 @@ export async function saveTeamMember(
   const name = field(data, "name");
   const email = field(data, "email")?.toLowerCase() ?? null;
   const type = field(data, "type") ?? "team";
-  // Security staff see the security console and nothing else.
-  const role = type === "security" ? "security" : (field(data, "role") ?? "lead");
+  // Security staff see the security console and facilitators their classes, nothing else.
+  const role =
+    type === "security" ? "security" : type === "facilitator" ? "facilitator" : (field(data, "role") ?? "lead");
   const status = field(data, "status") === "inactive" ? "inactive" : "active";
   if (!name) return fail("Enter a name.");
   if (email && !EMAIL.test(email)) return fail("Enter a valid email.");
