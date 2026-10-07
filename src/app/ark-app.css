@@ -844,7 +844,7 @@ a.mk-tr:hover{background:var(--surface-2)}
 .rcard .rphoto{width:96px;height:96px;border-radius:50%;object-fit:cover;display:grid;place-items:center;background:var(--slate);color:#fff;font-family:var(--display);font-weight:700;font-size:32px;margin-bottom:12px}
 .rcard h3{font-family:var(--display);font-size:17px;margin:0 0 4px}
 .rcard .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
-.rcard .btn{width:100%;margin-top:auto;padding:11px 14px}
+.rcard .btn{width:100%;justify-content:center;margin-top:auto;padding:11px 14px}
 .rdone{margin-top:auto;color:var(--leaf);font-weight:600;font-size:14px}
 .rdone .linkish-sm{margin:6px auto 0}
 @media (max-width:860px){
