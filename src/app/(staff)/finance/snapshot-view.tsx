@@ -99,8 +99,8 @@ export function SnapshotView({
   if (a.overdueAP.n) items.push({ tone: "bad", text: <>{a.overdueAP.n} overdue bill{a.overdueAP.n === 1 ? "" : "s"} · <b>{mark}{money(a.overdueAP.amount)}</b> to pay</> });
   if (a.dueSoonAP.n) items.push({ tone: "warn", text: <>{a.dueSoonAP.n} bill{a.dueSoonAP.n === 1 ? "" : "s"} due in the next 7 days · <b>{mark}{money(a.dueSoonAP.amount)}</b></> });
   if (a.dueSoonAR.n) items.push({ tone: "info", text: <>{a.dueSoonAR.n} invoice{a.dueSoonAR.n === 1 ? "" : "s"} due in the next 7 days · <b>{mark}{money(a.dueSoonAR.amount)}</b> expected</> });
-  if (attention.pendingBudgets) items.push({ tone: "warn", text: <><Link href="/finance/budgets" className="linkish">{attention.pendingBudgets} budget{attention.pendingBudgets === 1 ? "" : "s"} waiting for approval</Link></> });
-  if (attention.requests) items.push({ tone: "warn", text: <><Link href="/finance/budgets" className="linkish">{attention.requests} payment request{attention.requests === 1 ? "" : "s"} to pay</Link> · <b>{budgetMoney(attention.requestsCrc)}</b></> });
+  if (attention.pendingBudgets) items.push({ tone: "warn", text: <><Link href="/finance/queue" className="linkish">{attention.pendingBudgets} budget{attention.pendingBudgets === 1 ? "" : "s"} waiting for approval</Link></> });
+  if (attention.requests) items.push({ tone: "warn", text: <><Link href="/finance/queue" className="linkish">{attention.requests} payment request{attention.requests === 1 ? "" : "s"} to pay</Link> · <b>{budgetMoney(attention.requestsCrc)}</b></> });
   if (over.length) items.push({ tone: "bad", text: <>Over plan: {over.map((s) => s.name).join(", ")}</> });
   if (near.length) items.push({ tone: "warn", text: <>Close to plan (90%+): {near.map((s) => s.name).join(", ")}</> });
 
