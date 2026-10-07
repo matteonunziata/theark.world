@@ -47,6 +47,37 @@ export function fmtTotals(t: Totals, main = "CRC") {
   return parts.join(" + ");
 }
 
+/** How Finance is being viewed: the currency shown, and colones per dollar. */
+export type Conv = { to: "CRC" | "USD"; rate: number };
+
+export function convert(amount: number, from: string, c: Conv) {
+  if (from === c.to) return amount;
+  return c.to === "USD" ? amount / c.rate : amount * c.rate;
+}
+
+/** Everything added up in the viewing currency; `approx` if any of it was converted. */
+export function sumIn(
+  entries: Pick<Entry, "amount" | "currency">[],
+  c: Conv,
+) {
+  let value = 0;
+  let approx = false;
+  for (const e of entries) {
+    if (e.currency !== c.to) approx = true;
+    value += convert(Number(e.amount), e.currency, c);
+  }
+  return { value, approx };
+}
+
+/** "₡1,200,000", or "~₡1,200,000" when some of it was converted. */
+export function fmtSum(entries: Pick<Entry, "amount" | "currency">[], c: Conv) {
+  const { value, approx } = sumIn(entries, c);
+  return (approx ? "~" : "") + fmtMoney(value, c.to);
+}
+
+export const rateNote = (c: Conv) =>
+  `Converted at ₡${c.rate.toLocaleString("en-US")} = $1`;
+
 export const inMonth = (date: string, month: string) => date.startsWith(month);
 
 /** Days past due (positive) or until due (negative); null without a due date. */

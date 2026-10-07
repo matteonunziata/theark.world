@@ -6,11 +6,12 @@ import { fmtDate } from "@/lib/dates";
 import {
   docName,
   type Entry,
-  fmtTotals,
+  convert,
+  type Conv,
+  fmtSum,
   type Line,
   methodName,
   overdueDays,
-  totals,
 } from "@/lib/finance";
 import { colorVar } from "@/lib/roles";
 import { fmtMoney } from "@/lib/shop";
@@ -54,13 +55,13 @@ const addLabel = (t: DrawerTarget) =>
 export function EntryList({
   entries,
   lines,
-  currency,
+  conv,
   today,
   mode,
 }: {
   entries: Entry[];
   lines: Line[];
-  currency: string;
+  conv: Conv;
   today: string;
   mode: Mode;
 }) {
@@ -100,14 +101,14 @@ export function EntryList({
     <>
       {owed ? (
         <div className="stats" style={{ marginBottom: 18 }}>
-          <div className="stat"><b>{fmtTotals(totals(list), currency)}</b><span>{mode === "payables" ? "The ARK owes" : "Owed to The ARK"}</span></div>
+          <div className="stat"><b>{fmtSum(list, conv)}</b><span>{mode === "payables" ? "The ARK owes" : "Owed to The ARK"}</span></div>
           <div className="stat"><b>{list.length}</b><span>Open {mode === "payables" ? "bills" : "invoices"}</span></div>
-          <div className="stat"><b>{fmtTotals(totals(overdue), currency)}</b><span>Overdue ({overdue.length})</span></div>
+          <div className="stat"><b>{fmtSum(overdue, conv)}</b><span>Overdue ({overdue.length})</span></div>
         </div>
       ) : (
         <div className="stats" style={{ marginBottom: 18 }}>
-          <div className="stat"><b>{fmtTotals(totals(inc), currency)}</b><span>Income{month ? "" : ", all time"}</span></div>
-          <div className="stat"><b>{fmtTotals(totals(exp), currency)}</b><span>Expenses{month ? "" : ", all time"}</span></div>
+          <div className="stat"><b>{fmtSum(inc, conv)}</b><span>Income{month ? "" : ", all time"}</span></div>
+          <div className="stat"><b>{fmtSum(exp, conv)}</b><span>Expenses{month ? "" : ", all time"}</span></div>
           <div className="stat"><b>{list.length}</b><span>{mode === "documents" ? "Documents" : "Transactions"}</span></div>
         </div>
       )}
@@ -190,7 +191,14 @@ export function EntryList({
                 </span>
                 <span className={`c-amt amt ${e.kind}`}>
                   {e.kind === "expense" ? "−" : "+"}
-                  {fmtMoney(e.amount, e.currency)}
+                  {e.currency === conv.to
+                    ? fmtMoney(e.amount, e.currency)
+                    : `~${fmtMoney(convert(Number(e.amount), e.currency, conv), conv.to)}`}
+                  {e.currency !== conv.to && (
+                    <small className="muted" style={{ display: "block", fontWeight: 400 }}>
+                      {fmtMoney(e.amount, e.currency)}
+                    </small>
+                  )}
                 </span>
                 <span className="acts" onClick={(ev) => ev.stopPropagation()} onKeyDown={(ev) => ev.stopPropagation()}>
                   {e.file_path && (
@@ -207,7 +215,7 @@ export function EntryList({
           })}
         </div>
       )}
-      <EntryDrawer target={target} lines={lines} currency={currency} today={today} onClose={() => setTarget(null)} />
+      <EntryDrawer target={target} lines={lines} currency={conv.to} today={today} onClose={() => setTarget(null)} />
     </>
   );
 }

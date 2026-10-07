@@ -48,6 +48,13 @@ export function OrgForm({
             </select>
           </div>
         </div>
+        <div className="fld">
+          <label htmlFor="o-rate">Exchange rate (colones per $1)</label>
+          <input id="o-rate" name="usd_crc_rate" type="number" min="1" step="0.01" defaultValue={org?.usd_crc_rate ?? 500} required />
+          <small className="muted">
+            Used by the colones / dollars toggle in Finance. Update it when the rate moves.
+          </small>
+        </div>
         <div className="grid2">
           <div className="fld">
             <label htmlFor="o-tz">Time zone</label>

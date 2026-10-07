@@ -1,21 +1,41 @@
 import { describe, expect, it } from "vitest";
-import { fmtTotals, overdueDays, totals } from "../finance";
+import { fmtSum, fmtTotals, overdueDays, sumIn, totals } from "../finance";
 import { age, firstName } from "../school";
 
 describe("finance totals", () => {
   it("keeps currencies apart", () => {
     const t = totals([
       { amount: 1000, currency: "CRC" },
-      { amount: 2500, currency: "CRC" },
       { amount: 40, currency: "USD" },
     ]);
-    expect(t).toEqual({ CRC: 3500, USD: 40 });
-    expect(fmtTotals(t)).toBe("₡3,500 + $40");
+    expect(t).toEqual({ CRC: 1000, USD: 40 });
+    expect(fmtTotals(t)).toBe("₡1,000 + $40");
+    expect(fmtTotals({})).toBe("₡0");
+  });
+});
+
+describe("finance currency toggle", () => {
+  const rows = [
+    { amount: 1000, currency: "CRC" },
+    { amount: 2500, currency: "CRC" },
+    { amount: 40, currency: "USD" },
+  ];
+  it("converts to colones at the rate", () => {
+    const c = { to: "CRC", rate: 500 } as const;
+    expect(sumIn(rows, c)).toEqual({ value: 23500, approx: true });
+    expect(fmtSum(rows, c)).toBe("~₡23,500");
   });
 
-  it("shows zero in the main currency when empty", () => {
-    expect(fmtTotals({})).toBe("₡0");
-    expect(fmtTotals({ USD: 10 })).toBe("₡0 + $10");
+  it("converts to dollars at the rate", () => {
+    const c = { to: "USD", rate: 500 } as const;
+    expect(sumIn(rows, c).value).toBeCloseTo(47);
+    expect(fmtSum(rows, c)).toBe("~$47");
+  });
+
+  it("is exact when nothing needed converting", () => {
+    const c = { to: "CRC", rate: 500 } as const;
+    expect(fmtSum(rows.slice(0, 2), c)).toBe("₡3,500");
+    expect(fmtSum([], c)).toBe("₡0");
   });
 
   it("counts days past due", () => {

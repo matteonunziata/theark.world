@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import {
   type ActionResult,
   fail,
@@ -11,6 +12,7 @@ import {
 import { staffOrThrow } from "@/lib/auth";
 import { monthLabel } from "@/lib/dates";
 import { DOC_KINDS, METHODS } from "@/lib/finance";
+import { FINANCE_CURRENCY_COOKIE } from "@/lib/finance-currency";
 
 const done = (message: string) => {
   revalidatePath("/finance", "layout");
@@ -136,4 +138,18 @@ export async function saveLine(
     if (error) return fail(friendly(error));
   }
   return done(id ? "Business line saved" : `${name} added`);
+}
+
+/** Remember which currency Finance is viewed in, across every Finance page. */
+export async function setFinanceCurrency(cur: string): Promise<ActionResult> {
+  await staffOrThrow("admin");
+  if (cur !== "CRC" && cur !== "USD") return fail("Choose colones or dollars.");
+  (await cookies()).set(FINANCE_CURRENCY_COOKIE, cur, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+    httpOnly: true,
+  });
+  revalidatePath("/finance", "layout");
+  return ok("Currency changed");
 }

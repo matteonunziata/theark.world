@@ -171,6 +171,8 @@ export async function saveOrg(
   if (!name) return fail("Enter a name.");
   const currency = field(data, "currency") === "USD" ? "USD" : "CRC";
   const c2 = field(data, "currency2");
+  const rate = Number(field(data, "usd_crc_rate") ?? 0);
+  if (!(rate > 0)) return fail("Enter the exchange rate, colones per dollar.");
   const { error } = await supabase
     .from("org_settings")
     .update({
@@ -178,6 +180,7 @@ export async function saveOrg(
       location: field(data, "location") ?? "Santa Teresa, Costa Rica",
       currency,
       currency2: c2 === "USD" || c2 === "CRC" ? c2 : null,
+      usd_crc_rate: rate,
       timezone: field(data, "timezone") ?? "America/Costa_Rica",
       language: field(data, "language") === "es" ? "es" : "en",
       email: field(data, "email"),
