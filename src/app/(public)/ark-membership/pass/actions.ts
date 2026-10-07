@@ -39,6 +39,8 @@ export async function buyPass(_prev: ActionResult, data: FormData): Promise<Acti
       title: tier.name,
       description: `Full access to The ARK, 8am to 8pm, ${plan === "week" ? "seven days in a row" : "one day"}. Starts at your first check-in; use within 90 days.`,
       priceId: sp.priceId,
+      amount: sp.amount,
+      currency: sp.currency,
       email,
       meta: {
         tier: tier.key,
