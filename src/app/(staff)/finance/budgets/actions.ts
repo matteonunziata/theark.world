@@ -22,6 +22,11 @@ const money = (data: FormData, name: string) => {
   return Number.isFinite(n) ? n : NaN;
 };
 
+const ACCOUNT_CURRENCIES = ["CRC", "USD", "CRC/USD", "MXN"];
+const acctCur = (data: FormData) => {
+  const v = field(data, "currency");
+  return v && ACCOUNT_CURRENCIES.includes(v) ? v : "CRC";
+};
 const cur = (data: FormData) => (field(data, "currency") === "USD" ? "USD" : "CRC");
 
 /** Postgres rule messages ("Nothing can be logged until…") are written to be read. */
@@ -317,7 +322,16 @@ export async function saveProvider(
 
   const name = field(data, "name");
   if (!name) return fail("Enter the provider’s name.");
-  const row = { name, contact: field(data, "contact"), notes: field(data, "notes") };
+  const row = {
+    name,
+    contact: field(data, "contact"),
+    notes: field(data, "notes"),
+    country: field(data, "country"),
+    city: field(data, "city"),
+    tax_id: field(data, "tax_id"),
+    address: field(data, "address"),
+    email: field(data, "email"),
+  };
   if (id) {
     const { error } = await supabase.from("providers").update(row).eq("id", id);
     if (error) return dbFail(error);
@@ -362,7 +376,11 @@ async function insertAccount(
     bank,
     account_holder: holder,
     account_number: number,
-    currency: cur(data),
+    currency: acctCur(data),
+    swift: field(data, "swift"),
+    routing: field(data, "routing"),
+    sinpe: field(data, "sinpe"),
+    account_type: field(data, "account_type"),
     created_by: staff.id,
   });
   return error ? dbFail(error) : ok("");
@@ -390,7 +408,16 @@ export async function saveBankAccount(
     }
     const { error } = await supabase
       .from("provider_bank_accounts")
-      .update({ bank, account_holder: holder, account_number: number, currency: cur(data) })
+      .update({
+        bank,
+        account_holder: holder,
+        account_number: number,
+        currency: acctCur(data),
+        swift: field(data, "swift"),
+        routing: field(data, "routing"),
+        sinpe: field(data, "sinpe"),
+        account_type: field(data, "account_type"),
+      })
       .eq("id", id);
     if (error) return dbFail(error);
     return done("Bank account saved");

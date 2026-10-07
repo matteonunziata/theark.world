@@ -26,7 +26,7 @@ export function ProviderList({
   const accountDrawer = useDrawer<{ provider: Provider; account: Account | null }>();
   const needle = q.trim().toLowerCase();
   const list = providers.filter(
-    (p) => !needle || [p.name, p.contact].filter(Boolean).some((s) => s!.toLowerCase().includes(needle)),
+    (p) => !needle || [p.name, p.contact, p.tax_id, p.email, p.country, p.city].filter(Boolean).some((s) => s!.toLowerCase().includes(needle)),
   );
   const sectorName = (id: string | null) => divisions.find((d) => d.id === id)?.name;
 
@@ -57,6 +57,12 @@ export function ProviderList({
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                   <div className="main">
                     <b>{p.name}</b>
+                    {[p.country, p.city].filter(Boolean).length > 0 && (
+                      <span className="meta">{[p.city, p.country].filter(Boolean).join(", ")}</span>
+                    )}
+                    {p.tax_id && <span className="meta">ID {p.tax_id}</span>}
+                    {p.email && <span className="meta">{p.email}</span>}
+                    {p.address && <span className="meta">{p.address}</span>}
                     {p.contact && <span className="meta">{p.contact}</span>}
                     {p.notes && <span className="meta">{p.notes}</span>}
                   </div>
@@ -69,6 +75,16 @@ export function ProviderList({
                   <div key={a.id} className="bp-acct">
                     <span>
                       {a.bank} · {a.account_holder} · {a.currency}
+                      {(a.account_type || a.swift || a.routing || a.sinpe) && (
+                        <small className="muted" style={{ display: "block" }}>
+                          {[
+                            a.account_type,
+                            a.swift && `SWIFT ${a.swift}`,
+                            a.routing && `Routing ${a.routing}`,
+                            a.sinpe && `SINPE ${a.sinpe}`,
+                          ].filter(Boolean).join(" · ")}
+                        </small>
+                      )}
                       <small className="muted" style={{ display: "block" }}>
                         {a.division_id ? `Visible to ${sectorName(a.division_id) ?? "its sector"} and admins` : "Admins only"}
                       </small>
@@ -105,6 +121,30 @@ export function ProviderList({
         <div className="fld">
           <label htmlFor="pv-name">Name</label>
           <input id="pv-name" name="name" required autoFocus defaultValue={providerDrawer.item?.name ?? ""} />
+        </div>
+        <div className="grid2">
+          <div className="fld">
+            <label htmlFor="pv-country">Country</label>
+            <input id="pv-country" name="country" defaultValue={providerDrawer.item?.country ?? ""} />
+          </div>
+          <div className="fld">
+            <label htmlFor="pv-city">City</label>
+            <input id="pv-city" name="city" defaultValue={providerDrawer.item?.city ?? ""} />
+          </div>
+        </div>
+        <div className="grid2">
+          <div className="fld">
+            <label htmlFor="pv-tax">Tax ID (cédula)</label>
+            <input id="pv-tax" name="tax_id" defaultValue={providerDrawer.item?.tax_id ?? ""} />
+          </div>
+          <div className="fld">
+            <label htmlFor="pv-email">Email</label>
+            <input id="pv-email" name="email" defaultValue={providerDrawer.item?.email ?? ""} />
+          </div>
+        </div>
+        <div className="fld">
+          <label htmlFor="pv-address">Address</label>
+          <input id="pv-address" name="address" defaultValue={providerDrawer.item?.address ?? ""} />
         </div>
         <div className="fld">
           <label htmlFor="pv-contact">Contact</label>
@@ -173,6 +213,8 @@ function AccountFields({
           <select id="ac-cur" name="currency" defaultValue={account?.currency ?? "CRC"}>
             <option value="CRC">Colones (₡)</option>
             <option value="USD">US dollars ($)</option>
+            <option value="CRC/USD">Colones and dollars</option>
+            <option value="MXN">Mexican pesos</option>
           </select>
         </div>
       </div>
@@ -183,6 +225,26 @@ function AccountFields({
       <div className="fld">
         <label htmlFor="ac-num">IBAN or account number</label>
         <input id="ac-num" name="account_number" defaultValue={account?.account_number ?? ""} placeholder="CR05 0152 0200 …" />
+      </div>
+      <div className="grid2">
+        <div className="fld">
+          <label htmlFor="ac-swift">SWIFT</label>
+          <input id="ac-swift" name="swift" defaultValue={account?.swift ?? ""} />
+        </div>
+        <div className="fld">
+          <label htmlFor="ac-routing">Routing</label>
+          <input id="ac-routing" name="routing" defaultValue={account?.routing ?? ""} />
+        </div>
+      </div>
+      <div className="grid2">
+        <div className="fld">
+          <label htmlFor="ac-sinpe">SINPE móvil</label>
+          <input id="ac-sinpe" name="sinpe" defaultValue={account?.sinpe ?? ""} />
+        </div>
+        <div className="fld">
+          <label htmlFor="ac-type">Account type</label>
+          <input id="ac-type" name="account_type" defaultValue={account?.account_type ?? ""} placeholder="e.g. Business Checking" />
+        </div>
       </div>
       {isAdmin && !account && (
         <div className="fld">
