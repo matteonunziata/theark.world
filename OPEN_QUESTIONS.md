@@ -131,3 +131,5 @@
 - **Portal shop: delivery?** Orders are pickup at The ARK only. Delivery would need an address, a fee or Shopify's shipping rates, and a decision on who delivers.
 - **Portal shop: who is told to prepare the order?** A paid order shows in Slack's payments (if on), the shop ledger and Shopify (tagged `pickup`). A Slack message of its own, or a "ready for pickup" step, isn't built.
 - **Portal shop: stock.** Orders decrement Shopify's stock, but the portal only learns of sell-outs at the next "Sync from website", and a member can pay for something that sold out in between. Nothing refunds automatically.
+
+- Applications: a one-month application still requires having used a day pass first, but every applicant now gets a free one. Drop that requirement so they can apply, then visit on the free pass? Should approving or declining email the applicant?

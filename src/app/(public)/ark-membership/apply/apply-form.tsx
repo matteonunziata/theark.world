@@ -34,7 +34,7 @@ export function ApplyForm({ plan: initialPlan, utm }: { plan: string; utm: Recor
         <h2>Application received</h2>
         <p>
           Thank you{firstName ? `, ${firstName}` : ""}. Our stewardship team reads every application
-          with care, and we’ll reach out by WhatsApp or email within a day or two.
+          with care, and we’ll reach out by WhatsApp or email within a day or two. We’re also emailing you a free day pass: come for a day on us, any time in the next 90 days.
         </p>
         <Link href="/ark-membership" className="ms-btn">
           Back to membership

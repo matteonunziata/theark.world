@@ -106,3 +106,16 @@ export async function saveDiscount(
   revalidatePath("/crm", "layout");
   return ok(id ? "Discount saved" : `${name} added`);
 }
+
+const REVIEW = ["new", "reviewing", "approved", "declined"];
+
+/** Approve, decline or reopen a membership application (public.review_application). */
+export async function reviewApplication(id: string, status: string): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("memberships");
+  if (!REVIEW.includes(status)) return fail("Unknown status.");
+  const { error } = await supabase.rpc("review_application", { p_id: id, p_status: status });
+  if (error) return fail(friendly(error));
+  revalidatePath("/memberships", "layout");
+  revalidatePath("/crm", "layout");
+  return ok(status === "approved" ? "Approved" : status === "declined" ? "Declined" : "Updated");
+}

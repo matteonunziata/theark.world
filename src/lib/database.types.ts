@@ -1588,10 +1588,13 @@ export type Database = {
           contributing: string
           created_at: string
           drawn_to: string[]
+          free_pass_id: string | null
           id: string
           invited_by: string | null
           invites: string[]
           plan: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
           tried_day_pass: boolean | null
           why_join: string
@@ -1602,10 +1605,13 @@ export type Database = {
           contributing: string
           created_at?: string
           drawn_to?: string[]
+          free_pass_id?: string | null
           id?: string
           invited_by?: string | null
           invites?: string[]
           plan: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           tried_day_pass?: boolean | null
           why_join: string
@@ -1616,10 +1622,13 @@ export type Database = {
           contributing?: string
           created_at?: string
           drawn_to?: string[]
+          free_pass_id?: string | null
           id?: string
           invited_by?: string | null
           invites?: string[]
           plan?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           tried_day_pass?: boolean | null
           why_join?: string
@@ -3521,6 +3530,10 @@ export type Database = {
           p_why: string
         }
         Returns: string
+      }
+      review_application: {
+        Args: { p_id: string; p_status: string }
+        Returns: undefined
       }
       my_guests: { Args: never; Returns: Json };
       todays_guests: {
