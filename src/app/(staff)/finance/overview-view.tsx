@@ -7,8 +7,10 @@ import { addMonths, fmtDate, monthLabel, shortMonth } from "@/lib/dates";
 import { type Conv, convert, type Entry, fmtSum, type Line, rateNote, sumIn } from "@/lib/finance";
 import { COLORS, colorVar } from "@/lib/roles";
 import { fmtMoney } from "@/lib/shop";
+import { buildSnapshot } from "@/lib/finance-snapshot";
 import type { SectorRollup } from "./budgets/rollup";
 import { saveCash, saveLine } from "./actions";
+import { type Attention, SnapshotView } from "./snapshot-view";
 import { type DrawerTarget, EntryDrawer } from "./entry-drawer";
 
 type Cash = { key: string; cash: number | null; cash_date: string | null; notes: string | null };
@@ -23,6 +25,7 @@ export function OverviewView({
   cash,
   ticketSales,
   sectors,
+  attention,
   currency,
   conv,
   today,
@@ -36,6 +39,7 @@ export function OverviewView({
   cash: Cash[];
   ticketSales: number;
   sectors: SectorRollup[];
+  attention: Attention;
   /** The organization\u2019s own currency: cash in bank and ticket sales are kept in it. */
   currency: string;
   conv: Conv;
@@ -67,6 +71,18 @@ export function OverviewView({
       : []),
   ];
   const ofLine = (es: Entry[], id: string) => es.filter((e) => (e.business_line_id ?? "") === id);
+
+  // Latest cash figure on or before the month being viewed, shown in the viewing currency.
+  const lastCash = [...cash].filter((x) => x.cash != null && x.key <= k).sort((a, b) => b.key.localeCompare(a.key))[0];
+  const cashNow = lastCash?.cash != null ? convert(Number(lastCash.cash), currency, conv) : null;
+  const snap = buildSnapshot({
+    entries,
+    month: k,
+    today,
+    conv,
+    cash: cashNow,
+    lineName: (id) => lines.find((l) => l.id === id)?.name ?? "Not assigned",
+  });
 
   const six = Array.from({ length: 6 }, (_, i) => addMonths(k, i - 5));
   const series = six.map((m) => {
@@ -115,6 +131,17 @@ export function OverviewView({
         {kpi("Receivable", fmtSum(ar, conv), "", `${ar.length} open invoice${ar.length === 1 ? "" : "s"}`)}
         {kpi("Payable", fmtSum(ap, conv), "", `${ap.length} open bill${ap.length === 1 ? "" : "s"}`)}
       </div>
+      <SnapshotView
+        snap={snap}
+        attention={attention}
+        sectors={sectors}
+        conv={conv}
+        monthName={monthLabel(k)}
+        prevName={shortMonth(addMonths(k, -1))}
+        cash={{ value: cashNow, date: lastCash?.cash_date ? fmtDate(lastCash.cash_date) : null }}
+        lineColor={(id) => colorVar(lines.find((l) => l.id === id)?.color)}
+        isLatest={k === thisMonth}
+      />
       <div className="fin-grid">
         <div className="brk">
           <h2>Revenue by business line</h2>
