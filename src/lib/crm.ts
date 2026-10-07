@@ -157,6 +157,6 @@ export function tierPrice(
 }
 
 /** Memberships of a month or longer get the portal welcome email. Passes
- * and the team's own tier don't. */
+ * don't. */
 export const portalWelcomeTier = (t: { key: string; period: string } | null | undefined) =>
-  !!t && t.key !== "team" && !["day", "week"].includes(t.period);
+  !!t && !["day", "week"].includes(t.period);

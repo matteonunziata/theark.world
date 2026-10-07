@@ -271,7 +271,7 @@ function MemberDrawer({
           <div className="fld">
             <label htmlFor="m-email">Email</label>
             <input id="m-email" name="email" type="email" defaultValue={m?.email ?? ""} />
-            <span className="hint">Only @theark.world addresses can sign in.</span>
+            <span className="hint">They sign in with this email, by link or with Google.</span>
           </div>
           <div className="fld">
             <label htmlFor="m-phone">WhatsApp</label>

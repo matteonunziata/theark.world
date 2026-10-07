@@ -29,7 +29,7 @@ export default async function Me() {
   ]);
 
   // Paying ahead online: memberships paid by term, once Stripe is on.
-  const term = me && tier && tier.key !== "team" && stripeReady() ? termPrice(tier, rate, me.discount_percent) : null;
+  const term = me && tier && stripeReady() ? termPrice(tier, rate, me.discount_percent) : null;
   const dueSoon = !me?.renews_on || me.renews_on <= addDays(today, 30);
 
   if (!me) {

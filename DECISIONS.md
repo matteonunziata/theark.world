@@ -310,6 +310,11 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Files** go in a private `budgets` bucket, `{sector}/{budget}/{receipt|invoice|payment}/…`, readable by that sector and admins; 10 MB, photos or PDF.
 - **Test data** (migration `budgets_test_seed`): sectors "TEST – Farm sector" and "TEST – Events sector", a manager for each and a budget admin, all `test.*@theark.world` placeholders.
 
+## Round 22: Team is not a tier; Google sign-in for any domain (2026-10-07)
+
+- **Team is no longer a membership tier** (user decision). Everyone on the team holds an **Annual** membership (source `team`, open-ended while they're active), so they get Annual's 8 guest passes a month and can bring guests. Existing Team memberships were moved to Annual and the tier deleted. A membership someone already holds is left alone. Team members now count as Annual for Shopify (`member20`) and court discounts.
+- **Google sign-in is no longer limited to @theark.world.** Anyone added in Settings → Team with an active status can sign in with the Google account that matches their email. Email links already worked for any domain.
+
 ## Round 21: Shopify codes go by tier (2026-10-07)
 
 - **Who gets a code is decided by the tier, not its court discount** (user decision). Monthly, 3 months and 6 months get `member10`; Annual gets `member20`. Day and week passes and **Team get none**, so the 18 staff memberships no longer carry a Shopify tag. The next sync takes the tags off them.

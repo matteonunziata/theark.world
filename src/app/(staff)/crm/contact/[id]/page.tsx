@@ -60,7 +60,7 @@ export default async function ContactPage({
   const c = contact.data;
   const tier = (tiers.data ?? []).find((t) => t.key === c.tier);
   const disc = (discounts.data ?? []).find((d) => d.id === c.discount_id && d.active);
-  const term = tier && tier.key !== "team" && c.email && stripeReady() ? termPrice(tier, c.rate, disc?.percent) : null;
+  const term = tier && c.email && stripeReady() ? termPrice(tier, c.rate, disc?.percent) : null;
   const pay =
     term && tier
       ? {

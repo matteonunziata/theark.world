@@ -28,8 +28,7 @@ export default async function AccessPage() {
       </div>
       <p className="note">
         Access is enforced by the database, not just this screen. Finance is
-        visible to admins only. Only @theark.world Google accounts added to the
-        team can sign in.
+        visible to admins only. Only people added to the team can sign in.
       </p>
     </>
   );

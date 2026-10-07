@@ -978,9 +978,9 @@ reset role;
 -- Team members are members too (the eight above plus the Arkadia teacher).
 select pg_temp.expect(
   (select count(*) from public.contacts c join public.team_members t on t.email = c.email
-   where t.name like 'Test %' and c.tier = 'team' and c.membership_status = 'active')
+   where t.name like 'Test %' and c.tier = 'annual' and c.membership_status = 'active')
     = (select count(*) from public.team_members where name like 'Test %' and status = 'active'),
-  'every active team member gets a Team membership');
+  'every active team member gets an Annual membership');
 select pg_temp.act_as(pg_temp.id('admin'));
 select pg_temp.expect(public.is_member(), 'staff count as members in the portal');
 reset role;
