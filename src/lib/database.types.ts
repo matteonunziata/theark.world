@@ -670,6 +670,45 @@ export type Database = {
           },
         ]
       }
+      cleaning_tasks: {
+        Row: {
+          area: string
+          assignee: string | null
+          created_at: string
+          days: number[]
+          id: string
+          notes: string | null
+          position: number
+          task: string
+          time_slot: string | null
+          updated_at: string
+        }
+        Insert: {
+          area: string
+          assignee?: string | null
+          created_at?: string
+          days?: number[]
+          id?: string
+          notes?: string | null
+          position?: number
+          task: string
+          time_slot?: string | null
+          updated_at?: string
+        }
+        Update: {
+          area?: string
+          assignee?: string | null
+          created_at?: string
+          days?: number[]
+          id?: string
+          notes?: string | null
+          position?: number
+          task?: string
+          time_slot?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           bio: string | null
@@ -1897,6 +1936,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inventory_items: {
+        Row: {
+          category: string
+          counted_at: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          on_hand: number
+          reorder_at: number
+          supplier: string | null
+          target: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          counted_at?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          on_hand?: number
+          reorder_at?: number
+          supplier?: string | null
+          target?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          counted_at?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          on_hand?: number
+          reorder_at?: number
+          supplier?: string | null
+          target?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       lot_maintenance: {
         Row: {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
 import { addDays, fmtDate, todayIn } from "@/lib/dates";
-import { HospitalityHead } from "../hospitality-head";
+import { FoodHead } from "./food-head";
 
 export const metadata: Metadata = { title: "Food and beverage" };
 
@@ -36,7 +36,7 @@ export default async function FoodPage({ searchParams }: PageProps<"/hospitality
 
   return (
     <div className="page">
-      <HospitalityHead />
+      <FoodHead />
       <div className="listings-h">
         <p className="muted" style={{ margin: 0 }}>
           {data?.length ?? 0} meal pass{data?.length === 1 ? "" : "es"},{" "}

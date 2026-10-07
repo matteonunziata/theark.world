@@ -1026,3 +1026,11 @@ a.mk-tr:hover{background:var(--surface-2)}
 .bp-acct{background:var(--surface-2);border-radius:10px;padding:8px 10px;font-size:13px;margin-top:6px;display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;align-items:center}
 .bp-acct code{font-size:12.5px;overflow-wrap:anywhere}
 @media (max-width:640px){.bp-head-tools{justify-content:flex-start}.bp-item .side{text-align:left;justify-items:start}.bp-item .acts{justify-content:flex-start}}
+
+/* Hospitality: cleaning week and kitchen inventory */
+.clean-grid th:not(:first-child),.clean-grid td:not(:first-child){text-align:center}
+.clean-grid th:last-child,.clean-grid td:last-child,.clean-grid th:nth-last-child(2),.clean-grid td:nth-last-child(2){text-align:left}
+.clean-grid .today{background:var(--surface-2)}
+.clean-grid .clean-area td{text-align:left;font-weight:700;font-size:13px;color:var(--muted);padding-top:14px;border-top:1px solid var(--line)}
+.stock-qty{display:flex;gap:6px;justify-content:flex-end}
+.stock-qty input{width:76px;padding:5px 8px}
