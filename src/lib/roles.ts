@@ -67,7 +67,7 @@ export const MODULES: {
     key: "dashboard",
     name: "Dashboard",
     href: "/dashboard",
-    roles: ["admin", "lead", "sales", "facilitator", "shop"],
+    roles: ["admin", "lead", "sales", "shop"],
   },
   { key: "crm", name: "CRM", href: "/crm", roles: ["admin", "lead", "sales"] },
   {
@@ -92,13 +92,13 @@ export const MODULES: {
     key: "events",
     name: "Schedule",
     href: "/events",
-    roles: ["admin", "lead", "sales", "facilitator"],
+    roles: ["admin", "lead", "sales"],
   },
   {
     key: "security",
     name: "Security",
     href: "/security",
-    roles: ["admin", "lead", "facilitator", "security"],
+    roles: ["admin", "lead", "security"],
   },
   {
     key: "shop",
@@ -123,7 +123,7 @@ export const MODULES: {
     key: "operations",
     name: "Operations",
     href: "/operations",
-    roles: ["admin", "lead", "sales", "facilitator", "shop", "crew", "marketing"],
+    roles: ["admin", "lead", "sales", "shop", "crew", "marketing"],
   },
   { key: "finance", name: "Finance", href: "/finance", roles: ["admin"] },
   {

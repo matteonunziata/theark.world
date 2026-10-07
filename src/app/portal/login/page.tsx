@@ -29,7 +29,7 @@ export default async function PortalLogin({ searchParams }: PageProps<"/portal/l
             {error}
           </p>
         )}
-        <MagicLinkForm next={typeof next === "string" && next.startsWith("/") ? next : "/"} />
+        <MagicLinkForm next={typeof next === "string" && next.startsWith("/") ? next : "/choose"} />
       </div>
     </main>
   );

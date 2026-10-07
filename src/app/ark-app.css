@@ -15,6 +15,11 @@
 .auth-foot a{color:var(--sea)}
 .auth-or{text-align:center;font-size:13px;color:var(--muted);margin:14px 0!important}
 .auth-card form .fld input{background:var(--bg)}
+.auth-pick{display:grid;gap:10px;margin:0 0 6px}
+.auth-pick a{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);text-decoration:none}
+.auth-pick a:hover{border-color:var(--ink)}
+.auth-pick b{display:block;font-size:16px}
+.auth-pick span{display:block;margin-top:3px;font-size:13.5px;color:var(--muted)}
 
 /* shell */
 .side-foot form{margin:0}

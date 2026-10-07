@@ -34,7 +34,7 @@ export default async function LoginPage({
             {error}
           </p>
         )}
-        <MagicLinkForm next="/" />
+        <MagicLinkForm next="/choose" />
         {GOOGLE && (
           <>
             <p className="auth-or">or</p>

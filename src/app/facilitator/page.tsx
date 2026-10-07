@@ -11,7 +11,7 @@ export default async function FacilitatorLogin({
 }: PageProps<"/facilitator">) {
   const { error } = await searchParams;
   const { staff } = await getViewer();
-  if (staff) redirect(staff.role === "facilitator" ? "/classes" : "/");
+  if (staff) redirect("/choose");
 
   return (
     <main className="auth">
@@ -30,7 +30,7 @@ export default async function FacilitatorLogin({
             {error}
           </p>
         )}
-        <MagicLinkForm next="/classes" />
+        <MagicLinkForm next="/choose" />
       </div>
     </main>
   );
