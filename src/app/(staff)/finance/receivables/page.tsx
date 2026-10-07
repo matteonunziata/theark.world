@@ -7,14 +7,14 @@ const byDue = (a: { due_date: string | null }, b: { due_date: string | null }) =
 export const metadata: Metadata = { title: "Receivables" };
 
 export default async function Page() {
-  const { entries, lines, currency, today } = await loadFinance();
+  const { entries, lines, conv, today } = await loadFinance();
   return (
     <EntryList
       entries={entries
       .filter((e) => e.kind === "income" && e.status === "unpaid")
       .sort(byDue)}
       lines={lines}
-      currency={currency}
+      conv={conv}
       today={today}
       mode="receivables"
     />

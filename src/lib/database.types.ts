@@ -1845,6 +1845,7 @@ export type Database = {
           name: string | null
           timezone: string
           updated_at: string
+          usd_crc_rate: number
         }
         Insert: {
           currency?: string
@@ -1857,6 +1858,7 @@ export type Database = {
           name?: string | null
           timezone?: string
           updated_at?: string
+          usd_crc_rate?: number
         }
         Update: {
           currency?: string
@@ -1869,6 +1871,7 @@ export type Database = {
           name?: string | null
           timezone?: string
           updated_at?: string
+          usd_crc_rate?: number
         }
         Relationships: []
       }

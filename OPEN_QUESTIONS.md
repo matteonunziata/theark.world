@@ -133,3 +133,6 @@
 - **Portal shop: stock.** Orders decrement Shopify's stock, but the portal only learns of sell-outs at the next "Sync from website", and a member can pay for something that sold out in between. Nothing refunds automatically.
 
 - Applications: a one-month application still requires having used a day pass first, but every applicant now gets a free one. Drop that requirement so they can apply, then visit on the free pass? Should approving or declining email the applicant?
+
+## Finance currency toggle
+- **Exchange rate.** It starts at ₡500 per $1, a placeholder. What rate should it use, and should it follow the bank's rate each month, or should each transaction keep the rate on its own date so past months stop moving?

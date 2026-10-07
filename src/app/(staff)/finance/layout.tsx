@@ -1,9 +1,12 @@
 import { Icon } from "@/components/icons";
 import { Tabs } from "@/components/tabs";
 import { requireStaff } from "@/lib/auth";
+import { rateNote } from "@/lib/finance";
+import { getFinanceView } from "@/lib/finance-currency";
+import { CurrencyToggle } from "./currency-toggle";
 
 export default async function FinanceLayout({ children }: LayoutProps<"/finance">) {
-  const { staff } = await requireStaff("finance");
+  const { staff, supabase } = await requireStaff("finance");
   if (staff.role !== "admin") {
     return (
       <div className="page">
@@ -15,6 +18,7 @@ export default async function FinanceLayout({ children }: LayoutProps<"/finance"
       </div>
     );
   }
+  const { conv } = await getFinanceView(supabase);
   return (
     <div className="page">
       <div className="page-head">
@@ -25,6 +29,7 @@ export default async function FinanceLayout({ children }: LayoutProps<"/finance"
             what’s owed in either direction. Admins only.
           </p>
         </div>
+        <CurrencyToggle value={conv.to} note={rateNote(conv)} />
       </div>
       <Tabs
         label="Finance sections"

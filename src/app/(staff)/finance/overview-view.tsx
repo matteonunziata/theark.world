@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
 import { addMonths, fmtDate, monthLabel, shortMonth } from "@/lib/dates";
-import { type Entry, fmtTotals, type Line, totals } from "@/lib/finance";
+import { type Conv, convert, type Entry, fmtSum, type Line, rateNote, sumIn } from "@/lib/finance";
 import { COLORS, colorVar } from "@/lib/roles";
 import { fmtMoney } from "@/lib/shop";
 import { saveCash, saveLine } from "./actions";
@@ -22,6 +22,7 @@ export function OverviewView({
   cash,
   ticketSales,
   currency,
+  conv,
   today,
 }: {
   month: string;
@@ -32,14 +33,18 @@ export function OverviewView({
   lines: Line[];
   cash: Cash[];
   ticketSales: number;
+  /** The organization\u2019s own currency: cash in bank and ticket sales are kept in it. */
   currency: string;
+  conv: Conv;
   today: string;
 }) {
   const [target, setTarget] = useState<DrawerTarget | null>(null);
   const cashDrawer = useDrawer<string>();
   const lineDrawer = useDrawer<Line>();
-  const money = (n: number | null | undefined) => fmtMoney(n, currency);
-  const main = (es: Entry[]) => totals(es)[currency] ?? 0;
+  const money = (n: number | null | undefined) => fmtMoney(n, conv.to);
+  const main = (es: Entry[]) => sumIn(es, conv).value;
+  const mark = currency === conv.to ? "" : "~";
+  const tickets = convert(ticketSales, currency, conv);
 
   const monthEntries = entries.filter((e) => e.entry_date.startsWith(k));
   const inc = monthEntries.filter((e) => e.kind === "income");
@@ -98,12 +103,12 @@ export function OverviewView({
         </div>
       )}
       <div className="kpis">
-        {kpi("Revenue", fmtTotals(totals(inc), currency), "", ticketSales ? `Plus ${money(ticketSales)} in event tickets marked paid` : "")}
-        {kpi("Expenses", fmtTotals(totals(exp), currency))}
-        {kpi("Net", money(net), net < 0 ? "neg" : net > 0 ? "pos" : "", currency === "USD" ? "" : "Colones only")}
-        {kpi("Cash in bank", c?.cash != null ? money(c.cash) : "—", "", c?.cash_date ? `as of ${fmtDate(c.cash_date)}` : "")}
-        {kpi("Receivable", fmtTotals(totals(ar), currency), "", `${ar.length} open invoice${ar.length === 1 ? "" : "s"}`)}
-        {kpi("Payable", fmtTotals(totals(ap), currency), "", `${ap.length} open bill${ap.length === 1 ? "" : "s"}`)}
+        {kpi("Revenue", fmtSum(inc, conv), "", ticketSales ? `Plus ${mark}${money(tickets)} in event tickets marked paid` : "")}
+        {kpi("Expenses", fmtSum(exp, conv))}
+        {kpi("Net", money(net), net < 0 ? "neg" : net > 0 ? "pos" : "", monthEntries.some((e) => e.currency !== conv.to) || mark ? rateNote(conv) : "")}
+        {kpi("Cash in bank", c?.cash != null ? mark + money(convert(c.cash, currency, conv)) : "—", "", c?.cash_date ? `as of ${fmtDate(c.cash_date)}` : "")}
+        {kpi("Receivable", fmtSum(ar, conv), "", `${ar.length} open invoice${ar.length === 1 ? "" : "s"}`)}
+        {kpi("Payable", fmtSum(ap, conv), "", `${ap.length} open bill${ap.length === 1 ? "" : "s"}`)}
       </div>
       <div className="fin-grid">
         <div className="brk">
@@ -115,12 +120,12 @@ export function OverviewView({
               <div key={l.id || "none"}>
                 <div className="ln">
                   <span className="dot-label"><i style={{ background: colorVar(l.color) }} />{l.name}</span>
-                  <span>{fmtTotals(totals(r), currency)}</span>
+                  <span>{fmtSum(r, conv)}</span>
                 </div>
                 {x.length > 0 && (
                   <div className="ln sub" style={{ borderTop: 0, paddingTop: 0 }}>
                     <span style={{ paddingLeft: 16 }}>expenses</span>
-                    <span>−{fmtTotals(totals(x), currency)}</span>
+                    <span>−{fmtSum(x, conv)}</span>
                   </div>
                 )}
               </div>
@@ -129,12 +134,12 @@ export function OverviewView({
           {ticketSales > 0 && (
             <div className="ln sub">
               <span>Event tickets marked paid (from bookings)</span>
-              <span>{money(ticketSales)}</span>
+              <span>{mark}{money(tickets)}</span>
             </div>
           )}
           <div className="ln">
             <span><b>Total revenue</b></span>
-            <span><b>{fmtTotals(totals(inc), currency)}</b></span>
+            <span><b>{fmtSum(inc, conv)}</b></span>
           </div>
           <p style={{ margin: "12px 0 0", display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="button" className="btn ghost sm" onClick={lineDrawer.openNew}>Add a business line</button>
@@ -216,7 +221,7 @@ export function OverviewView({
         </table>
       </div>
 
-      <EntryDrawer target={target} lines={lines} currency={currency} today={k === thisMonth ? today : `${k}-01`} onClose={() => setTarget(null)} />
+      <EntryDrawer target={target} lines={lines} currency={conv.to} today={k === thisMonth ? today : `${k}-01`} onClose={() => setTarget(null)} />
 
       <Drawer
         key={`cash-${k}`}
