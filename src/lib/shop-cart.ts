@@ -61,3 +61,13 @@ export function priceOrder(catalog: CatalogItem[], lines: unknown, percent: numb
   const total = out.reduce((n, l) => n + l.unit * l.qty, 0);
   return { lines: out, subtotal, total };
 }
+
+/**
+ * What the basket shows: the full price, what the member discount takes off,
+ * and the total. Rounds per unit like priceOrder, so the total matches the charge.
+ */
+export function basketTotals(lines: { price: number; qty: number }[], percent: number) {
+  const subtotal = lines.reduce((n, l) => n + l.price * l.qty, 0);
+  const total = lines.reduce((n, l) => n + memberPrice(l.price, percent) * l.qty, 0);
+  return { subtotal, discount: subtotal - total, total };
+}

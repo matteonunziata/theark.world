@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { type MouseEvent, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useToast } from "@/components/toast";
 import { startShopCheckout } from "./actions";
-import { checkoutUrl, type CartLine, cleanCart, MAX_QTY, memberPrice } from "@/lib/shop-cart";
+import { basketTotals, checkoutUrl, type CartLine, cleanCart, MAX_QTY, memberPrice } from "@/lib/shop-cart";
 
 export type Group = {
   key: string;
@@ -17,6 +17,32 @@ export type Group = {
 
 const KEY = "ark-shop-cart";
 const crc = (n: number) => `₡${n.toLocaleString("en-US")}`;
+const calm = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** A small copy of the product photo that flies from the card into the basket. */
+function fly(from: Element, to: Element, image: string | null) {
+  const a = from.getBoundingClientRect();
+  const b = to.getBoundingClientRect();
+  const size = 56;
+  const dot = document.createElement("div");
+  dot.className = "sh-fly";
+  if (image) dot.style.backgroundImage = `url(${image})`;
+  dot.style.left = `${a.left + a.width / 2 - size / 2}px`;
+  dot.style.top = `${a.top + a.height / 2 - size / 2}px`;
+  document.body.appendChild(dot);
+  const dx = b.left + b.width / 2 - (a.left + a.width / 2);
+  const dy = b.top + b.height / 2 - (a.top + a.height / 2);
+  // Up and over, landing small in the basket.
+  const anim = dot.animate(
+    [
+      { transform: "translate(0, 0) scale(1)", opacity: 1 },
+      { transform: `translate(${dx * 0.5}px, ${Math.min(dy * 0.5, 0) - 80}px) scale(0.8)`, opacity: 1, offset: 0.45 },
+      { transform: `translate(${dx}px, ${dy}px) scale(0.25)`, opacity: 0.6 },
+    ],
+    { duration: 650, easing: "cubic-bezier(.45,.05,.4,1)" },
+  );
+  return anim.finished.catch(() => undefined).finally(() => dot.remove());
+}
 
 export function Shop({
   groups,
@@ -41,6 +67,9 @@ export function Shop({
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [ready, setReady] = useState(false);
+  const [added, setAdded] = useState<Record<string, boolean>>({});
+  const [bump, setBump] = useState(0);
+  const basketRef = useRef<HTMLButtonElement>(null);
 
   // The cart is kept in this browser, so it survives leaving for checkout and coming back.
   useEffect(() => {
@@ -72,7 +101,7 @@ export function Shop({
     return it ? [{ ...l, ...it }] : []; // a product that's gone from the shop drops out
   });
   const count = lines.reduce((n, l) => n + l.qty, 0);
-  const total = lines.reduce((n, l) => n + memberPrice(l.price, percent) * l.qty, 0);
+  const { subtotal, discount, total } = basketTotals(lines, percent);
   const url = checkoutUrl(lines, { code, email });
   const pay = () =>
     startPay(async () => {
@@ -88,6 +117,25 @@ export function Shop({
       if (qty < 1) return c.filter((l) => l.id !== id);
       return have ? c.map((l) => (l.id === id ? { ...l, qty } : l)) : [...c, { id, qty }];
     });
+
+  /** Add from a product card: the button says so, the photo flies to the basket, and the basket bumps. */
+  const addFromCard = (e: MouseEvent<HTMLButtonElement>, g: Group, id: string) => {
+    const card = e.currentTarget.closest(".sh-card");
+    const from = card?.querySelector(".sh-img") ?? e.currentTarget;
+    add(id);
+    setAdded((a) => ({ ...a, [g.key]: true }));
+    window.setTimeout(() => setAdded((a) => ({ ...a, [g.key]: false })), 1400);
+    if (calm()) {
+      setBump((n) => n + 1);
+      return;
+    }
+    // Wait a frame so the floating basket is on screen before aiming at it.
+    requestAnimationFrame(() => {
+      const to = basketRef.current;
+      if (!to) return setBump((n) => n + 1);
+      void fly(from, to, g.image).then(() => setBump((n) => n + 1));
+    });
+  };
 
   return (
     <>
@@ -147,8 +195,12 @@ export function Shop({
                       <b>{crc(mp)}</b>
                       {mp !== o.price && <s>{crc(o.price)}</s>}
                     </span>
-                    <button type="button" className="pv-btn sm" onClick={() => add(o.id)}>
-                      Add
+                    <button
+                      type="button"
+                      className={`pv-btn sm sh-add${added[g.key] ? " done" : ""}`}
+                      onClick={(e) => addFromCard(e, g, o.id)}
+                    >
+                      {added[g.key] ? "Added" : "Add"}
                     </button>
                   </div>
                 </div>
@@ -156,6 +208,20 @@ export function Shop({
             );
           })}
         </div>
+      )}
+
+      {count > 0 && !open && (
+        <button
+          ref={basketRef}
+          type="button"
+          key={bump}
+          className={`sh-float${bump ? " bump" : ""}`}
+          onClick={() => setOpen(true)}
+          aria-label={`Basket, ${count} items, ${crc(total)}`}
+        >
+          <span className="n">{count}</span>
+          Basket · {crc(total)}
+        </button>
       )}
 
       {open && (
@@ -177,7 +243,10 @@ export function Shop({
                     <div>
                       <b>{l.g.name}</b>
                       {l.label && <span className="sub"> · {l.label}</span>}
-                      <div className="sub">{crc(memberPrice(l.price, percent))} each</div>
+                      <div className="sub">
+                        {crc(memberPrice(l.price, percent))} each
+                        {memberPrice(l.price, percent) !== l.price && <s className="sh-was">{crc(l.price)}</s>}
+                      </div>
                     </div>
                     <div className="sh-qty">
                       <button type="button" aria-label="One fewer" onClick={() => add(l.id, -1)}>−</button>
@@ -190,14 +259,22 @@ export function Shop({
             )}
             {lines.length > 0 && (
               <div className="sh-pf">
-                <div className="sh-total">
-                  <span>Items</span>
-                  <b>{crc(total)}</b>
-                </div>
+                <dl className="sh-sum">
+                  {discount > 0 && (
+                    <>
+                      <dt>Full price</dt>
+                      <dd>{crc(subtotal)}</dd>
+                      <dt>Member discount ({percent}%)</dt>
+                      <dd className="sh-off">−{crc(discount)}</dd>
+                    </>
+                  )}
+                  <dt className="sh-tot">Total</dt>
+                  <dd className="sh-tot">{crc(total)}</dd>
+                </dl>
                 {payReady ? (
                   <>
                     <p className="sub">
-                      {percent ? `Your ${percent}% member discount is already taken off. ` : ""}
+                      {discount > 0 ? `You save ${crc(discount)} with your member price. ` : ""}
                       Pay by card, then pick your order up at The ARK.
                     </p>
                     <button type="button" className="pv-btn" disabled={paying} onClick={pay}>
