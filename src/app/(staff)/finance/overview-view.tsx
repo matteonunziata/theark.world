@@ -7,6 +7,7 @@ import { addMonths, fmtDate, monthLabel, shortMonth } from "@/lib/dates";
 import { type Conv, convert, type Entry, fmtSum, type Line, rateNote, sumIn } from "@/lib/finance";
 import { COLORS, colorVar } from "@/lib/roles";
 import { fmtMoney } from "@/lib/shop";
+import type { SectorRollup } from "./budgets/rollup";
 import { saveCash, saveLine } from "./actions";
 import { type DrawerTarget, EntryDrawer } from "./entry-drawer";
 
@@ -21,6 +22,7 @@ export function OverviewView({
   lines,
   cash,
   ticketSales,
+  sectors,
   currency,
   conv,
   today,
@@ -33,6 +35,7 @@ export function OverviewView({
   lines: Line[];
   cash: Cash[];
   ticketSales: number;
+  sectors: SectorRollup[];
   /** The organization\u2019s own currency: cash in bank and ticket sales are kept in it. */
   currency: string;
   conv: Conv;
@@ -44,6 +47,8 @@ export function OverviewView({
   const money = (n: number | null | undefined) => fmtMoney(n, conv.to);
   const main = (es: Entry[]) => sumIn(es, conv).value;
   const mark = currency === conv.to ? "" : "~";
+  // Budgets are planned and tracked in colones.
+  const budgetMoney = (crc: number) => (conv.to === "CRC" ? "" : "~") + fmtMoney(convert(crc, "CRC", conv), conv.to);
   const tickets = convert(ticketSales, currency, conv);
 
   const monthEntries = entries.filter((e) => e.entry_date.startsWith(k));
@@ -220,6 +225,53 @@ export function OverviewView({
           </tfoot>
         </table>
       </div>
+
+      <h2 className="section-title">Budgets by sector</h2>
+      {!sectors.length ? (
+        <p className="muted" style={{ marginTop: 0 }}>
+          No approved budgets yet. <Link href="/finance/budgets" className="linkish">Open Budgets</Link>
+        </p>
+      ) : (
+        <div className="table-wrap">
+          <table className="lines-table">
+            <thead>
+              <tr>
+                <th>Sector</th>
+                <th>Budgets</th>
+                <th>Planned</th>
+                <th>Spent</th>
+                <th>Remaining</th>
+                <th>Used</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sectors.map((s) => {
+                const pct = s.planned > 0 ? Math.round((s.spent / s.planned) * 100) : s.spent > 0 ? 100 : 0;
+                return (
+                  <tr key={s.id}>
+                    <td><span className="dot-label"><i style={{ background: colorVar(s.color) }} />{s.name}</span></td>
+                    <td>{s.budgets}</td>
+                    <td>{budgetMoney(s.planned)}</td>
+                    <td>{budgetMoney(s.spent)}</td>
+                    <td style={s.planned - s.spent < 0 ? { color: "var(--danger)" } : undefined}>{budgetMoney(s.planned - s.spent)}</td>
+                    <td>{pct}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>Total</td>
+                <td>{sectors.reduce((n, s) => n + s.budgets, 0)}</td>
+                <td>{budgetMoney(sectors.reduce((n, s) => n + s.planned, 0))}</td>
+                <td>{budgetMoney(sectors.reduce((n, s) => n + s.spent, 0))}</td>
+                <td>{budgetMoney(sectors.reduce((n, s) => n + s.planned - s.spent, 0))}</td>
+                <td />
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
 
       <EntryDrawer target={target} lines={lines} currency={conv.to} today={k === thisMonth ? today : `${k}-01`} onClose={() => setTarget(null)} />
 

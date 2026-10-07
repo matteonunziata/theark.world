@@ -114,7 +114,8 @@ export function BookingPanel({
           {result.payUrl ? (
             <>
               <p className="muted">
-                Your booking is confirmed once the payment goes through. The spot is held for 30 minutes.
+                Your pass is issued once the payment goes through. The spot is held for 30 minutes.
+                Then show your pass to the team at La Cocineta.
               </p>
               <p>
                 <a className="btn primary" href={result.payUrl}>
@@ -258,7 +259,8 @@ export function BookingPanel({
               <input type="hidden" name="ticket" value={firstOpen.id} />
               <p className="note" style={{ marginTop: 0 }}>
                 {o.title} is paid when you book{payFirstPrice ? ` (${payFirstPrice})` : ""}. You’ll go to the payment page
-                next, and your spot is confirmed once the payment goes through.
+                next, and your pass is issued once the payment goes through. Show it to the team at La
+                Cocineta.
               </p>
             </>
           ) : tickets.length > 0 && (

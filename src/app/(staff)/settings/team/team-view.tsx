@@ -253,6 +253,17 @@ function MemberDrawer({
           )}
         </div>
         <div className="fld">
+          <label htmlFor="m-fin">Finance role</label>
+          <select id="m-fin" name="finance_role" defaultValue={m?.finance_role ?? ""}>
+            <option value="">None</option>
+            <option value="sector_manager">Sector manager — their division’s budgets only</option>
+            <option value="admin">Admin — every sector’s budgets, approvals and payments</option>
+          </select>
+          <span className="hint">
+            Budgets &amp; Payments. A sector manager’s sector is the Division above.
+          </span>
+        </div>
+        <div className="fld">
           <label htmlFor="m-resp">Responsibilities</label>
           <textarea id="m-resp" name="responsibilities" defaultValue={m?.responsibilities ?? ""} placeholder="What they own day to day" />
         </div>

@@ -38,6 +38,18 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
   // decision: nobody is let in on the scan alone). The button reopens the
   // page with ?done=1 so the screen reads "Checked in" rather than "Already
   // used". Links inside the app add ?look=1 to open a ticket quietly.
+  // Meals (pay-first tickets) are shown to the kitchen, not the gate.
+  const { data: mealTicket } = t?.ticket_name
+    ? await supabase
+        .from("ticket_types")
+        .select("id")
+        .eq("offering_id", t.offering_id)
+        .eq("name", t.ticket_name)
+        .eq("pay_first", true)
+        .maybeSingle()
+    : { data: null };
+  const isMeal = !!mealTicket;
+  const awaiting = t?.state === "unpaid" || t?.state === "lapsed";
   const admitted = !!done && t?.state === "used";
   const orgName = org?.name ?? "The ARK";
   const head = (
@@ -109,9 +121,13 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
             {t.location ? ` at ${t.location}` : ""}
             {t.facilitator ? `, with ${t.facilitator}` : ""}
           </p>
-          {/* QR markup generated on the server from our own URL. */}
-          <div className="qr" dangerouslySetInnerHTML={{ __html: svg }} />
-          <div className="code">{ticketCode(token)}</div>
+          {/* QR markup generated on the server from our own URL. A meal has no pass until it's paid. */}
+          {!(isMeal && awaiting) && (
+            <>
+              <div className="qr" dangerouslySetInnerHTML={{ __html: svg }} />
+              <div className="code">{ticketCode(token)}</div>
+            </>
+          )}
           <p style={{ margin: "10px 0 0" }}>
             <b>{t.holder}</b>
             <br />
@@ -123,7 +139,14 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
           </p>
           {t.state === "unpaid" && (
             <p className="muted" style={{ margin: "8px 0 0", fontSize: 14 }}>
-              Your spot is held. It’s confirmed once the payment goes through.
+              {isMeal
+                ? "Your pass appears here once the payment goes through."
+                : "Your spot is held. It’s confirmed once the payment goes through."}
+            </p>
+          )}
+          {isMeal && !awaiting && (
+            <p style={{ margin: "10px 0 0", fontSize: 14 }}>
+              Show this pass to the team at La Cocineta.
             </p>
           )}
           {t.state === "lapsed" && (

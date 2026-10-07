@@ -40,6 +40,12 @@ export async function saveTeamMember(
   if (email && !EMAIL.test(email)) return fail("Enter a valid email.");
   if (!ROLES.some((r) => r.key === role)) return fail("Choose an access level.");
   if (!TYPES.some((t) => t[0] === type)) return fail("Choose a type.");
+  if (
+    field(data, "finance_role") === "sector_manager" &&
+    !field(data, "division_id")
+  ) {
+    return fail("A sector manager needs a division. Pick one under Division.");
+  }
 
   if (id && (role !== "admin" || status !== "active")) {
     if (await isLastAdmin(supabase, id)) {
@@ -55,6 +61,9 @@ export async function saveTeamMember(
     status,
     title: field(data, "title"),
     division_id: field(data, "division_id"),
+    finance_role: ["sector_manager", "admin"].includes(field(data, "finance_role") ?? "")
+      ? field(data, "finance_role")
+      : null,
     responsibilities: field(data, "responsibilities"),
     phone: field(data, "phone"),
     start_date: field(data, "start_date"),

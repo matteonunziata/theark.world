@@ -18,6 +18,527 @@ export type Database = {
   }
   public: {
     Tables: {
+      budget_events: {
+        Row: {
+          actor_id: string | null
+          actor_name: string | null
+          budget_id: string
+          comment: string | null
+          created_at: string
+          division_id: string
+          entity: string
+          entity_id: string
+          from_status: string | null
+          id: string
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_name?: string | null
+          budget_id: string
+          comment?: string | null
+          created_at?: string
+          division_id: string
+          entity: string
+          entity_id: string
+          from_status?: string | null
+          id?: string
+          to_status: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_name?: string | null
+          budget_id?: string
+          comment?: string | null
+          created_at?: string
+          division_id?: string
+          entity?: string
+          entity_id?: string
+          from_status?: string | null
+          id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_events_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_lines: {
+        Row: {
+          budget_id: string
+          category: string
+          created_at: string
+          id: string
+          planned_crc: number
+          planned_usd: number | null
+          position: number
+        }
+        Insert: {
+          budget_id: string
+          category: string
+          created_at?: string
+          id?: string
+          planned_crc?: number
+          planned_usd?: number | null
+          position?: number
+        }
+        Update: {
+          budget_id?: string
+          category?: string
+          created_at?: string
+          id?: string
+          planned_crc?: number
+          planned_usd?: number | null
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_lines_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_movements: {
+        Row: {
+          amount: number
+          amount_crc: number
+          budget_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string
+          id: string
+          line_id: string
+          movement_date: string
+          provider_id: string | null
+          receipt_name: string | null
+          receipt_path: string
+        }
+        Insert: {
+          amount: number
+          amount_crc: number
+          budget_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description: string
+          id?: string
+          line_id: string
+          movement_date: string
+          provider_id?: string | null
+          receipt_name?: string | null
+          receipt_path: string
+        }
+        Update: {
+          amount?: number
+          amount_crc?: number
+          budget_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string
+          id?: string
+          line_id?: string
+          movement_date?: string
+          provider_id?: string | null
+          receipt_name?: string | null
+          receipt_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_movements_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_movements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_movements_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "budget_line_totals"
+            referencedColumns: ["line_id"]
+          },
+          {
+            foreignKeyName: "budget_movements_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "budget_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_movements_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budgets: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          division_id: string
+          end_date: string | null
+          id: string
+          name: string
+          period_month: string | null
+          review_comment: string | null
+          start_date: string | null
+          status: string
+          submitted_at: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          division_id: string
+          end_date?: string | null
+          id?: string
+          name: string
+          period_month?: string | null
+          review_comment?: string | null
+          start_date?: string | null
+          status?: string
+          submitted_at?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          division_id?: string
+          end_date?: string | null
+          id?: string
+          name?: string
+          period_month?: string | null
+          review_comment?: string | null
+          start_date?: string | null
+          status?: string
+          submitted_at?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_feedback: {
+        Row: {
+          body: string
+          created_at: string
+          division_id: string | null
+          id: string
+          page: string | null
+          staff_id: string | null
+          staff_name: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          division_id?: string | null
+          id?: string
+          page?: string | null
+          staff_id?: string | null
+          staff_name?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          division_id?: string | null
+          id?: string
+          page?: string | null
+          staff_id?: string | null
+          staff_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_feedback_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_feedback_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_requests: {
+        Row: {
+          amount: number
+          amount_crc: number
+          budget_id: string
+          currency: string
+          due_date: string | null
+          id: string
+          invoice_name: string | null
+          invoice_path: string | null
+          line_id: string
+          milestone: string | null
+          paid_at: string | null
+          paid_by: string | null
+          paid_on: string | null
+          payment_receipt_name: string | null
+          payment_receipt_path: string | null
+          provider_account_id: string
+          provider_id: string
+          reject_reason: string | null
+          requested_at: string
+          requested_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          amount_crc: number
+          budget_id: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          invoice_name?: string | null
+          invoice_path?: string | null
+          line_id: string
+          milestone?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          paid_on?: string | null
+          payment_receipt_name?: string | null
+          payment_receipt_path?: string | null
+          provider_account_id: string
+          provider_id: string
+          reject_reason?: string | null
+          requested_at?: string
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          amount_crc?: number
+          budget_id?: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          invoice_name?: string | null
+          invoice_path?: string | null
+          line_id?: string
+          milestone?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          paid_on?: string | null
+          payment_receipt_name?: string | null
+          payment_receipt_path?: string | null
+          provider_account_id?: string
+          provider_id?: string
+          reject_reason?: string | null
+          requested_at?: string
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_requests_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "budget_line_totals"
+            referencedColumns: ["line_id"]
+          },
+          {
+            foreignKeyName: "payment_requests_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "budget_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_provider_account_id_fkey"
+            columns: ["provider_account_id"]
+            isOneToOne: false
+            referencedRelation: "provider_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_bank_accounts: {
+        Row: {
+          account_holder: string
+          account_number: string
+          bank: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          division_id: string | null
+          id: string
+          provider_id: string
+        }
+        Insert: {
+          account_holder: string
+          account_number: string
+          bank: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          division_id?: string | null
+          id?: string
+          provider_id: string
+        }
+        Update: {
+          account_holder?: string
+          account_number?: string
+          bank?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          division_id?: string | null
+          id?: string
+          provider_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_bank_accounts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_bank_accounts_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_bank_accounts_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      providers: {
+        Row: {
+          contact: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "providers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_lines: {
         Row: {
           active: boolean
@@ -2841,6 +3362,7 @@ export type Database = {
           created_at: string
           division_id: string | null
           email: string | null
+          finance_role: string | null
           id: string
           name: string
           phone: string | null
@@ -2857,6 +3379,7 @@ export type Database = {
           created_at?: string
           division_id?: string | null
           email?: string | null
+          finance_role?: string | null
           id?: string
           name: string
           phone?: string | null
@@ -2873,6 +3396,7 @@ export type Database = {
           created_at?: string
           division_id?: string | null
           email?: string | null
+          finance_role?: string | null
           id?: string
           name?: string
           phone?: string | null
@@ -3503,7 +4027,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      budget_line_totals: {
+        Row: {
+          budget_id: string | null
+          line_id: string | null
+          movements_crc: number | null
+          paid_crc: number | null
+          requested_crc: number | null
+        }
+        Insert: {
+          budget_id?: string | null
+          line_id?: string | null
+          movements_crc?: never
+          paid_crc?: never
+          requested_crc?: never
+        }
+        Update: {
+          budget_id?: string | null
+          line_id?: string | null
+          movements_crc?: never
+          paid_crc?: never
+          requested_crc?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_lines_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       shop_recount_stock: {
