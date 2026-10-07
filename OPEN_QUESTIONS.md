@@ -72,7 +72,9 @@
 
 ## Round 14: Farm shop
 
-- **Shopify orders.** Online orders on thearkfarm.shop don't reach ARK OS, so the Overview is the till only. Pull Shopify orders in (Admin API token, like the GHL integration) so online and in-person sales sit in one report?
+- **Shopify orders: history and speed.** Online orders now come into ARK OS (Round 20), but only those placed after the first sync and only when a sync runs (nightly, or Sync now). Backfill the last 60 days, and add Shopify webhooks so an order shows within a minute?
+- **Shopify orders: partial refunds.** An order refunded in part stays counted in full; one refunded in full, voided or cancelled comes back out. Count partial refunds by line?
+- **Shopify orders: unmatched lines.** A line whose variant isn't in the catalog (a product added in Shopify since the last "Sync from website", a gift card, a custom item) is kept on the order but isn't in the sales ledger. Run the catalog sync before each order pull so these don't happen?
 - **Shop sales into Finance.** Shop revenue isn't posted to the Finance ledger. A daily or weekly summary entry under the Farm shop business line, created automatically, or keep entering deposits by hand?
 - **Member prices.** No product has a member price yet, so the member share on the Overview just shows who bought while an active member. Set member prices on the products that should have one (the drawer has the field).
 - **Costs.** Products have no cost price, so there's no margin figure. Worth adding a cost per unit, at least for bought-in goods?
