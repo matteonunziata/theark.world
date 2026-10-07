@@ -37,7 +37,13 @@ export async function requireStaff(module?: ModuleKey) {
   const v = await getViewer();
   if (!v.user) redirect("/login");
   if (!v.staff) redirect(v.memberId ? "/portal" : "/no-access");
-  if (module && !canSee(v.staff.role, module)) redirect("/");
+  if (
+    module &&
+    !canSee(v.staff.role, module) &&
+    !(module === "finance" && v.staff.finance_role)
+  ) {
+    redirect("/");
+  }
   return { ...v, staff: v.staff };
 }
 
@@ -64,4 +70,31 @@ export async function schoolOrThrow() {
   const { data } = await v.supabase.rpc("is_school_staff");
   if (!data) throw new Error("You don’t have access to Arkadia.");
   return v;
+}
+
+/** Can see and change every sector's budgets (ARK OS admins and Finance role Admin). */
+export const isBudgetAdmin = (s: Pick<Staff, "role" | "finance_role">) =>
+  s.role === "admin" || s.finance_role === "admin";
+
+/** Budget pages: anyone with a Finance role. */
+export async function requireBudgets() {
+  const v = await requireStaff("finance");
+  if (!v.staff.finance_role && v.staff.role !== "admin") redirect("/");
+  return { ...v, isAdmin: isBudgetAdmin(v.staff) };
+}
+
+/** Budget pages only admins see. */
+export async function requireBudgetAdmin() {
+  const v = await requireBudgets();
+  if (!v.isAdmin) redirect("/finance/budgets");
+  return v;
+}
+
+/** For budget server actions. */
+export async function budgetsOrThrow() {
+  const v = await staffOrThrow();
+  if (!v.staff.finance_role && v.staff.role !== "admin") {
+    throw new Error("You don’t have access to budgets.");
+  }
+  return { ...v, isAdmin: isBudgetAdmin(v.staff) };
 }

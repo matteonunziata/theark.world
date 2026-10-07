@@ -16,6 +16,10 @@ export default async function StaffLayout({
     const at = mods.findIndex((m) => m.key === "operations");
     mods.splice(at < 0 ? mods.length : at, 0, MODULES.find((m) => m.key === "school")!);
   }
+  if (staff.finance_role && !mods.some((m) => m.key === "finance")) {
+    const at = mods.findIndex((m) => m.key === "settings");
+    mods.splice(at < 0 ? mods.length : at, 0, MODULES.find((m) => m.key === "finance")!);
+  }
   const nav = mods.map((m) => ({
     key: m.key,
     name: m.name,

@@ -136,3 +136,12 @@
 
 ## Finance currency toggle
 - **Exchange rate.** It starts at ₡500 per $1, a placeholder. What rate should it use, and should it follow the bank's rate each month, or should each transaction keep the rate on its own date so past months stop moving?
+
+## Budgets & Payments
+- **Test people.** The seeded `test.*@theark.world` managers can't sign in unless those Google accounts exist. Who should be the first real sector managers, and which sectors (Farm, Events, Operations, Courts…) become divisions?
+- **Bank account details.** They are protected by access rules but not encrypted in the database. Is that enough, or should account numbers be encrypted (needs a key and costs searchability)?
+- **Another sector's provider accounts.** A sector can't see a bank account another sector added, so a shared provider may need the account entered twice (or an admin adds it once and picks which sector sees it). Is that the right balance?
+- **Project budgets: committed or paid?** The progress bar counts paid plus requested. Should it count paid only?
+- **Monthly money in each sector's own bank account.** Expenses are records only. Do sectors need a monthly opening balance or top-up per budget to reconcile against?
+- **Who corrects a mistaken expense?** Managers can't edit or delete one; admins can, but the screen for it doesn't exist yet. Add one?
+- **Exchange rate.** Expenses are converted at the Settings rate on the day they're saved and keep that figure.

@@ -1,10 +1,13 @@
+import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
 import { getFinanceView } from "@/lib/finance-currency";
 
 /** Everything the finance pages share. RLS limits all of it to admins. */
 export async function loadFinance() {
-  const { supabase } = await requireStaff("finance");
+  const { supabase, staff } = await requireStaff("finance");
+  // The ledger is admins only; sector managers work in Budgets.
+  if (staff.role !== "admin") redirect("/finance/budgets");
   const [{ data: entries }, { data: lines }, { data: org }, { conv, base }] = await Promise.all([
     supabase
       .from("finance_entries")

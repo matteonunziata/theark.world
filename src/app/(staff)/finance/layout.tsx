@@ -1,46 +1,74 @@
 import { Icon } from "@/components/icons";
 import { Tabs } from "@/components/tabs";
-import { requireStaff } from "@/lib/auth";
+import { isBudgetAdmin, requireStaff } from "@/lib/auth";
 import { rateNote } from "@/lib/finance";
 import { getFinanceView } from "@/lib/finance-currency";
 import { CurrencyToggle } from "./currency-toggle";
+import { FeedbackButton } from "./feedback-button";
 
 export default async function FinanceLayout({ children }: LayoutProps<"/finance">) {
   const { staff, supabase } = await requireStaff("finance");
-  if (staff.role !== "admin") {
+  const ledger = staff.role === "admin";
+  const budgetAdmin = isBudgetAdmin(staff);
+  if (!ledger && !staff.finance_role) {
     return (
       <div className="page">
         <div className="lock">
           <Icon name="lock" />
           <h2>Finance is restricted</h2>
-          <p>Only admins can see financial figures.</p>
+          <p>Only admins and sector managers can open Finance.</p>
         </div>
       </div>
     );
   }
   const { conv } = await getFinanceView(supabase);
+
+  // What an admin has waiting: budgets to approve and payments to make.
+  let waiting = 0;
+  if (budgetAdmin) {
+    const [{ count: b }, { count: r }] = await Promise.all([
+      supabase.from("budgets").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("payment_requests").select("id", { count: "exact", head: true }).eq("status", "requested"),
+    ]);
+    waiting = (b ?? 0) + (r ?? 0);
+  }
+
+  const tabs = [
+    ...(ledger
+      ? [
+          { href: "/finance", label: "Overview" },
+          { href: "/finance/transactions", label: "Transactions" },
+          { href: "/finance/documents", label: "Receipts & invoices" },
+          { href: "/finance/payables", label: "Payables" },
+          { href: "/finance/receivables", label: "Receivables" },
+        ]
+      : []),
+    { href: "/finance/budgets", label: "Budgets" },
+    { href: "/finance/payments", label: "Payments made" },
+    ...(budgetAdmin
+      ? [{ href: "/finance/queue", label: waiting ? `Approvals (${waiting})` : "Approvals" }]
+      : []),
+    { href: "/finance/providers", label: "Providers" },
+    ...(budgetAdmin ? [{ href: "/finance/feedback", label: "Feedback" }] : []),
+  ];
+
   return (
     <div className="page">
       <div className="page-head">
         <div>
           <h1>Finance</h1>
           <p className="lede">
-            Revenue by business line, every transaction with its receipt, and
-            what’s owed in either direction. Admins only.
+            {ledger
+              ? "Revenue by business line, every transaction with its receipt, what’s owed in either direction, and sector budgets and payments."
+              : "Budgets, payments and providers for your sector."}
           </p>
         </div>
-        <CurrencyToggle value={conv.to} note={rateNote(conv)} />
+        <div className="bp-head-tools">
+          <FeedbackButton />
+          <CurrencyToggle value={conv.to} note={rateNote(conv)} />
+        </div>
       </div>
-      <Tabs
-        label="Finance sections"
-        items={[
-          { href: "/finance", label: "Overview" },
-          { href: "/finance/transactions", label: "Transactions" },
-          { href: "/finance/documents", label: "Receipts & invoices" },
-          { href: "/finance/payables", label: "Payables" },
-          { href: "/finance/receivables", label: "Receivables" },
-        ]}
-      />
+      <Tabs label="Finance sections" items={tabs} />
       {children}
     </div>
   );
