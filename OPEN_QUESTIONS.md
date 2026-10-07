@@ -119,7 +119,7 @@
 - **Meal products in Stripe.** The first meal payment looks for active one-time Stripe products named exactly "Breakfast" and "Lunch" (then by prefix). If the products are named differently, pick them once in Schedule → the class → Tickets → Stripe product. The 30-minute hold matches Stripe's shortest Checkout expiry; fine, or shorter for busy meals?
 
 
-- **Shopify: should Founding and Ambassador get member10?** They have a 10% discount on their tier, so the sync tags them. Set the tier's discount to 0 in Memberships → Tiers to exclude one.
+- **Portal shop: Team prices.** Team members still get their 20% court/shop discount on prices in the portal shop (ARK OS takes that payment itself), but no Shopify code. Give Team the same shop price as members, or none?
 - **Shopify: should the codes combine with other discounts or exclude sale items?** They currently apply to everything and combine only with free shipping.
 
 ## Round 19: Importing past Stripe payments

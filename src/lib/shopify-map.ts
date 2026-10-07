@@ -20,35 +20,51 @@ export const LEVELS: Level[] = [
 
 export const ARK_TAGS = LEVELS.map((l) => l.tag);
 
-/** The code for a tier's discount: 20% or more is member20, 10% or more is member10, else none. */
+/**
+ * Which code each membership tier gets, by tier (user decision, 2026-10-07):
+ * the 1, 3 and 6-month memberships get member10 and the 12-month one gets
+ * member20. Nothing else does: not passes, not Team, whatever its court discount.
+ */
+export const TIER_CODE: Record<string, Level["code"]> = {
+  standard: "member10",
+  quarter: "member10",
+  half: "member10",
+  annual: "member20",
+};
+
+/**
+ * The code that matches a discount percentage. Only for showing a code next to
+ * a price (the portal shop); who gets a code in Shopify is decided by levelForTier.
+ */
 export function levelForPercent(percent: number | null | undefined): Level | null {
   const p = Number(percent) || 0;
   return LEVELS.find((l) => p >= l.percent) ?? null;
 }
 
+export const levelForTier = (tier: string | null | undefined): Level | null =>
+  LEVELS.find((l) => l.code === TIER_CODE[tier ?? ""]) ?? null;
+
 export type MembershipRow = {
   status: string;
   starts_on: string | null;
   ends_on: string | null;
-  /** From the tier. */
-  period: string;
-  court_discount: number | null;
+  /** The tier's key. */
+  tier: string;
 };
 
 /**
  * The level a person has on a day (YYYY-MM-DD, Costa Rica): the best of the
- * memberships that cover it. Only paid-up memberships of a month or longer
- * count; passes, paused, ended and not-yet-started ones don't. Cancelled
- * subscriptions run to their end date, like at the gate.
+ * memberships that cover it. Only paid-up memberships on a tier that has a
+ * code count; passes, Team, paused, ended and not-yet-started ones don't.
+ * Cancelled subscriptions run to their end date, like at the gate.
  */
 export function levelOn(rows: MembershipRow[], today: string): Level | null {
   let best: Level | null = null;
   for (const m of rows) {
-    if (m.period === "day" || m.period === "week") continue;
     if (m.status !== "active" && m.status !== "cancelled") continue;
     if (!m.starts_on || m.starts_on > today) continue;
     if (m.ends_on && m.ends_on < today) continue;
-    const l = levelForPercent(m.court_discount);
+    const l = levelForTier(m.tier);
     if (l && (!best || l.percent > best.percent)) best = l;
   }
   return best;

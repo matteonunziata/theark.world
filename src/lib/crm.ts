@@ -8,12 +8,10 @@ export const PTYPES = [
 
 export const TIERS = [
   ["", "No membership"],
-  ["founding", "Founding"],
   ["standard", "Monthly"],
   ["quarter", "3 months"],
   ["half", "6 months"],
   ["annual", "Annual"],
-  ["ambassador", "Ambassador"],
   ["day", "Day pass"],
   ["week", "Week pass"],
 ] as const;
@@ -71,13 +69,9 @@ export const tierClass = (k: string | null | undefined) =>
 export const tierColor = (k: string | null | undefined) =>
   !k
     ? "var(--slate)"
-    : k === "founding"
-      ? "var(--leaf)"
-      : k === "ambassador"
-        ? "var(--plum)"
-        : k === "standard" || k === "annual" || k === "quarter" || k === "half"
-          ? "var(--sea)"
-          : "var(--slate)";
+    : k === "standard" || k === "annual" || k === "quarter" || k === "half"
+      ? "var(--sea)"
+      : "var(--slate)";
 export const ptypeName = (k: string | null | undefined) =>
   PTYPES.find((t) => t[0] === k)?.[1] ?? "Contact";
 export const mstatusName = (k: string | null | undefined) =>

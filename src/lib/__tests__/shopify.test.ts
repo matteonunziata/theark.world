@@ -1,27 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { diffTags, levelForPercent, LEVELS, levelOn, type MembershipRow, normalizeShop } from "@/lib/shopify-map";
+import { diffTags, LEVELS, levelForPercent, levelForTier, levelOn, type MembershipRow, normalizeShop } from "@/lib/shopify-map";
 
 const row = (o: Partial<MembershipRow> = {}): MembershipRow => ({
   status: "active",
   starts_on: "2026-10-01",
   ends_on: "2026-10-31",
-  period: "month",
-  court_discount: 10,
+  tier: "standard",
   ...o,
 });
 const [m20, m10] = LEVELS;
 
 describe("levelOn", () => {
-  it("gives member10 to a monthly, quarterly or half-year membership", () => {
+  it("gives member10 to the monthly, 3-month and 6-month memberships", () => {
     expect(levelOn([row()], "2026-10-06")).toBe(m10);
-    expect(levelOn([row({ period: "quarter" })], "2026-10-06")).toBe(m10);
-    expect(levelOn([row({ period: "half" })], "2026-10-06")).toBe(m10);
+    expect(levelOn([row({ tier: "quarter" })], "2026-10-06")).toBe(m10);
+    expect(levelOn([row({ tier: "half" })], "2026-10-06")).toBe(m10);
   });
   it("gives member20 to annual", () => {
-    expect(levelOn([row({ period: "year", court_discount: 20 })], "2026-10-06")).toBe(m20);
+    expect(levelOn([row({ tier: "annual" })], "2026-10-06")).toBe(m20);
   });
   it("takes the best of overlapping memberships", () => {
-    expect(levelOn([row(), row({ period: "year", court_discount: 20 })], "2026-10-06")).toBe(m20);
+    expect(levelOn([row(), row({ tier: "annual" })], "2026-10-06")).toBe(m20);
   });
   it("ends with the last day, inclusive", () => {
     expect(levelOn([row()], "2026-10-31")).toBe(m10);
@@ -36,22 +35,27 @@ describe("levelOn", () => {
   it("lets a cancelled subscription run to its end", () => {
     expect(levelOn([row({ status: "cancelled" })], "2026-10-20")).toBe(m10);
   });
-  it("gives nothing for paused, revoked, unused or passes", () => {
+  it("gives nothing for paused, revoked or unused memberships", () => {
     for (const status of ["paused", "revoked", "unused"]) expect(levelOn([row({ status })], "2026-10-06")).toBeNull();
-    expect(levelOn([row({ period: "day", court_discount: 10 })], "2026-10-06")).toBeNull();
-    expect(levelOn([row({ period: "week", court_discount: 10 })], "2026-10-06")).toBeNull();
   });
-  it("gives nothing when the tier has no discount", () => {
-    expect(levelOn([row({ court_discount: 0 })], "2026-10-06")).toBeNull();
-    expect(levelOn([row({ court_discount: null })], "2026-10-06")).toBeNull();
+  it("gives nothing for passes, Team or an unknown tier, whatever their court discount", () => {
+    for (const tier of ["day", "week", "team", "founding", "ambassador", ""]) expect(levelOn([row({ tier })], "2026-10-06")).toBeNull();
+  });
+});
+
+describe("levelForTier", () => {
+  it("maps tiers to codes", () => {
+    expect(levelForTier("annual")).toBe(m20);
+    expect(levelForTier("half")).toBe(m10);
+    expect(levelForTier("team")).toBeNull();
+    expect(levelForTier(null)).toBeNull();
   });
 });
 
 describe("levelForPercent", () => {
-  it("maps to the nearest code at or below", () => {
+  it("maps a price discount to the nearest code at or below", () => {
     expect(levelForPercent(20)).toBe(m20);
     expect(levelForPercent(15)).toBe(m10);
-    expect(levelForPercent(10)).toBe(m10);
     expect(levelForPercent(5)).toBeNull();
   });
 });
