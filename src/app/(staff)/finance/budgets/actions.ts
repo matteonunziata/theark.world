@@ -401,32 +401,3 @@ export async function saveBankAccount(
   const res = await insertAccount(supabase, staff, isAdmin, providerId, data);
   return res.ok ? done("Bank account added") : res;
 }
-
-// Feedback ----------------------------------------------------------------------------------------------
-
-export async function sendFeedback(
-  _prev: ActionResult,
-  data: FormData,
-): Promise<ActionResult> {
-  const { supabase, staff } = await budgetsOrThrow();
-  const body = field(data, "body");
-  if (!body) return fail("Write a few words first.");
-  const { error } = await supabase.from("finance_feedback").insert({
-    staff_id: staff.id,
-    staff_name: staff.name,
-    division_id: staff.division_id,
-    page: field(data, "page"),
-    body,
-  });
-  if (error) return dbFail(error);
-  return ok("Thank you. Your feedback was sent.");
-}
-
-export async function deleteFeedback(id: string): Promise<ActionResult> {
-  const { supabase, isAdmin } = await budgetsOrThrow();
-  if (!isAdmin) return fail("Only an admin can remove feedback.");
-  const { error } = await supabase.from("finance_feedback").delete().eq("id", id);
-  if (error) return dbFail(error);
-  revalidatePath("/finance/feedback");
-  return ok("Removed");
-}

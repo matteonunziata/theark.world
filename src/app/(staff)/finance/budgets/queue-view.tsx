@@ -13,9 +13,9 @@ import {
 } from "@/lib/budgets";
 import type { Tables } from "@/lib/database.types";
 import type { Conv } from "@/lib/finance";
-import { payRequest, rejectRequest, reviewBudget } from "../budgets/actions";
-import { FileField } from "../budgets/file-field";
-import { type Account, AccountBox, Amt, Crc, FileButton } from "../budgets/parts";
+import { payRequest, rejectRequest, reviewBudget } from "./actions";
+import { FileField } from "./file-field";
+import { type Account, AccountBox, Amt, Crc, FileButton } from "./parts";
 
 type Req = Tables<"payment_requests"> & {
   budget: { id: string; name: string; division_id: string } | null;
