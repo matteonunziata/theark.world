@@ -26,7 +26,7 @@ export function HowItWorks({ isAdmin }: { isAdmin: boolean }) {
             <li>Send it for approval. Only drafts can be edited.</li>
             <li>Once it’s approved, log expenses (Monthly) or request payments (Project).</li>
             <li>Track spent and remaining on each line. You’ll see a warning if something goes over, but it still saves.</li>
-            <li>See what’s been paid under Payments made.</li>
+            <li>See what’s been paid under Payables.</li>
           </ol>
         </div>
         <div>

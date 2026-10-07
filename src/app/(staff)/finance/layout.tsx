@@ -4,7 +4,6 @@ import { isBudgetAdmin, requireStaff } from "@/lib/auth";
 import { rateNote } from "@/lib/finance";
 import { getFinanceView } from "@/lib/finance-currency";
 import { CurrencyToggle } from "./currency-toggle";
-import { FeedbackButton } from "./feedback-button";
 
 export default async function FinanceLayout({ children }: LayoutProps<"/finance">) {
   const { staff, supabase } = await requireStaff("finance");
@@ -43,13 +42,9 @@ export default async function FinanceLayout({ children }: LayoutProps<"/finance"
           { href: "/finance/receivables", label: "Receivables" },
         ]
       : []),
-    { href: "/finance/budgets", label: "Budgets" },
-    { href: "/finance/payments", label: "Payments made" },
-    ...(budgetAdmin
-      ? [{ href: "/finance/queue", label: waiting ? `Approvals (${waiting})` : "Approvals" }]
-      : []),
+    { href: "/finance/budgets", label: waiting ? `Budgets (${waiting})` : "Budgets" },
+    ...(ledger ? [] : [{ href: "/finance/payables", label: "Payables" }]),
     { href: "/finance/providers", label: "Providers" },
-    ...(budgetAdmin ? [{ href: "/finance/feedback", label: "Feedback" }] : []),
   ];
 
   return (
@@ -64,7 +59,6 @@ export default async function FinanceLayout({ children }: LayoutProps<"/finance"
           </p>
         </div>
         <div className="bp-head-tools">
-          <FeedbackButton />
           <CurrencyToggle value={conv.to} note={rateNote(conv)} />
         </div>
       </div>
