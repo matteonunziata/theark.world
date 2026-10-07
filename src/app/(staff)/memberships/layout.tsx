@@ -3,7 +3,11 @@ import { Tabs } from "@/components/tabs";
 import { requireStaff } from "@/lib/auth";
 
 export default async function MembershipsLayout({ children }: LayoutProps<"/memberships">) {
-  await requireStaff("memberships");
+  const { supabase } = await requireStaff("memberships");
+  const { count } = await supabase
+    .from("membership_applications")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["new", "reviewing"]);
   return (
     <div className="page">
       <div className="page-head">
@@ -24,6 +28,7 @@ export default async function MembershipsLayout({ children }: LayoutProps<"/memb
         label="Memberships sections"
         items={[
           { href: "/memberships", label: "Members" },
+          { href: "/memberships/applications", label: count ? `Applications (${count})` : "Applications" },
           { href: "/memberships/tiers", label: "Tiers & pricing" },
         ]}
       />

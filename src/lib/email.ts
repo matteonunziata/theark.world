@@ -190,6 +190,8 @@ export async function sendPassEmail(m: {
   useBy: string;
   url: string;
   orgName: string;
+  /** A free pass given with a membership application, not a paid one. */
+  free?: boolean;
 }) {
   if (!emailConfigured()) return false;
   const png = await QRCode.toBuffer(m.url, { width: 360, margin: 1 });
@@ -203,7 +205,7 @@ export async function sendPassEmail(m: {
       preheader: `Your pass is ready. It starts on your first visit; use it by ${m.useBy}.`,
       eyebrow: m.what,
       heading: `See you soon, ${esc(first)}`,
-      body: `<p style="margin:0 0 16px">Thank you, your payment went through. Show this code to security when you arrive. Your pass starts the moment they check you in, and covers ${esc(covers)}.</p>
+      body: `<p style="margin:0 0 16px">${m.free ? "Thank you for applying. A day with us is on us." : "Thank you, your payment went through."} Show this code to security when you arrive. Your pass starts the moment they check you in, and covers ${esc(covers)}.</p>
 ${detailRows([
   ["Pass", esc(m.what)],
   ["Covers", esc(covers)],
@@ -213,9 +215,9 @@ ${detailRows([
 <img src="cid:pass-qr" width="200" height="200" alt="Pass QR code" style="display:block;border:0">
 </td></tr></table>`,
       cta: { label: "Open your pass", href: m.url },
-      footnote: "Your receipt comes separately from Stripe.",
+      footnote: m.free ? "We’ll be in touch about your application." : "Your receipt comes separately from Stripe.",
     },
-    text: `Hi ${first},\n\nThank you, your payment went through. Your ${m.what.toLowerCase()} covers ${covers}, starting the moment security checks you in. Use it by ${m.useBy}.\n\nShow your pass when you arrive: ${m.url}\n\nYour receipt comes separately from Stripe.`,
+    text: `Hi ${first},\n\n${m.free ? "Thank you for applying. A day with us is on us." : "Thank you, your payment went through."} Your ${m.what.toLowerCase()} covers ${covers}, starting the moment security checks you in. Use it by ${m.useBy}.\n\nShow your pass when you arrive: ${m.url}\n\n${m.free ? "We’ll be in touch about your application." : "Your receipt comes separately from Stripe."}`,
     attachments: [{ filename: "pass.png", content: png, contentId: "pass-qr" }],
   });
 }
