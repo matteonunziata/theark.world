@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArkFonts } from "@/components/ark-fonts";
 import { Logo } from "@/components/logo";
@@ -104,6 +105,7 @@ export default async function StayPage({ searchParams }: PageProps<"/stay">) {
       </header>
 
       <section id="book" className="hero dark">
+        <Image src="/stay-hero.webp" alt="" fill priority sizes="100vw" className="bg" />
         <div className="wrap">
           <div className="hero-copy">
             <p className="eyebrow">The ARK · Santa Teresa</p>
