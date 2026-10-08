@@ -4395,6 +4395,7 @@ export type Database = {
       court_booking_by_token: { Args: { p_token: string }; Returns: Json };
       hold_court: { Args: { p: Json }; Returns: Json };
       my_court_discount: { Args: never; Returns: number };
+      my_shop_discount: { Args: never; Returns: number };
       court_discount_for: { Args: { p_contact: string | null }; Returns: number };
       join_court_match: { Args: { p: Json }; Returns: Json };
       cancel_court_by_token: { Args: { p_token: string }; Returns: string };

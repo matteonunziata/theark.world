@@ -11,7 +11,7 @@ export default async function PortalShop({ searchParams }: PageProps<"/portal/sh
   const p = await loadPortal();
   const [{ data: rows }, { data: pct }] = await Promise.all([
     p.supabase.rpc("shop_catalog"),
-    p.supabase.rpc("my_court_discount"),
+    p.supabase.rpc("my_shop_discount"),
   ]);
   const percent = Number(pct) || 0;
   // One card per product, with its sizes or flavours as options.

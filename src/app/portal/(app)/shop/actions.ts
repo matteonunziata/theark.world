@@ -19,7 +19,7 @@ export async function startShopCheckout(lines: unknown): Promise<ActionResult & 
 
   const [{ data: catalog }, { data: pct }, { data: me }] = await Promise.all([
     v.supabase.rpc("shop_catalog"),
-    v.supabase.rpc("my_court_discount"),
+    v.supabase.rpc("my_shop_discount"),
     v.supabase.rpc("my_member_profile").maybeSingle(),
   ]);
   const percent = Number(pct) || 0;
