@@ -6,17 +6,17 @@ import { walletWalletEnabled } from "@/lib/walletwallet";
  * WalletWallet when it's set up (Apple and Google Wallet); otherwise falls back to the
  * own-certificate Apple Wallet ticket, which only exists for tickets.
  */
-export function WalletButton({ kind, token }: { kind: "t" | "p" | "g"; token: string }) {
+export function WalletButton({ kind, token, className = "wallet-btn" }: { kind: "t" | "p" | "g"; token: string; className?: string }) {
   if (walletWalletEnabled()) {
     return (
-      <a className="wallet-btn" href={`/wallet/${kind}/${token}`}>
+      <a className={className} href={`/wallet/${kind}/${token}`}>
         Add to Apple or Google Wallet
       </a>
     );
   }
   if (kind === "t" && walletEnabled()) {
     return (
-      <a className="wallet-btn" href={`/t/${token}/wallet.pkpass`}>
+      <a className={className} href={`/t/${token}/wallet.pkpass`}>
         Add to Apple Wallet
       </a>
     );
