@@ -28,7 +28,7 @@ const API_VERSION = "2026-07";
 /** Stop starting new customers after this long, so a run ends inside the cron's limit. */
 const BUDGET_MS = 45_000;
 /** What the app needs. write_* includes read_*. */
-const SCOPES = ["write_customers", "write_discounts", "write_orders"];
+const SCOPES = ["write_customers", "write_discounts", "write_orders", "read_products"];
 
 export class ShopifyError extends Error {
   constructor(

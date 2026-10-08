@@ -332,7 +332,7 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Starts from now.** The first run only sets the starting point (`integrations.settings.ordersSince`); no history is pulled in, so sales already counted by hand aren't doubled. Each run asks Shopify for orders changed since then, oldest first, and stops at the first failure so the next run resumes at the same order.
 - **Who the buyer is.** Matched to a contact by email (case-insensitive); if there is none, a contact of type `contact` with source `shopify` is made. New contacts are marked opted out of marketing unless Shopify says they subscribed.
 - **When it runs:** with the Shopify sync: nightly at 06:05 UTC and on "Sync now", after the tag sync (a failure in one doesn't stop the other). No webhooks yet.
-- **Needs** the app's `write_orders` scope (already required for portal orders; it includes read). Lines with no matching product are counted on the order, not the ledger.
+- **Needs** the app's `write_orders` scope (already required for portal orders; it includes read) and `read_products`, because each order line is matched to the catalog through its variant. Test connection lists a missing scope. Orders older than 60 days also need Shopify's `read_all_orders` approval; without it the pull only sees the last 60 days. Lines with no matching product are counted on the order, not the ledger.
 
 
 ## Provider directory import (2026-10-07)

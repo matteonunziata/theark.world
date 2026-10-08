@@ -105,7 +105,7 @@ export function ShopifyForm({
               <h2>Connection</h2>
               <p className="muted" style={{ margin: "4px 0 0" }}>
                 In the Shopify Dev Dashboard make an app for this store with the access scopes write_customers,
-                write_discounts and write_orders (paid portal orders are created in Shopify), install it, then copy its client id and client secret here. An older custom app works
+                write_discounts, write_orders (paid portal orders are created in Shopify) and read_products (to match order lines to the catalog), install it, then copy its client id and client secret here. An older custom app works
                 too: leave the client id empty and paste its Admin API access token (shpat_…) as the secret.
               </p>
             </div>
