@@ -77,6 +77,8 @@ export default async function PaymentDone({ searchParams }: PageProps<"/pay/done
 
   // A meal (breakfast, lunch) is paid first: members go straight back to the portal.
   if (r.kind === "ticket" && r.meta.held && (memberId || staff)) redirect("/portal?paid=1");
+  // A farm shop order from the portal returns to the shop, which empties the basket.
+  if (r.kind === "shop" && memberId) redirect("/portal/shop?paid=1");
 
   const paid = `${fmtAmount(r.amount, r.currency)} paid.`;
   const admin = createAdminClient();
