@@ -147,3 +147,9 @@
 - **Monthly money in each sector's own bank account.** Expenses are records only. Do sectors need a monthly opening balance or top-up per budget to reconcile against?
 - **Who corrects a mistaken expense?** Managers can't edit or delete one; admins can, but the screen for it doesn't exist yet. Add one?
 - **Exchange rate.** Expenses are converted at the Settings rate on the day they're saved and keep that figure.
+
+## Stays page
+- **Prices and photos.** Meal plans (per day, week, month), experiences and the flight and shuttle service are listed without prices. Send the prices, and photos for meals and experiences, and they can go on the page.
+- **Cancellation policy and contact.** The mockup had placeholders for both; the page says each home lists its own check-in times and sends questions to the form. What is the policy, and which email or WhatsApp should show?
+- **Dietary options.** Which of vegetarian, vegan and gluten-free can La Cocineta cover?
+- **Enquiries.** The "Ask us" form only emails the team. Keep it that way, or store enquiries (and meals or experiences added to a stay) in ARK OS?

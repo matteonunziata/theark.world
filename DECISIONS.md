@@ -358,3 +358,9 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **`/whats-on`** is the public events page, built from the `ark-events.html` mockup (`/events` is the staff area). It lists published non-class offerings (events, experiences, expeditions) from `offerings`, one row per offering at its next date, and links each to `/e/{id}/{date}`. The featured card is the first upcoming one with a cover photo. Members-only offerings only appear to people RLS lets see them.
 - **"Host an event" form** emails the team inbox (`org_settings.email`); nothing is stored. A table for enquiries would be the next step if the team wants to track them.
 - **`join.theark.world/events` shows the public events page** (proxy rewrite to `/whats-on`, exact path only, on that host). On every other host `/events` is still the staff area, and staff reach the overview at `/events/all` on join too.
+
+## Stays page redesign (2026-10-07)
+- **`/stay`** follows the new `ark-stays` mockup (hero with dates and guests, homes, "More than a room", meals, experiences, travel, info, membership band). It shares the events page's stylesheet (`whats-on/events.css`) plus `stay/stay.css`. The home pages (`/stay/[id]`) and the request flow are unchanged.
+- **Live:** the homes and their availability come from `public_listings`, as before. The search is a plain GET form, so dates and guests live in the URL and carry through to the home page. The first six homes show; "See all" adds `?all=1`.
+- **Static for now:** meals, experiences and travel are descriptions with no prices or photos, because none exist in ARK OS yet. They lead to an "Ask us" form that emails the team inbox (`org_settings.email`); nothing is stored.
+- **Left out of the mockup:** the `[PRICE]`, `[TIME]`, cancellation and contact placeholders, the per-day/week/month meal toggle, and the dietary options line.
