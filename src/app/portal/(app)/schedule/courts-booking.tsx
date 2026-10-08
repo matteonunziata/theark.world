@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useToast } from "@/components/toast";
+import { CourtGrid, type DayRow } from "@/app/(public)/courts/court-booker";
+import "@/app/(public)/courts/courts.css";
 import {
   addMinutes,
   BOOKING_DAYS,
-  classAt,
-  type Court,
   courtMoney,
   courtPrice,
   durationLabel,
@@ -16,15 +16,12 @@ import {
   LEVELS,
   overlapsTime,
   PER_DAY,
+  type PublicCourt,
   share,
-  slots,
-  SPORTS,
 } from "@/lib/courts";
-import { addDays, DOW, fmtDate } from "@/lib/dates";
-import type { Offering } from "@/lib/schedule";
+import { addDays, fmtDate } from "@/lib/dates";
 import { bookCourt, cancelCourt } from "../../actions";
 
-type Taken = { id: string; court_id: string; start_time: string; end_time: string; mine: boolean };
 type Mine = {
   id: string;
   court: string;
@@ -39,19 +36,11 @@ type Mine = {
   open_match: boolean;
 };
 
-type PortalCourt = Court & {
-  price: number | null;
-  price_90: number | null;
-  price_120: number | null;
-  currency: string;
-  max_players: number;
-};
-type Pick = { court: PortalCourt; start: string };
+type Pick = { court: PublicCourt; start: string };
 
 export function CourtsBooking({
   courts,
-  taken,
-  classes,
+  day,
   mine,
   date,
   today,
@@ -60,9 +49,8 @@ export function CourtsBooking({
   online,
   discount,
 }: {
-  courts: PortalCourt[];
-  taken: Taken[];
-  classes: Offering[];
+  courts: PublicCourt[];
+  day: DayRow[];
   mine: Mine[];
   date: string;
   today: string;
@@ -76,8 +64,8 @@ export function CourtsBooking({
   const toast = useToast();
   const [busy, setBusy] = useState<string | null>(null);
   const [pick, setPick] = useState<Pick | null>(null);
-  const days = Array.from({ length: BOOKING_DAYS + 1 }, (_, i) => addDays(today, i));
-  const mineToday = taken.filter((t) => t.mine).length;
+  const last = addDays(today, BOOKING_DAYS);
+  const href = (d: string) => `/portal/schedule?tab=courts${d !== today ? `&date=${d}` : ""}`;
 
   const run = async (key: string, fn: () => Promise<{ ok: boolean; message?: string; error?: string; payUrl?: string }>) => {
     setBusy(key);
@@ -132,76 +120,54 @@ export function CourtsBooking({
         </section>
       )}
 
-      <div className="sch-strip crt-days">
-        {days.map((d) => (
-          <Link key={d} href={`/portal/schedule?tab=courts&date=${d}`} aria-current={d === date ? "page" : undefined} className={d === today ? "today" : ""}>
-            <span>{DOW[new Date(`${d}T00:00:00Z`).getUTCDay()]}</span>
-            <b>{Number(d.slice(8))}</b>
-          </Link>
-        ))}
+      <div className="crts crts-embed">
+        <div className="crts-sec-h">
+          <div>
+            <p className="eyebrow">Book</p>
+            <h2>Available courts</h2>
+          </div>
+          {courts.length > 0 && (
+            <div className="crts-date">
+              <Link className="crts-step" href={href(addDays(date, -1))} aria-label="Previous day" aria-disabled={date <= today} tabIndex={date <= today ? -1 : undefined}>
+                ‹
+              </Link>
+              <div className="label" aria-live="polite">
+                <b>{date === today ? "Today" : fmtDate(date, { weekday: "long" })}</b>
+                <span>{fmtDate(date, { month: "long", day: "numeric", ...(date === today ? { weekday: "long" } : {}) })}</span>
+              </div>
+              <Link className="crts-step" href={href(addDays(date, 1))} aria-label="Next day" aria-disabled={date >= last} tabIndex={date >= last ? -1 : undefined}>
+                ›
+              </Link>
+            </div>
+          )}
+        </div>
+        {!courts.length ? (
+          <div className="crts-empty">
+            <h3>No courts to book yet</h3>
+            <p className="muted">Ask the team at reception.</p>
+          </div>
+        ) : (
+          <>
+            <div className="crts-card-cal">
+              <CourtGrid
+                courts={courts}
+                day={day}
+                date={date}
+                today={today}
+                now={now}
+                onPick={(court, start) => (isMember ? setPick({ court, start }) : toast("Court booking is for members."))}
+              />
+            </div>
+            <p className="crts-hint">Pick a free slot to book it, or a gold one to join an open match.</p>
+          </>
+        )}
       </div>
-
-      {!courts.length ? (
-        <div className="pv-empty">
-          <h3>No courts to book yet</h3>
-          <p>Ask the team at reception.</p>
-        </div>
-      ) : (
-        <div className="crt-grid">
-          {courts.map((c) => (
-            <section key={c.id} className="crt-court">
-              <h2>
-                {c.name}
-                <span>
-                  {SPORTS.find(([k]) => k === c.sport)?.[1]}
-                  {c.price ? ` · ${courtMoney(courtPrice(c, c.slot_minutes) * (1 - discount / 100), c.currency)}/slot` : ""}
-                </span>
-              </h2>
-              {slots(c).map((s) => {
-                const t = taken.find((x) => x.court_id === c.id && hhmm(x.start_time) < s.end && hhmm(x.end_time) > s.start);
-                const cls = t ? null : classAt(c, s, classes);
-                const gone = date === today && s.start <= now;
-                const full = mineToday >= PER_DAY;
-                return (
-                  <div key={s.start} className={`crt-slot ${t?.mine ? "mine" : t ? "taken" : cls ? "class" : gone ? "gone" : "free"}`}>
-                    <span className="t">{s.start}</span>
-                    <span className="what">
-                      {t?.mine ? "Yours" : t ? "Taken" : cls ? cls : gone ? "Passed" : "Free"}
-                    </span>
-                    {t?.mine ? (
-                      <button
-                        type="button"
-                        className="pv-btn ghost sm"
-                        disabled={busy === t.id}
-                        onClick={() => confirm("Cancel this booking?") && run(t.id, () => cancelCourt(t.id))}
-                      >
-                        Cancel
-                      </button>
-                    ) : !t && !cls && !gone && isMember ? (
-                      <button
-                        type="button"
-                        className="pv-btn sm"
-                        disabled={!!busy || full}
-                        title={full ? `You have ${PER_DAY} slots this day` : undefined}
-                        onClick={() => setPick({ court: c, start: s.start })}
-                      >
-                        Book
-                      </button>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </section>
-          ))}
-        </div>
-      )}
       {pick && (
         <BookDialog
           key={`${pick.court.id}|${pick.start}`}
           pick={pick}
           date={date}
-          taken={taken}
-          classes={classes}
+          day={day}
           discount={discount}
           online={online}
           busy={!!busy}
@@ -221,8 +187,7 @@ export function CourtsBooking({
 function BookDialog({
   pick,
   date,
-  taken,
-  classes,
+  day,
   discount,
   online,
   busy,
@@ -231,8 +196,7 @@ function BookDialog({
 }: {
   pick: Pick;
   date: string;
-  taken: Taken[];
-  classes: Offering[];
+  day: DayRow[];
   discount: number;
   online: boolean;
   busy: boolean;
@@ -244,8 +208,7 @@ function BookDialog({
     const win = { start: pick.start, end: addMinutes(pick.start, m) };
     return (
       win.end <= hhmm(c.close_time) &&
-      !taken.some((t) => t.court_id === c.id && overlapsTime(win, { start: hhmm(t.start_time), end: hhmm(t.end_time) })) &&
-      !classAt(c, win, classes)
+      !day.some((t) => t.court_id === c.id && overlapsTime(win, { start: hhmm(t.start_time), end: hhmm(t.end_time) }))
     );
   };
   const lengths = durations(c).filter(fits);
