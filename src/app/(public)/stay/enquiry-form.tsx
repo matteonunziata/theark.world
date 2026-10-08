@@ -34,7 +34,7 @@ export function EnquiryForm() {
         Tell us a little
         <textarea name="details" rows={4} />
       </label>
-      <input type="text" name="hp_contact" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hp" />
+      <input type="text" name="ms_trap_x" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hp" />
       {state.ok ? (
         <p className="form-thanks" role="status">
           {state.message}

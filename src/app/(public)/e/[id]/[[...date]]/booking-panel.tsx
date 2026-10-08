@@ -229,7 +229,7 @@ export function BookingPanel({
                 name: String(fd.get("name") ?? ""),
                 email: String(fd.get("email") ?? ""),
                 ticketTypeId: (fd.get("ticket") as string) || null,
-                website: String(fd.get("hp_contact") ?? ""),
+                website: String(fd.get("ms_trap_x") ?? ""),
               });
               setResult(r);
               if (r.ok) onBooked?.();
@@ -253,7 +253,7 @@ export function BookingPanel({
               </div>
             </>
           )}
-          <input name="hp_contact" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: -9999 }} />
+          <input name="ms_trap_x" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: -9999 }} />
           {payFirst && firstOpen ? (
             <>
               <input type="hidden" name="ticket" value={firstOpen.id} />

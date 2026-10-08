@@ -44,7 +44,7 @@ export function JoinForm({
             phone: String(fd.get("phone") ?? ""),
             level,
             pay,
-            website: String(fd.get("hp_contact") ?? ""),
+            website: String(fd.get("ms_trap_x") ?? ""),
           });
           setResult(r);
           if (r.ok) {
@@ -59,7 +59,7 @@ export function JoinForm({
           {result.error}
         </div>
       )}
-      <input name="hp_contact" className="hp" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+      <input name="ms_trap_x" className="hp" tabIndex={-1} autoComplete="off" aria-hidden="true" />
       <div className="two">
         <div className="fld">
           <label htmlFor="j-name">Your name</label>

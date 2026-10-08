@@ -182,7 +182,7 @@ export function BookingCard({
             <span>Anything we should know</span>
             <textarea name="message" rows={3} placeholder="Who’s coming, arrival time, questions" />
           </label>
-          <input name="hp_contact" tabIndex={-1} autoComplete="off" className="sb-hp" aria-hidden="true" />
+          <input name="ms_trap_x" tabIndex={-1} autoComplete="off" className="sb-hp" aria-hidden="true" />
         </div>
         {!state.ok && state.error && <p className="sb-err" role="alert">{state.error}</p>}
         <button type="submit" className="sb-btn" disabled={pending || !ready}>

@@ -10,7 +10,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /** Someone asks to host an event. It goes to the team's inbox; nothing is stored. */
 export async function hostEnquiry(_prev: ActionResult, data: FormData): Promise<ActionResult> {
   // A hidden field people don't see; bots tend to fill it in.
-  if (field(data, "hp_contact")) return ok("Thank you. We’ll be in touch soon.");
+  if (field(data, "ms_trap_x")) return ok("Thank you. We’ll be in touch soon.");
   const name = field(data, "name");
   const email = field(data, "email");
   if (!name) return fail("Add your name.");

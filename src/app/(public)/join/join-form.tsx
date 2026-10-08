@@ -21,7 +21,7 @@ export function JoinForm({ utm, brand }: { utm: Record<string, string>; brand: s
         <input key={k} type="hidden" name={k} value={v} />
       ))}
       <input type="hidden" name="brand" value={brand} />
-      <input name="hp_contact" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: -9999 }} />
+      <input name="ms_trap_x" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: -9999 }} />
       <div className="fld">
         <label htmlFor="j-name">Your name</label>
         <input id="j-name" name="name" autoComplete="name" required />

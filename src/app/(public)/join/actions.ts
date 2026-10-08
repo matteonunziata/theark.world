@@ -13,7 +13,7 @@ const utm = (data: FormData, k: string) => field(data, k)?.slice(0, 120) ?? "";
 /** Join the waitlist, keeping the UTM tags the person arrived with. */
 export async function joinWaitlist(_prev: ActionResult, data: FormData): Promise<ActionResult> {
   // A hidden field people don't see; bots tend to fill it in.
-  if (field(data, "hp_contact")) return ok("You’re on the list.");
+  if (field(data, "ms_trap_x")) return ok("You’re on the list.");
   const { supabase } = await getViewer();
   const { data: contactId, error } = await supabase.rpc("join_waitlist", {
     p_name: field(data, "name") ?? "",

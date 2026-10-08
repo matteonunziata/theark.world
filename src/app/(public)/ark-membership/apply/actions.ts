@@ -163,7 +163,7 @@ async function sendInviteePasses(applicationId: string | null, invitees: Invitee
 /** Send a membership application into the CRM (see public.apply_for_membership). */
 export async function applyForMembership(_prev: ActionResult, data: FormData): Promise<ActionResult> {
   // A hidden field people don't see; bots tend to fill it in.
-  if (field(data, "hp_contact")) return ok("Application received");
+  if (field(data, "ms_trap_x")) return ok("Application received");
   const { supabase } = await getViewer();
   const invitees = inviteList(data);
   const { data: contactId, error } = await supabase.rpc("apply_for_membership", {
