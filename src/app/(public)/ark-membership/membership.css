@@ -287,3 +287,4 @@
 .ms-choices button,.ms-tiers label,.ms-checks label,.ms-error,.mship .join-form .btn.primary{border-radius:12px}
 .ms-apply-card{border-radius:16px}
 .ms-compare li{border-radius:8px}
+.ms-invites{display:grid;gap:12px}
