@@ -21,12 +21,11 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 export default async function CourtsPage({ searchParams }: PageProps<"/courts">) {
   const sp = await searchParams;
   const { supabase, memberId, staff } = await getViewer();
-  const [{ data: org }, { data: courtsData }, { data: matches }, { data: me }, { data: discount }] = await Promise.all([
+  const [{ data: org }, { data: courtsData }, { data: matches }, { data: me }] = await Promise.all([
     supabase.rpc("public_org").maybeSingle(),
     supabase.rpc("public_courts"),
     supabase.rpc("public_open_matches"),
     memberId ? supabase.rpc("my_member_profile").maybeSingle() : Promise.resolve({ data: null }),
-    supabase.rpc("my_court_discount"),
   ]);
   const timezone = org?.timezone ?? "America/Costa_Rica";
   const today = todayIn(timezone);
@@ -45,7 +44,7 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
     return prices.length ? `${prices.join(" / ")} / hr` : "";
   };
   const member: Me | null = me
-    ? { name: me.name ?? "", email: me.email ?? "", phone: me.phone ?? "", discount: Number(discount ?? 0) }
+    ? { name: me.name ?? "", email: me.email ?? "", phone: me.phone ?? "" }
     : null;
   const open = (matches ?? []).filter((m) => m.players < m.spots);
 
@@ -92,7 +91,7 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
               </li>
             )}
             <li>
-              Members <b>{member?.discount ? `${member.discount}% off` : "10% off"}</b>
+              Members <b>10% off in the portal</b>
             </li>
           </ul>
           <a href="#book" className="btn solid">Book a court</a>
@@ -179,7 +178,10 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
             <ul>
               <li>Up to {BOOKING_DAYS} days ahead, two bookings a day.</li>
               <li>{stripeReady() ? `Pay by card to confirm. Held ${HOLD_MINUTES} min while you pay.` : "Pay at reception."}</li>
-              <li>Members: 10% off, 20% on Annual. Sign in first.</li>
+              <li>
+                Members get their discount (10%, 20% on Annual) when booking in the{" "}
+                <Link href="/portal/schedule?tab=courts">members portal</Link>.
+              </li>
               <li>Rackets and balls at reception.</li>
             </ul>
           </div>

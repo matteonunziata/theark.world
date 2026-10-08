@@ -37,7 +37,7 @@ export type DayRow = {
   currency: string | null;
 };
 
-export type Me = { name: string; email: string; phone: string; discount: number };
+export type Me = { name: string; email: string; phone: string };
 
 type Pick = { court: PublicCourt; start: string };
 
@@ -208,12 +208,7 @@ function BookingForm({
   const [result, setResult] = useState<CourtResult | null>(null);
   const [pending, start] = useTransition();
 
-  const priced = (m: number) => {
-    const full = courtPrice(c, m);
-    if (!me?.discount) return full;
-    const off = full * (1 - me.discount / 100);
-    return c.currency === "USD" ? Math.round(off * 100) / 100 : Math.round(off);
-  };
+  const priced = (m: number) => courtPrice(c, m);
   const discounted = priced(minutes);
   const share = openMatch ? (c.currency === "USD" ? Math.round((discounted / spots) * 100) / 100 : Math.round(discounted / spots)) : discounted;
   const end = addMinutes(pick.start, minutes);
@@ -248,7 +243,6 @@ function BookingForm({
               );
             })}
           </div>
-          {me?.discount ? <p className="muted note">{me.discount}% member discount applied.</p> : null}
           <button type="button" className="btn solid wide" disabled={!lengths.includes(minutes)} onClick={() => setStep("details")}>
             Continue · {courtMoney(discounted, c.currency)}
           </button>
@@ -392,7 +386,6 @@ function BookingForm({
         <div className="total">
           <span>
             {openMatch ? "Your share" : "Total"}
-            {me?.discount ? <small> · {me.discount}% off</small> : null}
             {openMatch ? <small> · court {courtMoney(discounted, c.currency)}</small> : null}
           </span>
           <b>{courtMoney(share, c.currency)}</b>
