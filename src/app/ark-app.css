@@ -618,7 +618,7 @@ a.seq-card{display:block;color:var(--ink);text-decoration:none}
 }
 
 /* Ask AI */
-.main-top{display:flex;justify-content:flex-end;padding:14px 22px 0;max-width:1180px;margin:0 auto}
+.main-top{display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:14px 22px 0;max-width:1180px;margin:0 auto}
 .main-top + .page{padding-top:6px}
 .ask-btn{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:13.5px;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 14px;cursor:pointer;box-shadow:0 1px 2px rgb(0 0 0 / .05)}
 .ask-btn svg{color:var(--sun)}
@@ -1068,3 +1068,6 @@ a.mk-tr:hover{background:var(--surface-2)}
 .clean-grid .clean-area td{text-align:left;font-weight:700;font-size:13px;color:var(--muted);padding-top:14px;border-top:1px solid var(--line)}
 .stock-qty{display:flex;gap:6px;justify-content:flex-end}
 .stock-qty input{width:76px;padding:5px 8px}
+
+.side-portal{display:none}
+@media (max-width:860px){.side-portal{display:inline-block}}

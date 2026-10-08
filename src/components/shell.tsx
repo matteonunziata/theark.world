@@ -70,6 +70,9 @@ export function Shell({
             <b>{me.name}</b>
             {roleName(me.role)}
           </span>
+          <a className="linkish side-portal" href="/portal">
+            Member portal
+          </a>
           <form action="/auth/signout" method="post">
             <button type="submit" className="linkish">
               Sign out
@@ -86,6 +89,9 @@ export function Shell({
       />
       <main className="main">
         <div className="main-top">
+          <a className="btn" href="/portal">
+            Member portal
+          </a>
           <AskAi />
         </div>
         {children}

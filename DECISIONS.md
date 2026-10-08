@@ -332,3 +332,9 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **When it runs:** with the Shopify sync: nightly at 06:05 UTC and on "Sync now", after the tag sync (a failure in one doesn't stop the other). No webhooks yet.
 - **Needs** the app's `write_orders` scope (already required for portal orders; it includes read). Lines with no matching product are counted on the order, not the ledger.
 
+
+## Provider directory import (2026-10-07)
+- **Source:** the finance team's "The Ark App — Datos" spreadsheet: 163 providers and 193 bank accounts, loaded once into `providers` and `provider_bank_accounts`. Providers gained country, city, tax ID, address and email; accounts gained SWIFT, routing, SINPE and account type; account currency can also be `CRC/USD` (one account holding both) or `MXN`.
+- **All imported accounts are admin-only** (no sector). The sheet doesn't say which sector owns which, so admins decide who sees them.
+- **Account holder** is set to the provider's name, since the sheet has no separate holder. Rows with no bank show "Not given".
+- **Currency guess:** 8 foreign accounts had no currency in the sheet and were set to USD. Check them.

@@ -609,6 +609,8 @@ function SessionDrawer({
       toast(r.ok ? (r.message ?? "") : (r.error ?? ""));
     });
   const pct = o.capacity ? Math.min(100, Math.round((regs.length / o.capacity) * 100)) : 0;
+  const checkedIn = regs.filter((r) => r.checked_in_at).length;
+  const inPct = regs.length ? Math.round((checkedIn / regs.length) * 100) : 0;
 
   return (
     <Drawer
@@ -662,6 +664,18 @@ function SessionDrawer({
       {o.capacity ? (
         <div className="meter" aria-hidden="true">
           <span style={{ width: `${pct}%` }} />
+        </div>
+      ) : null}
+      <dl className="info">
+        <dt>Checked in</dt>
+        <dd>
+          {checkedIn}
+          {regs.length ? ` of ${regs.length}` : ""}
+        </dd>
+      </dl>
+      {regs.length ? (
+        <div className="meter" aria-hidden="true">
+          <span style={{ width: `${inPct}%` }} />
         </div>
       ) : null}
       {tickets.map((t) => {

@@ -376,12 +376,16 @@ export function termPrice(
 export async function passStripePrice(
   admin: NonNullable<ReturnType<typeof createAdminClient>>,
   tier: { key: string; name: string; price: number | null; currency: string; stripe_price_id: string | null },
-): Promise<{ priceId: string; amount: number; currency: string } | null> {
+): Promise<{ priceId: string | null; amount: number; currency: string } | null> {
   if (tier.stripe_price_id) {
     return { priceId: tier.stripe_price_id, amount: Number(tier.price ?? 0), currency: tier.currency };
   }
   const found = await findStripePrice(tier.name).catch(() => null);
-  if (!found) return null;
+  // No Stripe product for this pass yet: charge the tier's own price.
+  if (!found) {
+    const amount = Number(tier.price ?? 0);
+    return amount > 0 ? { priceId: null, amount, currency: tier.currency } : null;
+  }
   await admin
     .from("membership_tiers")
     .update({ stripe_price_id: found.priceId, price: found.amount, currency: found.currency })
