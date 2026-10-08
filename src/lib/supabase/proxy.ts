@@ -1,8 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+/** Refreshes the session; with `rewriteTo`, serves that path under the requested URL. */
+export async function updateSession(request: NextRequest, rewriteTo?: string) {
+  const next = () =>
+    rewriteTo
+      ? NextResponse.rewrite(new URL(rewriteTo, request.url), { request })
+      : NextResponse.next({ request });
+  let response = next();
 
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -23,7 +28,7 @@ export async function updateSession(request: NextRequest) {
           for (const { name, value } of cookiesToSet) {
             request.cookies.set(name, value);
           }
-          response = NextResponse.next({ request });
+          response = next();
           for (const { name, value, options } of cookiesToSet) {
             response.cookies.set(name, value, options);
           }
