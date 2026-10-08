@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { GateButton } from "@/components/gate-button";
 import { PortalHead } from "@/components/portal-head";
 import { SaveImageButton } from "@/components/save-image";
+import { WalletButton } from "@/components/wallet-button";
 import { ScanResult } from "@/components/scan-result";
 import { getViewer } from "@/lib/auth";
 import { fmtDate } from "@/lib/dates";
@@ -108,6 +109,7 @@ export default async function GuestPassPage({ params, searchParams }: PageProps<
               <SaveImageButton href={`/g/${token}/image.png`} filename="ARK guest pass.png" className="btn primary" />
             )}
           </div>
+          {(g.state === "valid" || g.state === "upcoming") && <WalletButton kind="g" token={token} />}
           <p className="gate-note" style={{ marginTop: 16 }}>
             Show this to security when you arrive. It works once, on the day of your visit.
           </p>

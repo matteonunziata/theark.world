@@ -1624,6 +1624,27 @@ export type Database = {
           },
         ]
       }
+      wallet_passes: {
+        Row: {
+          created_at: string
+          kind: string
+          pass2u_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          kind: string
+          pass2u_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          kind?: string
+          pass2u_id?: string
+          token?: string
+        }
+        Relationships: []
+      }
       guest_passes: {
         Row: {
           created_at: string
