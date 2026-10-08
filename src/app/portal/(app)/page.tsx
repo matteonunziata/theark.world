@@ -102,8 +102,7 @@ export default async function PortalHome() {
           {first ? `, ${first}` : ""}.
         </h1>
         <p>
-          {city?.blurb ??
-            "Here’s what’s happening this week, who’s around, and where we’re headed next."}
+          Here’s what’s happening this week, who’s around, and where we’re headed next.
         </p>
         <div className="cta">
           <Link className="pv-btn light" href="/portal/explore">
