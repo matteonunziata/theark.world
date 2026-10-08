@@ -94,3 +94,41 @@ ${field(data, "message") ? `<p style="margin:0 0 14px">“${esc(field(data, "mes
   }
   return ok("Request sent");
 }
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** A guest asks about meals, experiences or travel. It goes to the team's inbox; nothing is stored. */
+export async function stayEnquiry(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  // A hidden field people don't see; bots tend to fill it in.
+  if (field(data, "hp_contact")) return ok("Thank you. We’ll be in touch soon.");
+  const name = field(data, "name");
+  const email = field(data, "email");
+  if (!name) return fail("Add your name.");
+  if (!email || !EMAIL.test(email)) return fail("Add an email we can reply to.");
+
+  const topic = field(data, "topic") ?? "Something else";
+  const dates = field(data, "dates");
+  const details = field(data, "details");
+
+  const admin = createAdminClient();
+  const { data: org } = admin ? await admin.from("org_settings").select("email").maybeSingle() : { data: null };
+  if (!org?.email) return fail("We couldn’t send that just now. Email us directly and we’ll take it from there.");
+
+  await sendEmail({
+    to: org.email,
+    subject: `Stay enquiry (${topic}): ${name}`,
+    parts: {
+      eyebrow: "Stay enquiry",
+      heading: name,
+      body: `<p style="margin:0 0 14px">${esc(name)} (${esc(email)}) asked about ${esc(topic.toLowerCase())}.</p>
+${detailRows([
+  ["Topic", esc(topic)],
+  ["Dates", esc(dates ?? "Not said")],
+])}
+${details ? `<p style="margin:14px 0 0">“${esc(details)}”</p>` : ""}`,
+      cta: { label: "Reply", href: `mailto:${email}` },
+    },
+    text: `${name} (${email}) asked about ${topic}.\nDates: ${dates ?? "Not said"}\n${details ?? ""}\n${await siteUrl()}`,
+  });
+  return ok("Thank you. We’ll be in touch soon.");
+}
