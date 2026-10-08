@@ -66,6 +66,40 @@ export function CourtBooker({
   online: boolean;
 }) {
   const [pick, setPick] = useState<Pick | null>(null);
+  return (
+    <>
+      <CourtGrid courts={courts} day={day} date={date} today={today} now={now} onPick={(court, start) => setPick({ court, start })} />
+      {pick && (
+        <BookingForm
+          key={`${pick.court.id}-${pick.start}`}
+          pick={pick}
+          day={day}
+          date={date}
+          me={me}
+          online={online}
+          onClose={() => setPick(null)}
+        />
+      )}
+    </>
+  );
+}
+
+/** The grid and its legend, without a booking form: the caller decides what a free cell does. */
+export function CourtGrid({
+  courts,
+  day,
+  date,
+  today,
+  now,
+  onPick,
+}: {
+  courts: PublicCourt[];
+  day: DayRow[];
+  date: string;
+  today: string;
+  now: string;
+  onPick: (court: PublicCourt, start: string) => void;
+}) {
 
   const from = Math.floor(Math.min(...courts.map((c) => toMin(hhmm(c.open_time)))) / 60);
   const to = Math.ceil(Math.max(...courts.map((c) => toMin(hhmm(c.close_time)))) / 60);
@@ -143,7 +177,7 @@ export function CourtBooker({
                       className="blk free"
                       style={place(s.start, s.end)}
                       aria-label={`${c.name}, ${fmtTime(s.start)}`}
-                      onClick={() => setPick({ court: c, start: s.start })}
+                      onClick={() => onPick(c, s.start)}
                     />
                   ))}
                 </div>
@@ -157,17 +191,6 @@ export function CourtBooker({
         <li><i className="taken" />Not available</li>
         <li><i className="match" />Open match</li>
       </ul>
-      {pick && (
-        <BookingForm
-          key={`${pick.court.id}-${pick.start}`}
-          pick={pick}
-          day={day}
-          date={date}
-          me={me}
-          online={online}
-          onClose={() => setPick(null)}
-        />
-      )}
     </>
   );
 }
