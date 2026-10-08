@@ -1,13 +1,13 @@
-import { pass2uEnabled } from "@/lib/pass2u";
 import { walletEnabled } from "@/lib/wallet";
+import { walletWalletEnabled } from "@/lib/walletwallet";
 
 /**
  * "Add to Wallet" for a ticket (t), member pass (p) or guest pass (g). Uses
- * Pass2U when it's set up (Apple and Google Wallet); otherwise falls back to the
+ * WalletWallet when it's set up (Apple and Google Wallet); otherwise falls back to the
  * own-certificate Apple Wallet ticket, which only exists for tickets.
  */
 export function WalletButton({ kind, token }: { kind: "t" | "p" | "g"; token: string }) {
-  if (pass2uEnabled()) {
+  if (walletWalletEnabled()) {
     return (
       <a className="wallet-btn" href={`/wallet/${kind}/${token}`}>
         Add to Apple or Google Wallet
