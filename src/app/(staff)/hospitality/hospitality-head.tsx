@@ -18,7 +18,6 @@ export function HospitalityHead() {
           { href: "/hospitality", label: "Bookings" },
           { href: "/hospitality/listings", label: "Listings" },
           { href: "/hospitality/food", label: "Food and beverage" },
-          { href: "/hospitality/cleaning", label: "Cleaning" },
         ]}
       />
     </>

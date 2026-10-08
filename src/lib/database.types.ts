@@ -704,6 +704,7 @@ export type Database = {
           currency: string
           hourly_rate: number | null
           id: string
+          kind: string
           name: string
           updated_at: string
         }
@@ -713,6 +714,7 @@ export type Database = {
           currency?: string
           hourly_rate?: number | null
           id?: string
+          kind?: string
           name: string
           updated_at?: string
         }
@@ -722,6 +724,7 @@ export type Database = {
           currency?: string
           hourly_rate?: number | null
           id?: string
+          kind?: string
           name?: string
           updated_at?: string
         }
@@ -734,6 +737,7 @@ export type Database = {
           days: number[]
           hours: number | null
           id: string
+          kind: string
           notes: string | null
           position: number
           staff_id: string | null
@@ -747,6 +751,7 @@ export type Database = {
           days?: number[]
           hours?: number | null
           id?: string
+          kind?: string
           notes?: string | null
           position?: number
           staff_id?: string | null
@@ -760,6 +765,7 @@ export type Database = {
           days?: number[]
           hours?: number | null
           id?: string
+          kind?: string
           notes?: string | null
           position?: number
           staff_id?: string | null
