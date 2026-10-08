@@ -1,7 +1,7 @@
 "use client";
 
 import { createBrowserClient } from "@supabase/ssr";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { sendSignInLink } from "@/app/auth/actions";
 import { createLinkClient } from "@/lib/supabase/link-client";
 
@@ -12,6 +12,16 @@ export function MagicLinkForm({ next }: { next: string }) {
   const [error, setError] = useState("");
   const [verifying, setVerifying] = useState(false);
   const busy = useRef(false);
+
+  // If Supabase sends the link to the site root instead of /auth/callback
+  // (redirect URL not on its allow-list), the session arrives here in the
+  // fragment. Hand it to /auth/confirm, which stores it.
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (/[#&](access_token|error_description)=/.test(hash)) {
+      window.location.replace(`/auth/confirm?next=${encodeURIComponent(next)}${hash}`);
+    }
+  }, [next]);
 
   async function send(form: FormData) {
     if (busy.current) return;
