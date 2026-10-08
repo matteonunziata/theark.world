@@ -1,7 +1,7 @@
-import { BOOKING_DAYS } from "@/lib/courts";
+import type { DayRow } from "@/app/(public)/courts/court-booker";
+import { BOOKING_DAYS, type PublicCourt } from "@/lib/courts";
 import { addDays, todayIn } from "@/lib/dates";
 import type { PortalData } from "@/lib/portal";
-import { sessions } from "@/lib/schedule";
 import { stripeReady } from "@/lib/stripe";
 import { CourtsBooking } from "./courts-booking";
 
@@ -12,17 +12,12 @@ export async function CourtsSection({ p, date: d }: { p: PortalData; date?: stri
   const today = todayIn(p.timezone);
   const last = addDays(today, BOOKING_DAYS);
   const date = d && ISO.test(d) && d >= today && d <= last ? d : today;
-  const [{ data: courts }, { data: taken }, { data: offerings }, { data: cancels }, { data: mine }, { data: discount }] = await Promise.all([
-    p.supabase.from("courts").select("id, name, sport, open_time, close_time, slot_minutes, price, price_90, price_120, currency, max_players").eq("active", true).order("position"),
-    p.supabase.rpc("court_day", { p_date: date }),
-    p.supabase.from("offerings").select("*").eq("status", "published").ilike("location", "%court%"),
-    p.supabase.from("session_cancellations").select("offering_id, session_date").eq("session_date", date),
+  const [{ data: courts }, { data: day }, { data: mine }, { data: discount }] = await Promise.all([
+    p.supabase.rpc("public_courts"),
+    p.supabase.rpc("public_court_day", { p_date: date }),
     p.memberId ? p.supabase.rpc("my_court_bookings") : Promise.resolve({ data: [] }),
     p.supabase.rpc("my_court_discount"),
   ]);
-  const classes = sessions(offerings ?? [], cancels ?? [], date, date)
-    .filter((s) => !s.cancelled)
-    .map((s) => s.o);
   const now = new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
@@ -31,9 +26,8 @@ export async function CourtsSection({ p, date: d }: { p: PortalData; date?: stri
   }).format(new Date());
   return (
     <CourtsBooking
-      courts={courts ?? []}
-      taken={taken ?? []}
-      classes={classes}
+      courts={(courts ?? []) as PublicCourt[]}
+      day={(day ?? []) as DayRow[]}
       mine={mine ?? []}
       date={date}
       today={today}

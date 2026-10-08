@@ -155,6 +155,12 @@
 
 - **WalletWallet setup:** sign up at walletwallet.dev (30-day trial of everything, then a free plan of 1,000 passes a month), create an API key, and set `WALLETWALLET_API_KEY` (and `SUPABASE_SERVICE_ROLE_KEY`) in Vercel. Then add a ticket, a member pass and a guest pass to a real iPhone and an Android phone. Pro ($39 a month) would allow our own colors, logo and images on the pass.
 
+## Schedule: cutoff and facilitator pay
+- **Pay amounts are fixed in code.** Change them in `src/lib/facilitator-pay.ts`, or should they be editable in Settings?
+- **Who counts toward pay?** Everyone checked in counts, including staff-added guests and complimentary check-ins. Exclude any?
+- **Payout record.** Analytics shows what is owed per period; nothing marks a period as paid yet.
+- **Monthly on day 29–31** skips months without that day. Use "the last day" instead?
+- **Public timetable** on the join page lists weekly classes only; classes on other repeats (every 2 weeks, monthly, specific dates) don't show there.
 ## Farm shop Checkout
 - **Tilopay charge call.** Tilopay's public guides cover saving a card, not charging a saved token from the server. `src/lib/tilopay.ts` uses a placeholder endpoint and request shape. Before turning on `TILOPAY_ENABLED`, check it against Tilopay's API docs (or soporte@tilopay.com) and confirm what an approved response looks like.
 - **If a charge succeeds but the sale doesn't save,** Checkout tells staff the Tilopay transaction id and not to charge again. Is a refund or "record it later" step needed?

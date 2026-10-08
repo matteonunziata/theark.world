@@ -16,9 +16,23 @@ export type EventRow = {
   desc: string;
   price: string;
   cta: string;
+  cover: string | null;
+  repeats: string;
 };
 
-/** The upcoming list with its kind filter. */
+const PLURAL: Record<string, string> = {
+  Event: "Events",
+  Experience: "Experiences",
+  Expedition: "Expeditions",
+};
+
+const EMPTY: Record<string, string> = {
+  Event: "No events are planned just yet.",
+  Experience: "No experiences are open just yet.",
+  Expedition: "No expeditions are planned just yet.",
+};
+
+/** The upcoming cards with their kind filter. */
 export function EventsList({ events }: { events: EventRow[] }) {
   const kinds = ["All", ...new Set(events.map((e) => e.kind))];
   const [kind, setKind] = useState("All");
@@ -27,43 +41,53 @@ export function EventsList({ events }: { events: EventRow[] }) {
   return (
     <>
       {kinds.length > 2 && (
-        <div className="filters" role="group" aria-label="Filter events">
+        <div className="filters" role="group" aria-label="Filter by type">
           {kinds.map((k) => (
             <button key={k} type="button" className="filter" aria-pressed={k === kind} onClick={() => setKind(k)}>
-              {k}
+              {PLURAL[k] ?? k}
             </button>
           ))}
         </div>
       )}
-      <div className="event-list">
-        {list.length === 0 ? (
-          <p className="empty">Nothing here yet. Check back soon.</p>
-        ) : (
-          list.map((e) => (
-            <article className="event" key={e.key}>
-              <div className="event-date">
-                <span className="m">{e.month}</span>
-                <span className="d">{e.day}</span>
-                <span className="y">{e.year}</span>
-              </div>
-              <div className="event-body">
+      {list.length === 0 ? (
+        <p className="empty">
+          {EMPTY[kind] ?? "Nothing is planned just yet."} New dates are added often, so please check back.
+        </p>
+      ) : (
+        <div className="event-grid">
+          {list.map((e) => (
+            <article className="event-card" key={e.key}>
+              <Link
+                className="card-img"
+                href={`/e/${e.id}/${e.date}`}
+                tabIndex={-1}
+                aria-hidden="true"
+                style={e.cover ? { backgroundImage: `url(${e.cover})` } : undefined}
+              >
+                <span className="card-date">
+                  <span className="m">{e.month}</span>
+                  <span className="d">{e.day}</span>
+                </span>
+              </Link>
+              <div className="card-body">
                 <div className="event-meta">
                   <span className="tag">{e.kind}</span>
                   <span className="when">{e.when}</span>
                 </div>
                 <h3>{e.title}</h3>
-                {e.desc && <p>{e.desc}</p>}
-              </div>
-              <div className="event-buy">
-                <span>{e.price}</span>
-                <Link className="btn btn-primary" href={`/e/${e.id}/${e.date}`}>
-                  {e.cta}
-                </Link>
+                {e.desc && <p className="card-desc">{e.desc}</p>}
+                {e.repeats && <p className="card-repeats">{e.repeats}</p>}
+                <div className="card-foot">
+                  <span>{e.price}</span>
+                  <Link className="btn btn-primary" href={`/e/${e.id}/${e.date}`}>
+                    {e.cta}
+                  </Link>
+                </div>
               </div>
             </article>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </>
   );
 }

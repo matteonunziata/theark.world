@@ -17,6 +17,11 @@ const base: Offering = {
   start_time: "07:00",
   end_time: "08:00",
   capacity: null,
+  booking_cutoff_minutes: null,
+  custom_dates: [],
+  month_mode: "date",
+  repeat_every: 1,
+  facilitator_pay_tier: 1,
   city_id: null,
   access: "members",
   status: "published",
@@ -101,5 +106,24 @@ describe("priceLabel", () => {
   it("marks meals as paid when booking", () => {
     expect(priceLabel(o, [t({ pay_first: true })])).toBe("Paid when you book");
     expect(priceLabel(o, [t({ pay_first: true, price: 6000 })])).toBe("₡6,000");
+  });
+});
+
+describe("flexible repeats", () => {
+  it("every other week", () => {
+    const o = { ...base, start_date: "2026-10-05", days: [1], repeat_every: 2 };
+    expect(occurrences(o, "2026-10-05", "2026-11-09")).toEqual(["2026-10-05", "2026-10-19", "2026-11-02"]);
+  });
+  it("monthly on the 2nd Saturday", () => {
+    const o = { ...base, repeat: "monthly", start_date: "2026-10-10", days: [6], month_mode: "weekday" };
+    expect(occurrences(o, "2026-10-01", "2026-12-31")).toEqual(["2026-10-10", "2026-11-14", "2026-12-12"]);
+  });
+  it("monthly on the same day number, every 2 months", () => {
+    const o = { ...base, repeat: "monthly", start_date: "2026-10-15", repeat_every: 2 };
+    expect(occurrences(o, "2026-10-01", "2027-01-31")).toEqual(["2026-10-15", "2026-12-15"]);
+  });
+  it("specific dates", () => {
+    const o = { ...base, repeat: "dates", custom_dates: ["2026-11-20", "2026-10-12", "2027-01-01"] };
+    expect(occurrences(o, "2026-10-01", "2026-12-31")).toEqual(["2026-10-12", "2026-11-20"]);
   });
 });

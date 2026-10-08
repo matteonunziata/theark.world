@@ -42,8 +42,15 @@ export async function saveOffering(
   const k = field(data, "kind");
   const kind = k === "event" || k === "experience" || k === "expedition" ? k : "class";
   const title = field(data, "title");
-  const repeat = field(data, "repeat") === "weekly" ? "weekly" : "none";
-  const start_date = field(data, "start_date");
+  const r = field(data, "repeat");
+  const repeat = r === "weekly" || r === "monthly" || r === "dates" ? r : "none";
+  const customDates = [
+    ...new Set(
+      data.getAll("custom_date").map((x) => String(x)).filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x)),
+    ),
+  ].sort();
+  if (repeat === "dates" && !customDates.length) return fail("Add at least one date.");
+  const start_date = repeat === "dates" ? customDates[0] : field(data, "start_date");
   const start_time = field(data, "start_time");
   const end_time = field(data, "end_time");
   const days = data.getAll("days").map(Number).filter((n) => n >= 0 && n <= 6);
@@ -54,6 +61,12 @@ export async function saveOffering(
     return fail("End after the start time.");
   }
   const capacity = Number(field(data, "capacity") ?? 0);
+  const cutoffAmount = field(data, "cutoff_amount");
+  const cutoffMinutes =
+    cutoffAmount === null || cutoffAmount === "" || Number.isNaN(Number(cutoffAmount))
+      ? null
+      : Math.max(0, Math.round(Number(cutoffAmount) * (field(data, "cutoff_unit") === "hours" ? 60 : 1)));
+  const tier = Number(field(data, "facilitator_pay_tier"));
 
   const row = {
     kind,
@@ -63,12 +76,17 @@ export async function saveOffering(
     location: field(data, "location"),
     repeat,
     start_date,
-    end_date: field(data, "end_date"),
+    end_date: repeat === "dates" ? customDates[customDates.length - 1] : field(data, "end_date"),
+    custom_dates: repeat === "dates" ? customDates : [],
+    repeat_every: repeat === "weekly" || repeat === "monthly" ? Math.min(12, Math.max(1, Math.round(Number(field(data, "repeat_every")) || 1))) : 1,
+    month_mode: field(data, "month_mode") === "weekday" ? "weekday" : "date",
     city_id: field(data, "city_id"),
     days: repeat === "weekly" ? days : [dow(start_date)],
     start_time,
     end_time,
     capacity: capacity > 0 ? capacity : null,
+    booking_cutoff_minutes: cutoffMinutes,
+    facilitator_pay_tier: tier === 2 || tier === 3 ? tier : 1,
     // Classes are members-only; events choose.
     access:
       kind === "class"

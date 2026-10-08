@@ -1,7 +1,8 @@
 import "server-only";
 import { getViewer } from "@/lib/auth";
 import { coverUrl } from "@/lib/covers";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays, nowIn, todayIn } from "@/lib/dates";
+import { bookingClosed } from "@/lib/facilitator-pay";
 import { sessions } from "@/lib/schedule";
 
 /** Everything the booking page (and the portal's booking modal) shows. */
@@ -16,6 +17,7 @@ export async function loadEvent(id: string, date?: string | null) {
   if (!o || o.status !== "published") return { ...viewer, event: null };
 
   const today = todayIn(org?.timezone);
+  const now = nowIn(org?.timezone);
   const to = addDays(today, 120);
   const [{ data: tickets }, { data: cancels }, { data: counts }, { data: facs }, { data: going }] =
     await Promise.all([
@@ -49,7 +51,7 @@ export async function loadEvent(id: string, date?: string | null) {
       facilitator: (facs ?? []).find((x) => x.id === o.facilitator_id)?.name ?? null,
       tickets: tickets ?? [],
       counts: counts ?? [],
-      sessions: upcoming.map((s) => ({ date: s.date, cancelled: s.cancelled })),
+      sessions: upcoming.map((s) => ({ date: s.date, cancelled: s.cancelled, closed: bookingClosed(o, s.date, now) })),
       attendees,
       canBook: !!memberId || (o.kind !== "class" && o.access === "everyone"),
     },
