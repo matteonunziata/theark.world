@@ -3,10 +3,11 @@ import { EventLink } from "../booking-modal";
 import Link from "next/link";
 import { reason, suggestions } from "@/lib/connect";
 import { coverUrl } from "@/lib/covers";
-import { addDays, dayLabel, timeRange, todayIn } from "@/lib/dates";
+import { addDays, DOW, dayLabel, dow, timeRange, todayIn } from "@/lib/dates";
 import { loadPortal } from "@/lib/portal";
 import { priceLabel, sessions, whenLabel } from "@/lib/schedule";
 import { Av, PersonCard, SectionHead, SessionCard } from "../ui";
+import { WeekTabs } from "./week-tabs";
 
 export const metadata: Metadata = { title: "Members portal" };
 
@@ -49,9 +50,37 @@ export default async function PortalHome() {
   const all = offerings.data ?? [];
   const fac = (id: string | null) => (facs.data ?? []).find((f) => f.id === id)?.name;
   const inCity = all.filter((o) => !city || o.city_id === city.id || !o.city_id);
-  const week = sessions(inCity.filter((o) => o.kind !== "expedition"), cancels.data ?? [], today, addDays(today, 7), {
+  const week = sessions(inCity.filter((o) => o.kind !== "expedition"), cancels.data ?? [], today, addDays(today, 6), {
     published: true,
-  }).slice(0, 12);
+  });
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(today, i)).map((date, i) => {
+    const items = week.filter((s) => s.date === date);
+    return {
+      date,
+      label: i === 0 ? "Today" : `${DOW[dow(date)]} ${Number(date.slice(8))}`,
+      count: items.filter((s) => !s.cancelled).length,
+      content: items.length ? (
+        <div className="pv-rail">
+          {items.map((s) => (
+            <SessionCard
+              key={`${s.o.id}-${s.date}`}
+              o={s.o}
+              date={s.date}
+              today={today}
+              cancelled={s.cancelled}
+              facilitator={fac(s.o.facilitator_id)}
+              price={priceLabel(s.o, tickets.data ?? [])}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="pv-empty">
+          <h3>Nothing on this day</h3>
+          <p>Pick another day, or see the full schedule.</p>
+        </div>
+      ),
+    };
+  });
   const expeditions = all
     .filter((o) => o.kind === "expedition" && (o.end_date ?? o.start_date) >= today)
     .sort((a, b) => a.start_date.localeCompare(b.start_date))
@@ -114,19 +143,7 @@ export default async function PortalHome() {
           link="Full schedule"
         />
         {week.length ? (
-          <div className="pv-rail">
-            {week.map((s) => (
-              <SessionCard
-                key={`${s.o.id}-${s.date}`}
-                o={s.o}
-                date={s.date}
-                today={today}
-                cancelled={s.cancelled}
-                facilitator={fac(s.o.facilitator_id)}
-                price={priceLabel(s.o, tickets.data ?? [])}
-              />
-            ))}
-          </div>
+          <WeekTabs days={weekDays} initial={today} />
         ) : (
           <div className="pv-empty">
             <h3>A quiet week here</h3>
