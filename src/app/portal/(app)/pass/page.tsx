@@ -6,7 +6,6 @@ import { WalletButton } from "@/components/wallet-button";
 import { siteUrl } from "@/lib/email";
 import { PASS_STATE, passCode, passOk, passValidity } from "@/lib/pass";
 import { loadPortal } from "@/lib/portal";
-import { ReplacePassButton } from "./replace-button";
 
 export const metadata: Metadata = { title: "Your pass" };
 
@@ -53,15 +52,12 @@ export default async function MyPass() {
       </div>
       <div className="pv-pass-acts">
         <SaveImageButton href={`/p/${token}/image.png`} filename="ARK member pass.png" className="pv-btn" label="Save to Photos" />
-        {(ok || inToday) && <WalletButton kind="p" token={token} className="pv-btn" />}
-        <Link className="pv-btn ghost" href={`/p/${token}`}>Open full screen</Link>
         <Link className="pv-btn ghost" href="/portal/guests">Invite a guest</Link>
-        <ReplacePassButton />
       </div>
+      {(ok || inToday) && <WalletButton kind="p" token={token} />}
       <p className="pv-pass-note">
         Show the code to security when you arrive; they check you in once a day. Saved to your photos, it works
-        without signal. If your phone is lost or you shared a screenshot, get a new code and the old one stops
-        working. Your class and event tickets are under <Link href="/portal/bookings">Bookings</Link>.
+        without signal. Your class and event tickets are under <Link href="/portal/bookings">Bookings</Link>.
       </p>
     </div>
   );
