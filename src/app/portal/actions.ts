@@ -11,7 +11,9 @@ import {
 } from "@/lib/action-result";
 import { getViewer } from "@/lib/auth";
 import { splitList } from "@/lib/connect";
-import { sendGuestPassEmail } from "@/lib/email";
+import { sendGuestPassEmail, siteUrl } from "@/lib/email";
+import { fmtDate } from "@/lib/dates";
+import { sendGuestPassWhatsApp } from "@/lib/whatsapp";
 import { notifyLater } from "@/lib/slack";
 import { stripeReady } from "@/lib/stripe";
 import { guestMessage } from "@/lib/slack-format";
@@ -60,7 +62,7 @@ export async function completeOnboarding(_prev: ActionResult, data: FormData): P
 export async function inviteGuest(
   _prev: ActionResult & { token?: string },
   data: FormData,
-): Promise<ActionResult & { token?: string; emailed?: boolean }> {
+): Promise<ActionResult & { token?: string; emailed?: boolean; whatsapped?: boolean }> {
   const v = await viewer();
   if (!v.memberId) return fail("Only members can invite guests.");
   const name = field(data, "guest_name");
@@ -80,20 +82,37 @@ export async function inviteGuest(
     notifyLater("guest", (origin) => guestMessage(g, origin));
   }
 
+  // The pass goes out by itself, to whichever of email and WhatsApp the member gave.
+  const phone = field(data, "phone");
+  const { data: org } = await v.supabase.rpc("public_org").maybeSingle();
+  const orgName = org?.name ?? "The ARK";
+  const host = me?.name ?? "A member";
   let emailed = false;
-  if (email && date) {
-    const { data: org } = await v.supabase.rpc("public_org").maybeSingle();
-    emailed = await sendGuestPassEmail({
-      to: email,
-      guest: name ?? "",
-      host: me?.name ?? "A member",
-      date,
-      token,
-      orgName: org?.name ?? "The ARK",
-    });
+  let whatsapped = false;
+  if (date) {
+    [emailed, whatsapped] = await Promise.all([
+      email ? sendGuestPassEmail({ to: email, guest: name ?? "", host, date, token, orgName }) : false,
+      phone
+        ? siteUrl().then((origin) =>
+            sendGuestPassWhatsApp({
+              phone,
+              guest: name ?? "",
+              host,
+              day: fmtDate(date, { weekday: "long", month: "long", day: "numeric" }),
+              url: `${origin}/g/${token}`,
+            }),
+          )
+        : false,
+    ]);
   }
   revalidatePath("/portal/guests");
-  return { ...ok(emailed ? `Invited. We emailed ${name} their pass.` : "Invited. Send them their pass."), token, emailed };
+  const via = [emailed && "email", whatsapped && "WhatsApp"].filter(Boolean).join(" and ");
+  return {
+    ...ok(via ? `Invited. We sent ${name} their pass by ${via}.` : "Invited. Send them their pass."),
+    token,
+    emailed,
+    whatsapped,
+  };
 }
 
 export async function cancelGuest(id: string) {

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { EventLink } from "../booking-modal";
 import Link from "next/link";
-import { Logo } from "@/components/logo";
 import { reason, suggestions } from "@/lib/connect";
 import { coverUrl } from "@/lib/covers";
 import { addDays, dayLabel, timeRange, todayIn } from "@/lib/dates";
@@ -10,6 +9,15 @@ import { priceLabel, sessions, whenLabel } from "@/lib/schedule";
 import { Av, PersonCard, SectionHead, SessionCard } from "../ui";
 
 export const metadata: Metadata = { title: "Members portal" };
+
+// The jungle-and-ocean shot behind the greeting. Drop the photo at public/portal/hero.jpg;
+// until it's there the Spa Deck photo from the main site shows instead.
+const HERO = [
+  "/portal/hero.jpg",
+  "https://vibe.filesafe.space/1776339959982732737/attachments/30ca26f5-6138-400d-a687-4f9407f14783.jpg",
+]
+  .map((u) => `url(${u})`)
+  .join(", ");
 
 const greeting = (tz: string) => {
   const h = Number(
@@ -52,13 +60,11 @@ export default async function PortalHome() {
   const suggested = suggestions(people, me, 3);
   const upcoming = (myRegs.data ?? []).filter((r) => r.session_date >= today && r.offering && r.status === "confirmed");
   const next = upcoming[0];
-  const cover = coverUrl(city?.cover_path);
   const first = (me?.name ?? p.staff?.name ?? "").split(/\s+/)[0];
 
   return (
     <>
-      <section className={`pv-hero ${cover ? "has-img" : ""}`} style={cover ? { backgroundImage: `url(${cover})` } : undefined}>
-        {!cover && <Logo kind="mark" height={420} className="mark" />}
+      <section className="pv-hero has-img" style={{ backgroundImage: HERO }}>
         <span className="eyebrow">
           {city ? `${city.name}${city.country ? `, ${city.country}` : ""}` : p.orgName}
         </span>
@@ -96,16 +102,13 @@ export default async function PortalHome() {
                 {next.offering.location ? ` · ${next.offering.location}` : ""}
               </span>
             </div>
-            <Link className="pv-btn" href={`/t/${next.qr_token}`}>
-              Your ticket
-            </Link>
           </div>
         </section>
       )}
 
       <section className="pv-sec">
         <SectionHead
-          title={`This week${city ? ` in ${city.name}` : ""}`}
+          title="This week at The ARK"
           sub="Classes, gatherings, and experiences. Members book in a tap."
           href="/portal/schedule"
           link="Full schedule"
