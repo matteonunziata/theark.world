@@ -134,7 +134,7 @@ export default async function Me() {
             <h2>Your bookings</h2>
             {!regs?.length ? (
               <p style={{ margin: 0, color: "var(--pv-muted)" }}>
-                Nothing booked. <Link href="/portal/explore" style={{ color: "var(--pv-sea)" }}>See what’s on</Link>.
+                Nothing booked. <Link href="/portal/schedule" style={{ color: "var(--pv-sea)" }}>See what’s on</Link>.
               </p>
             ) : (
               regs.map((r) =>
