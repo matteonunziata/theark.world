@@ -9,8 +9,6 @@ export const cleanDayOf = (iso: string) => {
   return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
 };
 
-export const TIME_SLOTS = ["Early morning", "Late morning", "Afternoon", "After checkout", "Before check-in"] as const;
-
 export const STOCK_CATEGORIES = [
   "Produce",
   "Dairy and eggs",
@@ -38,3 +36,29 @@ export const orderQty = (i: Stock & { target: number }) => {
 
 /** 1, 2.5, 0.25 — no trailing zeros. */
 export const qty = (n: number | string) => String(Number(Number(n).toFixed(2)));
+
+// Schedule view -------------------------------------------------------------
+
+/** "07:30:00" → minutes since midnight. */
+export const toMinutes = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + (m || 0);
+};
+
+/** "07:30:00" → "7:30". */
+export const clock = (t: string) => {
+  const [h, m] = t.split(":");
+  return `${Number(h)}:${m}`;
+};
+
+export const endClock = (start: string, hours: number) => {
+  const e = toMinutes(start) + Math.round(Number(hours) * 60);
+  return `${Math.floor(e / 60)}:${String(e % 60).padStart(2, "0")}`;
+};
+
+type Costed = { days: number[]; hours: number | null };
+
+/** Hours a task takes in a week (length × days it runs). */
+export const weekHours = (t: Costed) => (t.hours ? Number(t.hours) * t.days.length : 0);
+
+export const hoursLabel = (h: number) => `${qty(h)} h`;

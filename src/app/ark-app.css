@@ -1071,3 +1071,15 @@ a.mk-tr:hover{background:var(--surface-2)}
 
 .side-portal{display:none}
 @media (max-width:860px){.side-portal{display:inline-block}}
+
+/* Cleaning day grid */
+.sched{display:grid;gap:0 8px;margin-bottom:6px;overflow-x:auto;padding-bottom:4px}
+.sched-head{font-weight:700;font-size:14px;padding:0 4px 8px}
+.sched-hours{position:relative;font-size:12px;color:var(--muted)}
+.sched-hours span{position:absolute;right:6px;transform:translateY(-7px)}
+.sched-col{position:relative;background-color:var(--surface);background-image:linear-gradient(var(--line) 1px,transparent 1px);border:1px solid var(--line);border-radius:10px;cursor:copy}
+.sched-free{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;font-style:italic;pointer-events:none}
+.sched-block{position:absolute;left:3px;right:3px;display:flex;flex-direction:column;gap:1px;text-align:left;font:inherit;font-size:12.5px;line-height:1.25;padding:4px 7px;overflow:hidden;cursor:pointer;color:var(--ink);background:color-mix(in srgb,var(--c) 17%,var(--surface));border:0;border-left:3px solid var(--c);border-radius:6px}
+.sched-block span{color:var(--muted);font-size:11.5px}
+.sched-block:hover{background:color-mix(in srgb,var(--c) 28%,var(--surface))}
+.lines-table .dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px}

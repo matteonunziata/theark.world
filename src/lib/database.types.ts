@@ -697,44 +697,85 @@ export type Database = {
           },
         ]
       }
+      cleaning_staff: {
+        Row: {
+          color: string
+          created_at: string
+          currency: string
+          hourly_rate: number | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          currency?: string
+          hourly_rate?: number | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          currency?: string
+          hourly_rate?: number | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cleaning_tasks: {
         Row: {
           area: string
-          assignee: string | null
           created_at: string
           days: number[]
+          hours: number | null
           id: string
           notes: string | null
           position: number
+          staff_id: string | null
+          start_time: string | null
           task: string
-          time_slot: string | null
           updated_at: string
         }
         Insert: {
           area: string
-          assignee?: string | null
           created_at?: string
           days?: number[]
+          hours?: number | null
           id?: string
           notes?: string | null
           position?: number
+          staff_id?: string | null
+          start_time?: string | null
           task: string
-          time_slot?: string | null
           updated_at?: string
         }
         Update: {
           area?: string
-          assignee?: string | null
           created_at?: string
           days?: number[]
+          hours?: number | null
           id?: string
           notes?: string | null
           position?: number
+          staff_id?: string | null
+          start_time?: string | null
           task?: string
-          time_slot?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cleaning_tasks_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "cleaning_staff"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contacts: {
         Row: {
