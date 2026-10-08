@@ -57,7 +57,7 @@ export function Calculator() {
   if (!started) {
     return (
       <div className="ms-calc">
-        <h3>Ready to see the numbers?</h3>
+        <h3>Not sure which one is right for you?</h3>
         <p>
           Four quick questions about how you’d spend your time here, and we’ll show which pass or
           membership makes the most sense.

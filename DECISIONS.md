@@ -338,3 +338,17 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **All imported accounts are admin-only** (no sector). The sheet doesn't say which sector owns which, so admins decide who sees them.
 - **Account holder** is set to the provider's name, since the sheet has no separate holder. Rows with no bank show "Not given".
 - **Currency guess:** 8 foreign accounts had no currency in the sheet and were set to USD. Check them.
+
+## Round 23: portal home, join page, guest passes (2026-10-07)
+
+- **Portal home:** the greeting sits on a jungle-and-ocean photo (`public/portal/hero.jpg`; the Spa Deck photo shows until it's added). The section is "This week at The ARK". "Your ticket" is gone from "Up next".
+- **Meals:** after paying for breakfast or lunch, members land back in the portal (`/portal?paid=1`) instead of the ticket page.
+- **Join page:** the class timetable is now "This week at The ARK", the next seven days with dates. "Book a class" scrolls to Pricing (pass or application), since classes are for members and pass holders.
+- **Guest passes** send themselves when you invite: email (Resend) and WhatsApp (Meta Cloud API template, see `.env.example`). Until WhatsApp is set up, the manual share card still appears when nothing could be sent. "Choose from contacts" uses the browser's contact picker (Chrome on Android; not available on iPhone Safari).
+
+## Join page redesign (2026-10-07)
+- **join.theark.world** (`/ark-membership`) follows the new design: forest and mist palette with gold accents, Playfair headings, square buttons, sentence-case copy. The apply and pass pages share the stylesheet, so they pick up the palette and buttons.
+- **New sections:** "A day at The ARK" timeline, six spaces with a line each, "How to join" in three steps, a worldwide strip (the old photos are gone), and a closing call to action. Memberships and visiting passes are listed separately in Pricing.
+- **Kept live:** Stripe prices for day and week passes, the class schedule from Supabase, the "which one is right for you" calculator, and the existing FAQ answers.
+- **Left out of the design's draft copy:** the "[X DAYS]" reply time and the contact line, since neither is decided. Step 2 of How to join says the team reads every application and a free day pass is emailed, as the FAQ does. Add a reply time and contact once chosen.
+- **Names:** the page says Space Deck and ARK House (the design's names), where it said Spa Deck and Cowork.
