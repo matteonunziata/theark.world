@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { addDays, dayLabel, todayIn } from "@/lib/dates";
-import { loadPortal } from "@/lib/portal";
+import { loadGoing, loadPortal } from "@/lib/portal";
 import { KINDS, priceLabel, sessions } from "@/lib/schedule";
 import { SessionCard } from "../../ui";
 
@@ -13,11 +13,12 @@ export default async function Explore({ searchParams }: PageProps<"/portal/explo
   const everywhere = where === "all";
   const p = await loadPortal();
   const today = todayIn(p.timezone);
-  const [offerings, tickets, cancels, facs] = await Promise.all([
+  const [offerings, tickets, cancels, facs, going] = await Promise.all([
     p.supabase.from("offerings").select("*").eq("status", "published"),
     p.supabase.from("ticket_types").select("*"),
     p.supabase.from("session_cancellations").select("offering_id, session_date").gte("session_date", today),
     p.supabase.rpc("facilitator_names"),
+    loadGoing(p, today, addDays(today, 45)),
   ]);
   const list = sessions(
     (offerings.data ?? []).filter(
@@ -85,6 +86,7 @@ export default async function Explore({ searchParams }: PageProps<"/portal/explo
                     cancelled={s.cancelled}
                     facilitator={fac(s.o.facilitator_id)}
                     price={priceLabel(s.o, tickets.data ?? [])}
+                    going={going.get(`${s.o.id}|${d}`)}
                   />
                 ))}
             </div>

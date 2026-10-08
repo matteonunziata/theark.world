@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EventLink } from "./booking-modal";
 import { initials } from "@/components/avatar";
+import { type Attendee, Going } from "@/components/going";
 import { avatarColor, type DirEntry } from "@/lib/connect";
 import { avatarUrl, coverUrl } from "@/lib/covers";
 import { firstName, tierName, waLink } from "@/lib/crm";
@@ -40,6 +41,7 @@ export function SessionCard({
   cancelled,
   facilitator,
   price,
+  going,
 }: {
   o: Offering;
   date: string;
@@ -47,6 +49,7 @@ export function SessionCard({
   cancelled?: boolean;
   facilitator?: string;
   price?: string;
+  going?: Attendee[];
 }) {
   const cover = coverUrl(o.cover_path);
   const d = pd(date);
@@ -70,8 +73,9 @@ export function SessionCard({
         </span>
         <div className="foot">
           <span>{facilitator ? `with ${facilitator}` : ""}</span>
-          <span>{price}</span>
+          <span>{price === "Included for members" ? "" : price}</span>
         </div>
+        {!cancelled && going && going.length > 0 && <Going list={going} taken={going.length} />}
       </div>
     </EventLink>
   );

@@ -3,7 +3,8 @@ import { EventLink } from "../../booking-modal";
 import Link from "next/link";
 import { addDays, addMonths, DOW, fmtDate, fmtTime, monthLabel, timeRange, todayIn, weekStart } from "@/lib/dates";
 import { monthGrid } from "@/lib/estate";
-import { loadPortal } from "@/lib/portal";
+import { type Attendee, Going } from "@/components/going";
+import { loadGoing, loadPortal } from "@/lib/portal";
 import { KINDS, kindName, type Session, sessions } from "@/lib/schedule";
 import { CourtsSection } from "./courts-section";
 
@@ -100,6 +101,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/portal/
       }
     });
   }
+  const going = view === "month" ? new Map<string, Attendee[]>() : await loadGoing(p, from, to);
   const booked = new Set((mine.data ?? []).map((r) => `${r.offering_id}|${r.session_date}`));
   const fac = (id: string | null) => (facs.data ?? []).find((f) => f.id === id)?.name;
 
@@ -121,7 +123,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/portal/
         ? `${fmtDate(from, { month: "short", day: "numeric" })} – ${fmtDate(to, { month: "short", day: "numeric", year: "numeric" })}`
         : monthLabel(date.slice(0, 7));
 
-  const props = { today, taken, booked, fac };
+  const props = { today, taken, booked, fac, going };
 
   return (
     <>
@@ -225,6 +227,7 @@ type Props = {
   taken: Map<string, number>;
   booked: Set<string>;
   fac: (id: string | null) => string | undefined;
+  going: Map<string, Attendee[]>;
 };
 
 function spots(s: Session, taken: Map<string, number>) {
@@ -249,6 +252,7 @@ function Block({ s, ...p }: Props & { s: Session }) {
       <b>{s.o.title}</b>
       <span className="m">{[p.fac(s.o.facilitator_id), s.o.location].filter(Boolean).join(" · ")}</span>
       {status(s, p)}
+      {!s.cancelled && <Going list={p.going.get(`${s.o.id}|${s.date}`) ?? []} taken={0} />}
     </EventLink>
   );
 }
@@ -282,6 +286,7 @@ function DayList({ items, ...p }: Props & { items: Session[] }) {
                   .filter(Boolean)
                   .join(" · ")}
               </span>
+              {!s.cancelled && <Going list={p.going.get(`${s.o.id}|${s.date}`) ?? []} taken={0} />}
             </span>
             <span className="act">
               {status(s, p)}
