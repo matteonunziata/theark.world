@@ -338,3 +338,5 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **All imported accounts are admin-only** (no sector). The sheet doesn't say which sector owns which, so admins decide who sees them.
 - **Account holder** is set to the provider's name, since the sheet has no separate holder. Rows with no bank show "Not given".
 - **Currency guess:** 8 foreign accounts had no currency in the sheet and were set to USD. Check them.
+
+- **Court discount is for the members portal only** (user decision, 2026-10-07). `hold_court` applies the tier discount only when a signed-in member books with `portal: true`; the public `/courts` page charges the full price, signed in or not, and points members to the portal. In the portal, members pick a length (1, 1½, 2 hours, discounted prices) and can make the booking an open match (level, players), so others join from the public join page and pay their share. A joiner's share is the host's court total divided by the players, so it carries the host's discount.
