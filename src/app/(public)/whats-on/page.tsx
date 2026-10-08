@@ -71,7 +71,7 @@ export default async function EventsPage() {
           </div>
           <div className="nav-right">
             {staff ? (
-              <Link href="/events/all" className="btn btn-primary sm">Staff view</Link>
+              <Link href="/events/classes" className="btn btn-primary sm">Staff view</Link>
             ) : memberId ? (
               <Link href="/portal/schedule" className="btn btn-primary sm">Sign in</Link>
             ) : (

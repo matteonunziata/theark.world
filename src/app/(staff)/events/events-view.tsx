@@ -35,6 +35,12 @@ import {
 import type { StripePrice } from "@/lib/stripe";
 import type { EventsData } from "./data";
 
+const EMPTY: Record<string, string> = {
+  class: "Add a weekly class like Vinyasa yoga or Muay Thai.",
+  event: "Add a one-off event like a farm dinner or a market day.",
+  experience: "Add an experience or an expedition, like a sunrise hike or a surf trip.",
+};
+
 const LOCATIONS = ["The Shala", "Spa deck", "Cowork lounge", "Courts", "Gym", "The House", "Farm"];
 
 type Reg = EventsData["registrations"][number];
@@ -52,11 +58,18 @@ export function EventsView({
   team,
   cities,
   stripePrices,
-}: EventsData & { mode: "week" | "all"; weekStart: string; today: string; stripePrices: StripePrice[] }) {
+  kinds,
+}: EventsData & {
+  mode: "week" | "all";
+  weekStart: string;
+  today: string;
+  stripePrices: StripePrice[];
+  /** List mode: only these types, one tab each (classes, events, experiences). */
+  kinds?: readonly Kind[];
+}) {
   const offering = useDrawer<Offering>();
   const [newKind, setNewKind] = useState<Kind>("class");
   const [session, setSession] = useState<{ id: string; date: string } | null>(null);
-  const [kind, setKind] = useState("");
   const canCreate = staff.role === "admin" || staff.role === "lead";
   const canManage = (o: Offering) =>
     canCreate || (staff.role === "facilitator" && o.facilitator_id === staff.id);
@@ -64,6 +77,11 @@ export function EventsView({
   const regsFor = (oid: string, d: string) =>
     registrations.filter((r) => r.offering_id === oid && r.session_date === d);
 
+  const listed = kinds ? offerings.filter((o) => kinds.includes(o.kind as Kind)) : offerings;
+  const noun = kinds ? kindName(kinds[0]).toLowerCase() : "";
+  const nouns = kinds?.length === 1 ? `${noun}s` : "experiences and expeditions";
+  /** Which "new" buttons this tab shows: all on the calendar, its own type in a list. */
+  const has = (k: Kind) => mode === "week" || !!kinds?.includes(k);
   const startNew = (k: Kind) => {
     setNewKind(k);
     offering.openNew();
@@ -87,31 +105,37 @@ export function EventsView({
             <Link className="btn" href={`/events?week=${addDays(ws, 7)}`}>Next</Link>
           </div>
         ) : (
-          <select
-            className="field-in"
-            aria-label="Filter by type"
-            value={kind}
-            onChange={(e) => setKind(e.target.value)}
-          >
-            <option value="">Classes and events</option>
-            {KINDS.map(([k, l]) => (
-              <option key={k} value={k}>
-                {l === "Class" ? "Classes" : `${l}s`}
-              </option>
-            ))}
-          </select>
+          <span className="muted" style={{ fontSize: 13.5 }}>
+            {listed.length} {listed.length === 1 ? (kinds?.length === 1 ? noun : "experience or expedition") : nouns}
+          </span>
         )}
         {canCreate && (
           <div className="head-actions" style={{ marginLeft: "auto" }}>
-            <a className="btn" href="/qr" target="_blank" rel="noopener noreferrer">
-              Class QR codes
-            </a>
-            <button type="button" className="btn" onClick={() => startNew("event")}>
-              New event
-            </button>
-            <button type="button" className="btn primary" onClick={() => startNew("class")}>
-              New class
-            </button>
+            {has("class") && (
+              <a className="btn" href="/qr" target="_blank" rel="noopener noreferrer">
+                Class QR codes
+              </a>
+            )}
+            {mode === "week" && (
+              <button type="button" className="btn" onClick={() => startNew("experience")}>
+                New experience
+              </button>
+            )}
+            {has("event") && (
+              <button type="button" className={mode === "week" ? "btn" : "btn primary"} onClick={() => startNew("event")}>
+                New event
+              </button>
+            )}
+            {has("class") && (
+              <button type="button" className="btn primary" onClick={() => startNew("class")}>
+                New class
+              </button>
+            )}
+            {mode === "all" && has("experience") && (
+              <button type="button" className="btn primary" onClick={() => startNew("experience")}>
+                New experience
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -165,22 +189,14 @@ export function EventsView({
             <span><i style={{ outline: "1px dashed var(--muted)", background: "transparent" }} />Draft, staff only</span>
           </div>
         </>
-      ) : !offerings.length ? (
+      ) : !listed.length ? (
         <div className="empty">
-          <h2>No classes or events yet</h2>
-          <p>
-            Add a weekly class like Vinyasa yoga or Muay Thai, or a one-off
-            event like a farm dinner.
-          </p>
+          <h2>No {nouns} yet</h2>
+          <p>{EMPTY[kinds?.[0] ?? "class"]}</p>
           {canCreate && (
-            <>
-              <button type="button" className="btn primary" onClick={() => startNew("class")}>
-                New class
-              </button>{" "}
-              <button type="button" className="btn" onClick={() => startNew("event")}>
-                New event
-              </button>
-            </>
+            <button type="button" className="btn primary" onClick={() => startNew(kinds?.[0] ?? "class")}>
+              New {noun}
+            </button>
           )}
         </div>
       ) : (
@@ -191,9 +207,7 @@ export function EventsView({
             <span className="c-fac">Facilitator</span>
             <span>Status</span>
           </div>
-          {offerings
-            .filter((o) => !kind || o.kind === kind)
-            .map((o) => {
+          {listed.map((o) => {
               const f = person(o.facilitator_id);
               return (
                 <button

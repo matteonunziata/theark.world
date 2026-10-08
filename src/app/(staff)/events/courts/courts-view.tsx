@@ -14,6 +14,13 @@ type Booking = Tables<"court_bookings">;
 type Person = { id: string; name: string; email: string | null; phone: string | null };
 type Slot = { court: Court; start: string; end: string };
 
+const toMin = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + (m || 0);
+};
+const clock = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+const hourLabel = (h: number) => `${h % 12 || 12} ${h < 12 || h === 24 ? "AM" : "PM"}`;
+
 export function CourtsView({
   courts,
   bookings,
@@ -40,6 +47,13 @@ export function CourtsView({
   const q = (d: string) => `/events/courts?date=${d}`;
   const past = (start: string) => date < today || (date === today && start <= now);
   const courtOf = (id: string) => courts.find((c) => c.id === id);
+  const from = open.length ? Math.floor(Math.min(...open.map((c) => toMin(hhmm(c.open_time)))) / 60) : 0;
+  const to = open.length ? Math.ceil(Math.max(...open.map((c) => toMin(hhmm(c.close_time)))) / 60) : 0;
+  const hours = Array.from({ length: to - from }, (_, i) => from + i);
+  const place = (start: string, end: string) => ({
+    left: `${((toMin(start) - from * 60) / ((to - from) * 60)) * 100}%`,
+    width: `${((toMin(end) - toMin(start)) / ((to - from) * 60)) * 100}%`,
+  });
 
   return (
     <>
@@ -74,64 +88,94 @@ export function CourtsView({
           {canManage && <button type="button" className="btn primary" onClick={manage.openNew}>Add a court</button>}
         </div>
       ) : (
-        <div className="courts" style={{ gridTemplateColumns: `repeat(${open.length}, minmax(200px, 1fr))` }}>
-          {open.map((c) => (
-            <section key={c.id} className="court-col">
-              <h2>
-                {c.name}
-                <span className="muted">{SPORTS.find(([k]) => k === c.sport)?.[1]} · {hhmm(c.open_time)}–{hhmm(c.close_time)}</span>
-              </h2>
-              {slots(c).map((s) => {
-                const b = bookings.find(
-                  (x) => x.court_id === c.id && hhmm(x.start_time) < s.end && hhmm(x.end_time) > s.start,
-                );
-                const tags = b
-                  ? [
-                      b.status === "held" ? "paying now" : null,
-                      b.open_match ? `open match, level ${levelRange(b.level_min, b.level_max)}` : b.players ? `${b.players} players` : null,
-                      b.amount && Number(b.amount) > 0 ? (b.paid ? "paid" : `${courtMoney(Number(b.amount), b.currency)} unpaid`) : null,
-                      b.source === "portal" ? "portal" : b.source === "web" ? "website" : null,
-                    ].filter(Boolean)
-                  : [];
-                const cls = b ? null : classAt(c, s, classes);
-                const gone = past(s.start);
-                return b ? (
-                  <button
-                    key={s.start}
-                    type="button"
-                    className={`court-slot taken ${b.status === "held" ? "held" : ""}`}
-                    onClick={() => book.openItem(b)}
-                  >
-                    <span className="t">{s.start}</span>
-                    <span>
-                      <b>{b.name}</b>
-                      <span className="muted">{tags.join(" · ")}</span>
-                    </span>
-                  </button>
-                ) : cls ? (
-                  <div key={s.start} className="court-slot class">
-                    <span className="t">{s.start}</span>
-                    <span>{cls}</span>
+        <>
+          <div className="tl" style={{ "--cols": hours.length } as React.CSSProperties}>
+            <div className="tl-in">
+              <div className="tl-row head">
+                <div className="tl-name" />
+                <div className="tl-hours">
+                  {hours.map((h) => (
+                    <span key={h}>{hourLabel(h)}</span>
+                  ))}
+                </div>
+              </div>
+              {open.map((c) => {
+                const opens = hhmm(c.open_time);
+                const closes = hhmm(c.close_time);
+                const mine = bookings.filter((x) => x.court_id === c.id);
+                const all = slots(c);
+                const cover = (s: { start: string; end: string }) =>
+                  mine.some((x) => hhmm(x.start_time) < s.end && hhmm(x.end_time) > s.start);
+                return (
+                  <div key={c.id} className="tl-row">
+                    <div className="tl-name">
+                      {c.name}
+                      <span className="muted">{SPORTS.find(([k]) => k === c.sport)?.[1]}</span>
+                    </div>
+                    <div className="tl-track">
+                      {toMin(opens) > from * 60 && <span className="blk off" style={place(clock(from * 60), opens)} />}
+                      {toMin(closes) < to * 60 && <span className="blk off" style={place(closes, clock(to * 60))} />}
+                      {mine.map((b) => {
+                        const st = hhmm(b.start_time);
+                        const en = hhmm(b.end_time);
+                        const tags = [
+                          b.status === "held" ? "paying now" : null,
+                          b.open_match ? `open match, level ${levelRange(b.level_min, b.level_max)}` : b.players ? `${b.players} players` : null,
+                          b.amount && Number(b.amount) > 0 ? (b.paid ? "paid" : `${courtMoney(Number(b.amount), b.currency)} unpaid`) : null,
+                        ].filter(Boolean);
+                        return (
+                          <button
+                            key={b.id}
+                            type="button"
+                            className={`blk ${b.open_match ? "match" : "taken"} ${b.status === "held" ? "held" : ""}`}
+                            style={place(st, en)}
+                            title={[b.name, ...tags].join(" · ")}
+                            onClick={() => book.openItem(b)}
+                          >
+                            <b>{b.name}</b>
+                            {b.open_match && b.spots ? <small>{b.players ?? 0}/{b.spots} players</small> : null}
+                          </button>
+                        );
+                      })}
+                      {all.map((s) => {
+                        if (cover(s)) return null;
+                        const cls = classAt(c, s, classes);
+                        if (cls) {
+                          return (
+                            <span key={s.start} className="blk class" style={place(s.start, s.end)} title={cls}>
+                              {cls}
+                            </span>
+                          );
+                        }
+                        if (past(s.start)) return <span key={s.start} className="blk off" style={place(s.start, s.end)} />;
+                        return (
+                          <button
+                            key={s.start}
+                            type="button"
+                            className="blk free"
+                            style={place(s.start, s.end)}
+                            aria-label={`${c.name}, ${s.start}`}
+                            onClick={() => {
+                              setSlot({ court: c, ...s });
+                              book.openNew();
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
                   </div>
-                ) : (
-                  <button
-                    key={s.start}
-                    type="button"
-                    className="court-slot free"
-                    disabled={gone}
-                    onClick={() => {
-                      setSlot({ court: c, ...s });
-                      book.openNew();
-                    }}
-                  >
-                    <span className="t">{s.start}</span>
-                    <span className="muted">{gone ? "—" : "Free · book"}</span>
-                  </button>
                 );
               })}
-            </section>
-          ))}
-        </div>
+            </div>
+            <ul className="tl-legend">
+              <li><i className="free" />Available</li>
+              <li><i className="taken" />Booked</li>
+              <li><i className="match" />Open match</li>
+              <li><i className="class" />Class</li>
+            </ul>
+          </div>
+          <p className="note" style={{ marginTop: 12 }}>Pick a free slot to book it, or a booking to open it.</p>
+        </>
       )}
       <p className="note">
         Anyone books and pays on the public page (<Link href="/courts" target="_blank">/courts</Link>), members in the portal

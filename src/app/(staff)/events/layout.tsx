@@ -9,7 +9,7 @@ export default async function EventsLayout({ children }: LayoutProps<"/events">)
         <div>
           <h1>Schedule</h1>
           <p className="lede">
-            Classes, events and the courts. Published sessions appear on the
+            Classes, events, courts and experiences. Published sessions appear on the
             members portal as soon as you save.
           </p>
         </div>
@@ -18,9 +18,11 @@ export default async function EventsLayout({ children }: LayoutProps<"/events">)
         label="Events sections"
         items={[
           { href: "/events", label: "Calendar" },
-          { href: "/events/all", label: "All classes & events" },
-          { href: "/events/analytics", label: "Analytics" },
+          { href: "/events/classes", label: "Classes" },
+          { href: "/events/events", label: "Events" },
           { href: "/events/courts", label: "Courts" },
+          { href: "/events/experiences", label: "Experiences" },
+          { href: "/events/analytics", label: "Analytics" },
         ]}
       />
       {children}
