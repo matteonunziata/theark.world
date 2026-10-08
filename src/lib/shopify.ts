@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json, Tables } from "@/lib/database.types";
 import { todayIn } from "@/lib/dates";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   ARK_TAGS,
   diffTags,
@@ -558,7 +559,7 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
 
   // Paid portal orders that never reached Shopify (it was paused, or down) go first.
   try {
-    const sent = await retryUnsentOrders(sb);
+    const sent = await retryUnsentOrders();
     if (sent.failed) r.errors.push(`${plural(sent.failed, "portal order")} still not in Shopify`);
   } catch (e) {
     r.errors.push(`Portal orders: ${errorText(e)}`);
@@ -730,10 +731,14 @@ export async function pushOrder(sb: Sb, orderId: string) {
     );
     userErrors(d.orderCreate.userErrors);
     if (!d.orderCreate.order) throw new ShopifyError(500, "Shopify didn’t create the order.");
-    await sb
+    const { error: saveError } = await sb
       .from("portal_shop_orders")
       .update({ shopify_order_id: d.orderCreate.order.id, shopify_order_name: d.orderCreate.order.name, shopify_error: null })
       .eq("id", orderId);
+    if (saveError) {
+      await logEvent(sb, { direction: "out", kind: "push", ok: false, detail: `Order ${d.orderCreate.order.name} was created in Shopify but not saved here (${saveError.message}). Do not send it again.` });
+      return;
+    }
     await logEvent(sb, { direction: "out", kind: "push", ok: true, detail: `Order ${d.orderCreate.order.name} created in Shopify (${plural(lines.length, "line")}, paid).`, contact_id: o.contact_id });
   } catch (e) {
     await fail(errorText(e));
@@ -741,7 +746,11 @@ export async function pushOrder(sb: Sb, orderId: string) {
 }
 
 /** Send every paid portal order that has no Shopify order yet. Oldest first. */
-export async function retryUnsentOrders(sb: Sb) {
+export async function retryUnsentOrders() {
+  // Portal orders can only be written with the service role (RLS), and a push that
+  // can't record its Shopify order id would be sent again next time.
+  const sb = createAdminClient();
+  if (!sb) return { tried: 0, failed: 0 };
   const { data } = await sb
     .from("portal_shop_orders")
     .select("id")
