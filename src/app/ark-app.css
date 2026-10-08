@@ -106,6 +106,10 @@ dialog.drawer form{display:flex;flex-direction:column;height:100%}
 .tier-card h3{font-size:24px;margin:8px 0 4px}
 .tier-card .perks{margin:0 0 12px;padding-left:18px;color:var(--muted);font-size:13.5px}
 .tier-card .meter{margin-bottom:8px}
+.wallet-badges{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;margin-top:14px}
+.wallet-badges .wallet-btn{margin-top:0;gap:8px;height:48px;border-radius:999px;padding:0 20px}
+.wallet-badge{display:inline-flex;line-height:0}
+.wallet-badge img{height:48px;width:auto}
 .wallet-btn{display:inline-flex;align-items:center;justify-content:center;margin-top:14px;background:#000;color:#fff;border-radius:10px;padding:10px 18px;font-weight:600;text-decoration:none}
 .city-card{padding-top:0;overflow:hidden}
 .city-card .city-img{height:120px;margin:0 -18px 14px;background:linear-gradient(135deg,var(--canopy),var(--sea));background-size:cover;background-position:center}
