@@ -124,29 +124,44 @@ export async function cancelGuest(id: string) {
 }
 
 /**
- * Book a court from the portal. Members pay when they book (their tier's
- * discount applied): the slot is held and they go to Stripe. While Stripe
- * isn't set up, it's booked and settled at reception.
+ * Book a court from the portal. Members pay when they book, with their tier's
+ * discount (only here, not on the public page): the slot is held and they go
+ * to Stripe. While Stripe isn't set up, it's booked and settled at reception.
+ * An open match lets others join from the public page and pay their share.
  */
-export async function bookCourt(courtId: string, date: string, start: string): Promise<ActionResult & { payUrl?: string }> {
+export async function bookCourt(input: {
+  courtId: string;
+  date: string;
+  start: string;
+  minutes: number;
+  openMatch?: boolean;
+  level?: number;
+  spots?: number;
+  levelMin?: number;
+  levelMax?: number;
+}): Promise<ActionResult & { payUrl?: string }> {
   const v = await viewer();
   if (!v.memberId) return fail("Court booking is for members.");
-  const [{ data: me }, { data: court }] = await Promise.all([
-    v.supabase.rpc("my_member_profile").maybeSingle(),
-    v.supabase.from("courts").select("slot_minutes").eq("id", courtId).maybeSingle(),
-  ]);
+  const { data: me } = await v.supabase.rpc("my_member_profile").maybeSingle();
   if (!me?.email) return fail("Add your email under Me first.");
   const online = stripeReady();
+  const open = !!input.openMatch;
   const { data, error } = await v.supabase.rpc("hold_court", {
     p: {
-      court_id: courtId,
-      date,
-      start,
-      minutes: court?.slot_minutes ?? 60,
+      court_id: input.courtId,
+      date: input.date,
+      start: input.start,
+      minutes: input.minutes,
       name: me.name,
       email: me.email,
       phone: me.phone ?? "",
       pay: online ? "online" : "reception",
+      portal: true,
+      open_match: open,
+      level: open ? input.level : null,
+      spots: open ? input.spots : null,
+      level_min: open ? input.levelMin : null,
+      level_max: open ? input.levelMax : null,
     },
   });
   if (error || !data) return fail(friendly(error));
@@ -155,7 +170,7 @@ export async function bookCourt(courtId: string, date: string, start: string): P
   revalidatePath("/events/courts");
   revalidatePath("/courts", "layout");
   if (h.status === "held") return { ...ok("Taking you to payment…"), payUrl: `/pay/court/${h.player_token}` };
-  if (Number(h.amount) > 0) return ok("Booked. Settle it at reception when you arrive.");
+  if (Number(h.amount) > 0) return ok(open ? "Booked. Share the match from Your bookings." : "Booked. Settle it at reception when you arrive.");
   return ok("Booked.");
 }
 

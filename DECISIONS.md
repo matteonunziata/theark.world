@@ -352,3 +352,6 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Kept live:** Stripe prices for day and week passes, the class schedule from Supabase, the "which one is right for you" calculator, and the existing FAQ answers.
 - **Left out of the design's draft copy:** the "[X DAYS]" reply time and the contact line, since neither is decided. Step 2 of How to join says the team reads every application and a free day pass is emailed, as the FAQ does. Add a reply time and contact once chosen.
 - **Names:** the page says Space Deck and ARK House (the design's names), where it said Spa Deck and Cowork.
+=======
+- **Court discount is for the members portal only** (user decision, 2026-10-07). `hold_court` applies the tier discount only when a signed-in member books with `portal: true`; the public `/courts` page charges the full price, signed in or not, and points members to the portal. In the portal, members pick a length (1, 1½, 2 hours, discounted prices) and can make the booking an open match (level, players), so others join from the public join page and pay their share. A joiner's share is the host's court total divided by the players, so it carries the host's discount.
+>>>>>>> origin/main

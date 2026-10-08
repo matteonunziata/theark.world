@@ -13,7 +13,7 @@ export async function CourtsSection({ p, date: d }: { p: PortalData; date?: stri
   const last = addDays(today, BOOKING_DAYS);
   const date = d && ISO.test(d) && d >= today && d <= last ? d : today;
   const [{ data: courts }, { data: taken }, { data: offerings }, { data: cancels }, { data: mine }, { data: discount }] = await Promise.all([
-    p.supabase.from("courts").select("id, name, sport, open_time, close_time, slot_minutes, price, currency").eq("active", true).order("position"),
+    p.supabase.from("courts").select("id, name, sport, open_time, close_time, slot_minutes, price, price_90, price_120, currency, max_players").eq("active", true).order("position"),
     p.supabase.rpc("court_day", { p_date: date }),
     p.supabase.from("offerings").select("*").eq("status", "published").ilike("location", "%court%"),
     p.supabase.from("session_cancellations").select("offering_id, session_date").eq("session_date", date),
