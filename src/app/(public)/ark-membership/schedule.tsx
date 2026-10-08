@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { coverUrl } from "@/lib/covers";
+import { addDays, DOW, fmtDate } from "@/lib/dates";
 
 export type ClassSlot = {
   id: string;
@@ -10,53 +12,67 @@ export type ClassSlot = {
   end_time: string | null;
   location: string | null;
   facilitator: string | null;
+  cover_path: string | null;
 };
 
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const hm = (t: string | null) => (t ? t.slice(0, 5) : "");
+const dowOf = (s: string) => new Date(`${s}T00:00:00Z`).getUTCDay();
 
-export function Schedule({ classes, today }: { classes: ClassSlot[]; today: number }) {
-  // Days are 0 (Sunday) to 6, shown Monday first; hide days with nothing on.
-  const days = [1, 2, 3, 4, 5, 6, 0].filter((d) => classes.some((c) => c.days.includes(d)));
-  const [day, setDay] = useState(days.includes(today) ? today : (days[0] ?? 1));
-  const list = classes.filter((c) => c.days.includes(day));
+/** The next seven days, from today. Booking a class goes through the pricing section. */
+export function Schedule({ classes, today }: { classes: ClassSlot[]; today: string }) {
+  const week = Array.from({ length: 7 }, (_, i) => addDays(today, i));
+  const [day, setDay] = useState(today);
+  const list = classes.filter((c) => c.days.includes(dowOf(day)));
 
-  if (!days.length) {
+  if (!classes.length) {
     return <p className="ms-fine">The new season’s schedule is on its way.</p>;
   }
   return (
     <>
       <div className="ms-days" role="tablist" aria-label="Day">
-        {days.map((d) => (
-          <button
-            key={d}
-            type="button"
-            role="tab"
-            aria-selected={d === day}
-            onClick={() => setDay(d)}
-          >
-            <span className="long">{DAYS[d]}</span>
-            <span className="short">{DAYS[d].slice(0, 3)}</span>
+        {week.map((d, i) => (
+          <button key={d} type="button" role="tab" aria-selected={d === day} onClick={() => setDay(d)}>
+            <span className="long">{i === 0 ? "Today" : fmtDate(d, { weekday: "long", month: "short", day: "numeric" })}</span>
+            <span className="short">
+              {DOW[dowOf(d)]} {Number(d.slice(8))}
+            </span>
           </button>
         ))}
       </div>
       <ul className="ms-sched" role="tabpanel">
-        {list.map((c) => (
-          <li key={c.id}>
-            <span className="ms-time">
-              {hm(c.start_time)}
-              {c.end_time && ` – ${hm(c.end_time)}`}
-            </span>
-            <span>
-              <b>{c.title}</b>
-              <span className="ms-where">
-                {[c.location, c.facilitator && `with ${c.facilitator.split(" ")[0]}`]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </span>
-            </span>
+        {list.length ? (
+          list.map((c) => {
+            const cover = coverUrl(c.cover_path);
+            return (
+            <li key={c.id}>
+              <div
+                className="ms-cover"
+                role="img"
+                aria-label={c.title}
+                style={cover ? { backgroundImage: `url(${cover})` } : undefined}
+              >
+                <span className="ms-time">
+                  {hm(c.start_time)}
+                  {c.end_time && ` – ${hm(c.end_time)}`}
+                </span>
+              </div>
+              <div className="ms-card-body">
+                <b>{c.title}</b>
+                <span className="ms-where">
+                  {[c.location, c.facilitator && `with ${c.facilitator.split(" ")[0]}`].filter(Boolean).join(" · ")}
+                </span>
+                <a className="ms-btn small ms-book" href="#pricing">
+                  Book a class
+                </a>
+              </div>
+            </li>
+            );
+          })
+        ) : (
+          <li className="empty">
+            <span className="ms-where">Nothing on this day.</span>
           </li>
-        ))}
+        )}
       </ul>
     </>
   );

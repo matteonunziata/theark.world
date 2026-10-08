@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { PortalHead } from "@/components/portal-head";
 import { getViewer } from "@/lib/auth";
 import { fmtDate } from "@/lib/dates";
@@ -24,7 +25,7 @@ export default async function PaymentDone({ searchParams }: PageProps<"/pay/done
   const sp = await searchParams;
   const sessionId = typeof sp.session_id === "string" ? sp.session_id : "";
   const code = typeof sp.problem === "string" ? sp.problem : "";
-  const { supabase } = await getViewer();
+  const { supabase, memberId, staff } = await getViewer();
   const { data: org } = await supabase.rpc("public_org").maybeSingle();
   const orgName = org?.name ?? "The ARK";
   const head = <PortalHead name={orgName} sub="Payment" />;
@@ -73,6 +74,9 @@ export default async function PaymentDone({ searchParams }: PageProps<"/pay/done
       </p>
     ));
   }
+
+  // A meal (breakfast, lunch) is paid first: members go straight back to the portal.
+  if (r.kind === "ticket" && r.meta.held && (memberId || staff)) redirect("/portal?paid=1");
 
   const paid = `${fmtAmount(r.amount, r.currency)} paid.`;
   const admin = createAdminClient();

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useToast } from "@/components/toast";
 import type { ActionResult } from "@/lib/action-result";
 import { fmtDate, monthLabel } from "@/lib/dates";
@@ -56,6 +56,27 @@ export function GuestsView({
     }
   });
   useEffect(() => onResult(state), [state]);
+
+  // Chrome on Android can open the phone's contacts; other browsers don't offer it.
+  const canPick = useSyncExternalStore(
+    () => () => {},
+    () => "contacts" in navigator && "ContactsManager" in window,
+    () => false,
+  );
+  const pick = async () => {
+    try {
+      type Picker = { select: (p: string[], o: { multiple: boolean }) => Promise<{ name?: string[]; tel?: string[]; email?: string[] }[]> };
+      const [c] = await (navigator as unknown as { contacts: Picker }).contacts.select(["name", "tel", "email"], { multiple: false });
+      const f = form.current;
+      if (!c || !f) return;
+      const set = (n: string, v?: string) => v && ((f.elements.namedItem(n) as HTMLInputElement).value = v);
+      set("guest_name", c.name?.[0]);
+      set("phone", c.tel?.[0]);
+      set("email", c.email?.[0]);
+    } catch {
+      /* closed without choosing */
+    }
+  };
 
   const none = thisMonth.allowed === 0 && nextMonth.allowed === 0;
   const thisKey = today.slice(0, 7);
@@ -115,6 +136,11 @@ export function GuestsView({
               }}
               className="gp-form"
             >
+              {canPick && (
+                <button type="button" className="pv-btn ghost" onClick={pick}>
+                  Choose from contacts
+                </button>
+              )}
               <label>
                 <span>Name</span>
                 <input name="guest_name" required autoComplete="off" placeholder="Their full name" />
@@ -132,10 +158,10 @@ export function GuestsView({
                 <input name="visit_date" type="date" required min={today} max={maxDate} defaultValue={today} />
               </label>
               <button type="submit" className="pv-btn" disabled={pending}>
-                {pending ? "Inviting…" : "Invite"}
+                {pending ? "Sending…" : "Invite and send pass"}
               </button>
             </form>
-            <p className="gp-note">Add a phone number or an email so they get the pass. Each pass works once, on the day you choose.</p>
+            <p className="gp-note">We send the pass to their WhatsApp and email as soon as you invite them. Each pass works once, on the day you choose.</p>
           </section>
 
           {last && <ShareCard g={last} origin={origin} orgName={orgName} hostFirst={hostFirst} onClose={() => setLast(null)} />}
