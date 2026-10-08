@@ -1321,6 +1321,22 @@ select pg_temp.act_as(null);
 select pg_temp.expect((select count(*) from public.book_session(pg_temp.id('lunch'), public.org_today(), 'Late', 'late@example.com', pg_temp.id('meal'))) = 1, 'the same person can book again after a lapse');
 reset role;
 
+-- Farm shop Checkout ----------------------------------------------------------
+select pg_temp.act_as(pg_temp.id('shop'));
+select pg_temp.expect((select count(*) from public.checkout_customers('zz')) >= 0, 'shop staff can search customers');
+select pg_temp.act_as(pg_temp.id('sales'));
+select pg_temp.expect((select count(*) from public.checkout_customers('zz')) = 0, 'sales staff get no customer search through Checkout');
+select pg_temp.expect((select count(*) from public.sales) >= 0, 'CRM roles can read sales');
+do $$ begin
+  begin
+    perform public.checkout_sale(null, '[]'::jsonb, 'cash', null, 1);
+    raise exception 'RLS test failed: a sales-role user ran Checkout';
+  exception when sqlstate '42501' then null; end;
+end $$;
+select pg_temp.act_as(pg_temp.id('marketing'));
+select pg_temp.expect((select count(*) from public.sales) = 0 and (select count(*) from public.sale_payments) = 0, 'marketing cannot read sales');
+reset role;
+
 select 'All RLS tests passed' as result;
 
 rollback;

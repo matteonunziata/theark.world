@@ -17,6 +17,7 @@ import {
   waLink,
 } from "@/lib/crm";
 import { dayLabel, fmtDate, todayIn } from "@/lib/dates";
+import { fmtMoney } from "@/lib/shop";
 import { nextStep, stepDue } from "@/lib/sequences";
 import { type Activity, ActivityPanel } from "./activity-panel";
 import { addNote, enroll, replacePass, sendWelcome, setStage, updateEnrollment } from "../../actions";
@@ -53,6 +54,13 @@ const MEMBERSHIP_STATUS: Record<string, string> = {
   revoked: "Ended early",
 };
 
+const SHOP_PAY: Record<string, string> = {
+  tilopay_account: "Account (Tilopay)",
+  bac_card: "Card (BAC)",
+  sinpe: "SINPE",
+  cash: "Cash",
+};
+
 export function ProfileView({
   contact: c,
   pay,
@@ -65,6 +73,7 @@ export function ProfileView({
   discounts,
   activity,
   memberships,
+  sales,
   currency,
   now,
   role,
@@ -82,6 +91,14 @@ export function ProfileView({
   discounts: DiscountOption[];
   activity: Activity[];
   memberships: Membership[];
+  sales: {
+    id: string;
+    total: number;
+    discount: number;
+    created_at: string;
+    items: { name: string; quantity: number }[];
+    payments: { method: string }[];
+  }[];
   currency: string;
   now: string;
   role: string;
@@ -443,6 +460,27 @@ export function ProfileView({
               </>
             )}
           </section>
+          {sales.length > 0 && (
+            <section className="panel">
+              <h2>Farm shop purchases</h2>
+              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 8 }}>
+                {sales.map((s) => (
+                  <li key={s.id} style={{ fontSize: 14 }}>
+                    <b>{fmtMoney(Number(s.total))}</b>
+                    <span className="muted">
+                      {" "}
+                      · {fmtDate(s.created_at.slice(0, 10), { month: "short", day: "numeric", year: "numeric" })} ·{" "}
+                      {s.payments.map((p) => SHOP_PAY[p.method] ?? p.method).join(", ")}
+                      {Number(s.discount) > 0 ? ` · saved ${fmtMoney(Number(s.discount))}` : ""}
+                    </span>
+                    <div className="muted">
+                      {s.items.map((i) => `${i.name}${Number(i.quantity) !== 1 ? ` × ${Number(i.quantity)}` : ""}`).join(", ")}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <section className="panel">
             <h2>Interests</h2>
             <div className="tags">

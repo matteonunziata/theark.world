@@ -77,6 +77,11 @@ export function OrgForm({
           <label htmlFor="o-email">Contact email</label>
           <input id="o-email" name="email" type="email" defaultValue={org?.email ?? ""} placeholder="hello@theark.world" />
         </div>
+        <div className="fld">
+          <label htmlFor="o-sinpe">SINPE Móvil number</label>
+          <input id="o-sinpe" name="sinpe_number" inputMode="tel" defaultValue={org?.sinpe_number ?? ""} placeholder="8888 8888" />
+          <small className="muted">Shown at the farm shop Checkout when someone pays by SINPE.</small>
+        </div>
         {canEdit && (
           <button type="submit" className="btn primary">
             {pending ? "Saving…" : "Save organization"}
