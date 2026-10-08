@@ -1105,3 +1105,61 @@ a.mk-tr:hover{background:var(--surface-2)}
 .sched-block span{color:var(--muted);font-size:11.5px}
 .sched-block:hover{background:color-mix(in srgb,var(--c) 28%,var(--surface))}
 .lines-table .dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px}
+
+/* Farm shop checkout: a tablet till. Big tap targets, products left, sale right. */
+.co{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:20px;align-items:start}
+.co-tools{display:grid;gap:10px;margin-bottom:14px;position:sticky;top:0;background:var(--bg);padding:4px 0 8px;z-index:2}
+.co-search{width:100%;min-height:52px;font-size:17px;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.co-cats{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.co-cats button{font:inherit;font-weight:600;white-space:nowrap;min-height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer}
+.co-cats button.on{background:var(--leaf);border-color:var(--leaf);color:#fff}
+.co-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.co-card{position:relative;display:flex;flex-direction:column;gap:4px;text-align:left;font:inherit;padding:10px;min-height:210px;background:var(--surface);border:1px solid var(--line);border-radius:14px;cursor:pointer;color:var(--ink)}
+.co-card:active:not(:disabled){transform:scale(.98)}
+.co-card.out{opacity:.45;filter:grayscale(1);cursor:not-allowed}
+.co-photo{display:flex;align-items:center;justify-content:center;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--surface-2);font-size:34px;font-weight:700;color:var(--muted)}
+.co-photo img{width:100%;height:100%;object-fit:cover}
+.co-name{font-weight:600;line-height:1.25}
+.co-price{font-weight:700}
+.co-stock{font-size:12.5px;color:var(--muted)}
+.co-badge{position:absolute;top:6px;right:6px;min-width:30px;height:30px;border-radius:15px;background:var(--leaf);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+.co-side{display:grid;gap:14px;position:sticky;top:8px;max-height:calc(100dvh - 16px);overflow-y:auto}
+.co-box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.co-box h3{margin:0 0 10px;font-size:15px}
+.co-results{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.co-results button{width:100%;min-height:56px;text-align:left;font:inherit;display:flex;flex-direction:column;gap:2px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);cursor:pointer;color:var(--ink)}
+.co-guest{margin:10px 0 0;font-size:13px}
+.co-cust{display:flex;gap:12px;align-items:center}
+.co-cust .btn{margin-left:auto;min-height:44px}
+.co-av{width:52px;height:52px;border-radius:50%;overflow:hidden;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.co-av img{width:100%;height:100%;object-fit:cover}
+.co-lines{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.co-lname{display:flex;justify-content:space-between;gap:10px}
+.co-qty{display:flex;align-items:center;gap:8px;margin-top:6px}
+.co-qty button{font:inherit;font-size:22px;font-weight:700;width:48px;height:48px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.co-qty button:disabled{opacity:.35;cursor:not-allowed}
+.co-qty output{min-width:36px;text-align:center;font-weight:700;font-size:18px}
+.co-qty .rm{width:auto;margin-left:auto;font-size:14px;padding:0 12px;color:var(--danger)}
+.co-totals{margin:14px 0 0;display:grid;gap:6px}
+.co-totals div{display:flex;justify-content:space-between}
+.co-totals dt,.co-totals dd{margin:0}
+.co-totals .grand{font-size:22px;font-weight:800;border-top:1px solid var(--line);padding-top:8px}
+.co-methods{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.co-methods button{font:inherit;font-weight:600;min-height:60px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.co-methods button.on{border-color:var(--leaf);background:color-mix(in srgb,var(--leaf) 14%,var(--surface))}
+.co-note{margin:0 0 6px}
+.co-num{font-family:ui-monospace,Menlo,monospace;font-size:1.15em}
+.co-big{font-size:56px;font-weight:800;line-height:1.1;text-align:center;margin:8px 0 14px;letter-spacing:-.01em}
+.co-box .fld input{min-height:56px;font-size:20px}
+.co-quick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.co-quick button{font:inherit;font-weight:600;min-height:48px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.co-change{font-size:26px;font-weight:800;text-align:center;color:var(--leaf);margin:6px 0 12px}
+.co-change.short{color:var(--danger)}
+.co-pay{width:100%;justify-content:center;min-height:64px;font-size:19px;margin-top:8px}
+.co-done{max-width:480px;margin:40px auto;text-align:center;display:grid;gap:8px;justify-items:center}
+.co-done h2{margin:0}
+.co-tick{width:72px;height:72px;border-radius:50%;background:var(--leaf);color:#fff;font-size:40px;display:flex;align-items:center;justify-content:center}
+.co-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.co-actions .btn{min-height:52px}
+@media (max-width:1100px){.co{grid-template-columns:minmax(0,1fr) 360px}}
+@media (max-width:820px){.co{grid-template-columns:1fr}.co-side{position:static;max-height:none}}

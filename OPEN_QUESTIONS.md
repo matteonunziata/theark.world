@@ -161,3 +161,11 @@
 - **Payout record.** Analytics shows what is owed per period; nothing marks a period as paid yet.
 - **Monthly on day 29–31** skips months without that day. Use "the last day" instead?
 - **Public timetable** on the join page lists weekly classes only; classes on other repeats (every 2 weeks, monthly, specific dates) don't show there.
+## Farm shop Checkout
+- **Tilopay charge call.** Tilopay's public guides cover saving a card, not charging a saved token from the server. `src/lib/tilopay.ts` uses a placeholder endpoint and request shape. Before turning on `TILOPAY_ENABLED`, check it against Tilopay's API docs (or soporte@tilopay.com) and confirm what an approved response looks like.
+- **If a charge succeeds but the sale doesn't save,** Checkout tells staff the Tilopay transaction id and not to charge again. Is a refund or "record it later" step needed?
+- **Annual members get 20%** at Checkout, as in the portal. The brief said 10% for 1, 3 and 6 months; is annual meant to be left out?
+- **Customer search covers every contact**, not only those with a login. Narrow it?
+- **Who is "community manager"?** Checkout uses the Shop staff role plus admins. Add a separate role?
+- **Receipts on WhatsApp** open a chat with a ready message; automatic sending needs the WhatsApp template set up.
+- **The old sale form on Sales** (no discount, no payment record) could be retired once Checkout is trusted.

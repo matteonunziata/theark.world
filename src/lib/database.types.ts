@@ -785,6 +785,7 @@ export type Database = {
       }
       contacts: {
         Row: {
+          tilopay_card_token: string | null
           bio: string | null
           city_id: string | null
           created_at: string
@@ -825,6 +826,7 @@ export type Database = {
           waitlist_at: string | null
         }
         Insert: {
+          tilopay_card_token?: string | null
           bio?: string | null
           city_id?: string | null
           created_at?: string
@@ -865,6 +867,7 @@ export type Database = {
           waitlist_at?: string | null
         }
         Update: {
+          tilopay_card_token?: string | null
           bio?: string | null
           city_id?: string | null
           created_at?: string
@@ -2553,6 +2556,7 @@ export type Database = {
       }
       org_settings: {
         Row: {
+          sinpe_number: string | null
           currency: string
           currency2: string | null
           email: string | null
@@ -2566,6 +2570,7 @@ export type Database = {
           usd_crc_rate: number
         }
         Insert: {
+          sinpe_number?: string | null
           currency?: string
           currency2?: string | null
           email?: string | null
@@ -2579,6 +2584,7 @@ export type Database = {
           usd_crc_rate?: number
         }
         Update: {
+          sinpe_number?: string | null
           currency?: string
           currency2?: string | null
           email?: string | null
@@ -3338,8 +3344,151 @@ export type Database = {
           },
         ]
       }
+      sales: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          currency: string
+          discount: number
+          discount_percent: number
+          id: string
+          staff_id: string | null
+          subtotal: number
+          total: number
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          discount?: number
+          discount_percent?: number
+          id?: string
+          staff_id?: string | null
+          subtotal: number
+          total: number
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          discount?: number
+          discount_percent?: number
+          id?: string
+          staff_id?: string | null
+          subtotal: number
+          total: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_items: {
+        Row: {
+          discount: number
+          id: string
+          name: string
+          product_id: string | null
+          quantity: number
+          sale_id: string
+          unit_price: number
+        }
+        Insert: {
+          discount?: number
+          id?: string
+          name: string
+          product_id?: string | null
+          quantity: number
+          sale_id: string
+          unit_price: number
+        }
+        Update: {
+          discount?: number
+          id?: string
+          name: string
+          product_id?: string | null
+          quantity: number
+          sale_id: string
+          unit_price: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_payments: {
+        Row: {
+          amount: number
+          cash_received: number | null
+          change_due: number | null
+          created_at: string
+          id: string
+          method: string
+          reference: string | null
+          sale_id: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          cash_received?: number | null
+          change_due?: number | null
+          created_at?: string
+          id?: string
+          method: string
+          reference?: string | null
+          sale_id: string
+          status?: string
+        }
+        Update: {
+          amount: number
+          cash_received?: number | null
+          change_due?: number | null
+          created_at?: string
+          id?: string
+          method: string
+          reference?: string | null
+          sale_id: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_payments_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_movements: {
         Row: {
+          reason: string | null
+          reference: string | null
+          sale_id: string | null
           amount: number | null
           contact_id: string | null
           by_id: string | null
@@ -3353,6 +3502,9 @@ export type Database = {
           unit_price: number | null
         }
         Insert: {
+          reason?: string | null
+          reference?: string | null
+          sale_id?: string | null
           amount?: number | null
           contact_id?: string | null
           by_id?: string | null
@@ -3366,6 +3518,9 @@ export type Database = {
           unit_price?: number | null
         }
         Update: {
+          reason?: string | null
+          reference?: string | null
+          sale_id?: string | null
           amount?: number | null
           contact_id?: string | null
           by_id?: string | null
@@ -3391,6 +3546,13 @@ export type Database = {
             columns: ["by_id"]
             isOneToOne: false
             referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
             referencedColumns: ["id"]
           },
           {
@@ -4326,6 +4488,42 @@ export type Database = {
       shop_recount_stock: {
         Args: never;
         Returns: undefined;
+      };
+      checkout_customers: {
+        Args: { p_q: string };
+        Returns: {
+          id: string;
+          name: string;
+          email: string | null;
+          phone: string | null;
+          photo_path: string | null;
+          tier: string | null;
+          membership_status: string | null;
+          discount_percent: number;
+          has_card: boolean;
+        }[];
+      };
+      checkout_card_token: {
+        Args: { cid: string };
+        Returns: string | null;
+      };
+      checkout_price: {
+        Args: { p_contact: string | null; p_lines: Json };
+        Returns: Json;
+      };
+      checkout_sale: {
+        Args: {
+          p_contact: string | null;
+          p_lines: Json;
+          p_method: string;
+          p_reference?: string | null;
+          p_cash_received?: number | null;
+        };
+        Returns: Json;
+      };
+      shop_discount_for: {
+        Args: { cid: string };
+        Returns: number;
       };
       shop_report: {
         Args: { p_from: string; p_to: string };
