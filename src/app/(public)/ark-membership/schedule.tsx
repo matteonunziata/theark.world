@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { coverUrl } from "@/lib/covers";
 import { addDays, DOW, fmtDate } from "@/lib/dates";
 
 export type ClassSlot = {
@@ -11,6 +12,7 @@ export type ClassSlot = {
   end_time: string | null;
   location: string | null;
   facilitator: string | null;
+  cover_path: string | null;
 };
 
 const hm = (t: string | null) => (t ? t.slice(0, 5) : "");
@@ -39,25 +41,35 @@ export function Schedule({ classes, today }: { classes: ClassSlot[]; today: stri
       </div>
       <ul className="ms-sched" role="tabpanel">
         {list.length ? (
-          list.map((c) => (
+          list.map((c) => {
+            const cover = coverUrl(c.cover_path);
+            return (
             <li key={c.id}>
-              <span className="ms-time">
-                {hm(c.start_time)}
-                {c.end_time && ` – ${hm(c.end_time)}`}
-              </span>
-              <span>
+              <div
+                className="ms-cover"
+                role="img"
+                aria-label={c.title}
+                style={cover ? { backgroundImage: `url(${cover})` } : undefined}
+              >
+                <span className="ms-time">
+                  {hm(c.start_time)}
+                  {c.end_time && ` – ${hm(c.end_time)}`}
+                </span>
+              </div>
+              <div className="ms-card-body">
                 <b>{c.title}</b>
                 <span className="ms-where">
                   {[c.location, c.facilitator && `with ${c.facilitator.split(" ")[0]}`].filter(Boolean).join(" · ")}
                 </span>
-              </span>
-              <a className="ms-btn small ms-book" href="#pricing">
-                Book a class
-              </a>
+                <a className="ms-btn small ms-book" href="#pricing">
+                  Book a class
+                </a>
+              </div>
             </li>
-          ))
+            );
+          })
         ) : (
-          <li>
+          <li className="empty">
             <span className="ms-where">Nothing on this day.</span>
           </li>
         )}

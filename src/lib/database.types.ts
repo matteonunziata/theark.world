@@ -4394,6 +4394,7 @@ export type Database = {
         Returns: {
           days: number[]
           end_time: string
+          cover_path: string | null
           facilitator: string
           id: string
           location: string
