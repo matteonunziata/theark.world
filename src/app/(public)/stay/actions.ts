@@ -21,7 +21,7 @@ export async function requestStay(_prev: ActionResult, data: FormData): Promise<
   const email = field(data, "email") ?? "";
   if (!lotId || !checkIn || !checkOut) return fail("Choose your dates.");
   // A hidden field people don't see; bots tend to fill it in.
-  if (field(data, "website")) return ok("Thanks. We’ll be in touch.");
+  if (field(data, "hp_contact")) return ok("Thanks. We’ll be in touch.");
 
   const guests = Math.max(1, Number(field(data, "guests") ?? 1) || 1);
   const { error } = await supabase.rpc("request_stay", {
