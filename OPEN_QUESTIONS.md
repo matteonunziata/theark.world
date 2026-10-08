@@ -153,3 +153,5 @@
 - **Cancellation policy and contact.** The mockup had placeholders for both; the page says each home lists its own check-in times and sends questions to the form. What is the policy, and which email or WhatsApp should show?
 - **Dietary options.** Which of vegetarian, vegan and gluten-free can La Cocineta cover?
 - **Enquiries.** The "Ask us" form only emails the team. Keep it that way, or store enquiries (and meals or experiences added to a stay) in ARK OS?
+
+- **Pass2U setup:** sign up at pass2u.net and request an API key (30-day trial, then paid yearly). In the dashboard create one Generic model with four dynamic text fields keyed `holder`, `what`, `when`, `where` and a barcode of type "Dynamic - assigned by CSV file or API (duplicable)" (QR). Issue it, then set `PASS2U_API_KEY` and `PASS2U_MODEL_ID` (and `SUPABASE_SERVICE_ROLE_KEY`) in Vercel. Check the Google Wallet side on an Android phone; the API guide only documents Apple's format.

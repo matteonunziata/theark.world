@@ -4,6 +4,7 @@ import { avatarUrl } from "@/lib/covers";
 import { GateButton } from "@/components/gate-button";
 import { PortalHead } from "@/components/portal-head";
 import { SaveImageButton } from "@/components/save-image";
+import { WalletButton } from "@/components/wallet-button";
 import { ScanResult } from "@/components/scan-result";
 import { getViewer } from "@/lib/auth";
 import { siteUrl } from "@/lib/email";
@@ -98,6 +99,7 @@ export default async function PassPage({ params, searchParams }: PageProps<"/p/[
               <SaveImageButton href={`/p/${token}/image.png`} filename="ARK member pass.png" className="btn primary" />
             )}
           </div>
+          {(p.is_mine || !staff) && (passOk(p.state) || p.state === "checked_in") && <WalletButton kind="p" token={token} />}
           <p className="gate-note" style={{ marginTop: 16 }}>
             {p.state === "unused"
               ? "Show this to security on your first visit; that starts your pass. Use it within the next three months."

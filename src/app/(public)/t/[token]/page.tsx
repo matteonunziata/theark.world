@@ -10,7 +10,7 @@ import { fmtDate, fmtTime, timeRange } from "@/lib/dates";
 import { siteUrl, ticketCode, ticketUrl } from "@/lib/email";
 import { kindName, money } from "@/lib/schedule";
 import { stripeReady } from "@/lib/stripe";
-import { walletEnabled } from "@/lib/wallet";
+import { WalletButton } from "@/components/wallet-button";
 import { CheckInButton, CopyTicketLink } from "./ticket-actions";
 
 export const metadata: Metadata = { title: "Ticket", robots: { index: false } };
@@ -183,11 +183,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
             )}
             <CopyTicketLink url={url} />
           </div>
-          {walletEnabled() && (t.state === "valid" || t.state === "upcoming" || t.state === "early") && (
-            <a className="wallet-btn" href={`/t/${token}/wallet.pkpass`}>
-              Add to Apple Wallet
-            </a>
-          )}
+          {(t.state === "valid" || t.state === "upcoming" || t.state === "early") && <WalletButton kind="t" token={token} />}
           {(t.state === "valid" || t.state === "upcoming" || t.state === "early") && (
             <AddToCalendar
               icsHref={`/t/${token}/calendar.ics`}
