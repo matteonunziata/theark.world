@@ -65,6 +65,8 @@ export const KINDS = [
   ["expedition", "Expedition"],
 ] as const;
 
+export type Kind = (typeof KINDS)[number][0];
+
 export const kindName = (k: string) => KINDS.find(([x]) => x === k)?.[1] ?? "Class";
 
 export function whenLabel(o: Offering) {

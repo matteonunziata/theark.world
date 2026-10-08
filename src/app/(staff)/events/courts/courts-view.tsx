@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
 import type { Tables } from "@/lib/database.types";
 import { addDays, fmtDate } from "@/lib/dates";
-import { classAt, courtMoney, hhmm, levelRange, slots, SPORTS } from "@/lib/courts";
+import { classAt, courtMoney, hhmm, levelRange, overlapsTime, slots, SPORTS } from "@/lib/courts";
 import type { Offering } from "@/lib/schedule";
 import { saveCourt, saveCourtBooking } from "./actions";
 
@@ -13,6 +13,13 @@ type Court = Tables<"courts">;
 type Booking = Tables<"court_bookings">;
 type Person = { id: string; name: string; email: string | null; phone: string | null };
 type Slot = { court: Court; start: string; end: string };
+
+const toMin = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + (m || 0);
+};
+const pad = (h: number) => String(h).padStart(2, "0");
+const hourLabel = (h: number) => `${h % 12 || 12} ${h < 12 || h === 24 ? "AM" : "PM"}`;
 
 export function CourtsView({
   courts,
@@ -40,6 +47,14 @@ export function CourtsView({
   const q = (d: string) => `/events/courts?date=${d}`;
   const past = (start: string) => date < today || (date === today && start <= now);
   const courtOf = (id: string) => courts.find((c) => c.id === id);
+  const from = open.length ? Math.floor(Math.min(...open.map((c) => toMin(hhmm(c.open_time)))) / 60) : 0;
+  const to = open.length ? Math.ceil(Math.max(...open.map((c) => toMin(hhmm(c.close_time)))) / 60) : 0;
+  const hours = Array.from({ length: to - from }, (_, i) => from + i);
+  const span = (to - from) * 60;
+  const place = (start: string, end: string) => ({
+    left: `${((toMin(start) - from * 60) / span) * 100}%`,
+    width: `${((toMin(end) - toMin(start)) / span) * 100}%`,
+  });
 
   return (
     <>
@@ -49,7 +64,10 @@ export function CourtsView({
           <Link className="btn sm" href={q(today)}>Today</Link>
           <Link className="btn sm" href={q(addDays(date, 1))} aria-label="Next day">→</Link>
         </span>
-        <b style={{ fontSize: 16 }}>{fmtDate(date, { weekday: "long", month: "long", day: "numeric" })}</b>
+        <span className="ct-day">
+          <b>{date === today ? "Today" : fmtDate(date, { weekday: "long" })}</b>
+          <span>{fmtDate(date, { weekday: "long", month: "long", day: "numeric" })}</span>
+        </span>
         <span className="muted" style={{ fontSize: 13.5 }}>
           {bookings.length} booking{bookings.length === 1 ? "" : "s"}
         </span>
@@ -74,63 +92,93 @@ export function CourtsView({
           {canManage && <button type="button" className="btn primary" onClick={manage.openNew}>Add a court</button>}
         </div>
       ) : (
-        <div className="courts" style={{ gridTemplateColumns: `repeat(${open.length}, minmax(200px, 1fr))` }}>
-          {open.map((c) => (
-            <section key={c.id} className="court-col">
-              <h2>
-                {c.name}
-                <span className="muted">{SPORTS.find(([k]) => k === c.sport)?.[1]} · {hhmm(c.open_time)}–{hhmm(c.close_time)}</span>
-              </h2>
-              {slots(c).map((s) => {
-                const b = bookings.find(
-                  (x) => x.court_id === c.id && hhmm(x.start_time) < s.end && hhmm(x.end_time) > s.start,
-                );
-                const tags = b
-                  ? [
-                      b.status === "held" ? "paying now" : null,
-                      b.open_match ? `open match, level ${levelRange(b.level_min, b.level_max)}` : b.players ? `${b.players} players` : null,
-                      b.amount && Number(b.amount) > 0 ? (b.paid ? "paid" : `${courtMoney(Number(b.amount), b.currency)} unpaid`) : null,
-                      b.source === "portal" ? "portal" : b.source === "web" ? "website" : null,
-                    ].filter(Boolean)
-                  : [];
-                const cls = b ? null : classAt(c, s, classes);
-                const gone = past(s.start);
-                return b ? (
-                  <button
-                    key={s.start}
-                    type="button"
-                    className={`court-slot taken ${b.status === "held" ? "held" : ""}`}
-                    onClick={() => book.openItem(b)}
-                  >
-                    <span className="t">{s.start}</span>
-                    <span>
-                      <b>{b.name}</b>
-                      <span className="muted">{tags.join(" · ")}</span>
-                    </span>
-                  </button>
-                ) : cls ? (
-                  <div key={s.start} className="court-slot class">
-                    <span className="t">{s.start}</span>
-                    <span>{cls}</span>
+        <div className="ct-card">
+          <div className="ct-scroll" style={{ "--cols": hours.length } as React.CSSProperties}>
+            <div className="ct-in">
+              <div className="ct-row head">
+                <div className="ct-name" />
+                <div className="ct-hours">
+                  {hours.map((h) => (
+                    <span key={h}>{hourLabel(h)}</span>
+                  ))}
+                </div>
+              </div>
+              {open.map((c) => {
+                const mine = bookings.filter((x) => x.court_id === c.id);
+                const o = hhmm(c.open_time);
+                const cl = hhmm(c.close_time);
+                const blocked = classes
+                  .map((k) => ({ k, start: hhmm(k.start_time ?? ""), end: hhmm(k.end_time ?? "") }))
+                  .filter((x) => x.start && x.end && classAt(c, x, [x.k]));
+                return (
+                  <div key={c.id} className="ct-row">
+                    <div className="ct-name">
+                      {c.name}
+                      <small>{SPORTS.find(([k]) => k === c.sport)?.[1]}</small>
+                    </div>
+                    <div className="ct-track">
+                      {toMin(o) > from * 60 && <span className="blk off" style={place(`${pad(from)}:00`, o)} />}
+                      {toMin(cl) < to * 60 && <span className="blk off" style={place(cl, `${pad(to)}:00`)} />}
+                      {blocked.map((x) => (
+                        <span key={x.k.id} className="blk class" style={place(x.start, x.end)} title={x.k.title}>
+                          {x.k.title}
+                        </span>
+                      ))}
+                      {mine.map((b) => {
+                        const tags = [
+                          b.status === "held" ? "paying now" : null,
+                          b.open_match ? `open match, level ${levelRange(b.level_min, b.level_max)}` : b.players ? `${b.players} players` : null,
+                          b.amount && Number(b.amount) > 0 ? (b.paid ? "paid" : `${courtMoney(Number(b.amount), b.currency)} unpaid`) : null,
+                          b.source === "portal" ? "portal" : b.source === "web" ? "website" : null,
+                        ].filter(Boolean);
+                        return (
+                          <button
+                            key={b.id}
+                            type="button"
+                            className={`blk ${b.open_match ? "match" : "taken"} ${b.status === "held" ? "held" : ""}`}
+                            style={place(hhmm(b.start_time), hhmm(b.end_time))}
+                            title={`${b.name}, ${hhmm(b.start_time)}–${hhmm(b.end_time)}${tags.length ? `, ${tags.join(", ")}` : ""}`}
+                            onClick={() => book.openItem(b)}
+                          >
+                            <b>{b.name}</b>
+                            <small>{b.open_match ? "Open match" : b.paid ? "Paid" : b.status === "held" ? "Paying" : "Booked"}</small>
+                          </button>
+                        );
+                      })}
+                      {slots(c).map((s) => {
+                        const span = { start: s.start, end: s.end };
+                        const taken =
+                          mine.some((x) => overlapsTime(span, { start: hhmm(x.start_time), end: hhmm(x.end_time) })) ||
+                          blocked.some((x) => overlapsTime(span, x));
+                        if (taken) return null;
+                        const gone = past(s.start);
+                        return (
+                          <button
+                            key={s.start}
+                            type="button"
+                            className="blk free"
+                            style={place(s.start, s.end)}
+                            disabled={gone}
+                            aria-label={`${c.name}, ${s.start}`}
+                            onClick={() => {
+                              setSlot({ court: c, ...s });
+                              book.openNew();
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
                   </div>
-                ) : (
-                  <button
-                    key={s.start}
-                    type="button"
-                    className="court-slot free"
-                    disabled={gone}
-                    onClick={() => {
-                      setSlot({ court: c, ...s });
-                      book.openNew();
-                    }}
-                  >
-                    <span className="t">{s.start}</span>
-                    <span className="muted">{gone ? "—" : "Free · book"}</span>
-                  </button>
                 );
               })}
-            </section>
-          ))}
+            </div>
+          </div>
+          <ul className="ct-legend">
+            <li><i className="free" />Available</li>
+            <li><i className="taken" />Booked</li>
+            <li><i className="match" />Open match</li>
+            <li><i className="class" />Class</li>
+          </ul>
         </div>
       )}
       <p className="note">

@@ -576,21 +576,38 @@ a.seq-card{display:block;color:var(--ink);text-decoration:none}
 .pick-chip .linkish-sm{margin-top:0}
 
 /* Courts */
-.courts{display:grid;gap:14px;align-items:start;overflow-x:auto}
-.court-col{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;display:grid;gap:6px;min-width:200px}
-.court-col h2{margin:0 0 6px;font-size:17px;display:flex;flex-direction:column;gap:2px}
-.court-col h2 .muted{font-family:var(--body);font-size:12.5px;font-weight:500}
-.court-slot{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;text-align:left;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:none;font:inherit;font-size:14px;color:var(--ink);min-height:44px}
-.court-slot .t{font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
-.court-slot > span:last-child{display:flex;flex-direction:column;min-width:0}
-.court-slot.free{cursor:pointer;border-style:dashed}
-.court-slot.free:hover:not(:disabled){border-color:var(--leaf);background:color-mix(in srgb,var(--leaf) 8%,transparent)}
-.court-slot.free:disabled{opacity:.45;cursor:default}
-.court-slot.taken{cursor:pointer;background:color-mix(in srgb,var(--clay) 12%,var(--surface));border-color:color-mix(in srgb,var(--clay) 40%,var(--line))}
-.court-slot.taken .muted{font-size:12.5px}
-.court-slot.class{background:var(--surface-2);color:var(--muted)}
-.court-slot.taken.held{border-style:dashed;background:color-mix(in srgb,var(--sun) 18%,var(--surface))}
 .court-row{grid-template-columns:1fr auto}
+
+/* Courts day grid: a row per court, a column per hour */
+.ct-day{display:flex;flex-direction:column;line-height:1.25;min-width:190px}
+.ct-day b{font-family:var(--display);font-size:18px}
+.ct-day span{font-size:13.5px;color:var(--muted)}
+.ct-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.ct-scroll{overflow-x:auto;padding:8px 0}
+.ct-in{min-width:calc(150px + var(--cols) * 72px)}
+.ct-row{display:grid;grid-template-columns:150px 1fr;align-items:center}
+.ct-name{position:sticky;left:0;z-index:3;background:var(--surface);display:flex;flex-direction:column;justify-content:center;padding:0 16px;font-family:var(--display);font-weight:600;font-size:15.5px;line-height:1.25}
+.ct-name small{font-family:var(--body);font-weight:500;font-size:12px;color:var(--muted)}
+.ct-hours{display:grid;grid-template-columns:repeat(var(--cols),1fr);padding-right:12px}
+.ct-hours span{text-align:center;font-size:12.5px;letter-spacing:.04em;color:var(--muted);padding:10px 0 8px}
+.ct-track{position:relative;height:60px;margin-right:12px}
+.ct-track .blk{position:absolute;top:5px;bottom:5px;box-sizing:border-box;border:solid transparent;border-width:0 2px;background-clip:padding-box;border-radius:7px;padding:0;font:inherit;color:var(--ink);overflow:hidden}
+.ct-track .off{background:color-mix(in srgb,var(--surface-2) 70%,transparent)}
+.ct-track .free{cursor:pointer;background-color:var(--surface);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 28%,var(--line))}
+.ct-track .free:hover:not(:disabled),.ct-track .free:focus-visible{background-color:color-mix(in srgb,var(--leaf) 10%,var(--surface));box-shadow:inset 0 0 0 1.5px var(--leaf);outline:0}
+.ct-track .free:disabled{cursor:default;background-color:color-mix(in srgb,var(--surface-2) 70%,transparent);box-shadow:none}
+.ct-track .taken,.ct-track .match{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:1px;padding:0 9px;text-align:left;cursor:pointer;line-height:1.2}
+.ct-track .taken{background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line)}
+.ct-track .match{background:color-mix(in srgb,var(--sun) 28%,var(--surface));box-shadow:inset 0 0 0 1px var(--sun)}
+.ct-track .held{background-image:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--sun) 25%,transparent) 6px 12px)}
+.ct-track .taken b,.ct-track .match b{font-size:12.5px;font-weight:600;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct-track .taken small,.ct-track .match small{font-size:11px;color:var(--muted)}
+.ct-track .class{background:var(--surface-2);color:var(--muted);font-size:11.5px;font-style:italic;line-height:50px;padding:0 8px;white-space:nowrap;text-overflow:ellipsis}
+.ct-legend{display:flex;flex-wrap:wrap;gap:8px 22px;margin:0;padding:14px 20px;list-style:none;font-size:14px;color:var(--muted);border-top:1px solid var(--line)}
+.ct-legend li{display:flex;align-items:center;gap:8px}
+.ct-legend i{display:inline-block;width:18px;height:18px;border-radius:5px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 28%,var(--line));background:var(--surface)}
+.ct-legend i.taken,.ct-legend i.class{background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line)}
+.ct-legend i.match{background:color-mix(in srgb,var(--sun) 28%,var(--surface));box-shadow:inset 0 0 0 1px var(--sun)}
 
 /* Contact activity (CRM profile) */
 .act-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}

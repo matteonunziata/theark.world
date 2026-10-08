@@ -10,7 +10,7 @@ const ROOT_BY_HOST: Record<string, string> = {
 };
 
 // On join.theark.world the public events page answers at /events. The staff
-// events area (/events/...) is unchanged; staff reach its overview at /events/all.
+// events area (/events/...) is unchanged; staff reach its overview at /events/classes.
 const EVENTS_HOST = "join.theark.world";
 
 export async function proxy(request: NextRequest) {

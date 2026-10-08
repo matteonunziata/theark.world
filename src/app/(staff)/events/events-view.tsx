@@ -19,6 +19,7 @@ import {
   KINDS,
   kindName,
   money,
+  type Kind,
   type Offering,
   sessions,
   type TicketType,
@@ -42,6 +43,7 @@ type Person = EventsData["team"][number];
 
 export function EventsView({
   mode,
+  kinds,
   weekStart: ws,
   today,
   staff,
@@ -52,7 +54,14 @@ export function EventsView({
   team,
   cities,
   stripePrices,
-}: EventsData & { mode: "week" | "all"; weekStart: string; today: string; stripePrices: StripePrice[] }) {
+}: EventsData & {
+  mode: "week" | "all";
+  /** The "all" list only shows these kinds, and the filter goes away. */
+  kinds?: Kind[];
+  weekStart: string;
+  today: string;
+  stripePrices: StripePrice[];
+}) {
   const offering = useDrawer<Offering>();
   const [newKind, setNewKind] = useState<Kind>("class");
   const [session, setSession] = useState<{ id: string; date: string } | null>(null);
@@ -69,6 +78,10 @@ export function EventsView({
     offering.openNew();
   };
 
+  // Calendar and the full list offer events and classes; a kind tab offers its own.
+  const newKinds: Kind[] = kinds ?? ["event", "class"];
+  const primaryKind: Kind = kinds ? kinds[0] : "class";
+  const shown = offerings.filter((o) => (kinds ? kinds.includes(o.kind as Kind) : !kind || o.kind === kind));
   const we = addDays(ws, 6);
   const week = sessions(offerings, cancellations, ws, we);
   const open = session && offerings.find((o) => o.id === session.id);
@@ -86,6 +99,10 @@ export function EventsView({
             <Link className="btn" href="/events">This week</Link>
             <Link className="btn" href={`/events?week=${addDays(ws, 7)}`}>Next</Link>
           </div>
+        ) : kinds ? (
+          <span className="muted" style={{ fontSize: 13.5 }}>
+            {offerings.filter((o) => kinds.includes(o.kind as Kind)).length} in total
+          </span>
         ) : (
           <select
             className="field-in"
@@ -103,15 +120,21 @@ export function EventsView({
         )}
         {canCreate && (
           <div className="head-actions" style={{ marginLeft: "auto" }}>
-            <a className="btn" href="/qr" target="_blank" rel="noopener noreferrer">
-              Class QR codes
-            </a>
-            <button type="button" className="btn" onClick={() => startNew("event")}>
-              New event
-            </button>
-            <button type="button" className="btn primary" onClick={() => startNew("class")}>
-              New class
-            </button>
+            {(!kinds || kinds.includes("class")) && (
+              <a className="btn" href="/qr" target="_blank" rel="noopener noreferrer">
+                Class QR codes
+              </a>
+            )}
+            {[...newKinds].sort((a) => (a === primaryKind ? 1 : -1)).map((k) => (
+              <button
+                key={k}
+                type="button"
+                className={`btn ${k === primaryKind ? "primary" : ""}`}
+                onClick={() => startNew(k)}
+              >
+                New {kindName(k).toLowerCase()}
+              </button>
+            ))}
           </div>
         )}
       </div>
@@ -165,23 +188,16 @@ export function EventsView({
             <span><i style={{ outline: "1px dashed var(--muted)", background: "transparent" }} />Draft, staff only</span>
           </div>
         </>
-      ) : !offerings.length ? (
+      ) : !shown.length ? (
         <div className="empty">
-          <h2>No classes or events yet</h2>
-          <p>
-            Add a weekly class like Vinyasa yoga or Muay Thai, or a one-off
-            event like a farm dinner.
-          </p>
-          {canCreate && (
-            <>
-              <button type="button" className="btn primary" onClick={() => startNew("class")}>
-                New class
-              </button>{" "}
-              <button type="button" className="btn" onClick={() => startNew("event")}>
-                New event
+          <h2>{kinds ? `No ${kindsLabel(kinds)} yet` : "No classes or events yet"}</h2>
+          <p>{kinds ? EMPTY[kinds[0]] : EMPTY.class}</p>
+          {canCreate &&
+            [...newKinds].sort((a) => (a === primaryKind ? -1 : 1)).map((k) => (
+              <button key={k} type="button" className={`btn ${k === primaryKind ? "primary" : ""}`} onClick={() => startNew(k)}>
+                New {kindName(k).toLowerCase()}
               </button>
-            </>
-          )}
+            ))}
         </div>
       ) : (
         <div className="list">
@@ -191,9 +207,7 @@ export function EventsView({
             <span className="c-fac">Facilitator</span>
             <span>Status</span>
           </div>
-          {offerings
-            .filter((o) => !kind || o.kind === kind)
-            .map((o) => {
+          {shown.map((o) => {
               const f = person(o.facilitator_id);
               return (
                 <button
@@ -263,7 +277,13 @@ export function EventsView({
 /* ---------- Class / event editor ---------- */
 
 type DraftTicket = Partial<TicketType> & { key: number };
-type Kind = "class" | "event" | "experience" | "expedition";
+const EMPTY: Record<Kind, string> = {
+  class: "Add a weekly class like Vinyasa yoga or Muay Thai.",
+  event: "Add a one-off event like a farm dinner.",
+  experience: "Add an experience, like a cacao ceremony or a sunset sail.",
+  expedition: "Add an expedition, a longer outing with a guide.",
+};
+const kindsLabel = (kinds: Kind[]) => kinds.map((k) => `${kindName(k).toLowerCase()}s`).join(" or ");
 type City = EventsData["cities"][number];
 
 function OfferingDrawer({
