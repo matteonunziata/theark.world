@@ -83,10 +83,23 @@ export default async function PortalHome() {
       ),
     };
   });
-  const expeditions = all
-    .filter((o) => o.kind === "expedition" && (o.end_date ?? o.start_date) >= today)
-    .sort((a, b) => a.start_date.localeCompare(b.start_date))
-    .slice(0, 2);
+  const upcomingOfferings = [
+    ...sessions(
+      inCity.filter((o) => o.kind === "event" || o.kind === "experience"),
+      cancels.data ?? [],
+      today,
+      addDays(today, 90),
+      { published: true },
+    )
+      .filter((s) => !s.cancelled)
+      .map((s) => ({ o: s.o, date: s.date })),
+    ...inCity
+      .filter((o) => o.kind === "expedition" && (o.end_date ?? o.start_date) >= today)
+      .map((o) => ({ o, date: o.start_date })),
+  ]
+    .filter((x, i, a) => a.findIndex((y) => y.o.id === x.o.id) === i)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 4);
   const people = (dir.data ?? []).filter((x) => !x.is_me);
   const suggested = suggestions(people, me, 3);
   const upcoming = (myRegs.data ?? []).filter((r) => r.session_date >= today && r.offering && r.status === "confirmed");
@@ -107,7 +120,7 @@ export default async function PortalHome() {
           Here’s what’s happening this week, who’s around, and where we’re headed next.
         </p>
         <div className="cta">
-          <Link className="pv-btn light" href="/portal/explore">
+          <Link className="pv-btn light" href="/portal/schedule">
             See what’s on
           </Link>
           <Link className="pv-btn ghost" href="/portal/people">
@@ -153,11 +166,11 @@ export default async function PortalHome() {
         )}
       </section>
 
-      {expeditions.length > 0 && (
+      {upcomingOfferings.length > 0 && (
         <section className="pv-sec">
-          <SectionHead title="Expeditions" sub="Further afield, together." href="/portal/explore?kind=expedition" />
+          <SectionHead title="Upcoming events and experiences" sub="Further ahead, and further afield." href="/portal/schedule" link="Full schedule" />
           <div style={{ display: "grid", gap: 16 }}>
-            {expeditions.map((o) => {
+            {upcomingOfferings.map(({ o }) => {
               const c = coverUrl(o.cover_path);
               const where = p.cities.find((x) => x.id === o.city_id)?.name;
               return (
