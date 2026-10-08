@@ -59,7 +59,7 @@
 .ms-side .ms-eyebrow{margin-bottom:0!important}
 
 /* Hero */
-.ms-hero{background:var(--ms-forest);color:var(--ms-mist);padding:clamp(56px,8vw,112px) 2rem 64px}
+.ms-hero{background:linear-gradient(180deg,rgba(36,63,49,.78),rgba(36,63,49,.62) 45%,rgba(36,63,49,.86)),url(https://vibe.filesafe.space/1776339959982732737/attachments/30ca26f5-6138-400d-a687-4f9407f14783.jpg) center/cover no-repeat var(--ms-forest);color:var(--ms-mist);padding:clamp(56px,8vw,112px) 2rem 64px}
 .ms-hero-in{max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
 .ms-hero .ms-eyebrow{margin:0!important}
 .ms-hero h1{font-size:clamp(48px,6vw,72px);line-height:1.08;letter-spacing:-.02em;max-width:14ch}

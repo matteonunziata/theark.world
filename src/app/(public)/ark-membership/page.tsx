@@ -30,9 +30,11 @@ const SPACES = [
 ] as const;
 
 const DAY = [
-  ["8:00", "Morning yoga", "At the Shala"],
-  ["9:00", "Chef-cooked breakfast", "La Cocineta"],
+  ["8:00", "Morning yoga / workout", "At the Shala"],
+  ["9:00", "Breakfast", "La Cocineta"],
   ["10:00", "Deep work session", "ARK House"],
+  ["12:00", "Lunch", "La Cocineta"],
+  ["14:00", "Networking + business workshop", "ARK House"],
   ["16:00", "Pickleball game", "The Courts"],
   ["17:00", "Sauna, swim and plunge", "The Space Deck"],
 ] as const;
