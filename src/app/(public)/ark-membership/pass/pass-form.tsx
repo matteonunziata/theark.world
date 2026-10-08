@@ -16,7 +16,7 @@ export function PassForm({
   const chosen = plans.find((p) => p.key === plan) ?? plans[0];
   return (
     <form className="ms-apply-card" action={action}>
-      <input name="hp_contact" tabIndex={-1} autoComplete="off" aria-hidden="true" className="ms-hp" />
+      <input name="ms_trap_x" tabIndex={-1} autoComplete="off" aria-hidden="true" className="ms-hp" />
       <fieldset>
         <legend>Your pass</legend>
         <div className="ms-tiers">
