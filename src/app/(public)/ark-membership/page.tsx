@@ -137,8 +137,8 @@ export default async function MembershipPage() {
           <p className="ms-eyebrow light">Santa Teresa · Costa Rica</p>
           <h1>Your dream days are here.</h1>
           <p className="ms-lede">
-            Unlimited access to The ARK: ARK House, space deck, jungle gym, workshops and classes,
-            every day, 8am to 8pm.
+            Unlimited access to The ARK: cowork, spa deck, jungle gym, workshops and classes, every
+            day, 8am to 8pm.
           </p>
           <div className="ms-hero-cards">
             <div className="ms-hero-card pale">
