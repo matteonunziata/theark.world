@@ -154,3 +154,10 @@
 - **Enquiries.** The "Ask us" form only emails the team. Keep it that way, or store enquiries (and meals or experiences added to a stay) in ARK OS?
 
 - **WalletWallet setup:** sign up at walletwallet.dev (30-day trial of everything, then a free plan of 1,000 passes a month), create an API key, and set `WALLETWALLET_API_KEY` (and `SUPABASE_SERVICE_ROLE_KEY`) in Vercel. Then add a ticket, a member pass and a guest pass to a real iPhone and an Android phone. Pro ($39 a month) would allow our own colors, logo and images on the pass.
+
+## Schedule: cutoff and facilitator pay
+- **Pay amounts are fixed in code.** Change them in `src/lib/facilitator-pay.ts`, or should they be editable in Settings?
+- **Who counts toward pay?** Everyone checked in counts, including staff-added guests and complimentary check-ins. Exclude any?
+- **Payout record.** Analytics shows what is owed per period; nothing marks a period as paid yet.
+- **Monthly on day 29–31** skips months without that day. Use "the last day" instead?
+- **Public timetable** on the join page lists weekly classes only; classes on other repeats (every 2 weeks, monthly, specific dates) don't show there.

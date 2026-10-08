@@ -33,7 +33,7 @@ export function BookingPanel({
     location: string | null;
     capacity: number | null;
   };
-  sessions: { date: string; cancelled: boolean }[];
+  sessions: { date: string; cancelled: boolean; closed?: boolean }[];
   /** Directory members booked per date; members and staff only. */
   attendees?: Record<string, Attendee[]>;
   counts: Count[];
@@ -49,7 +49,7 @@ export function BookingPanel({
 }) {
   const [picked, setPicked] = useState<string | null>(() => {
     const s = startOn ? sessions.find((x) => x.date === startOn) : null;
-    if (!s || s.cancelled || !canBook) return null;
+    if (!s || s.cancelled || s.closed || !canBook) return null;
     const cap = o.capacity;
     const n = counts.filter((c) => c.session_date === s.date).reduce((a, c) => a + Number(c.taken), 0);
     return cap && n >= cap ? null : s.date;
@@ -289,7 +289,7 @@ export function BookingPanel({
       {sessions.length ? (
         sessions.map((s) => {
           const l = left(s.date);
-          const off = s.cancelled || l === 0 || !canBook;
+          const off = s.cancelled || s.closed || l === 0 || !canBook;
           return (
             <div
               className="drow"
@@ -306,7 +306,9 @@ export function BookingPanel({
                   {timeRange(o)}
                   {s.cancelled
                     ? ", cancelled"
-                    : l === 0
+                    : s.closed
+                      ? ", booking closed"
+                      : l === 0
                       ? ", full"
                       : l !== null
                         ? `, ${l} ${l === 1 ? "spot" : "spots"} left`
@@ -323,7 +325,7 @@ export function BookingPanel({
                   setPicked(s.date);
                 }}
               >
-                {s.cancelled ? "Cancelled" : l === 0 ? "Full" : "Book"}
+                {s.cancelled ? "Cancelled" : s.closed ? "Closed" : l === 0 ? "Full" : "Book"}
               </button>
             </div>
           );

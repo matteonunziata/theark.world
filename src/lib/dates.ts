@@ -40,6 +40,16 @@ export function todayIn(timeZone = "America/Costa_Rica") {
   }
 }
 
+/** Right now in a time zone, as YYYY-MM-DDTHH:MM. */
+export function nowIn(timeZone = "America/Costa_Rica") {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
+    }).formatToParts(new Date()).map((x) => [x.type, x.value]),
+  );
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}
+
 export const fmtDate = (
   s: string,
   opt: Intl.DateTimeFormatOptions = {

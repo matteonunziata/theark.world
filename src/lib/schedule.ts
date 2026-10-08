@@ -4,20 +4,40 @@ import { addDays, DOW, DOW_LONG, dow, fmtDate, timeRange } from "@/lib/dates";
 export type Offering = Tables<"offerings">;
 export type TicketType = Tables<"ticket_types">;
 
-/** Dates an offering runs between from and to (inclusive). */
+const ORDINAL = ["1st", "2nd", "3rd", "4th", "5th"];
+const nth = (n: number) => `${n}${["th", "st", "nd", "rd"][(n % 100 > 10 && n % 100 < 14) || n % 10 > 3 ? 0 : n % 10]}`;
+const weekIndex = (d: string) => Math.floor((Number(d.slice(8, 10)) - 1) / 7);
+const monthNo = (d: string) => Number(d.slice(0, 4)) * 12 + Number(d.slice(5, 7));
+const mondayOf = (d: string) => addDays(d, -((dow(d) + 6) % 7));
+
+/** Dates an offering runs between from and to (inclusive). Mirrors public.occurs_on. */
 export function occurrences(o: Offering, from: string, to: string) {
   const out: string[] = [];
-  if (o.repeat !== "weekly") {
+  if (o.repeat === "dates") {
+    return [...o.custom_dates].filter((d) => d >= from && d <= to).sort();
+  }
+  if (o.repeat !== "weekly" && o.repeat !== "monthly") {
     if (o.start_date >= from && o.start_date <= to) out.push(o.start_date);
     return out;
   }
   const days = o.days.map(Number);
-  if (!days.length) return out;
+  if (o.repeat === "weekly" && !days.length) return out;
+  const every = o.repeat_every || 1;
+  const startWeek = mondayOf(o.start_date);
   let d = o.start_date > from ? o.start_date : from;
   const end = o.end_date && o.end_date < to ? o.end_date : to;
   let guard = 0;
-  while (d <= end && guard++ < 800) {
-    if (days.includes(dow(d))) out.push(d);
+  while (d <= end && guard++ < 1500) {
+    if (o.repeat === "weekly") {
+      const weeks = Math.round((Date.parse(mondayOf(d)) - Date.parse(startWeek)) / 604800000);
+      if (days.includes(dow(d)) && weeks % every === 0) out.push(d);
+    } else if ((monthNo(d) - monthNo(o.start_date)) % every === 0) {
+      const same =
+        o.month_mode === "weekday"
+          ? dow(d) === dow(o.start_date) && weekIndex(d) === weekIndex(o.start_date)
+          : d.slice(8, 10) === o.start_date.slice(8, 10);
+      if (same) out.push(d);
+    }
     d = addDays(d, 1);
   }
   return out;
@@ -70,6 +90,19 @@ export type Kind = (typeof KINDS)[number][0];
 export const kindName = (k: string) => KINDS.find(([x]) => x === k)?.[1] ?? "Class";
 
 export function whenLabel(o: Offering) {
+  if (o.repeat === "dates") {
+    const ds = [...o.custom_dates].sort();
+    const shown = ds.slice(0, 3).map((d) => fmtDate(d, { month: "short", day: "numeric" })).join(", ");
+    return `${shown}${ds.length > 3 ? ` +${ds.length - 3} more` : ""}, ${timeRange(o)}`;
+  }
+  if (o.repeat === "monthly") {
+    const every = o.repeat_every > 1 ? `Every ${o.repeat_every} months` : "Monthly";
+    const on =
+      o.month_mode === "weekday"
+        ? `${ORDINAL[weekIndex(o.start_date)]} ${DOW_LONG[dow(o.start_date)]}`
+        : `the ${nth(Number(o.start_date.slice(8, 10)))}`;
+    return `${every} on ${on}, ${timeRange(o)}${o.end_date ? ` until ${fmtDate(o.end_date, { month: "short", day: "numeric" })}` : ""}`;
+  }
   if (o.repeat === "weekly") {
     const days = [...o.days]
       .map(Number)
@@ -81,7 +114,7 @@ export function whenLabel(o: Offering) {
           ? DOW_LONG[days[0]]
           : days.map((x) => DOW[x]).join(", ");
     return (
-      `${d}, ${timeRange(o)}` +
+      `${o.repeat_every > 1 ? `Every ${o.repeat_every} weeks: ` : ""}${d}, ${timeRange(o)}` +
       (o.end_date
         ? ` until ${fmtDate(o.end_date, { month: "short", day: "numeric" })}`
         : "")

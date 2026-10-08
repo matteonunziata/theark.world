@@ -1,73 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
-import { addDays, addMonths, fmtDate, monthKey, monthLabel, todayIn, weekStart } from "@/lib/dates";
-import { sessions } from "@/lib/schedule";
+import { fmtDate, fmtTime } from "@/lib/dates";
+import { tierName } from "@/lib/facilitator-pay";
+import { loadAnalytics, PERIODS, type Period } from "./load";
 
 export const metadata: Metadata = { title: "Class analytics" };
 
-const PERIODS = [
-  ["day", "Daily"],
-  ["week", "Weekly"],
-  ["month", "Monthly"],
-] as const;
-type Period = (typeof PERIODS)[number][0];
-
-const lastOfMonth = (key: string) => addDays(`${addMonths(key, 1)}-01`, -1);
 const pct = (n: number, d: number) => (d ? Math.round((n / d) * 100) : null);
 
 export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { supabase } = await requireStaff("events");
-  const { p, d } = await searchParams;
-  const today = todayIn();
-  const period: Period = p === "day" || p === "month" ? p : "week";
-  const anchor = typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : today;
-
-  const from = period === "day" ? anchor : period === "week" ? weekStart(anchor) : `${monthKey(anchor)}-01`;
-  const to = period === "day" ? anchor : period === "week" ? addDays(from, 6) : lastOfMonth(monthKey(anchor));
-  const upTo = to < today ? to : today; // nothing to measure in the future
-  const step = (n: number) =>
-    period === "day" ? addDays(anchor, n) : period === "week" ? addDays(anchor, 7 * n) : `${addMonths(monthKey(anchor), n)}-01`;
-  const label =
-    period === "day"
-      ? fmtDate(from, { weekday: "long", month: "long", day: "numeric", year: "numeric" })
-      : period === "week"
-        ? `${fmtDate(from, { month: "short", day: "numeric" })} – ${fmtDate(to, { month: "short", day: "numeric", year: "numeric" })}`
-        : monthLabel(monthKey(anchor));
-
-  const [{ data: offerings }, { data: cancels }] = await Promise.all([
-    supabase.from("offerings").select("*").eq("kind", "class").order("title"),
-    supabase.from("session_cancellations").select("offering_id, session_date").gte("session_date", from).lte("session_date", to),
-  ]);
-  const classes = offerings ?? [];
-  const ids = new Set(classes.map((o) => o.id));
-
-  // Page through the bookings; a month can pass the 1,000-row default.
-  type Reg = { offering_id: string; checked_in_at: string | null; status: string; hold_until: string | null };
-  const regs: Reg[] = [];
-  if (from <= upTo) {
-    for (let at = 0; ; at += 1000) {
-      const { data } = await supabase
-        .from("registrations")
-        .select("offering_id, checked_in_at, status, hold_until")
-        .gte("session_date", from)
-        .lte("session_date", upTo)
-        .order("id")
-        .range(at, at + 999);
-      regs.push(...(data ?? []));
-      if ((data?.length ?? 0) < 1000) break;
-    }
-  }
-  const live = regs.filter(
-    (r) => ids.has(r.offering_id) && (r.checked_in_at || r.status === "confirmed" || !r.hold_until || new Date(r.hold_until) > new Date()),
+  const { today, period, anchor, from, upTo, step, label, classes, live, held, sessionRows } = await loadAnalytics(
+    supabase,
+    await searchParams,
   );
-
-  const held = new Map<string, number>();
-  if (from <= upTo) {
-    for (const s of sessions(classes, cancels ?? [], from, upTo)) {
-      if (!s.cancelled) held.set(s.o.id, (held.get(s.o.id) ?? 0) + 1);
-    }
-  }
 
   const rows = classes
     .map((o) => {
@@ -93,6 +40,20 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   const max = Math.max(1, ...rows.map((r) => r.checked));
   const link = (np: Period, nd = anchor) => `/events/analytics?p=${np}&d=${nd}`;
 
+  const crc = (n: number) => `₡${n.toLocaleString("en-US")}`;
+  const done = sessionRows.filter((x) => !x.cancelled);
+  const pay = new Map<string, { sessions: number; checked: number; pay: number }>();
+  for (const x of done) {
+    const c = pay.get(x.facilitator) ?? { sessions: 0, checked: 0, pay: 0 };
+    c.sessions++;
+    c.checked += x.checked;
+    c.pay += x.pay;
+    pay.set(x.facilitator, c);
+  }
+  const payRows = [...pay.entries()].sort((a, b) => b[1].pay - a[1].pay || a[0].localeCompare(b[0]));
+  const totalPay = payRows.reduce((n, [, c]) => n + c.pay, 0);
+  const exportHref = (fmt: string, report: string) => `/events/analytics/export?p=${period}&d=${anchor}&report=${report}&fmt=${fmt}`;
+
   const top = rows[0]?.checked ? rows[0] : null;
   const rated = rows.filter((r) => r.booked >= 3 && r.rate !== null).sort((a, b) => (b.rate ?? 0) - (a.rate ?? 0));
   const avgBest = [...rows].filter((r) => r.sessions && r.checked).sort((a, b) => b.avg - a.avg)[0];
@@ -116,6 +77,12 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         </nav>
       </div>
 
+      <p style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <span className="muted">Export this period:</span>
+        <a className="btn" href={exportHref("csv", "sessions")}>Sessions CSV</a>
+        <a className="btn" href={exportHref("pdf", "sessions")} target="_blank" rel="noopener noreferrer">Sessions PDF</a>
+      </p>
+
       <div className="stats" style={{ marginBottom: 22 }}>
         <div className="stat"><b>{total}</b><span>Checked in</span></div>
         <div className="stat"><b>{totalBooked}</b><span>Booked</span></div>
@@ -130,7 +97,58 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         </div>
       ) : (
         <>
-          <h2 className="subhead">Check-ins by class</h2>
+          <h2 className="subhead">Every session</h2>
+          <div className="table-wrap">
+            <table className="lines-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Class</th>
+                  <th>Facilitator</th>
+                  <th>Booked</th>
+                  <th>Checked in</th>
+                  <th>Pay tier</th>
+                  <th>Facilitator pay</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sessionRows.map((x) => (
+                  <tr key={`${x.o.id}|${x.date}`} className={x.cancelled ? "muted" : ""}>
+                    <td>
+                      {fmtDate(x.date, { weekday: "short", month: "short", day: "numeric" })}
+                      {x.o.start_time ? `, ${fmtTime(x.o.start_time)}` : ""}
+                    </td>
+                    <td><b>{x.o.title}</b>{x.cancelled ? " (cancelled)" : ""}</td>
+                    <td>{x.facilitator}</td>
+                    <td>{x.booked}</td>
+                    <td><b>{x.checked}</b></td>
+                    <td>{x.o.facilitator_pay_tier} · {tierName(x.o.facilitator_pay_tier)}</td>
+                    <td>{x.cancelled ? "—" : crc(x.pay)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <h2 className="subhead" style={{ marginTop: 28 }}>Facilitator pay</h2>
+          <div className="table-wrap">
+            <table className="lines-table">
+              <thead>
+                <tr><th>Facilitator</th><th>Sessions</th><th>Checked in</th><th>Owed</th></tr>
+              </thead>
+              <tbody>
+                {payRows.map(([name, c]) => (
+                  <tr key={name}><td><b>{name}</b></td><td>{c.sessions}</td><td>{c.checked}</td><td>{crc(c.pay)}</td></tr>
+                ))}
+                <tr><td><b>Total</b></td><td /><td /><td><b>{crc(totalPay)}</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="muted">
+            Pay follows each class’s tier: Free pays nothing, Fixed ₡20,000, Flex by people checked in (0–10 ₡20,000, 11–20 ₡25,000, 21–30 ₡30,000, 31+ ₡35,000). Sessions still to come and cancelled sessions aren’t counted.
+          </p>
+
+          <h2 className="subhead" style={{ marginTop: 28 }}>Check-ins by class</h2>
           <div className="table-wrap">
             <table className="lines-table">
               <thead>

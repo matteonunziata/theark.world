@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { EventLink } from "../../booking-modal";
 import Link from "next/link";
-import { addDays, addMonths, DOW, fmtDate, fmtTime, monthLabel, timeRange, todayIn, weekStart } from "@/lib/dates";
+import { addDays, addMonths, DOW, fmtDate, fmtTime, monthLabel, nowIn, timeRange, todayIn, weekStart } from "@/lib/dates";
 import { monthGrid } from "@/lib/estate";
+import { bookingClosed } from "@/lib/facilitator-pay";
 import { type Attendee, Going } from "@/components/going";
 import { loadGoing, loadPortal } from "@/lib/portal";
 import { KINDS, kindName, type Session, sessions } from "@/lib/schedule";
@@ -123,7 +124,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/portal/
         ? `${fmtDate(from, { month: "short", day: "numeric" })} – ${fmtDate(to, { month: "short", day: "numeric", year: "numeric" })}`
         : monthLabel(date.slice(0, 7));
 
-  const props = { today, taken, booked, fac, going };
+  const props = { today, now: nowIn(p.timezone), taken, booked, fac, going };
 
   return (
     <>
@@ -224,6 +225,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/portal/
 
 type Props = {
   today: string;
+  now: string;
   taken: Map<string, number>;
   booked: Set<string>;
   fac: (id: string | null) => string | undefined;
@@ -239,6 +241,7 @@ function status(s: Session, p: Props) {
   if (s.cancelled) return <span className="sch-st off">Cancelled</span>;
   if (p.booked.has(`${s.o.id}|${s.date}`)) return <span className="sch-st mine">You’re booked</span>;
   if (s.date < p.today) return null;
+  if (bookingClosed(s.o, s.date, p.now)) return <span className="sch-st off">Booking closed</span>;
   const left = spots(s, p.taken);
   if (left === 0) return <span className="sch-st off">Full</span>;
   if (left !== null && left <= 5) return <span className="sch-st low">{left} left</span>;
@@ -271,7 +274,7 @@ function DayList({ items, ...p }: Props & { items: Session[] }) {
       {items.map((s) => {
         const mine = p.booked.has(`${s.o.id}|${s.date}`);
         const left = spots(s, p.taken);
-        const canBook = !s.cancelled && !mine && s.date >= p.today && left !== 0;
+        const canBook = !s.cancelled && !mine && s.date >= p.today && left !== 0 && !bookingClosed(s.o, s.date, p.now);
         return (
           <div key={`${s.o.id}-${s.date}`} className={`sch-row k-${s.o.kind} ${s.cancelled ? "cancelled" : ""}`}>
             <span className="tm">

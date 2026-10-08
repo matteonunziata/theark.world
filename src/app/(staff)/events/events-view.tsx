@@ -6,9 +6,11 @@ import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
 import { useToast } from "@/components/toast";
 import type { ActionResult } from "@/lib/action-result";
 import { coverUrl } from "@/lib/covers";
+import { FLEX_BANDS, PAY_TIERS } from "@/lib/facilitator-pay";
 import {
   addDays,
   DOW,
+  DOW_LONG,
   dow,
   fmtDate,
   pd,
@@ -97,6 +99,8 @@ export function EventsView({
             </span>
             <Link className="btn" href={`/events?week=${addDays(ws, -7)}`}>Previous</Link>
             <Link className="btn" href="/events">This week</Link>
+            <a className="btn" href={`/events/export?from=${ws}&to=${we}&fmt=csv`}>Attendees CSV</a>
+            <a className="btn" href={`/events/export?from=${ws}&to=${we}&fmt=pdf`} target="_blank" rel="noopener noreferrer">Attendees PDF</a>
             <Link className="btn" href={`/events?week=${addDays(ws, 7)}`}>Next</Link>
           </div>
         ) : kinds ? (
@@ -120,11 +124,6 @@ export function EventsView({
         )}
         {canCreate && (
           <div className="head-actions" style={{ marginLeft: "auto" }}>
-            {(!kinds || kinds.includes("class")) && (
-              <a className="btn" href="/qr" target="_blank" rel="noopener noreferrer">
-                Class QR codes
-              </a>
-            )}
             {[...newKinds].sort((a) => (a === primaryKind ? 1 : -1)).map((k) => (
               <button
                 key={k}
@@ -314,6 +313,8 @@ function OfferingDrawer({
   const k = (o?.kind ?? kind) as Kind;
   const [curKind, setCurKind] = useState(k);
   const [repeat, setRepeat] = useState(o?.repeat ?? (k === "class" ? "weekly" : "none"));
+  const [startDate, setStartDate] = useState(o?.start_date ?? today);
+  const [customDates, setCustomDates] = useState<string[]>(o?.custom_dates ?? []);
   const [rows, setRows] = useState<DraftTicket[]>(tickets.map((t, i) => ({ ...t, key: i })));
   const [nextKey, setNextKey] = useState(rows.length);
   const [cover, setCover] = useState(o?.cover_path ?? "");
@@ -435,41 +436,99 @@ function OfferingDrawer({
           <div className="fld">
             <label htmlFor="e-repeat">Repeats</label>
             <select id="e-repeat" name="repeat" value={repeat} onChange={(e) => setRepeat(e.target.value)}>
-              <option value="weekly">Weekly</option>
               <option value="none">Doesn’t repeat</option>
+              <option value="weekly">Weekly (pick days)</option>
+              <option value="monthly">Monthly</option>
+              <option value="dates">Specific dates</option>
             </select>
           </div>
-          <div className="fld">
-            <label htmlFor="e-date">{repeat === "weekly" ? "Starts on" : "Date"}</label>
-            <input id="e-date" name="start_date" type="date" defaultValue={o?.start_date ?? today} required />
-          </div>
+          {repeat !== "dates" && (
+            <div className="fld">
+              <label htmlFor="e-date">{repeat === "none" ? "Date" : "Starts on"}</label>
+              <input id="e-date" name="start_date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+            </div>
+          )}
         </div>
-        {repeat !== "weekly" && (
+        {repeat === "none" && (
           <div className="fld">
             <label htmlFor="e-end1">Ends on</label>
-            <input id="e-end1" name="end_date" type="date" defaultValue={o?.end_date ?? ""} />
+            <input id="e-end1" name="end_date" type="date" defaultValue={o?.repeat === "none" ? (o?.end_date ?? "") : ""} />
             <span className="hint">For multi-day expeditions. Leave empty for a single day.</span>
           </div>
         )}
-        {repeat === "weekly" && (
-          <>
-            <fieldset className="fld" style={{ border: 0, padding: 0 }}>
-              <legend style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 6 }}>On these days</legend>
-              <div className="daypick">
-                {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-                  <label key={d}>
-                    <input type="checkbox" name="days" value={d} defaultChecked={days.includes(d)} />
-                    <span>{DOW[d]}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+        {(repeat === "weekly" || repeat === "monthly") && (
+          <div className="grid2">
             <div className="fld">
-              <label htmlFor="e-end">Repeats until</label>
-              <input id="e-end" name="end_date" type="date" defaultValue={o?.end_date ?? ""} />
-              <span className="hint">Leave empty to keep it on the schedule.</span>
+              <label htmlFor="e-every">Every</label>
+              <select id="e-every" name="repeat_every" defaultValue={o?.repeat_every ?? 1}>
+                {Array.from({ length: repeat === "weekly" ? 8 : 12 }, (_, i) => i + 1).map((n) => (
+                  <option key={n} value={n}>
+                    {n === 1 ? (repeat === "weekly" ? "Week" : "Month") : `${n} ${repeat === "weekly" ? "weeks" : "months"}`}
+                  </option>
+                ))}
+              </select>
             </div>
-          </>
+            {repeat === "monthly" && startDate && (
+              <div className="fld">
+                <label htmlFor="e-mm">On</label>
+                <select id="e-mm" name="month_mode" defaultValue={o?.month_mode ?? "date"}>
+                  <option value="date">Day {Number(startDate.slice(8, 10))} of the month</option>
+                  <option value="weekday">
+                    The {["1st", "2nd", "3rd", "4th", "5th"][Math.floor((Number(startDate.slice(8, 10)) - 1) / 7)]} {DOW_LONG[dow(startDate)]}
+                  </option>
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+        {repeat === "weekly" && (
+          <fieldset className="fld" style={{ border: 0, padding: 0 }}>
+            <legend style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 6 }}>On these days</legend>
+            <div className="daypick">
+              {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+                <label key={d}>
+                  <input type="checkbox" name="days" value={d} defaultChecked={days.includes(d)} />
+                  <span>{DOW[d]}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
+        {(repeat === "weekly" || repeat === "monthly") && (
+          <div className="fld">
+            <label htmlFor="e-end">Repeats until</label>
+            <input id="e-end" name="end_date" type="date" defaultValue={o?.repeat === repeat ? (o?.end_date ?? "") : ""} />
+            <span className="hint">Leave empty to keep it on the schedule.</span>
+          </div>
+        )}
+        {repeat === "dates" && (
+          <div className="fld">
+            <label>Dates</label>
+            {customDates.map((d, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+                <input
+                  name="custom_date"
+                  type="date"
+                  value={d}
+                  aria-label={`Date ${i + 1}`}
+                  onChange={(e) => setCustomDates(customDates.map((x, j) => (j === i ? e.target.value : x)))}
+                />
+                <button type="button" className="mini" onClick={() => setCustomDates(customDates.filter((_, j) => j !== i))}>
+                  Remove
+                </button>
+              </div>
+            ))}
+            <div>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setCustomDates([...customDates, customDates.length ? addDays(customDates[customDates.length - 1], 7) : today])}
+              >
+                Add a date
+              </button>
+            </div>
+            <span className="hint">Pick any days you like. Each one is its own session with the same times.</span>
+          </div>
         )}
         <div className="grid2">
           <div className="fld">
@@ -481,6 +540,47 @@ function OfferingDrawer({
             <input id="e-et" name="end_time" type="time" defaultValue={o?.end_time?.slice(0, 5) ?? (k === "class" ? "09:00" : "21:00")} />
           </div>
         </div>
+
+        <div className="subhead">Booking cutoff</div>
+        <div className="grid2">
+          <div className="fld">
+            <label htmlFor="e-cut">Stop bookings before it starts</label>
+            <input
+              id="e-cut"
+              name="cutoff_amount"
+              type="number"
+              min={0}
+              step="any"
+              defaultValue={o?.booking_cutoff_minutes == null ? "" : o.booking_cutoff_minutes % 60 === 0 && o.booking_cutoff_minutes > 0 ? o.booking_cutoff_minutes / 60 : o.booking_cutoff_minutes}
+              placeholder="No cutoff"
+            />
+            <span className="hint">Leave empty to allow booking until the session starts. Staff can still add people.</span>
+          </div>
+          <div className="fld">
+            <label htmlFor="e-cutu">Unit</label>
+            <select id="e-cutu" name="cutoff_unit" defaultValue={o?.booking_cutoff_minutes != null && o.booking_cutoff_minutes > 0 && o.booking_cutoff_minutes % 60 === 0 ? "hours" : "minutes"}>
+              <option value="minutes">Minutes</option>
+              <option value="hours">Hours</option>
+            </select>
+          </div>
+        </div>
+
+        {curKind === "class" && (
+          <>
+            <div className="subhead">Facilitator pay</div>
+            <div className="fld">
+              <label htmlFor="e-tier">Compensation tier</label>
+              <select id="e-tier" name="facilitator_pay_tier" defaultValue={o?.facilitator_pay_tier ?? 1}>
+                {PAY_TIERS.map(([n, name, note]) => (
+                  <option key={n} value={n}>{n} · {name} ({note})</option>
+                ))}
+              </select>
+              <span className="hint">
+                Flex pays by people checked in: {FLEX_BANDS.map((b) => `${b.label} ₡${b.pay.toLocaleString("en-US")}`).join(", ")}.
+              </span>
+            </div>
+          </>
+        )}
 
         <div className="subhead">Spots &amp; tickets</div>
         <div className="grid2">
@@ -714,6 +814,10 @@ function SessionDrawer({
       })}
 
       <div className="subhead">Bookings</div>
+      <p style={{ display: "flex", gap: 8, margin: "0 0 10px" }}>
+        <a className="mini" href={`/events/export?o=${o.id}&d=${date}&fmt=csv`}>Export CSV</a>
+        <a className="mini" href={`/events/export?o=${o.id}&d=${date}&fmt=pdf`} target="_blank" rel="noopener noreferrer">Export PDF</a>
+      </p>
       {!regs.length ? (
         <p className="muted" style={{ margin: 0 }}>No bookings yet.</p>
       ) : (

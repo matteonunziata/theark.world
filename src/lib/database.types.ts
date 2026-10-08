@@ -2451,20 +2451,25 @@ export type Database = {
           capacity: number | null
           city_id: string | null
           cover_path: string | null
+          booking_cutoff_minutes: number | null
           created_at: string
           created_by: string | null
           days: number[]
           description: string | null
           end_date: string | null
+          custom_dates: string[]
           end_time: string | null
           facilitator_id: string | null
           id: string
           kind: string
           location: string | null
+          facilitator_pay_tier: number
           repeat: string
           start_date: string
           start_time: string | null
+          month_mode: string
           status: string
+          repeat_every: number
           title: string
           updated_at: string
         }
@@ -2473,20 +2478,25 @@ export type Database = {
           capacity?: number | null
           city_id?: string | null
           cover_path?: string | null
+          booking_cutoff_minutes?: number | null
           created_at?: string
           created_by?: string | null
           days?: number[]
           description?: string | null
           end_date?: string | null
+          custom_dates?: string[]
           end_time?: string | null
           facilitator_id?: string | null
           id?: string
           kind: string
           location?: string | null
+          facilitator_pay_tier?: number
           repeat?: string
           start_date: string
           start_time?: string | null
+          month_mode?: string
           status?: string
+          repeat_every?: number
           title: string
           updated_at?: string
         }
@@ -2495,20 +2505,25 @@ export type Database = {
           capacity?: number | null
           city_id?: string | null
           cover_path?: string | null
+          booking_cutoff_minutes?: number | null
           created_at?: string
           created_by?: string | null
           days?: number[]
           description?: string | null
           end_date?: string | null
+          custom_dates?: string[]
           end_time?: string | null
           facilitator_id?: string | null
           id?: string
           kind?: string
           location?: string | null
+          facilitator_pay_tier?: number
           repeat?: string
           start_date?: string
           start_time?: string | null
+          month_mode?: string
           status?: string
+          repeat_every?: number
           title?: string
           updated_at?: string
         }
