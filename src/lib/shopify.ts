@@ -627,11 +627,11 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
       `${plural(r.members, "member")} entitled today. Tagged ${r.tagged} (${r.created} new in Shopify), took the tag off ${r.untagged}` +
       `${r.noEmail ? `, ${r.noEmail} without an email skipped` : ""}${r.left ? `, ${r.left} left for the next run` : ""}` +
       `${r.orders ? ` ${ordersLine(r.orders)}` : ""}` +
-      `${r.errors.length ? `, ${plural(r.errors.length, "failure")}: ${r.errors[0]}` : "."}`,
+      `${r.errors.length ? `, ${plural(r.errors.length, "failure")}: ${r.errors.slice(0, 4).join(" | ")}` : "."}`,
   });
   await sb
     .from("integrations")
-    .update({ last_sync_at: startedAt, last_error: r.errors[0] ?? null })
+    .update({ last_sync_at: startedAt, last_error: r.errors.length ? r.errors.slice(0, 4).join(" | ") : null })
     .eq("key", "shopify");
   return r;
 }
