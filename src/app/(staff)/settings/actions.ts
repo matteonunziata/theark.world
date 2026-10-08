@@ -194,6 +194,7 @@ export async function saveOrg(
       timezone: field(data, "timezone") ?? "America/Costa_Rica",
       language: field(data, "language") === "es" ? "es" : "en",
       email: field(data, "email"),
+      sinpe_number: field(data, "sinpe_number"),
     })
     .eq("id", true);
   if (error) return fail(friendly(error));
