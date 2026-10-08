@@ -154,4 +154,4 @@
 - **Dietary options.** Which of vegetarian, vegan and gluten-free can La Cocineta cover?
 - **Enquiries.** The "Ask us" form only emails the team. Keep it that way, or store enquiries (and meals or experiences added to a stay) in ARK OS?
 
-- **Pass2U setup:** sign up at pass2u.net and request an API key (30-day trial, then paid yearly). In the dashboard create one Generic model with four dynamic text fields keyed `holder`, `what`, `when`, `where` and a barcode of type "Dynamic - assigned by CSV file or API (duplicable)" (QR). Issue it, then set `PASS2U_API_KEY` and `PASS2U_MODEL_ID` (and `SUPABASE_SERVICE_ROLE_KEY`) in Vercel. Check the Google Wallet side on an Android phone; the API guide only documents Apple's format.
+- **WalletWallet setup:** sign up at walletwallet.dev (30-day trial of everything, then a free plan of 1,000 passes a month), create an API key, and set `WALLETWALLET_API_KEY` (and `SUPABASE_SERVICE_ROLE_KEY`) in Vercel. Then add a ticket, a member pass and a guest pass to a real iPhone and an Android phone. Pro ($39 a month) would allow our own colors, logo and images on the pass.

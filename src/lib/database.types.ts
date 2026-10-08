@@ -1628,19 +1628,22 @@ export type Database = {
         Row: {
           created_at: string
           kind: string
-          pass2u_id: string
+          serial: string
+          share_url: string
           token: string
         }
         Insert: {
           created_at?: string
           kind: string
-          pass2u_id: string
+          serial: string
+          share_url: string
           token: string
         }
         Update: {
           created_at?: string
           kind?: string
-          pass2u_id?: string
+          serial?: string
+          share_url?: string
           token?: string
         }
         Relationships: []
