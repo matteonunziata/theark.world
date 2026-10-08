@@ -5,15 +5,15 @@ import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
 import { coverUrl } from "@/lib/covers";
 import { addDays, fmtDate, timeRange, todayIn } from "@/lib/dates";
-import { kindName, priceLabel, sessions } from "@/lib/schedule";
+import { kindName, priceLabel, sessions, whenLabel } from "@/lib/schedule";
 import { HostForm } from "./host-form";
 import { type EventRow, EventsList } from "./events-list";
 import "./events.css";
 
 export const metadata: Metadata = {
-  title: { absolute: "Events — The ARK, Santa Teresa" },
+  title: { absolute: "Events & experiences — The ARK, Santa Teresa" },
   description:
-    "Markets, music, farm-to-table dinners and summits at The ARK in Santa Teresa. Open to the village, with members first in line.",
+    "Events, experiences and expeditions at The ARK in Santa Teresa: markets, music, dinners, ceremonies, time on the land and the water. Open to the village, with members first in line.",
 };
 
 const MEMBERSHIP = "/ark-membership";
@@ -51,6 +51,8 @@ export default async function EventsPage() {
     desc: s.o.description ?? "",
     price: priceLabel(s.o, tickets ?? []),
     cta: s.o.access === "members" && !memberId ? "Members only" : "Details",
+    cover: coverUrl(s.o.cover_path),
+    repeats: s.o.repeat !== "none" ? whenLabel(s.o) : "",
   }));
 
   const featured = next.find((s) => s.o.cover_path) ?? next[0];
@@ -61,11 +63,11 @@ export default async function EventsPage() {
       <ArkFonts />
       <header>
         <nav aria-label="Main">
-          <Link href="/whats-on" aria-label="The ARK events">
+          <Link href="/whats-on" aria-label="The ARK events and experiences">
             <Logo tone="dark" height={40} />
           </Link>
           <div className="nav-links">
-            <a href="#upcoming">Upcoming</a>
+            <a href="#upcoming">What’s coming up</a>
             <a href="#host">Host an event</a>
             <Link href={MEMBERSHIP}>Membership</Link>
           </div>
@@ -88,13 +90,14 @@ export default async function EventsPage() {
         <div className="wrap">
           <div className="hero-copy">
             <p className="eyebrow">The ARK · Santa Teresa</p>
-            <h1>Events at The ARK</h1>
+            <h1>Events &amp; experiences at The ARK</h1>
             <p className="hero-sub">
-              Markets, music, farm-to-table dinners and summits — open to the village, with members first in line.
+              Gather for a market, a dinner or a night of music. Or slow down with an experience: time on the land,
+              the water and with the people who live here. Open to the village, with members first in line.
             </p>
             <div className="btn-row">
-              <a className="btn btn-accent" href="#upcoming">See upcoming events</a>
-              <a className="btn btn-ghost-light" href="#host">Host at The ARK</a>
+              <a className="btn btn-accent" href="#upcoming">See what’s coming up</a>
+              <a className="btn btn-ghost-light" href="#host">Host with us</a>
             </div>
           </div>
 
@@ -123,7 +126,7 @@ export default async function EventsPage() {
                 </dl>
                 <div className="btn-row" style={{ marginTop: 8 }}>
                   <Link className="btn btn-primary" href={`/e/${featured.o.id}/${featured.date}`}>
-                    {featured.o.access === "members" && !memberId ? "See details" : "Get tickets"}
+                    {featured.o.access === "members" && !memberId ? "See details" : featured.o.kind === "event" ? "Get tickets" : "Reserve a place"}
                   </Link>
                 </div>
               </div>
@@ -137,7 +140,10 @@ export default async function EventsPage() {
           <div className="section-head">
             <div>
               <p className="eyebrow">Upcoming</p>
-              <h2>The season ahead.</h2>
+              <h2>Come along.</h2>
+              <p className="section-sub">
+                Events and experiences coming up at The ARK. Pick one and we’ll hold a place for you.
+              </p>
             </div>
           </div>
           <EventsList events={rows} />
@@ -148,7 +154,7 @@ export default async function EventsPage() {
         <div className="wrap members-band dark">
           <div>
             <h3>Members are first in.</h3>
-            <p>Early access to every event, 10% off tickets — 20% on Annual.</p>
+            <p>Early access to every event and experience, and 10% off tickets, 20% on Annual.</p>
           </div>
           <div className="btn-row">
             <Link className="btn btn-accent" href={`${MEMBERSHIP}/apply`}>Apply for membership</Link>
