@@ -52,7 +52,7 @@ async function emailFreePass(applicationId: string | null) {
 /** Send a membership application into the CRM (see public.apply_for_membership). */
 export async function applyForMembership(_prev: ActionResult, data: FormData): Promise<ActionResult> {
   // A hidden field people don't see; bots tend to fill it in.
-  if (field(data, "website")) return ok("Application received");
+  if (field(data, "hp_contact")) return ok("Application received");
   const { supabase } = await getViewer();
   const { data: contactId, error } = await supabase.rpc("apply_for_membership", {
     p_first: field(data, "first_name") ?? "",
