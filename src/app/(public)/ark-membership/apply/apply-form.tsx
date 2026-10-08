@@ -180,11 +180,22 @@ export function ApplyForm({ plan: initialPlan, utm }: { plan: string; utm: Recor
         <p className="ms-q">
           If you could invite three people into this community — people whose energy, work, or way of
           living feels aligned with The ARK — who would they be?{" "}
-          <span className="ms-where">Optional, names only</span>
+          <span className="ms-where">Optional</span>
         </p>
-        <div className="ms-grid3">
+        <p className="ms-fine">
+          Add a name and a WhatsApp number or email, and we’ll send each of them a free day pass.
+        </p>
+        <div className="ms-invites">
           {[1, 2, 3].map((n) => (
-            <input key={n} name="invite" aria-label={`Name ${n}`} placeholder={`Name ${n}`} maxLength={120} />
+            <div key={n} className="ms-grid2">
+              <input name="invite_name" aria-label={`Name ${n}`} placeholder={`Name ${n}`} maxLength={80} />
+              <input
+                name="invite_contact"
+                aria-label={`Phone or email ${n}`}
+                placeholder="WhatsApp or email"
+                maxLength={120}
+              />
+            </div>
           ))}
         </div>
       </fieldset>
@@ -204,11 +215,11 @@ export function ApplyForm({ plan: initialPlan, utm }: { plan: string; utm: Recor
           <span />
         )}
         {step < STEPS.length - 1 ? (
-          <button type="button" className="ms-btn solid" onClick={next}>
+          <button key="next" type="button" className="ms-btn solid" onClick={next}>
             {step === 1 && chosen?.kind === "pass" ? "Continue to payment" : "Continue"}
           </button>
         ) : (
-          <button type="submit" className="ms-btn solid" disabled={pending}>
+          <button key="send" type="submit" className="ms-btn solid" disabled={pending}>
             {pending ? "Sending…" : "Send application"}
           </button>
         )}

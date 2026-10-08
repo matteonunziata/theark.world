@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { type ActionResult, fail, field, friendly, ok } from "@/lib/action-result";
 import { getViewer } from "@/lib/auth";
 import { fmtDate } from "@/lib/dates";
@@ -15,27 +16,41 @@ const list = (data: FormData, name: string) =>
     .filter(Boolean)
     .slice(0, 10);
 
+/** "Name, contact" for each invited person; a name alone still counts. */
+const invites = (data: FormData) => {
+  const names = data.getAll("invite_name");
+  const contacts = data.getAll("invite_contact");
+  return names
+    .map((n, i) => {
+      const name = typeof n === "string" ? n.trim() : "";
+      const contact = typeof contacts[i] === "string" ? (contacts[i] as string).trim() : "";
+      return [name, contact].filter(Boolean).join(" · ");
+    })
+    .filter(Boolean)
+    .slice(0, 3);
+};
+
 /**
  * Email the free day pass that came with an application (see
  * public.apply_for_membership). Only for a pass made just now, so a double
  * submit doesn't send it twice.
  */
-async function emailFreePass(applicationId: string | null) {
+async function emailFreePass(applicationId: string | null): Promise<string | null> {
   const admin = createAdminClient();
-  if (!admin || !applicationId) return;
+  if (!admin || !applicationId) return null;
   const { data: a } = await admin
     .from("membership_applications")
     .select("free_pass_id, contact:contacts(name, email, pass_token)")
     .eq("id", applicationId)
     .maybeSingle();
-  if (!a?.free_pass_id) return;
+  if (!a?.free_pass_id) return null;
   const { data: pass } = await admin
     .from("memberships")
     .select("activate_by, created_at")
     .eq("id", a.free_pass_id)
     .maybeSingle();
-  if (!a.contact?.email || !pass?.activate_by) return;
-  if (Date.now() - new Date(pass.created_at).getTime() > 2 * 60_000) return;
+  if (!a.contact?.email || !pass?.activate_by) return null;
+  if (Date.now() - new Date(pass.created_at).getTime() > 2 * 60_000) return a.contact.pass_token;
   const [origin, { data: org }] = await Promise.all([siteUrl(), admin.rpc("public_org").maybeSingle()]);
   await sendPassEmail({
     to: a.contact.email,
@@ -47,6 +62,7 @@ async function emailFreePass(applicationId: string | null) {
     orgName: org?.name ?? "The ARK",
     free: true,
   });
+  return a.contact.pass_token;
 }
 
 /** Send a membership application into the CRM (see public.apply_for_membership). */
@@ -65,7 +81,7 @@ export async function applyForMembership(_prev: ActionResult, data: FormData): P
     p_why: field(data, "why_join") ?? "",
     p_contributing: field(data, "contributing") ?? "",
     p_drawn_to: list(data, "drawn_to"),
-    p_invites: list(data, "invite"),
+    p_invites: invites(data),
     p_source: field(data, "utm_source")?.slice(0, 120) ?? "",
     p_medium: field(data, "utm_medium")?.slice(0, 120) ?? "",
     p_campaign: field(data, "utm_campaign")?.slice(0, 120) ?? "",
@@ -73,7 +89,10 @@ export async function applyForMembership(_prev: ActionResult, data: FormData): P
   if (error) return fail(friendly(error));
 
   // Their free day pass, by email (never blocks the application).
-  await emailFreePass(contactId ?? null).catch((e) => console.error("Free pass email failed", e));
+  const passToken = await emailFreePass(contactId ?? null).catch((e) => {
+    console.error("Free pass email failed", e);
+    return null;
+  });
 
   // Tell the team on Slack, once the response is out.
   const a = {
@@ -86,5 +105,7 @@ export async function applyForMembership(_prev: ActionResult, data: FormData): P
     contactId: contactId ?? null,
   };
   notifyLater("application", (origin) => applicationMessage(a, origin), { contact_id: contactId ?? null });
+  // Straight to their pass.
+  if (passToken) redirect(`/p/${passToken}`);
   return ok("Application received");
 }
