@@ -1,5 +1,6 @@
 /* ARK OS design system, ported from reference/prototype.html. */
 :root{
+  color-scheme:light;
   --bg:#F1F3EF; --surface:#FFFFFF; --surface-2:#E8ECE5; --ink:#1C2620; --muted:#5B6960; --line:#D6DDD3;
   --canopy:#21402D; --canopy-2:#2B5039; --canopy-ink:#E7EEE6; --canopy-muted:#A9BCAE;
   --leaf:#3E7A55; --sea:#1F6E7A; --sun:#C99A1E; --clay:#A65A3A; --plum:#6E4A7E; --slate:#56636B;
@@ -8,14 +9,6 @@
   --body:"Figtree", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#111713; --surface:#18201B; --surface-2:#212B24; --ink:#E5ECE4; --muted:#9BA99F; --line:#2D3931;
-    --canopy:#0C140F; --canopy-2:#18261D; --canopy-ink:#E5ECE4; --canopy-muted:#8FA596;
-    --leaf:#6BB386; --sea:#5DB2BD; --sun:#E3B341; --clay:#D98A68; --plum:#B593C4; --slate:#97A6AE;
-    --danger:#E27D66; --focus:#5DB2BD;
-  }
 }
 :root[data-theme="dark"]{
   --bg:#111713; --surface:#18201B; --surface-2:#212B24; --ink:#E5ECE4; --muted:#9BA99F; --line:#2D3931;
@@ -63,7 +56,6 @@ h2{font-family:var(--display);font-weight:700;font-size:21px;letter-spacing:-0.0
 a.btn{text-decoration:none;color:inherit}
 .btn.primary{background:var(--leaf);border-color:var(--leaf);color:#fff}
 :root[data-theme="dark"] .btn.primary{color:#0C140F}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.primary{color:#0C140F}}
 .btn.primary:hover{filter:brightness(1.06)}
 .btn.danger{color:var(--danger)}
 .btn.danger.armed{background:var(--danger);border-color:var(--danger);color:#fff}

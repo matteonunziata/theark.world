@@ -28,7 +28,7 @@ export default async function PassPage({ params, searchParams }: PageProps<"/p/[
     <PortalHead
       name={orgName}
       sub={staff ? "Security check" : "Member pass"}
-      link={staff ? { href: "/security", label: "Security console" } : p?.is_mine ? { href: "/portal", label: "Members portal" } : undefined}
+      link={staff ? { href: "/security", label: "Security console" } : p?.is_mine ? { href: "/portal", label: "Sign in" } : undefined}
     />
   );
 

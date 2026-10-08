@@ -35,7 +35,7 @@ export default async function ChoosePage() {
             </span>
           </a>
           <a href="/portal">
-            <b>Members portal</b>
+            <b>Sign in</b>
             <span>Schedule, bookings, the shop and the community.</span>
           </a>
         </div>

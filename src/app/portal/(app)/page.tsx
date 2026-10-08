@@ -9,7 +9,7 @@ import { priceLabel, sessions, whenLabel } from "@/lib/schedule";
 import { Av, PersonCard, SectionHead, SessionCard } from "../ui";
 import { WeekTabs } from "./week-tabs";
 
-export const metadata: Metadata = { title: "Members portal" };
+export const metadata: Metadata = { title: "Sign in" };
 
 // The jungle-and-ocean shot behind the greeting. Drop the photo at public/portal/hero.jpg;
 // until it's there the Spa Deck photo from the main site shows instead.

@@ -226,7 +226,10 @@
 
 @media (max-width:640px){
   .ms-nav{padding:12px 16px}
-  .ms-nav-links,.ms-nav-end .ms-login{display:none}
+  .ms-nav-links{display:none}
+  .ms-nav{flex-wrap:nowrap}
+  .ms-nav-end{gap:4px}
+  .ms-nav-end .ms-login{padding:12px 10px;white-space:nowrap}
   .ms-sec,.ms-hero,.ms-foot{padding-left:16px;padding-right:16px}
   .ms-days .long{display:none}
   .ms-days .short{display:inline}

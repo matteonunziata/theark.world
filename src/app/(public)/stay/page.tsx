@@ -92,10 +92,10 @@ export default async function StayPage({ searchParams }: PageProps<"/stay">) {
             {staff ? (
               <Link href="/hospitality" className="btn btn-primary sm">Staff view</Link>
             ) : memberId ? (
-              <Link href="/portal" className="btn btn-primary sm">Members portal</Link>
+              <Link href="/portal" className="btn btn-primary sm">Sign in</Link>
             ) : (
               <>
-                <Link className="nav-login" href="/portal/login?next=/stay">Member log in</Link>
+                <Link className="nav-login" href="/portal/login?next=/stay">Sign in</Link>
                 <a className="btn btn-primary sm" href="#book">Book a stay</a>
               </>
             )}
@@ -346,7 +346,7 @@ export default async function StayPage({ searchParams }: PageProps<"/stay">) {
           <div className="links">
             <Link href={MEMBERSHIP}>Membership</Link>
             <Link href="/courts">Courts</Link>
-            <Link href="/portal/login?next=/stay">Member log in</Link>
+            <Link href="/portal/login?next=/stay">Sign in</Link>
           </div>
         </div>
       </footer>
