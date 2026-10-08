@@ -14,7 +14,7 @@ import {
   weekHours,
 } from "@/lib/hospitality";
 import { money } from "@/lib/schedule";
-import { saveCleaningStaff, saveCleaningTask } from "../actions";
+import { saveCleaningStaff, saveCleaningTask } from "./schedule-actions";
 
 type Task = Tables<"cleaning_tasks">;
 type Person = Tables<"cleaning_staff">;
@@ -24,7 +24,17 @@ const PX = 56; // pixels per hour in the day grid
 
 const DAY_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-export function CleaningView({ tasks, staff, today }: { tasks: Task[]; staff: Person[]; today: string }) {
+export function ScheduleView({
+  kind,
+  tasks,
+  staff,
+  today,
+}: {
+  kind: "cleaning" | "maintenance";
+  tasks: Task[];
+  staff: Person[];
+  today: string;
+}) {
   const todayIdx = cleanDayOf(today);
   const [view, setView] = useState<"day" | "week">("day");
   const [day, setDay] = useState(todayIdx);
@@ -196,10 +206,11 @@ export function CleaningView({ tasks, staff, today }: { tasks: Task[]; staff: Pe
           </>
         }
       >
+        <input type="hidden" name="kind" value={kind} />
         {task && <input type="hidden" name="id" value={task.id} />}
         <div className="fld">
           <label htmlFor="cl-task">Task</label>
-          <input id="cl-task" name="task" required defaultValue={task?.task ?? ""} placeholder="Deck limpieza profunda" />
+          <input id="cl-task" name="task" required defaultValue={task?.task ?? ""} placeholder={kind === "maintenance" ? "Fix the deck rail" : "Deck limpieza profunda"} />
         </div>
         <div className="grid2">
           <div className="fld">
@@ -259,6 +270,7 @@ export function CleaningView({ tasks, staff, today }: { tasks: Task[]; staff: Pe
           </>
         }
       >
+        <input type="hidden" name="kind" value={kind} />
         {person && <input type="hidden" name="id" value={person.id} />}
         <div className="fld">
           <label htmlFor="cs-name">Name</label>

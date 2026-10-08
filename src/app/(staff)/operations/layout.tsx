@@ -19,6 +19,8 @@ export default async function OpsLayout({ children }: LayoutProps<"/operations">
         items={[
           { href: "/operations", label: "Pipeline" },
           { href: "/operations/list", label: "List" },
+          { href: "/operations/cleaning", label: "Cleaning" },
+          { href: "/operations/maintenance", label: "Maintenance" },
         ]}
       />
       {children}
