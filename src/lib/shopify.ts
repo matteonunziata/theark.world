@@ -726,7 +726,7 @@ export async function pushOrder(sb: Sb, orderId: string) {
           note: `Paid in the ARK member portal. Pick up at The ARK.${o.discount_percent > 0 ? ` Member discount ${o.discount_percent}% already taken off each price.` : ""} ARK OS order ${o.id}.`,
           sourceName: "ark-portal",
         },
-        options: { inventoryBehavior: "DECREMENT_STOCK", sendReceipt: false, sendFulfillmentReceipt: false },
+        options: { inventoryBehaviour: "DECREMENT_IGNORING_POLICY", sendReceipt: false, sendFulfillmentReceipt: false },
       },
     );
     userErrors(d.orderCreate.userErrors);
