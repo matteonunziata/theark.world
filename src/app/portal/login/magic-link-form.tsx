@@ -1,7 +1,7 @@
 "use client";
 
 import { createBrowserClient } from "@supabase/ssr";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { sendSignInLink } from "@/app/auth/actions";
 import { createLinkClient } from "@/lib/supabase/link-client";
 
@@ -11,16 +11,27 @@ export function MagicLinkForm({ next }: { next: string }) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [verifying, setVerifying] = useState(false);
+  const busy = useRef(false);
 
   async function send(form: FormData) {
+    if (busy.current) return;
     const value = String(form.get("email") ?? "").trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       setError("Enter a valid email.");
       return;
     }
+    busy.current = true;
     setState("sending");
     setError("");
     setEmail(value);
+    try {
+      await deliver(value);
+    } finally {
+      busy.current = false;
+    }
+  }
+
+  async function deliver(value: string) {
 
     // The ARK-styled email with a link and a code, when it's set up.
     const r = await sendSignInLink(value, next).catch(() => ({
@@ -80,6 +91,13 @@ export function MagicLinkForm({ next }: { next: string }) {
     window.location.replace(next);
   }
 
+  if (state === "sending") {
+    return (
+      <p role="status" style={{ color: "var(--ink)" }}>
+        An email is on its way to <b>{email}</b>. Sending your sign-in link…
+      </p>
+    );
+  }
   if (state === "sent") {
     return (
       <p role="status" style={{ color: "var(--ink)" }}>
@@ -145,8 +163,8 @@ export function MagicLinkForm({ next }: { next: string }) {
           required
         />
       </div>
-      <button type="submit" className="btn primary auth-btn" disabled={state === "sending"}>
-        {state === "sending" ? "Sending…" : "Email me a sign-in link"}
+      <button type="submit" className="btn primary auth-btn">
+        Email me a sign-in link
       </button>
     </form>
   );

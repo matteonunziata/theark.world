@@ -33,7 +33,7 @@ export default async function EventPage({ params, searchParams }: Props) {
         staff
           ? { href: "/events", label: "Staff view" }
           : memberId
-            ? { href: "/portal", label: "Members portal" }
+            ? { href: "/portal", label: "Sign in" }
             : { href: `/portal/login?next=/e/${id}`, label: "Member sign-in" }
       }
     />

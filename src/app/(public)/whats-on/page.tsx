@@ -73,10 +73,10 @@ export default async function EventsPage() {
             {staff ? (
               <Link href="/events/all" className="btn btn-primary sm">Staff view</Link>
             ) : memberId ? (
-              <Link href="/portal/schedule" className="btn btn-primary sm">Members portal</Link>
+              <Link href="/portal/schedule" className="btn btn-primary sm">Sign in</Link>
             ) : (
               <>
-                <Link className="nav-login" href="/portal/login?next=/whats-on">Member log in</Link>
+                <Link className="nav-login" href="/portal/login?next=/whats-on">Sign in</Link>
                 <a className="btn btn-primary sm" href="#upcoming">See what’s on</a>
               </>
             )}
@@ -152,7 +152,7 @@ export default async function EventsPage() {
           </div>
           <div className="btn-row">
             <Link className="btn btn-accent" href={`${MEMBERSHIP}/apply`}>Apply for membership</Link>
-            {!memberId && <Link className="btn btn-ghost-light" href="/portal/login?next=/whats-on">Member log in</Link>}
+            {!memberId && <Link className="btn btn-ghost-light" href="/portal/login?next=/whats-on">Sign in</Link>}
           </div>
         </div>
       </section>
@@ -179,7 +179,7 @@ export default async function EventsPage() {
           <div className="links">
             <Link href={MEMBERSHIP}>Membership</Link>
             <Link href="/courts">Courts</Link>
-            <Link href="/portal/login?next=/whats-on">Member log in</Link>
+            <Link href="/portal/login?next=/whats-on">Sign in</Link>
           </div>
         </div>
       </footer>

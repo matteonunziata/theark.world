@@ -126,7 +126,7 @@ export default async function MembershipPage() {
         </div>
         <div className="ms-nav-end">
           <Link href="/portal/login" className="ms-login">
-            Member log in
+            Sign in
           </Link>
           <Link href={APPLY_URL} className="ms-btn small solid">
             Apply
@@ -335,7 +335,7 @@ export default async function MembershipPage() {
             </span>
             <nav>
               <Link href="/courts">Courts</Link>
-              <Link href="/portal/login">Member log in</Link>
+              <Link href="/portal/login">Sign in</Link>
               <a href="#faq">FAQ</a>
             </nav>
           </div>

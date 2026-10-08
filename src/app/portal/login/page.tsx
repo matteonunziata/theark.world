@@ -5,7 +5,7 @@ import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
 import { MagicLinkForm } from "./magic-link-form";
 
-export const metadata: Metadata = { title: "Members sign-in" };
+export const metadata: Metadata = { title: "Sign in" };
 
 export default async function PortalLogin({ searchParams }: PageProps<"/portal/login">) {
   const { error, next } = await searchParams;
@@ -19,7 +19,7 @@ export default async function PortalLogin({ searchParams }: PageProps<"/portal/l
         <div className="auth-brand">
           <Logo tone="dark" height={34} />
         </div>
-        <h1>Members portal</h1>
+        <h1>Sign in</h1>
         <p>
           Enter your email and we’ll send you a link to sign in, no password
           needed. Team members and facilitators sign in here too.

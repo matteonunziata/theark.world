@@ -236,7 +236,7 @@ export async function sendSignInEmail(m: { to: string; link: string; code: strin
     subject: `Your sign-in code: ${m.code}`,
     parts: {
       preheader: `Your code is ${m.code}. It works once and expires in an hour.`,
-      eyebrow: m.team ? "Team sign-in" : "Members portal",
+      eyebrow: m.team ? "Team sign-in" : "Sign in",
       heading: "Sign in to The ARK",
       body: `<p style="margin:0 0 18px">Tap the button to sign in. You can open it on your phone or your computer.</p>`,
       cta: { label: "Sign in", href: m.link },

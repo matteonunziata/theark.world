@@ -151,7 +151,7 @@ export default async function PaymentDone({ searchParams }: PageProps<"/pay/done
         {paid} Your membership is active{contact?.renews_on ? ` until ${day(contact.renews_on)}` : ""}.
         {emailConfigured() ? " Check your inbox for your way into the members portal." : ""}
       </p>
-      <p><Link className="btn primary" href="/portal">Go to the members portal</Link></p>
+      <p><Link className="btn primary" href="/portal">Sign in</Link></p>
     </>
   ));
 }

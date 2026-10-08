@@ -69,10 +69,10 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
           {staff ? (
             <Link href="/events/courts" className="btn sm solid">Staff view</Link>
           ) : memberId ? (
-            <Link href={portalHref} className="btn sm solid">Members portal</Link>
+            <Link href={portalHref} className="btn sm solid">Sign in</Link>
           ) : (
             <>
-              <Link href="/portal/login?next=/courts" className="login">Member log in</Link>
+              <Link href="/portal/login?next=/courts" className="login">Sign in</Link>
               <a href="#book" className="btn sm solid">Book a court</a>
             </>
           )}
@@ -292,7 +292,7 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
           <div className="links">
             <Link href="/ark-membership">Membership</Link>
             <Link href="/stay">Stay</Link>
-            <Link href="/portal/login?next=/courts">Member log in</Link>
+            <Link href="/portal/login?next=/courts">Sign in</Link>
             <a href="#info">Info</a>
           </div>
         </div>
