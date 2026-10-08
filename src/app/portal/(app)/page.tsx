@@ -4,7 +4,7 @@ import Link from "next/link";
 import { reason, suggestions } from "@/lib/connect";
 import { coverUrl } from "@/lib/covers";
 import { addDays, DOW, dayLabel, dow, timeRange, todayIn } from "@/lib/dates";
-import { loadPortal } from "@/lib/portal";
+import { loadGoing, loadPortal } from "@/lib/portal";
 import { priceLabel, sessions, whenLabel } from "@/lib/schedule";
 import { Av, PersonCard, SectionHead, SessionCard } from "../ui";
 import { WeekTabs } from "./week-tabs";
@@ -32,12 +32,13 @@ export default async function PortalHome() {
   const { supabase, me, city } = p;
   const today = todayIn(p.timezone);
 
-  const [offerings, tickets, cancels, facs, dir, myRegs] = await Promise.all([
+  const [offerings, tickets, cancels, facs, dir, going, myRegs] = await Promise.all([
     supabase.from("offerings").select("*").eq("status", "published"),
     supabase.from("ticket_types").select("*"),
     supabase.from("session_cancellations").select("offering_id, session_date").gte("session_date", today),
     supabase.rpc("facilitator_names"),
     supabase.rpc("member_directory"),
+    loadGoing(p, today, addDays(today, 6)),
     me
       ? supabase
           .from("registrations")
@@ -70,6 +71,7 @@ export default async function PortalHome() {
               cancelled={s.cancelled}
               facilitator={fac(s.o.facilitator_id)}
               price={priceLabel(s.o, tickets.data ?? [])}
+              going={going.get(`${s.o.id}|${s.date}`)}
             />
           ))}
         </div>

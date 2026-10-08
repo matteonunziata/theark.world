@@ -358,3 +358,7 @@ dialog.book-modal::backdrop{background:rgba(10,18,13,.5)}
 .pv-step .n { width: 28px; height: 28px; border-radius: 50%; background: var(--pv-green); color: var(--pv-cream); display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
 .pv-step h2 { margin: 2px 0 2px; font-size: 20px; }
 .pv-step p { margin: 0; color: var(--pv-muted); font-size: 14px; }
+
+/* Who's going, inside cards and schedule blocks: a little tighter than on the booking page. */
+.pv-card .ev-going, .sch-block .ev-going { margin-top: 4px; font-size: 12px; }
+.pv-card .ev-going .av, .sch-block .ev-going .av { width: 20px; height: 20px; font-size: 9px; }

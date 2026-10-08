@@ -4756,6 +4756,17 @@ export type Database = {
           is_me: boolean;
         }[];
       };
+      portal_attendees: {
+        Args: { p_from: string; p_to: string };
+        Returns: {
+          offering_id: string;
+          id: string;
+          session_date: string;
+          name: string;
+          photo_path: string | null;
+          is_me: boolean;
+        }[];
+      };
       org_today: { Args: never; Returns: string };
       public_org: {
         Args: never;
