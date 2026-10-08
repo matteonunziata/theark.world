@@ -8,16 +8,14 @@ export const metadata: Metadata = { title: "Cleaning" };
 
 export default async function CleaningPage() {
   const { supabase } = await requireStaff("hospitality");
-  const { data } = await supabase
-    .from("cleaning_tasks")
-    .select("*")
-    .order("area")
-    .order("position")
-    .order("created_at");
+  const [{ data: tasks }, { data: staff }] = await Promise.all([
+    supabase.from("cleaning_tasks").select("*").order("start_time", { nullsFirst: false }).order("position"),
+    supabase.from("cleaning_staff").select("*").order("created_at").order("name"),
+  ]);
   return (
     <div className="page">
       <HospitalityHead />
-      <CleaningView tasks={data ?? []} today={todayIn()} />
+      <CleaningView tasks={tasks ?? []} staff={staff ?? []} today={todayIn()} />
     </div>
   );
 }
