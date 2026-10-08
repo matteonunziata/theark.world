@@ -556,6 +556,14 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
     return { error: errorText(e) };
   }
 
+  // Paid portal orders that never reached Shopify (it was paused, or down) go first.
+  try {
+    const sent = await retryUnsentOrders(sb);
+    if (sent.failed) r.errors.push(`${plural(sent.failed, "portal order")} still not in Shopify`);
+  } catch (e) {
+    r.errors.push(`Portal orders: ${errorText(e)}`);
+  }
+
   try {
     // The codes are set up once; a run never leaves the tags without them.
     if (!settingsOf(i).discounts?.member10 || !settingsOf(i).discounts?.member20) await setupDiscounts(sb, i);
@@ -730,6 +738,24 @@ export async function pushOrder(sb: Sb, orderId: string) {
   } catch (e) {
     await fail(errorText(e));
   }
+}
+
+/** Send every paid portal order that has no Shopify order yet. Oldest first. */
+export async function retryUnsentOrders(sb: Sb) {
+  const { data } = await sb
+    .from("portal_shop_orders")
+    .select("id")
+    .eq("status", "paid")
+    .is("shopify_order_id", null)
+    .order("paid_at", { ascending: true })
+    .limit(25);
+  let failed = 0;
+  for (const o of data ?? []) {
+    await pushOrder(sb, o.id);
+    const { data: after } = await sb.from("portal_shop_orders").select("shopify_order_id").eq("id", o.id).maybeSingle();
+    if (!after?.shopify_order_id) failed++;
+  }
+  return { tried: data?.length ?? 0, failed };
 }
 
 export type { PortalOrder };
