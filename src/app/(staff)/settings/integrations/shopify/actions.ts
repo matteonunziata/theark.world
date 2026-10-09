@@ -5,6 +5,7 @@ import { type ActionResult, fail, field, friendly, ok } from "@/lib/action-resul
 import { staffOrThrow } from "@/lib/auth";
 import * as shopify from "@/lib/shopify";
 import { normalizeShop } from "@/lib/shopify-map";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const refresh = () => revalidatePath("/settings/integrations", "layout");
 const errorText = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong talking to Shopify.");
@@ -116,7 +117,8 @@ export async function setupShopifyDiscounts(): Promise<ActionResult> {
 
 export async function syncShopifyNow(): Promise<ActionResult> {
   const { supabase } = await staffOrThrow("admin");
-  const r = await shopify.runSync(supabase);
+  // Saving orders and contacts is service-role only (like the nightly run); the admin check above is the gate.
+  const r = await shopify.runSync(createAdminClient() ?? supabase);
   refresh();
   if ("error" in r) return fail(r.error);
   const parts = [`${r.members} member${r.members === 1 ? "" : "s"} with a discount today`, `${r.tagged} tagged`, `${r.untagged} untagged`];
