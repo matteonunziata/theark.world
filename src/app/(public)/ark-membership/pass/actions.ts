@@ -13,7 +13,6 @@ const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
  * days (user decision, 2026-10-05).
  */
 export async function buyPass(_prev: ActionResult, data: FormData): Promise<ActionResult> {
-  if (field(data, "ms_trap_x")) return fail("Couldn’t start the payment. Try again.");
   const plan = field(data, "plan");
   const name = field(data, "name")?.slice(0, 120);
   const email = field(data, "email")?.toLowerCase();
