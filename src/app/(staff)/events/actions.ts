@@ -144,6 +144,11 @@ export async function saveOffering(
       // Meals: the booking is a hold until it's paid.
       pay_first: String(data.getAll("t_when")[i] ?? "") === "first",
       stripe_price_id: String(data.getAll("t_stripe")[i] ?? "").trim() || null,
+      kind: data.getAll("t_kind")[i] === "addon" ? "addon" : "main",
+      max_per_order: Math.max(1, Math.round(Number(data.getAll("t_max")[i]) || 10)),
+      sales_start: String(data.getAll("t_from")[i] ?? "") ? `${String(data.getAll("t_from")[i]).slice(0, 16)}:00` : null,
+      sales_end: String(data.getAll("t_to")[i] ?? "") ? `${String(data.getAll("t_to")[i]).slice(0, 16)}:00` : null,
+      unlocks_after_ticket_id: String(data.getAll("t_after")[i] ?? "") || null,
       position: i,
     }))
     .filter((t) => t.name);
@@ -156,6 +161,14 @@ export async function saveOffering(
       if (!sp) return fail("That Stripe product isn’t available any more. Pick another.");
       t.price = sp.amount;
       t.currency = sp.currency;
+    }
+  }
+  for (const t of tickets) {
+    if (t.sales_start && t.sales_end && t.sales_end <= t.sales_start) {
+      return fail(`“${t.name}” should stop selling after it starts.`);
+    }
+    if (t.unlocks_after_ticket_id && t.unlocks_after_ticket_id === t.id) {
+      return fail(`“${t.name}” can’t open after itself.`);
     }
   }
   if (tickets.some((t) => t.payment_link && !t.payment_link.startsWith("https://"))) {
@@ -250,16 +263,17 @@ export async function addBooking(
   if (!name) return fail("Enter a name.");
   if (email && !EMAIL.test(email)) return fail("Enter a valid email.");
 
-  const [{ data: o }, { count }] = await Promise.all([
+  const [{ data: o }, { data: seatRows }] = await Promise.all([
     supabase.from("offerings").select("*").eq("id", offeringId).single(),
     supabase
       .from("registrations")
-      .select("id", { count: "exact", head: true })
+      .select("seats")
       .eq("offering_id", offeringId)
       .eq("session_date", date),
   ]);
   if (!o) return fail("That session no longer exists.");
-  if (o.capacity && (count ?? 0) >= o.capacity) return fail("This session is full.");
+  const taken = (seatRows ?? []).reduce((n, r) => n + r.seats, 0);
+  if (o.capacity && taken >= o.capacity) return fail("This session is full.");
 
   // Link to the CRM contact when we know them.
   const { data: contact } = email

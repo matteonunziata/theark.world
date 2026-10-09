@@ -685,8 +685,9 @@ function OfferingDrawer({
           </div>
         </div>
         <p className="subhint">
-          Add ticket types for paid or guest entry. Leave empty if it’s free or
-          included in membership. “Pay to confirm” holds the spot until it’s paid (meals);
+          Add ticket types for paid or guest entry, such as Early Bird, General or VIP. Set dates for when each
+          is on sale, or have one open when another sells out. Mark extras like lunch as optional add-ons.
+          Leave empty if it’s free or included in membership. “Pay to confirm” holds the spot until it’s paid (meals);
           a Stripe product sets the price.
         </p>
         {rows.map((t) => (
@@ -710,6 +711,29 @@ function OfferingDrawer({
                   {sp.name}, {money(sp.amount, sp.currency)}
                 </option>
               ))}
+            </select>
+            <select name="t_kind" aria-label="Ticket role" defaultValue={t.kind ?? "main"}>
+              <option value="main">Main admission</option>
+              <option value="addon">Optional add-on</option>
+            </select>
+            <input name="t_max" type="number" min={1} placeholder="Max per order (10)" defaultValue={t.max_per_order ?? ""} aria-label="Most per order" />
+            <label className="hint" style={{ display: "grid", gap: 2 }}>
+              On sale from
+              <input name="t_from" type="datetime-local" defaultValue={t.sales_start?.slice(0, 16) ?? ""} />
+            </label>
+            <label className="hint" style={{ display: "grid", gap: 2 }}>
+              On sale until
+              <input name="t_to" type="datetime-local" defaultValue={t.sales_end?.slice(0, 16) ?? ""} />
+            </label>
+            <select name="t_after" aria-label="Opens when another sells out" defaultValue={t.unlocks_after_ticket_id ?? ""}>
+              <option value="">On sale as soon as the dates allow</option>
+              {rows
+                .filter((x) => x.id && x.id !== t.id)
+                .map((x) => (
+                  <option key={x.id} value={x.id}>
+                    Opens when “{x.name || "ticket"}” sells out
+                  </option>
+                ))}
             </select>
             <div className="full">
               <input name="t_link" type="url" placeholder="Outside payment link, only used while Stripe is off" defaultValue={t.payment_link ?? ""} aria-label="Payment link" />

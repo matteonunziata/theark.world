@@ -311,6 +311,58 @@ delete from public.registrations where email = 'staffadd@example.com';
 update public.offerings set booking_closes_at = null where title = 'Open event';
 delete from public.event_schedule_items; delete from public.event_images;
 
+-- Tickets: sales windows, release order, add-ons, seats --------------------------------------
+
+insert into public.offerings (kind, title, start_date, status, access, repeat, capacity)
+values ('event', 'Ticket logic', public.org_today() + 3, 'published', 'everyone', 'none', 5);
+insert into public.ticket_types (offering_id, name, price, qty, kind, position)
+select id, 'Early Bird', 10000, 2, 'main', 0 from public.offerings where title = 'Ticket logic';
+insert into public.ticket_types (offering_id, name, price, kind, position, unlocks_after_ticket_id)
+select o.id, 'General', 15000, 'main', 1, t.id
+from public.offerings o join public.ticket_types t on t.offering_id = o.id and t.name = 'Early Bird'
+where o.title = 'Ticket logic';
+insert into public.ticket_types (offering_id, name, price, kind, position, max_per_order)
+select id, 'Lunch', 5000, 'addon', 2, 3 from public.offerings where title = 'Ticket logic';
+insert into public.ticket_types (offering_id, name, price, kind, position, sales_start)
+select id, 'Later', 1, 'main', 3, public.org_now() + interval '1 day' from public.offerings where title = 'Ticket logic';
+
+create or replace function pg_temp.try_book(who text, items jsonb) returns text
+language plpgsql as $$
+begin
+  perform public.book_tickets(
+    (select id from public.offerings where title = 'Ticket logic'),
+    public.org_today() + 3, who, who || '@example.com', null, items);
+  return 'ok';
+exception when raise_exception then return sqlerrm;
+end $$;
+create or replace function pg_temp.item(nm text, q int) returns jsonb
+language sql as $$
+  select jsonb_build_object('ticket_type_id', (select id from public.ticket_types where name = nm
+    and offering_id = (select id from public.offerings where title = 'Ticket logic')), 'qty', q) $$;
+
+select pg_temp.act_as(null);
+select pg_temp.expect(pg_temp.try_book('a1', jsonb_build_array(pg_temp.item('General', 1))) = 'General isn''t available yet.',
+  'a ticket that opens when another sells out stays shut');
+select pg_temp.expect(pg_temp.try_book('a2', jsonb_build_array(pg_temp.item('Lunch', 1))) like 'Choose a main ticket first%',
+  'an add-on cannot be booked alone');
+select pg_temp.expect(pg_temp.try_book('a3', jsonb_build_array(pg_temp.item('Later', 1))) = 'Later isn''t on sale yet.',
+  'a ticket before its sales start cannot be booked');
+select pg_temp.expect(pg_temp.try_book('a4', jsonb_build_array(pg_temp.item('Lunch', 4), pg_temp.item('Early Bird', 1))) like 'You can book up to 3%',
+  'the per-order limit holds');
+select pg_temp.expect(pg_temp.try_book('b1', jsonb_build_array(pg_temp.item('Early Bird', 2), pg_temp.item('Lunch', 2))) = 'ok',
+  'two main tickets and an add-on book together');
+select pg_temp.expect(pg_temp.try_book('b2', jsonb_build_array(pg_temp.item('Early Bird', 1))) = 'Early Bird just sold out.',
+  'a sold-out ticket cannot be booked');
+select pg_temp.expect(pg_temp.try_book('b3', jsonb_build_array(pg_temp.item('General', 3))) = 'ok',
+  'the next ticket opens once the first sells out');
+select pg_temp.expect(pg_temp.try_book('b4', jsonb_build_array(pg_temp.item('General', 1))) = 'Sorry, this session just filled up.',
+  'seats, not bookings, count against capacity');
+reset role;
+select pg_temp.expect((select sum(taken) from public.session_counts(
+  (select id from public.offerings where title = 'Ticket logic'), public.org_today(), public.org_today() + 5)) = 5,
+  'add-ons take no seat in the counts');
+delete from public.offerings where title = 'Ticket logic';
+
 -- Check-in ---------------------------------------------------------------------------
 
 update public.offerings set start_date = public.org_today()

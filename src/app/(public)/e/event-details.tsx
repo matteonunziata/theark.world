@@ -20,7 +20,10 @@ export function EventDetails({
   compact?: boolean;
   onBooked?: () => void;
 }) {
-  const { o, tickets } = ev;
+  const { o } = ev;
+  const tickets = ev.tickets;
+  // The booking form takes main tickets that are on sale (or sold out, so it can say so).
+  const bookable = tickets.filter((t) => t.kind === "main" && ["ok", "sold_out"].includes(ev.states[t.id] ?? "ok"));
   const booking = (
     <BookingPanel
       offering={{
@@ -34,7 +37,7 @@ export function EventDetails({
       sessions={ev.sessions}
       attendees={ev.attendees}
       counts={ev.counts}
-      tickets={tickets}
+      tickets={bookable}
       highlight={date}
       startOn={compact ? date : null}
       today={ev.today}
@@ -82,15 +85,32 @@ export function EventDetails({
     <section className="panel">
       <h2>Tickets</h2>
       {tickets.length ? (
-        tickets.map((t) => (
-          <div className="tk" key={t.id}>
-            <div>
-              <b>{t.name}</b>
-              {t.qty ? <span>{t.qty} per session</span> : null}
+        tickets.map((t) => {
+          const st = ev.states[t.id] ?? "ok";
+          const note =
+            st === "sold_out"
+              ? "Sold out"
+              : st === "not_started" && t.sales_start
+                ? `On sale ${t.sales_start.slice(0, 10)} at ${t.sales_start.slice(11, 16)}`
+                : st === "ended"
+                  ? "Sales ended"
+                  : st === "locked"
+                    ? "Opens when the earlier tickets sell out"
+                    : t.kind === "addon"
+                      ? "Optional add-on"
+                      : t.qty
+                        ? `${t.qty} per session`
+                        : null;
+          return (
+            <div className="tk" key={t.id} style={st === "ok" ? undefined : { opacity: 0.6 }}>
+              <div>
+                <b>{t.name}</b>
+                {note ? <span>{note}</span> : null}
+              </div>
+              <div>{money(t.price, t.currency)}</div>
             </div>
-            <div>{money(t.price, t.currency)}</div>
-          </div>
-        ))
+          );
+        })
       ) : (
         <p className="muted" style={{ margin: 0 }}>{priceLabel(o, [])}</p>
       )}

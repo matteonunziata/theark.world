@@ -128,7 +128,7 @@ export function whenLabel(o: Offering) {
 
 /** Classes are included for members; events may charge everyone. */
 export function priceLabel(o: Offering, tickets: TicketType[]) {
-  const t = tickets.filter((x) => x.offering_id === o.id);
+  const t = tickets.filter((x) => x.offering_id === o.id && x.kind !== "addon");
   if (!t.length) return o.access === "members" ? "Included for members" : "Free";
   const min = t.reduce((a, b) => (Number(b.price) < Number(a.price) ? b : a));
   // Meals: everyone pays when they book, members too.

@@ -49,6 +49,10 @@ export async function loadEvent(id: string, date?: string | null) {
   // Keep the date someone picked, even when it's further out.
   const asked = date && !upcoming.some((s) => s.date === date) && all.find((s) => s.date === date);
   if (asked) upcoming.push(asked);
+  // Where each ticket stands (on sale, sold out, opens later) for the date being looked at.
+  const forDate = date ?? upcoming.find((s) => !s.cancelled)?.date ?? today;
+  const { data: avail } = await supabase.rpc("ticket_availability", { p_offering_id: o.id, p_date: forDate });
+  const states: Record<string, string> = Object.fromEntries((avail ?? []).map((a) => [a.ticket_type_id, a.state]));
   return {
     ...viewer,
     event: {
@@ -57,6 +61,7 @@ export async function loadEvent(id: string, date?: string | null) {
       cover: coverUrl(o.cover_path),
       facilitator: (facs ?? []).find((x) => x.id === o.facilitator_id)?.name ?? null,
       tickets: tickets ?? [],
+      states,
       schedule: schedule ?? [],
       images: (images ?? []).map((x) => coverUrl(x.path)).filter((x): x is string => !!x),
       registrationClosed,

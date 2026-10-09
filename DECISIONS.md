@@ -417,3 +417,12 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Members banner:** "Members enjoy special prices." with "Enjoy exclusive member pricing for events and experiences." The early-access wording and the 10% / 20% figures are gone from the copy; the discount rules themselves are unchanged.
 - **Host an event form:** adds phone (WhatsApp), Instagram or Facebook, duration, ticketed or free, short and long description, and additional information. It still emails the team and stores nothing.
 - **Payments for events** will use Stripe (embedded Payment Element), not Tilopay.
+
+## Events: tickets (2026-10-09)
+- **Ticket types** (`ticket_types`) gain `kind` (main admission or optional add-on), `sales_start` / `sales_end` (venue-local), `max_per_order` (default 10) and `unlocks_after_ticket_id` (on sale only once that ticket has sold out for the date). Dates and release order combine: a ticket is on sale when its window is open and, if it has a predecessor, that one is sold out.
+- **Bookings hold many tickets.** `registration_items` (ticket type, quantity, price at the time of sale). `registrations.seats` is the number of main tickets; capacity counts seats, and add-ons take no seat. `registrations.ticket_type_id` stays as the first main ticket so older reports keep working. Bookings made before this have one item, backfilled.
+- **`book_tickets(offering, date, name, email, phone, items)`** is the single way to book; `book_session` now calls it with one ticket. It checks windows, release order, per-order limits, stock per ticket, add-ons needing a main ticket, and seats against capacity, all under the offering's row lock so two people can't oversell.
+- **Add-ons** must come with at least one main ticket. They have their own stock and limit.
+- **Availability** for the booking page: `ticket_availability(offering, date)` returns taken and a state (ok, not_started, ended, sold_out, locked) per ticket.
+- **Revenue:** `ticket_sales_for_month` sums quantity times the price at the time of sale. The CRM activity feed (`contact_activity`) still shows one price per booking until it's updated.
+- **Not done yet:** the public booking form still takes one main ticket at a time. The quantity stepper, add-on picker and phone field come with the booking page rebuild (Phase 3), and Stripe payment for multi-ticket orders with the embedded checkout (Phase 4).

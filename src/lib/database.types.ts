@@ -2970,6 +2970,48 @@ export type Database = {
         }
         Relationships: []
       }
+      registration_items: {
+        Row: {
+          currency: string
+          id: string
+          qty: number
+          registration_id: string
+          ticket_type_id: string | null
+          unit_price: number
+        }
+        Insert: {
+          currency?: string
+          id?: string
+          qty: number
+          registration_id: string
+          ticket_type_id?: string | null
+          unit_price?: number
+        }
+        Update: {
+          currency?: string
+          id?: string
+          qty?: number
+          registration_id?: string
+          ticket_type_id?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_items_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_items_ticket_type_id_fkey"
+            columns: ["ticket_type_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       registrations: {
         Row: {
           checked_in_at: string | null
@@ -2989,6 +3031,8 @@ export type Database = {
           hold_until: string | null
           ticket_type_id: string | null
           user_id: string | null
+          phone: string | null
+          seats: number
         }
         Insert: {
           checked_in_at?: string | null
@@ -3008,6 +3052,8 @@ export type Database = {
           hold_until?: string | null
           ticket_type_id?: string | null
           user_id?: string | null
+          phone?: string | null
+          seats?: number
         }
         Update: {
           checked_in_at?: string | null
@@ -3027,6 +3073,8 @@ export type Database = {
           hold_until?: string | null
           ticket_type_id?: string | null
           user_id?: string | null
+          phone?: string | null
+          seats?: number
         }
         Relationships: [
           {
@@ -3967,6 +4015,11 @@ export type Database = {
           position: number
           price: number
           qty: number | null
+          kind: string
+          max_per_order: number
+          sales_end: string | null
+          sales_start: string | null
+          unlocks_after_ticket_id: string | null
         }
         Insert: {
           currency?: string
@@ -3979,6 +4032,11 @@ export type Database = {
           position?: number
           price?: number
           qty?: number | null
+          kind?: string
+          max_per_order?: number
+          sales_end?: string | null
+          sales_start?: string | null
+          unlocks_after_ticket_id?: string | null
         }
         Update: {
           currency?: string
@@ -3991,6 +4049,11 @@ export type Database = {
           position?: number
           price?: number
           qty?: number | null
+          kind?: string
+          max_per_order?: number
+          sales_end?: string | null
+          sales_start?: string | null
+          unlocks_after_ticket_id?: string | null
         }
         Relationships: [
           {
@@ -4842,6 +4905,23 @@ export type Database = {
       refresh_membership_caches: { Args: never; Returns: number };
       has_access_today: { Args: { cid: string }; Returns: boolean };
       is_portal_member: { Args: { cid: string }; Returns: boolean };
+      book_tickets: {
+        Args: {
+          p_email: string;
+          p_items?: Json;
+          p_name: string;
+          p_offering_id: string;
+          p_phone?: string;
+          p_session_date: string;
+        };
+        Returns: { qr_token: string; registration_id: string }[];
+      };
+      ticket_availability: {
+        Args: { p_date: string; p_offering_id: string };
+        Returns: { state: string; taken: number; ticket_type_id: string }[];
+      };
+      ticket_state: { Args: { p_date: string; p_ticket: string }; Returns: string };
+      ticket_taken: { Args: { p_date: string; p_ticket: string }; Returns: number };
       book_session: {
         Args: {
           p_email: string;
