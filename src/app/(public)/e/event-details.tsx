@@ -1,5 +1,6 @@
 "use client";
 
+import { fmtDate } from "@/lib/dates";
 import { kindName, money, priceLabel, whenLabel } from "@/lib/schedule";
 import { BookingPanel } from "./[id]/[[...date]]/booking-panel";
 import type { LoadedEvent } from "./load";
@@ -42,6 +43,40 @@ export function EventDetails({
       loginHref={`/portal/login?next=/e/${o.id}`}
       onBooked={onBooked}
     />
+  );
+  const days = [...new Set(ev.schedule.map((x) => x.day))];
+  const scheduleList = ev.schedule.length > 0 && (
+    <section className="panel">
+      <h2>Schedule</h2>
+      {days.map((day) => (
+        <div key={day}>
+          {days.length > 1 && <p className="note" style={{ margin: "8px 0 0" }}>{fmtDate(day, { weekday: "long", month: "long", day: "numeric" })}</p>}
+          {ev.schedule
+            .filter((x) => x.day === day)
+            .map((x) => (
+              <div className="tk" key={x.id}>
+                <div>
+                  <b>{x.title}</b>
+                  {x.location ? <span>{x.location}</span> : null}
+                  {x.description ? <span>{x.description}</span> : null}
+                </div>
+                <div>
+                  {x.start_time.slice(0, 5)}
+                  {x.end_time ? `–${x.end_time.slice(0, 5)}` : ""}
+                </div>
+              </div>
+            ))}
+        </div>
+      ))}
+    </section>
+  );
+  const gallery = ev.images.length > 0 && (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10, marginTop: 14 }}>
+      {ev.images.map((src) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={src} src={src} alt="" style={{ width: "100%", borderRadius: 12, display: "block" }} />
+      ))}
+    </div>
   );
   const ticketList = (
     <section className="panel">
@@ -87,15 +122,23 @@ export function EventDetails({
         <img className="ev-cover" src={ev.cover} alt="" />
       )}
       {o.description && <p className="ev-desc">{o.description}</p>}
+      {gallery}
+      {ev.registrationClosed && (
+        <p className="note" role="status" style={{ marginTop: 14 }}><b>Registration closed.</b></p>
+      )}
       {compact ? (
         <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
           {booking}
           {tickets.length > 0 && ticketList}
+          {scheduleList}
         </div>
       ) : (
         <div className="ev-grid">
           {booking}
-          <aside style={{ display: "grid", gap: 14 }}>{ticketList}</aside>
+          <aside style={{ display: "grid", gap: 14 }}>
+            {ticketList}
+            {scheduleList}
+          </aside>
         </div>
       )}
     </>

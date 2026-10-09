@@ -5,12 +5,15 @@ import { addDays, nowIn, todayIn } from "@/lib/dates";
 import { bookingClosed } from "@/lib/facilitator-pay";
 import { sessions } from "@/lib/schedule";
 
-/** Everything the booking page (and the portal's booking modal) shows. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Everything the booking page (and the portal's booking modal) shows.
+ * `id` is the event's id or its clean link (slug). */
 export async function loadEvent(id: string, date?: string | null) {
   const { supabase, staff, memberId } = await getViewer();
   const [{ data: org }, { data: o }] = await Promise.all([
     supabase.rpc("public_org").maybeSingle(),
-    supabase.from("offerings").select("*").eq("id", id).maybeSingle(),
+    supabase.from("offerings").select("*").eq(UUID.test(id) ? "id" : "slug", id).maybeSingle(),
   ]);
   const orgName = org?.name ?? "The ARK";
   const viewer = { staff: !!staff, memberId, orgName };
@@ -19,7 +22,7 @@ export async function loadEvent(id: string, date?: string | null) {
   const today = todayIn(org?.timezone);
   const now = nowIn(org?.timezone);
   const to = addDays(today, 120);
-  const [{ data: tickets }, { data: cancels }, { data: counts }, { data: facs }, { data: going }] =
+  const [{ data: tickets }, { data: cancels }, { data: counts }, { data: facs }, { data: going }, { data: schedule }, { data: images }] =
     await Promise.all([
       supabase.from("ticket_types").select("*").eq("offering_id", o.id).order("position"),
       supabase
@@ -34,7 +37,11 @@ export async function loadEvent(id: string, date?: string | null) {
       memberId || staff
         ? supabase.rpc("session_attendees", { p_offering_id: o.id, p_from: today, p_to: to })
         : Promise.resolve({ data: [] as Attendee[] }),
+      supabase.from("event_schedule_items").select("*").eq("offering_id", o.id).order("day").order("start_time"),
+      supabase.from("event_images").select("*").eq("offering_id", o.id).order("position"),
     ]);
+  // Booking stops at the cut-off date and time, in the venue's time zone.
+  const registrationClosed = !!o.booking_closes_at && o.booking_closes_at.slice(0, 16) <= now;
   const attendees: Record<string, Attendee[]> = {};
   for (const a of going ?? []) (attendees[a.session_date] ??= []).push(a);
   const all = sessions([o], cancels ?? [], today, to);
@@ -50,8 +57,11 @@ export async function loadEvent(id: string, date?: string | null) {
       cover: coverUrl(o.cover_path),
       facilitator: (facs ?? []).find((x) => x.id === o.facilitator_id)?.name ?? null,
       tickets: tickets ?? [],
+      schedule: schedule ?? [],
+      images: (images ?? []).map((x) => coverUrl(x.path)).filter((x): x is string => !!x),
+      registrationClosed,
       counts: counts ?? [],
-      sessions: upcoming.map((s) => ({ date: s.date, cancelled: s.cancelled, closed: bookingClosed(o, s.date, now) })),
+      sessions: upcoming.map((s) => ({ date: s.date, cancelled: s.cancelled, closed: registrationClosed || bookingClosed(o, s.date, now) })),
       attendees,
       canBook: !!memberId || (o.kind !== "class" && o.access === "everyone"),
     },

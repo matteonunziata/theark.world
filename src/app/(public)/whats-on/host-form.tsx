@@ -45,9 +45,37 @@ export function HostForm() {
           <option>Several</option>
         </select>
       </label>
+      <label>
+        Phone (WhatsApp preferred)
+        <input type="tel" name="phone" autoComplete="tel" />
+      </label>
+      <label>
+        Instagram or Facebook
+        <input type="text" name="social" placeholder="@yourname or a link" />
+      </label>
+      <label>
+        Duration
+        <input type="text" name="duration" placeholder="e.g. 3 hours, 2 days" />
+      </label>
+      <label>
+        Ticketed or free
+        <select name="ticketing" defaultValue="">
+          <option value="">Not sure yet</option>
+          <option>Ticketed</option>
+          <option>Free</option>
+        </select>
+      </label>
       <label className="full">
-        Tell us about it
+        Short description
+        <input type="text" name="short" maxLength={160} placeholder="One line about the event" />
+      </label>
+      <label className="full">
+        Long description
         <textarea name="details" rows={4} />
+      </label>
+      <label className="full">
+        Additional information
+        <textarea name="extra" rows={3} placeholder="Anything else we should know" />
       </label>
       <input type="text" name="ms_trap_x" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hp" />
       {state.ok ? (

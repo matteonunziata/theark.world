@@ -68,10 +68,44 @@ export async function saveOffering(
       : Math.max(0, Math.round(Number(cutoffAmount) * (field(data, "cutoff_unit") === "hours" ? 60 : 1)));
   const tier = Number(field(data, "facilitator_pay_tier"));
 
+  const slug = kind === "class" ? null : (field(data, "slug") ?? "").toLowerCase() || null;
+  if (slug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) {
+    return fail("The link can only use lowercase letters, numbers and dashes.");
+  }
+  const closesDate = field(data, "closes_date");
+  const closesTime = field(data, "closes_time");
+  if (!closesDate !== !closesTime) return fail("Set both a date and a time for when booking closes, or leave both empty.");
+  const bookingClosesAt = kind !== "class" && closesDate && closesTime ? `${closesDate}T${closesTime}:00` : null;
+
+  const scheduleItems =
+    kind === "class"
+      ? []
+      : data
+          .getAll("s_title")
+          .map((t, i) => ({
+            day: String(data.getAll("s_day")[i] ?? ""),
+            start_time: String(data.getAll("s_start")[i] ?? ""),
+            end_time: String(data.getAll("s_end")[i] ?? "") || null,
+            title: String(t).trim(),
+            location: String(data.getAll("s_loc")[i] ?? "").trim() || null,
+            description: String(data.getAll("s_desc")[i] ?? "").trim() || null,
+            position: i,
+          }))
+          .filter((x) => x.title);
+  for (const x of scheduleItems) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(x.day) || !x.start_time) return fail(`Add a day and start time for “${x.title}”.`);
+    if (x.end_time && x.end_time <= x.start_time) return fail(`“${x.title}” should end after it starts.`);
+  }
+  const galleryPaths =
+    kind === "class" ? [] : data.getAll("gallery_path").map((x) => String(x).trim()).filter(Boolean);
+
   const row = {
     kind,
     title,
     description: field(data, "description"),
+    short_description: kind === "class" ? null : field(data, "short_description"),
+    slug,
+    booking_closes_at: bookingClosesAt,
     facilitator_id: field(data, "facilitator_id"),
     location: field(data, "location"),
     repeat,
@@ -131,14 +165,14 @@ export async function saveOffering(
   let offeringId = id;
   if (id) {
     const { error } = await supabase.from("offerings").update(row).eq("id", id);
-    if (error) return fail(friendly(error));
+    if (error) return fail(error.code === "23505" ? "That link is already used by another event. Pick a different one." : friendly(error));
   } else {
     const { data: created, error } = await supabase
       .from("offerings")
       .insert({ ...row, created_by: staff.id })
       .select("id")
       .single();
-    if (error) return fail(friendly(error));
+    if (error) return fail(error.code === "23505" ? "That link is already used by another event. Pick a different one." : friendly(error));
     offeringId = created.id;
   }
 
@@ -161,6 +195,26 @@ export async function saveOffering(
           .from("ticket_types")
           .insert({ ...rest, offering_id: offeringId! });
     if (error) return fail(friendly(error));
+  }
+
+  // Schedule and gallery: replaced as a whole; the form always sends the full list.
+  if (kind !== "class") {
+    const del1 = await supabase.from("event_schedule_items").delete().eq("offering_id", offeringId!);
+    if (del1.error) return fail(friendly(del1.error));
+    if (scheduleItems.length) {
+      const { error } = await supabase
+        .from("event_schedule_items")
+        .insert(scheduleItems.map((x) => ({ ...x, offering_id: offeringId! })));
+      if (error) return fail(friendly(error));
+    }
+    const del2 = await supabase.from("event_images").delete().eq("offering_id", offeringId!);
+    if (del2.error) return fail(friendly(del2.error));
+    if (galleryPaths.length) {
+      const { error } = await supabase
+        .from("event_images")
+        .insert(galleryPaths.map((path, position) => ({ offering_id: offeringId!, path, position })));
+      if (error) return fail(friendly(error));
+    }
   }
 
   refresh();

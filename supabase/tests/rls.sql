@@ -275,6 +275,42 @@ select pg_temp.expect(
   'member sees only their own booking');
 reset role;
 
+-- Event setup: schedule, gallery, booking cut-off ---------------------------------------
+
+insert into public.event_schedule_items (offering_id, day, start_time, title)
+select id, public.org_today() + 3, '10:00', 'Opening' from public.offerings where title = 'Open event';
+insert into public.event_images (offering_id, path)
+select id, 'test.jpg' from public.offerings where title = 'Open event';
+
+select pg_temp.act_as(null);
+select pg_temp.expect((select count(*) from public.event_schedule_items) = 1, 'anon sees the schedule of a published event');
+select pg_temp.expect((select count(*) from public.event_images) = 1, 'anon sees the gallery of a published event');
+do $$ begin
+  begin
+    insert into public.event_schedule_items (offering_id, day, start_time, title)
+    select id, public.org_today(), '09:00', 'Sneaky' from public.offerings where title = 'Open event';
+    raise exception 'RLS test failed: anon added a schedule item';
+  exception when insufficient_privilege or check_violation then null; end;
+end $$;
+reset role;
+
+update public.offerings set booking_closes_at = public.org_now() - interval '1 hour' where title = 'Open event';
+do $$ begin
+  begin
+    insert into public.registrations (offering_id, session_date, name, email, source)
+    select id, public.org_today() + 5, 'Late', 'late@example.com', 'public' from public.offerings where title = 'Open event';
+    raise exception 'RLS test failed: booked online after the cut-off';
+  exception when raise_exception then
+    if sqlerrm like 'RLS test failed%' then raise; end if;
+    if sqlerrm <> 'Registration closed.' then raise; end if;
+  end;
+end $$;
+insert into public.registrations (offering_id, session_date, name, email, source)
+select id, public.org_today() + 5, 'Staff add', 'staffadd@example.com', 'staff' from public.offerings where title = 'Open event';
+delete from public.registrations where email = 'staffadd@example.com';
+update public.offerings set booking_closes_at = null where title = 'Open event';
+delete from public.event_schedule_items; delete from public.event_images;
+
 -- Check-in ---------------------------------------------------------------------------
 
 update public.offerings set start_date = public.org_today()

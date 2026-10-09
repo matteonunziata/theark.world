@@ -406,3 +406,14 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **First sync resets the 44 counted products** to Shopify's quantities. This also undoes the dip the history backfill caused (it took the Shopify sales since 2 Sep off hand-counted stock).
 - **Permissions:** `read_inventory`, `write_inventory` and `read_locations` on the Shopify app (Test connection lists what is missing). Product price and detail changes are not pushed to Shopify yet; that would need `write_products`.
 
+
+## Events: setup, schedule, gallery, links, cut-off (2026-10-09)
+- **Source:** "The Ark — Events Platform Changes" (Downloads). Phase 1 covers sections 1.1–1.6 and 3.3. Ticket logic, the public event page redesign, embedded Stripe checkout and per-event analytics are later phases.
+- **Descriptions:** `offerings.short_description` is the card line; the existing `description` is now the long description. Cards and the featured event use the short one when it's set.
+- **Link:** `offerings.slug` (lowercase letters, numbers, dashes; unique; events and experiences only). `/e/<slug>` works alongside `/e/<id>`; `loadEvent` accepts either. The old id links keep working. A `/events/<slug>` path comes with the public page redesign.
+- **Booking closes** (`offerings.booking_closes_at`, venue-local date and time, both or neither): a trigger on `registrations` refuses online (portal and public) inserts after it, with "Registration closed." Staff-added bookings are still allowed. It is separate from the per-session `booking_cutoff_minutes`.
+- **Schedule** (`event_schedule_items`: day, start, end, title, location, description) and **gallery** (`event_images`, ordered). Both are saved as a whole list from the offering form and shown on the event page. The cover photo stays on `offerings.cover_path`.
+- **Locations:** "The Ark" and "La Cocineta" added to the location suggestions.
+- **Members banner:** "Members enjoy special prices." with "Enjoy exclusive member pricing for events and experiences." The early-access wording and the 10% / 20% figures are gone from the copy; the discount rules themselves are unchanged.
+- **Host an event form:** adds phone (WhatsApp), Instagram or Facebook, duration, ticketed or free, short and long description, and additional information. It still emails the team and stores nothing.
+- **Payments for events** will use Stripe (embedded Payment Element), not Tilopay.

@@ -2455,6 +2455,7 @@ export type Database = {
           city_id: string | null
           cover_path: string | null
           booking_cutoff_minutes: number | null
+          booking_closes_at: string | null
           created_at: string
           created_by: string | null
           days: number[]
@@ -2469,6 +2470,8 @@ export type Database = {
           facilitator_pay_tier: number
           repeat: string
           start_date: string
+          short_description: string | null
+          slug: string | null
           start_time: string | null
           month_mode: string
           status: string
@@ -2482,6 +2485,7 @@ export type Database = {
           city_id?: string | null
           cover_path?: string | null
           booking_cutoff_minutes?: number | null
+          booking_closes_at?: string | null
           created_at?: string
           created_by?: string | null
           days?: number[]
@@ -2496,6 +2500,8 @@ export type Database = {
           facilitator_pay_tier?: number
           repeat?: string
           start_date: string
+          short_description?: string | null
+          slug?: string | null
           start_time?: string | null
           month_mode?: string
           status?: string
@@ -2509,6 +2515,7 @@ export type Database = {
           city_id?: string | null
           cover_path?: string | null
           booking_cutoff_minutes?: number | null
+          booking_closes_at?: string | null
           created_at?: string
           created_by?: string | null
           days?: number[]
@@ -2523,6 +2530,8 @@ export type Database = {
           facilitator_pay_tier?: number
           repeat?: string
           start_date?: string
+          short_description?: string | null
+          slug?: string | null
           start_time?: string | null
           month_mode?: string
           status?: string
@@ -3869,6 +3878,79 @@ export type Database = {
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_images: {
+        Row: {
+          id: string
+          offering_id: string
+          path: string
+          position: number
+        }
+        Insert: {
+          id?: string
+          offering_id: string
+          path: string
+          position?: number
+        }
+        Update: {
+          id?: string
+          offering_id?: string
+          path?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_images_offering_id_fkey"
+            columns: ["offering_id"]
+            isOneToOne: false
+            referencedRelation: "offerings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_schedule_items: {
+        Row: {
+          day: string
+          description: string | null
+          end_time: string | null
+          id: string
+          location: string | null
+          offering_id: string
+          position: number
+          start_time: string
+          title: string
+        }
+        Insert: {
+          day: string
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          offering_id: string
+          position?: number
+          start_time: string
+          title: string
+        }
+        Update: {
+          day?: string
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          offering_id?: string
+          position?: number
+          start_time?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_schedule_items_offering_id_fkey"
+            columns: ["offering_id"]
+            isOneToOne: false
+            referencedRelation: "offerings"
             referencedColumns: ["id"]
           },
         ]
