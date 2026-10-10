@@ -18,7 +18,7 @@ export async function GET(request: Request, ctx: RouteContext<"/pay/ticket/[toke
   const { data: r } = await admin
     .from("registrations")
     .select(
-      "id, name, email, paid, status, hold_until, session_date, contact_id, offering:offerings(title, status), ticket:ticket_types(id, name, price, currency, payment_link, pay_first, stripe_price_id)",
+      "id, name, email, paid, status, hold_until, session_date, contact_id, offering:offerings(title, status), ticket:ticket_types(id, name, price, currency, payment_link, pay_first, stripe_price_id), items:registration_items(qty, unit_price, currency, ticket:ticket_types(name))",
     )
     .eq("qr_token", token)
     .maybeSingle();
@@ -29,7 +29,17 @@ export async function GET(request: Request, ctx: RouteContext<"/pay/ticket/[toke
   let priceId = r.ticket.stripe_price_id;
   let amount = Number(r.ticket.price);
   let currency = r.ticket.currency;
-  if (!priceId && !(amount > 0)) {
+  // More than one ticket, or an add-on: charge the whole order at the prices it was booked at.
+  const items = r.items ?? [];
+  const order = items.length > 1 || (items.length === 1 && items[0].qty > 1);
+  let what = r.ticket.name;
+  if (order && new Set(items.map((i) => i.currency)).size === 1) {
+    priceId = null;
+    amount = items.reduce((n, i) => n + Number(i.unit_price) * i.qty, 0);
+    currency = items[0].currency;
+    what = items.map((i) => `${i.qty} × ${i.ticket?.name ?? "Ticket"}`).join(", ");
+  }
+  if (!order && !priceId && !(amount > 0)) {
     const found = await findStripePrice(r.ticket.name).catch(() => null);
     if (found) {
       priceId = found.priceId;
@@ -51,7 +61,7 @@ export async function GET(request: Request, ctx: RouteContext<"/pay/ticket/[toke
     const url = await createCheckout({
       kind: "ticket",
       title: `${title}, ${day}`,
-      description: r.ticket.name,
+      description: what,
       priceId,
       amount,
       currency,
@@ -63,7 +73,7 @@ export async function GET(request: Request, ctx: RouteContext<"/pay/ticket/[toke
         email: r.email,
         contact_id: r.contact_id,
         held: r.status === "held" ? "1" : null,
-        description: `${title} (${r.ticket.name}), ${r.session_date}`,
+        description: `${title} (${what}), ${r.session_date}`,
       },
       cancelPath: `/t/${token}`,
     });

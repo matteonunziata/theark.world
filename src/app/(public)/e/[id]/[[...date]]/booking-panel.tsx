@@ -17,6 +17,7 @@ export function BookingPanel({
   attendees = {},
   counts,
   tickets,
+  availability,
   highlight,
   startOn,
   today,
@@ -37,7 +38,10 @@ export function BookingPanel({
   /** Directory members booked per date; members and staff only. */
   attendees?: Record<string, Attendee[]>;
   counts: Count[];
+  /** Every ticket type, main admission and add-ons. */
   tickets: Ticket[];
+  /** Per date and ticket: how many are taken and whether it's on sale. */
+  availability: Record<string, Record<string, { state: string; taken: number }>>;
   highlight: string | null;
   /** Open straight on the booking form for this date, when it can be booked. */
   startOn?: string | null;
@@ -62,13 +66,11 @@ export function BookingPanel({
     counts.filter((c) => c.session_date === d).reduce((n, c) => n + Number(c.taken), 0);
   const left = (d: string) => (o.capacity ? Math.max(0, o.capacity - taken(d)) : null);
   const ticketLeft = (t: Ticket, d: string) =>
-    t.qty
-      ? Math.max(
-          0,
-          t.qty -
-            Number(counts.find((c) => c.session_date === d && c.ticket_type_id === t.id)?.taken ?? 0),
-        )
-      : null;
+    t.qty ? Math.max(0, t.qty - (availability[d]?.[t.id]?.taken ?? 0)) : null;
+  const stateOf = (t: Ticket, d: string) => availability[d]?.[t.id]?.state ?? "ok";
+  const [qty, setQty] = useState<Record<string, number>>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const setTicketQty = (id: string, n: number) => setQty((q) => ({ ...q, [id]: n }));
 
   if (result?.ok && result.held) {
     // Meals: the spot is held until it's paid. Online, that means straight to Stripe.
@@ -80,6 +82,7 @@ export function BookingPanel({
           <p>
             {picked && dayLabel(picked, today)}, {timeRange(o)}
           </p>
+          {result.summary && <p>{result.summary}</p>}
           {result.payUrl ? (
             <>
               <p className="muted">
@@ -123,6 +126,7 @@ export function BookingPanel({
           <p>
             {picked && dayLabel(picked, today)}, {timeRange(o)}
           </p>
+          {result.summary && <p>{result.summary}</p>}
           <p className="muted">
             {result.emailed
               ? "Your ticket is on its way to your inbox."
@@ -170,34 +174,99 @@ export function BookingPanel({
   }
 
   if (picked) {
-    const firstOpen = tickets.find((t) => ticketLeft(t, picked) !== 0);
+    const mains = tickets.filter((t) => t.kind === "main");
+    const addons = tickets.filter((t) => t.kind === "addon");
+    const seatsLeft = left(picked);
+    const chosen = tickets.filter((t) => (qty[t.id] ?? 0) > 0);
+    const mainSeats = mains.reduce((n, t) => n + (qty[t.id] ?? 0), 0);
+    const total = chosen.reduce((n, t) => n + Number(t.price) * (qty[t.id] ?? 0), 0);
+    const currencies = [...new Set(chosen.map((t) => t.currency))];
+    const totalLabel =
+      currencies.length === 1 ? money(total, currencies[0]) : currencies.length ? "Mixed currencies" : null;
     // Meals and the like: everyone, members included, pays when booking.
-    const payFirst = tickets.length > 0 && tickets.every((t) => t.pay_first);
-    const payFirstPrice = payFirst && firstOpen && Number(firstOpen.price) > 0 ? money(firstOpen.price, firstOpen.currency) : null;
+    const payFirst = mains.length > 0 && mains.every((t) => t.pay_first);
+    // Most of a ticket this booking can take: its own limit, stock, and (main) the spots left.
+    const maxFor = (t: Ticket) => {
+      const stock = ticketLeft(t, picked);
+      let m = Math.min(t.max_per_order, stock ?? Infinity);
+      if (t.kind === "main" && seatsLeft !== null) m = Math.min(m, seatsLeft - (mainSeats - (qty[t.id] ?? 0)));
+      return Math.max(0, m);
+    };
+    const noteFor = (t: Ticket) => {
+      const st = stateOf(t, picked);
+      if (st === "sold_out" || ticketLeft(t, picked) === 0) return "Sold out";
+      if (st === "not_started") return t.sales_start ? `On sale ${t.sales_start.slice(0, 10)}` : "Not on sale yet";
+      if (st === "ended") return "Sales ended";
+      if (st === "locked") return "Opens when earlier tickets sell out";
+      return null;
+    };
+    const row = (t: Ticket) => {
+      const note = noteFor(t);
+      const n = qty[t.id] ?? 0;
+      const max = maxFor(t);
+      return (
+        <div className={`tkrow${note ? " off" : ""}`} key={t.id}>
+          <div>
+            <b>{t.name}</b>
+            <span>
+              {money(t.price, t.currency)}
+              {note ? `, ${note.toLowerCase()}` : ""}
+            </span>
+          </div>
+          <div className="stepper" role="group" aria-label={`${t.name} quantity`}>
+            <button type="button" aria-label={`Fewer ${t.name}`} disabled={!!note || n <= 0} onClick={() => setTicketQty(t.id, n - 1)}>
+              −
+            </button>
+            <output aria-live="polite">{n}</output>
+            <button type="button" aria-label={`More ${t.name}`} disabled={!!note || n >= max} onClick={() => setTicketQty(t.id, n + 1)}>
+              +
+            </button>
+          </div>
+        </div>
+      );
+    };
     return (
       <section className="panel">
         <h2>Book {o.title}</h2>
         <p className="muted" style={{ marginTop: 0 }}>
           {dayLabel(picked, today)}, {timeRange(o)}
           {o.location ? ` at ${o.location}` : ""}
+          {sessions.length > 1 && (
+            <>
+              {" · "}
+              <button type="button" className="linkish" onClick={() => setPicked(null)}>
+                Change date
+              </button>
+            </>
+          )}
         </p>
         {isMember && <Going list={attendees[picked] ?? []} taken={taken(picked)} />}
-        {result && !result.ok && (
+        {(formError || (result && !result.ok)) && (
           <div className="form-error" role="alert">
-            {result.error}
+            {formError ?? (result && !result.ok ? result.error : null)}
           </div>
         )}
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            setFormError(null);
             const fd = new FormData(e.currentTarget);
+            if (mains.length > 0 && !isMember && mainSeats === 0) {
+              setFormError(addons.some((t) => (qty[t.id] ?? 0) > 0) ? "Choose a main ticket first. Add-ons come with one." : "Choose at least one ticket.");
+              return;
+            }
+            if (chosen.length > 0 && mainSeats === 0) {
+              setFormError("Choose a main ticket first. Add-ons come with one.");
+              return;
+            }
             start(async () => {
               const r = await bookSession({
                 offeringId: o.id,
                 date: picked,
                 name: String(fd.get("name") ?? ""),
                 email: String(fd.get("email") ?? ""),
-                ticketTypeId: (fd.get("ticket") as string) || null,
+                phone: String(fd.get("phone") ?? ""),
+                items: chosen.map((t) => ({ ticketTypeId: t.id, qty: qty[t.id] ?? 0 })),
                 website: String(fd.get("ms_trap_x") ?? ""),
               });
               setResult(r);
@@ -220,57 +289,50 @@ export function BookingPanel({
                 <input id="b-email" name="email" type="email" autoComplete="email" required />
                 <span className="hint">We’ll email your ticket here.</span>
               </div>
+              <div className="fld">
+                <label htmlFor="b-phone">Phone (WhatsApp preferred)</label>
+                <input id="b-phone" name="phone" type="tel" autoComplete="tel" required />
+              </div>
             </>
           )}
           <input name="ms_trap_x" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: -9999 }} />
-          {payFirst && firstOpen ? (
-            <>
-              <input type="hidden" name="ticket" value={firstOpen.id} />
-              <p className="note" style={{ marginTop: 0 }}>
-                {o.title} is paid when you book{payFirstPrice ? ` (${payFirstPrice})` : ""}. You’ll go to the payment page
-                next, and your pass is issued once the payment goes through. Show it to the team at La
-                Cocineta.
-              </p>
-            </>
-          ) : tickets.length > 0 && (
+          {payFirst && (
+            <p className="note" style={{ marginTop: 0 }}>
+              {o.title} is paid when you book. You’ll go to the payment page next, and your pass is issued once
+              the payment goes through.
+            </p>
+          )}
+          {tickets.length > 0 && (
             <fieldset className="fld" style={{ border: 0, padding: 0 }}>
-              <legend style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 6 }}>Ticket</legend>
-              <div className="tkpick">
-                {isMember && (
-                  <label>
-                    <input type="radio" name="ticket" value="" defaultChecked />
-                    <b>I’m a member</b>
-                    <span>Included</span>
-                  </label>
-                )}
-                {tickets.map((t) => {
-                  const l = ticketLeft(t, picked);
-                  return (
-                    <label key={t.id} className={l === 0 ? "off" : ""}>
-                      <input
-                        type="radio"
-                        name="ticket"
-                        value={t.id}
-                        disabled={l === 0}
-                        defaultChecked={!isMember && firstOpen?.id === t.id}
-                      />
-                      <b>{t.name}</b>
-                      <span>
-                        {money(t.price, t.currency)}
-                        {l === 0 ? ", sold out" : ""}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
+              <legend style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 6 }}>Tickets</legend>
+              {isMember && (
+                <p className="note" style={{ margin: "0 0 8px" }}>
+                  Members are included. Choose tickets only if you’re paying, for example for guests.
+                </p>
+              )}
+              <div className="tkpick">{mains.map(row)}</div>
+              {addons.length > 0 && (
+                <>
+                  <legend style={{ fontSize: 13.5, fontWeight: 600, margin: "12px 0 6px" }}>Optional extras</legend>
+                  <div className="tkpick">{addons.map(row)}</div>
+                </>
+              )}
             </fieldset>
           )}
+          {totalLabel && (
+            <div className="tk" style={{ borderTop: "1px solid var(--line)", marginTop: 8 }}>
+              <div>
+                <b>Total</b>
+                <span>{chosen.map((t) => `${qty[t.id]} × ${t.name}`).join(", ")}</span>
+              </div>
+              <div>
+                <b>{totalLabel}</b>
+              </div>
+            </div>
+          )}
           <div className="book-acts">
-            <button type="button" className="btn ghost" onClick={() => setPicked(null)}>
-              Other dates
-            </button>
             <button type="submit" className="btn primary" disabled={pending}>
-              {pending ? "Booking…" : payFirst ? "Book and pay" : "Confirm booking"}
+              {pending ? "Booking…" : payFirst || total > 0 ? "Book and pay" : "Confirm booking"}
             </button>
           </div>
         </form>

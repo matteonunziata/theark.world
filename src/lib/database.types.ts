@@ -2467,6 +2467,7 @@ export type Database = {
           id: string
           kind: string
           location: string | null
+          location_address: string | null
           facilitator_pay_tier: number
           repeat: string
           start_date: string
@@ -2497,6 +2498,7 @@ export type Database = {
           id?: string
           kind: string
           location?: string | null
+          location_address?: string | null
           facilitator_pay_tier?: number
           repeat?: string
           start_date: string
@@ -2527,6 +2529,7 @@ export type Database = {
           id?: string
           kind?: string
           location?: string | null
+          location_address?: string | null
           facilitator_pay_tier?: number
           repeat?: string
           start_date?: string

@@ -1,9 +1,11 @@
 "use client";
 
-import { fmtDate } from "@/lib/dates";
+import { fmtDate, timeRange } from "@/lib/dates";
 import { kindName, money, priceLabel, whenLabel } from "@/lib/schedule";
 import { BookingPanel } from "./[id]/[[...date]]/booking-panel";
+import { LocationBlock, ReadMore, ShareButton } from "./event-bits";
 import type { LoadedEvent } from "./load";
+import "./event-page.css";
 
 /** The event itself: what, when, photo, description, booking and tickets.
  * Used by the booking page and by the portal's booking modal. */
@@ -22,8 +24,6 @@ export function EventDetails({
 }) {
   const { o } = ev;
   const tickets = ev.tickets;
-  // The booking form takes main tickets that are on sale (or sold out, so it can say so).
-  const bookable = tickets.filter((t) => t.kind === "main" && ["ok", "sold_out"].includes(ev.states[t.id] ?? "ok"));
   const booking = (
     <BookingPanel
       offering={{
@@ -37,7 +37,8 @@ export function EventDetails({
       sessions={ev.sessions}
       attendees={ev.attendees}
       counts={ev.counts}
-      tickets={bookable}
+      tickets={tickets}
+      availability={ev.availability}
       highlight={date}
       startOn={compact ? date : null}
       today={ev.today}
@@ -120,9 +121,75 @@ export function EventDetails({
     </section>
   );
 
+  if (!compact) {
+    const next = ev.sessions.find((x) => !x.cancelled) ?? null;
+    const bookable = !!next && !next.closed && ev.canBook && !ev.registrationClosed;
+    const label = priceLabel(o, tickets);
+    return (
+      <>
+        <div className="evp-head">
+          <span className={`kind ${o.kind !== "class" ? "event" : ""}`}>
+            <i />
+            {kindName(o.kind)}
+            {o.access === "members" ? ", members only" : ""}
+          </span>
+          <h1 style={{ marginTop: 6 }}>{o.title}</h1>
+          <p className="ev-meta">
+            {whenLabel(o)}
+            {o.location ? ` at ${o.location}` : ""}
+            {ev.facilitator ? `, with ${ev.facilitator}` : ""}
+          </p>
+          {ev.cover && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="ev-cover" src={ev.cover} alt="" />
+          )}
+        </div>
+        <div className="evp-grid">
+          <div className="evp-main">
+            {(o.description || o.short_description) && (
+              <section>
+                <h2>About this event</h2>
+                <ReadMore text={o.description ?? o.short_description ?? ""} />
+              </section>
+            )}
+            {gallery}
+            {scheduleList}
+            {(o.location || o.location_address) && <LocationBlock name={o.location} address={o.location_address} />}
+          </div>
+          <aside className="evp-side">
+            <div className="evp-price">
+              <div>
+                <b>{label}</b>
+                {next && (
+                  <span>
+                    {fmtDate(next.date, { weekday: "short", month: "short", day: "numeric" })}
+                    {o.start_time ? ` • ${timeRange(o)}` : ""}
+                  </span>
+                )}
+              </div>
+              <div className="evp-actions">
+                <ShareButton title={o.title} />
+                {bookable ? (
+                  <a className="btn primary" href="#book">
+                    {o.kind === "event" ? "Get tickets" : "Reserve a place"}
+                  </a>
+                ) : ev.registrationClosed ? (
+                  <span className="btn" aria-disabled="true">Registration closed</span>
+                ) : null}
+              </div>
+            </div>
+            <div id="book">{booking}</div>
+            {tickets.length > 0 && ticketList}
+          </aside>
+        </div>
+      </>
+    );
+  }
+
+  // Compact: the portal's booking modal.
   return (
     <>
-      {compact && ev.cover && (
+      {ev.cover && (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="ev-cover" src={ev.cover} alt="" />
       )}
@@ -137,30 +204,16 @@ export function EventDetails({
         {o.location ? ` at ${o.location}` : ""}
         {ev.facilitator ? `, with ${ev.facilitator}` : ""}
       </p>
-      {!compact && ev.cover && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className="ev-cover" src={ev.cover} alt="" />
-      )}
       {o.description && <p className="ev-desc">{o.description}</p>}
       {gallery}
       {ev.registrationClosed && (
         <p className="note" role="status" style={{ marginTop: 14 }}><b>Registration closed.</b></p>
       )}
-      {compact ? (
-        <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
-          {booking}
-          {tickets.length > 0 && ticketList}
-          {scheduleList}
-        </div>
-      ) : (
-        <div className="ev-grid">
-          {booking}
-          <aside style={{ display: "grid", gap: 14 }}>
-            {ticketList}
-            {scheduleList}
-          </aside>
-        </div>
-      )}
+      <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
+        {booking}
+        {tickets.length > 0 && ticketList}
+        {scheduleList}
+      </div>
     </>
   );
 }

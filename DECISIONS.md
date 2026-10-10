@@ -426,3 +426,11 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Availability** for the booking page: `ticket_availability(offering, date)` returns taken and a state (ok, not_started, ended, sold_out, locked) per ticket.
 - **Revenue:** `ticket_sales_for_month` sums quantity times the price at the time of sale. The CRM activity feed (`contact_activity`) still shows one price per booking until it's updated.
 - **Not done yet:** the public booking form still takes one main ticket at a time. The quantity stepper, add-on picker and phone field come with the booking page rebuild (Phase 3), and Stripe payment for multi-ticket orders with the embedded checkout (Phase 4).
+
+## Events: public pages and booking form (2026-10-10)
+- **Date filters** on the public events list: All, Today, This week (today to Sunday), This weekend (Saturday and Sunday; on a weekend it's what's left), This month (today to the 31st), Next month. Each card shows the event's first date inside the range; events with none drop out. Ranges are worked out in the venue's time zone (`src/lib/event-filters.ts`).
+- **Event page** follows the GHL layout: cover, About this event (folded with Read more), photos, schedule, location, and a price card with Share and Get tickets. The location name opens Google Maps; "Get directions" and a small map use `offerings.location_address` (street address), or search Maps for the place name in Santa Teresa when it's empty.
+- **Link stays `/e/<slug>`**, not `/events/<slug>`: `/events` is the staff area, so a public slug there could clash with a staff page.
+- **Booking form:** name, email and phone (WhatsApp preferred; required for non-members), a quantity stepper per ticket, optional add-ons under "Optional extras", and a live total. "Other dates" is gone; events with several dates keep a small "Change date" link. Members are included without choosing tickets; they choose tickets only to pay (for guests, say).
+- **Per-date availability** (`ticket_availability`, one call per upcoming date) drives which tickets are open, sold out, or opening later, and each ticket's stock.
+- **Paying** still goes to Stripe's hosted page for now. `/pay/ticket/<token>` charges the whole order (all items at their booked prices) as one amount; the embedded checkout replaces this in Phase 4.

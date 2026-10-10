@@ -49,10 +49,21 @@ export async function loadEvent(id: string, date?: string | null) {
   // Keep the date someone picked, even when it's further out.
   const asked = date && !upcoming.some((s) => s.date === date) && all.find((s) => s.date === date);
   if (asked) upcoming.push(asked);
-  // Where each ticket stands (on sale, sold out, opens later) for the date being looked at.
-  const forDate = date ?? upcoming.find((s) => !s.cancelled)?.date ?? today;
-  const { data: avail } = await supabase.rpc("ticket_availability", { p_offering_id: o.id, p_date: forDate });
-  const states: Record<string, string> = Object.fromEntries((avail ?? []).map((a) => [a.ticket_type_id, a.state]));
+  // Where each ticket stands (on sale, sold out, opens later) and how many are taken, per date.
+  const open = upcoming.filter((s) => !s.cancelled).map((s) => s.date);
+  const availList = await Promise.all(
+    open.map((d) => supabase.rpc("ticket_availability", { p_offering_id: o.id, p_date: d })),
+  );
+  const availability: Record<string, Record<string, { state: string; taken: number }>> = {};
+  open.forEach((d, i) => {
+    availability[d] = Object.fromEntries(
+      (availList[i].data ?? []).map((a) => [a.ticket_type_id, { state: a.state, taken: a.taken }]),
+    );
+  });
+  const forDate = date && availability[date] ? date : (open[0] ?? today);
+  const states: Record<string, string> = Object.fromEntries(
+    Object.entries(availability[forDate] ?? {}).map(([id, a]) => [id, a.state]),
+  );
   return {
     ...viewer,
     event: {
@@ -62,6 +73,7 @@ export async function loadEvent(id: string, date?: string | null) {
       facilitator: (facs ?? []).find((x) => x.id === o.facilitator_id)?.name ?? null,
       tickets: tickets ?? [],
       states,
+      availability,
       schedule: schedule ?? [],
       images: (images ?? []).map((x) => coverUrl(x.path)).filter((x): x is string => !!x),
       registrationClosed,

@@ -108,6 +108,7 @@ export async function saveOffering(
     booking_closes_at: bookingClosesAt,
     facilitator_id: field(data, "facilitator_id"),
     location: field(data, "location"),
+    location_address: kind === "class" ? null : field(data, "location_address"),
     repeat,
     start_date,
     end_date: repeat === "dates" ? customDates[customDates.length - 1] : field(data, "end_date"),

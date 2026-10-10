@@ -38,15 +38,20 @@ export default async function EventsPage() {
   const seen = new Set<string>();
   const next = upcoming.filter((s) => (seen.has(s.o.id) ? false : (seen.add(s.o.id), true)));
 
+  // Every upcoming date per event, so the date filters can find the right one.
+  const byOffering = new Map<string, typeof upcoming>();
+  for (const s of upcoming) byOffering.set(s.o.id, [...(byOffering.get(s.o.id) ?? []), s]);
   const rows: EventRow[] = next.map((s) => ({
-    key: `${s.o.id}|${s.date}`,
+    key: s.o.id,
     id: s.o.slug ?? s.o.id,
-    date: s.date,
-    month: fmtDate(s.date, { month: "short" }),
-    day: fmtDate(s.date, { day: "numeric" }),
-    year: s.date.slice(0, 4),
+    slots: (byOffering.get(s.o.id) ?? []).slice(0, 60).map((x) => ({
+      date: x.date,
+      month: fmtDate(x.date, { month: "short" }),
+      day: fmtDate(x.date, { day: "numeric" }),
+      year: x.date.slice(0, 4),
+      when: [fmtDate(x.date, { weekday: "long" }), timeRange(x.o)].filter(Boolean).join(" · "),
+    })),
     kind: kindName(s.o.kind),
-    when: [fmtDate(s.date, { weekday: "long" }), timeRange(s.o)].filter(Boolean).join(" · "),
     title: s.o.title,
     desc: s.o.short_description ?? s.o.description ?? "",
     price: priceLabel(s.o, tickets ?? []),
@@ -146,7 +151,7 @@ export default async function EventsPage() {
               </p>
             </div>
           </div>
-          <EventsList events={rows} />
+          <EventsList events={rows} today={today} />
         </div>
       </section>
 

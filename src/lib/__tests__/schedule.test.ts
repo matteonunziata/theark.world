@@ -10,6 +10,7 @@ const base: Offering = {
   description: null,
   facilitator_id: null,
   location: null,
+  location_address: null,
   repeat: "weekly",
   start_date: "2026-10-01",
   end_date: null,

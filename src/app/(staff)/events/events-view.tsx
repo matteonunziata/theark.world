@@ -485,6 +485,13 @@ function OfferingDrawer({
           </div>
         </div>
 
+        {curKind !== "class" && (
+          <div className="fld">
+            <label htmlFor="e-addr">Address</label>
+            <input id="e-addr" name="location_address" defaultValue={o?.location_address ?? ""} placeholder="e.g. Calle Bella Vista, Santa Teresa, Puntarenas" />
+            <span className="hint">Used for the map and “Get directions” on the event page. Leave empty to search Maps for the location name.</span>
+          </div>
+        )}
         {cities.length > 0 && (
           <div className="fld">
             <label htmlFor="e-city">City</label>
