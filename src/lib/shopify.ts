@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json, Tables } from "@/lib/database.types";
 import { todayIn } from "@/lib/dates";
@@ -29,7 +30,7 @@ const API_VERSION = "2026-07";
 /** Stop starting new customers after this long, so a run ends inside the cron's limit. */
 const BUDGET_MS = 45_000;
 /** What the app needs. write_* includes read_*. */
-const SCOPES = ["write_customers", "write_discounts", "write_orders", "read_products"];
+const SCOPES = ["write_customers", "write_discounts", "write_orders", "read_products", "read_inventory", "write_inventory", "read_locations"];
 
 export class ShopifyError extends Error {
   constructor(
@@ -158,6 +159,8 @@ type Settings = {
   discounts?: Record<string, string>;
   /** Orders updated in Shopify at or after this have been brought in. */
   ordersSince?: string;
+  /** The one Shopify location whose stock ARK OS mirrors. */
+  locationId?: string;
 };
 const settingsOf = (i: Integration): Settings => (i.settings && typeof i.settings === "object" && !Array.isArray(i.settings) ? (i.settings as Settings) : {});
 
@@ -438,28 +441,67 @@ const PRODUCT_FIELDS = `
     pageInfo { hasNextPage }
   }`;
 
-/** Unit cost per variant. Needs read_inventory; the rest of the pull doesn't. */
-async function variantCosts(shop: string, token: string) {
-  const costs = new Map<string, number>();
+const numericGid = (gid: string) => gid.split("/").pop() ?? gid;
+
+/** The one location ARK OS mirrors: the saved one, else the first active location (saved for next time). */
+async function stockLocation(sb: Sb, i: Integration & { shop_domain: string }, token: string) {
+  const saved = settingsOf(i).locationId;
+  if (saved) return saved;
+  const d = await graphql<{ locations: { nodes: { id: string; name: string; isActive: boolean }[] } }>(
+    i.shop_domain,
+    token,
+    `{ locations(first: 10) { nodes { id name isActive } } }`,
+  );
+  const active = d.locations.nodes.filter((l) => l.isActive);
+  const loc = active[0];
+  if (!loc) throw new ShopifyError(422, "Shopify has no active location to read stock from.");
+  await saveSettings(sb, { locationId: loc.id });
+  await logEvent(sb, { direction: "in", kind: "sync", ok: true, detail: `Stock follows the Shopify location “${loc.name}”${active.length > 1 ? ` (the first of ${active.length}; the others are ignored)` : ""}.` });
+  return loc.id;
+}
+
+export type VariantStock = { itemId: string; tracked: boolean; qty: number | null; cost: number | null };
+
+/**
+ * Inventory item, tracking flag, available quantity at the location and unit
+ * cost for every variant, keyed by the variant's numeric id. Needs
+ * read_inventory and read_locations.
+ */
+async function variantInventory(shop: string, token: string, locationId: string) {
+  type Page = {
+    productVariants: {
+      nodes: { id: string; inventoryItem: { id: string; tracked: boolean; unitCost: { amount: string } | null; inventoryLevel: { quantities: { name: string; quantity: number }[] } | null } | null }[];
+      pageInfo: { hasNextPage: boolean; endCursor: string | null };
+    };
+  };
+  const out = new Map<string, VariantStock>();
   let after: string | null = null;
-  for (let page = 0; page < 30; page++) {
-    const d: { productVariants: { nodes: { id: string; inventoryItem: { unitCost: { amount: string } | null } | null }[]; pageInfo: { hasNextPage: boolean; endCursor: string | null } } } =
-      await graphql(
-        shop,
-        token,
-        `query($after: String) { productVariants(first: 100, after: $after) { nodes { id inventoryItem { unitCost { amount } } } pageInfo { hasNextPage endCursor } } }`,
-        { after },
-      );
+  for (let page = 0; page < 40; page++) {
+    const d: Page = await graphql(
+      shop,
+      token,
+      `query($after: String, $loc: ID!) {
+        productVariants(first: 100, after: $after) {
+          nodes { id inventoryItem { id tracked unitCost { amount } inventoryLevel(locationId: $loc) { quantities(names: ["available"]) { name quantity } } } }
+          pageInfo { hasNextPage endCursor }
+        }
+      }`,
+      { after, loc: locationId },
+    );
     for (const v of d.productVariants.nodes) {
-      const amount = v.inventoryItem?.unitCost?.amount;
-      if (amount !== undefined) costs.set(numericGid(v.id), Number(amount));
+      const it = v.inventoryItem;
+      if (!it) continue;
+      const q = it.inventoryLevel?.quantities.find((x) => x.name === "available");
+      out.set(numericGid(v.id), { itemId: it.id, tracked: it.tracked, qty: q ? q.quantity : null, cost: it.unitCost ? Number(it.unitCost.amount) : null });
     }
     if (!d.productVariants.pageInfo.hasNextPage) break;
     after = d.productVariants.pageInfo.endCursor;
   }
-  return costs;
+  return out;
 }
-const numericGid = (gid: string) => gid.split("/").pop() ?? gid;
+
+const stockFields = (v: VariantStock | undefined) =>
+  v ? { shopify_inventory_item_id: v.itemId, shopify_tracked: v.tracked, ...(v.cost !== null ? { cost: v.cost } : {}) } : {};
 
 /**
  * Bring the catalog in from Shopify's Admin API: new products, and price,
@@ -494,10 +536,10 @@ export async function pullProducts(sb: Sb, i: Integration & { shop_domain: strin
   }
   const rows = toProductRows(nodes);
 
-  let costs = new Map<string, number>();
+  let inventory = new Map<string, VariantStock>();
   if (!r.more) {
     try {
-      costs = await variantCosts(i.shop_domain, token);
+      inventory = await variantInventory(i.shop_domain, token, await stockLocation(sb, i, token));
     } catch (e) {
       r.costNote = errorText(e);
     }
@@ -520,7 +562,7 @@ export async function pullProducts(sb: Sb, i: Integration & { shop_domain: strin
     shopify_stock: row.shopify_stock,
     shopify_product_id: row.shopify_product_id,
     shopify_synced_at: now,
-    ...(costs.has(row.external_id) ? { cost: costs.get(row.external_id) } : {}),
+    ...stockFields(inventory.get(row.external_id)),
   });
 
   // Counting stays off until someone counts, so a new product raises no alerts.
@@ -675,11 +717,143 @@ export async function pullOrders(sb: Sb, i: Integration & { shop_domain: string;
   return r;
 }
 
+// Stock, both ways ------------------------------------------------------------------
+
+export type StockResult = {
+  /** Movements made in ARK OS that were sent to Shopify. */
+  pushed: number;
+  /** Products whose ARK OS stock was set to Shopify's quantity. */
+  mirrored: number;
+  errors: string[];
+};
+
+export const stockLine = (st: StockResult) =>
+  `Stock: ${st.pushed} change${st.pushed === 1 ? "" : "s"} sent to Shopify, ${plural(st.mirrored, "product")} set to Shopify's count.`;
+
+/**
+ * Send stock changes made in ARK OS (a till sale, a delivery, a count) to
+ * Shopify as inventory adjustments. One change per product, and the same
+ * movements always make the same idempotency key, so a retry after a lost
+ * answer can't apply twice. Movements for a product Shopify doesn't know yet
+ * stay pending; ones for a product Shopify doesn't track are let go.
+ */
+export async function pushPendingStock(sb: Sb, known?: { i: Integration & { shop_domain: string; secret: string }; token: string }): Promise<{ pushed: number }> {
+  const { data: pending, error } = await sb
+    .from("stock_movements")
+    .select("id, product_id, delta, products!inner(shopify_inventory_item_id, shopify_tracked)")
+    .eq("shopify_pending", true)
+    .order("created_at", { ascending: true })
+    .limit(500);
+  if (error) throw new Error(error.message);
+  if (!pending?.length) return { pushed: 0 };
+  const i = known?.i ?? (await getIntegration(sb));
+  if (!ready(i)) return { pushed: 0 };
+  const token = known?.token ?? (await tokenFor(sb, i));
+
+  const done: string[] = [];
+  const perProduct = new Map<string, { itemId: string; delta: number }>();
+  const sending: string[] = [];
+  for (const m of pending) {
+    const p = Array.isArray(m.products) ? m.products[0] : m.products;
+    if (p?.shopify_tracked === false) done.push(m.id);
+    else if (!p?.shopify_inventory_item_id) continue;
+    else {
+      const have = perProduct.get(m.product_id) ?? { itemId: p.shopify_inventory_item_id, delta: 0 };
+      have.delta += Number(m.delta);
+      perProduct.set(m.product_id, have);
+      sending.push(m.id);
+    }
+  }
+  const changes = [...perProduct.values()].map((c) => ({ itemId: c.itemId, delta: Math.round(c.delta) })).filter((c) => c.delta !== 0);
+  if (changes.length) {
+    const locationId = await stockLocation(sb, i, token);
+    const key = createHash("sha256").update(sending.join(",")).digest("hex").slice(0, 32);
+    const d = await graphql<{ inventoryAdjustQuantities: { userErrors: UserErrors } }>(
+      i.shop_domain,
+      token,
+      `mutation($input: InventoryAdjustQuantitiesInput!, $key: String!) {
+        inventoryAdjustQuantities(input: $input) @idempotent(key: $key) { userErrors { field message } }
+      }`,
+      {
+        key,
+        input: {
+          reason: "correction",
+          name: "available",
+          referenceDocumentUri: `logistics://ark-os/stock/${key}`,
+          changes: changes.map((c) => ({ inventoryItemId: c.itemId, locationId, delta: c.delta })),
+        },
+      },
+    );
+    userErrors(d.inventoryAdjustQuantities.userErrors);
+  }
+  done.push(...sending);
+  if (done.length) {
+    const { error } = await sb.from("stock_movements").update({ shopify_pending: false }).in("id", done);
+    if (error) throw new Error(`Sent to Shopify but not marked as sent (${error.message}). Do not send again.`);
+  }
+  await logEvent(sb, { direction: "out", kind: "push", ok: true, detail: `Stock: ${plural(changes.length, "product")} adjusted in Shopify.` });
+  return { pushed: changes.length };
+}
+
+/**
+ * Make ARK OS's stock equal Shopify's available quantity at the location, for
+ * every product Shopify tracks. Counted products get an "adjusted" movement
+ * (so the ledger explains the change); the rest are set directly. A product
+ * with changes still waiting to go to Shopify is left until they've gone.
+ */
+async function reconcileStock(sb: Sb, i: Integration & { shop_domain: string; secret: string }, token: string): Promise<number> {
+  const inventory = await variantInventory(i.shop_domain, token, await stockLocation(sb, i, token));
+  const [{ data: products, error }, { data: pending }] = await Promise.all([
+    sb.from("products").select("id, external_id, stock, track_stock, shopify_stock, shopify_inventory_item_id, shopify_tracked").not("external_id", "is", null).limit(5000),
+    sb.from("stock_movements").select("product_id").eq("shopify_pending", true).limit(5000),
+  ]);
+  if (error) throw new Error(error.message);
+  const waiting = new Set((pending ?? []).map((m) => m.product_id));
+  let mirrored = 0;
+  for (const p of products ?? []) {
+    const v = inventory.get(p.external_id as string);
+    if (!v) continue;
+    if (p.shopify_inventory_item_id !== v.itemId || p.shopify_tracked !== v.tracked || (v.qty !== null && Number(p.shopify_stock) !== v.qty)) {
+      await sb.from("products").update({ shopify_inventory_item_id: v.itemId, shopify_tracked: v.tracked, ...(v.qty !== null ? { shopify_stock: v.qty } : {}) }).eq("id", p.id);
+    }
+    if (!v.tracked || v.qty === null || waiting.has(p.id)) continue;
+    const target = Math.max(0, v.qty);
+    const have = Number(p.stock);
+    if (have === target) continue;
+    if (p.track_stock) {
+      const { error } = await sb.from("stock_movements").insert({ product_id: p.id, type: "adjusted", delta: target - have, reference: "Set to Shopify's count" });
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await sb.from("products").update({ stock: target }).eq("id", p.id);
+      if (error) throw new Error(error.message);
+    }
+    mirrored++;
+  }
+  return mirrored;
+}
+
+/** Stock both ways: ARK OS's own changes go to Shopify first, then ARK OS takes Shopify's count. */
+export async function syncStock(sb: Sb, i: Integration & { shop_domain: string; secret: string }, token: string): Promise<StockResult> {
+  const r: StockResult = { pushed: 0, mirrored: 0, errors: [] };
+  try {
+    r.pushed = (await pushPendingStock(sb, { i, token })).pushed;
+  } catch (e) {
+    r.errors.push(`Stock to Shopify: ${errorText(e)}`);
+  }
+  try {
+    r.mirrored = await reconcileStock(sb, i, token);
+  } catch (e) {
+    r.errors.push(`Stock from Shopify: ${errorText(e)}`);
+  }
+  return r;
+}
+
 // The sync ----------------------------------------------------------------------------
 
 export type SyncResult = {
   orders: OrdersResult | null;
   products: ProductsResult | null;
+  stock: StockResult | null;
   members: number;
   tagged: number;
   untagged: number;
@@ -699,7 +873,7 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
   if (!ready(i)) return { error: "Shopify isn’t connected." };
   const started = Date.now();
   const startedAt = new Date().toISOString();
-  const r: SyncResult = { orders: null, products: null, members: 0, tagged: 0, untagged: 0, created: 0, noEmail: 0, left: 0, errors: [] };
+  const r: SyncResult = { orders: null, products: null, stock: null, members: 0, tagged: 0, untagged: 0, created: 0, noEmail: 0, left: 0, errors: [] };
 
   let token: string;
   try {
@@ -780,6 +954,14 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
     r.errors.push(`Orders: ${errorText(e)}`);
   }
 
+  // Last, so the counts Shopify gives are the freshest and orders are already in.
+  try {
+    r.stock = await syncStock(sb, i, token);
+    r.errors.push(...r.stock.errors);
+  } catch (e) {
+    r.errors.push(`Stock: ${errorText(e)}`);
+  }
+
   await logEvent(sb, {
     direction: "out",
     kind: "sync",
@@ -789,6 +971,7 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
       `${r.noEmail ? `, ${r.noEmail} without an email skipped` : ""}${r.left ? `, ${r.left} left for the next run` : ""}` +
       `${r.products ? ` ${productsLine(r.products)}` : ""}` +
       `${r.orders ? ` ${ordersLine(r.orders)}` : ""}` +
+      `${r.stock ? ` ${stockLine(r.stock)}` : ""}` +
       `${r.errors.length ? `, ${plural(r.errors.length, "failure")}: ${r.errors.slice(0, 4).join(" | ")}` : "."}`,
   });
   await sb

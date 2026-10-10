@@ -17,6 +17,20 @@ import { CATEGORIES, SHOP_METHODS, type ShopMethod } from "@/lib/shop";
 /** Every shop page shows the ledger one way or another. */
 const refresh = () => revalidatePath("/shop", "layout");
 
+/**
+ * Send what was just recorded to Shopify so both show the same stock. Best
+ * effort: if it fails the movement stays pending and goes with the next sync.
+ */
+async function pushStock() {
+  const admin = createAdminClient();
+  if (!admin) return;
+  try {
+    await shopify.pushPendingStock(admin);
+  } catch {
+    // Left pending; the sync reports it.
+  }
+}
+
 const asMethod = (v: string | null): ShopMethod | null =>
   SHOP_METHODS.some((m) => m[0] === v) ? (v as ShopMethod) : null;
 
@@ -84,8 +98,10 @@ export async function saveProduct(
       type: id ? "adjusted" : "restock",
       delta,
       by_id: staff.id,
+      shopify_pending: true,
     });
     if (error) return fail(friendly(error));
+    await pushStock();
   }
   refresh();
   return ok(id ? "Product saved" : `${name} added`);
@@ -169,10 +185,12 @@ export async function recordSale(
       amount: Math.round(unit * l.qty * 100) / 100,
       method,
       order_id: orderId,
+      shopify_pending: true,
     });
   }
   const { error: insErr } = await supabase.from("stock_movements").insert(rows);
   if (insErr) return fail(friendly(insErr));
+  await pushStock();
   refresh();
   const total = rows.reduce((n, r) => n + r.amount, 0);
   return ok(
@@ -196,9 +214,11 @@ export async function recordDelivery(
       delta: l.qty,
       by_id: staff.id,
       order_id: orderId,
+      shopify_pending: true,
     })),
   );
   if (error) return fail(friendly(error));
+  await pushStock();
   refresh();
   return ok(`Restocked ${lines.length} product${lines.length === 1 ? "" : "s"}`);
 }
@@ -244,8 +264,10 @@ export async function recordStock(
     amount,
     unit_price: unit,
     method: type === "sale" ? asMethod(method ?? null) : null,
+    shopify_pending: true,
   });
   if (error) return fail(friendly(error));
+  await pushStock();
   refresh();
   return ok(type === "sale" ? "Sale recorded" : "Restocked");
 }

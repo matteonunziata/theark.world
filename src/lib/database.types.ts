@@ -2894,6 +2894,8 @@ export type Database = {
           shopify_stock: number | null
           shopify_synced_at: string | null
           sku: string | null
+          shopify_inventory_item_id: string | null
+          shopify_tracked: boolean | null
         }
         Insert: {
           active?: boolean
@@ -2923,6 +2925,8 @@ export type Database = {
           shopify_stock?: number | null
           shopify_synced_at?: string | null
           sku?: string | null
+          shopify_inventory_item_id?: string | null
+          shopify_tracked?: boolean | null
         }
         Update: {
           active?: boolean
@@ -2952,6 +2956,8 @@ export type Database = {
           shopify_stock?: number | null
           shopify_synced_at?: string | null
           sku?: string | null
+          shopify_inventory_item_id?: string | null
+          shopify_tracked?: boolean | null
         }
         Relationships: []
       }
@@ -3521,6 +3527,7 @@ export type Database = {
           product_id: string
           type: string
           unit_price: number | null
+          shopify_pending: boolean
         }
         Insert: {
           reason?: string | null
@@ -3537,6 +3544,7 @@ export type Database = {
           product_id: string
           type: string
           unit_price?: number | null
+          shopify_pending?: boolean
         }
         Update: {
           reason?: string | null
@@ -3553,6 +3561,7 @@ export type Database = {
           product_id?: string
           type?: string
           unit_price?: number | null
+          shopify_pending?: boolean
         }
         Relationships: [
           {
