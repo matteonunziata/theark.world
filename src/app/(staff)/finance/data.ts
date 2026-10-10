@@ -11,7 +11,9 @@ export async function loadFinance() {
   const [{ data: entries }, { data: lines }, { data: org }, { conv, base }] = await Promise.all([
     supabase
       .from("finance_entries")
-      .select("*, contact:contacts(id, name)")
+      .select("*, contact:contacts(id, name), lot:lots(id, code, name)")
+      // Drafts aren't owed yet, so they stay out of every list and total.
+      .neq("status", "draft")
       .order("entry_date", { ascending: false })
       .order("created_at", { ascending: false }),
     supabase.from("business_lines").select("*").order("position"),

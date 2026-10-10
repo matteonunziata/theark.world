@@ -2,6 +2,7 @@
 
 import { ConfirmButton, Drawer } from "@/components/drawer";
 import type { Tables } from "@/lib/database.types";
+import { splitName } from "@/lib/ghl-map";
 import { MSTATUS, PTYPES, ptypeName, RATES, tierPrice } from "@/lib/crm";
 import { saveContact } from "./actions";
 
@@ -37,6 +38,7 @@ export function ContactDrawer({
   const c = contact;
   const t = c?.type ?? type;
   const label = ptypeName(t).toLowerCase();
+  const { firstName, lastName } = splitName(c?.name ?? "");
   return (
     <Drawer
       title={c ? `Edit ${label}` : `Add ${label}`}
@@ -60,9 +62,15 @@ export function ContactDrawer({
     >
       <fieldset disabled={!canEdit} style={{ border: 0, padding: 0, margin: 0 }}>
         {c && <input type="hidden" name="id" value={c.id} />}
-        <div className="fld">
-          <label htmlFor="c-name">Full name</label>
-          <input id="c-name" name="name" defaultValue={c?.name} required />
+        <div className="grid2">
+          <div className="fld">
+            <label htmlFor="c-first">First name</label>
+            <input id="c-first" name="first_name" defaultValue={firstName} required />
+          </div>
+          <div className="fld">
+            <label htmlFor="c-last">Last name</label>
+            <input id="c-last" name="last_name" defaultValue={lastName} />
+          </div>
         </div>
         <div className="grid2">
           <div className="fld">

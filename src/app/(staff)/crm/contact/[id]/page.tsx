@@ -12,7 +12,7 @@ export default async function ContactPage({
 }: PageProps<"/crm/contact/[id]">) {
   const { id } = await params;
   const { supabase, staff } = await requireStaff("crm");
-  const [contact, notes, stages, enrollments, sequences, owners, org, tiers, discounts, activity, memberships, sales] =
+  const [contact, notes, stages, enrollments, sequences, owners, org, tiers, discounts, activity, memberships, sales, links] =
     await Promise.all([
       supabase.from("contacts").select("*").eq("id", id).maybeSingle(),
       supabase
@@ -50,6 +50,7 @@ export default async function ContactPage({
         .eq("contact_id", id)
         .order("created_at", { ascending: false })
         .limit(20),
+      supabase.from("property_stewards").select("lot:lots(id, code, name)").eq("contact_id", id),
     ]);
   if (!contact.data) {
     return (
@@ -62,6 +63,14 @@ export default async function ContactPage({
       </>
     );
   }
+  const props = (links.data ?? []).flatMap((l) => (l.lot ? [l.lot] : []));
+  const sf = props.length
+    ? ((await supabase.rpc("steward_finance", { p_contact: id })).data as {
+        fees_current: boolean;
+        owed_to_ark: number | null;
+        owed_to_steward: number | null;
+      } | null)
+    : null;
   // A Stripe link for the member's next term, at their rate and discount.
   const c = contact.data;
   const tier = (tiers.data ?? []).find((t) => t.key === c.tier);
@@ -103,6 +112,8 @@ export default async function ContactPage({
       activity={activity.data ?? []}
       memberships={memberships.data ?? []}
       sales={sales.data ?? []}
+      properties={props}
+      stewardFinance={sf}
       currency={org.data?.currency ?? "CRC"}
       now={new Date().toISOString()}
       role={staff.role}

@@ -272,8 +272,9 @@ export async function recordStock(
   return ok(type === "sale" ? "Sale recorded" : "Restocked");
 }
 
-/** Pull new products and price changes from the online shop. Stock and
- * anything edited here (name, category, photo, notes) is left alone. */
+/** Pull new products and price changes from the online shop, and make stock
+ * match Shopify's. Anything else edited here (name, category, photo, notes)
+ * is left alone. */
 export async function syncFromWebsite(): Promise<ActionResult> {
   const { supabase } = await staffOrThrow("admin", "shop");
   // With Shopify connected, pull from its Admin API (stock counts, sku, status
@@ -284,7 +285,9 @@ export async function syncFromWebsite(): Promise<ActionResult> {
       const r = await shopify.pullProductsNow(admin);
       if (r) {
         refresh();
-        return r.errors.length ? fail(`${shopify.productsLine(r)} ${r.errors[0]}`) : ok(shopify.productsLine(r));
+        const line = `${shopify.productsLine(r)}${r.stock ? ` ${shopify.stockLine(r.stock)}` : ""}`;
+        const errors = [...r.errors, ...(r.stock?.errors ?? [])];
+        return errors.length ? fail(`${line} ${errors[0]}`) : ok(line);
       }
     } catch (e) {
       return fail(e instanceof Error ? e.message : "Couldn’t reach Shopify.");

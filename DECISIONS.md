@@ -394,7 +394,7 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 
 - **The catalog now comes from Shopify's Admin API,** not only the public feed. It runs with every Shopify sync (nightly, Sync now) before the orders pull, so an order for a new product finds it, and from the shop's "Sync from website" button while Shopify is connected (the old public-feed path is the fallback when it isn't). Needs the app's `read_products` scope; cost also needs `read_inventory`, and without it cost is skipped and the sync says so.
 - **What is pulled:** new variants (counting off, so no alerts); for existing ones price, online availability, photo, product group, variant, SKU, barcode, Shopify status and Shopify's own stock count. **Never overwritten:** name, category, description (filled only when empty), an uploaded photo, ARK OS stock, member price and the low-stock alert.
-- **Stock is shown beside, not merged** (my default; the question was left open): `shopify_stock` is Shopify's count, shown under ARK OS's count on Products & stock. Sales entered in ARK OS only never go back to Shopify, so overwriting would lose them.
+- **Stock is one number** (superseded by Round 23): Products & stock shows only ARK OS's count, which mirrors Shopify's. `shopify_stock` is kept as the last count read from Shopify but isn't shown.
 - **For sale online** means the product is active, published to the online store and the variant can be bought. Archived or draft products are off sale online. A variant that is missing from a complete pull is taken off sale online, never deleted, because sales point at it.
 
 ## Round 23: Stock both ways with Shopify (2026-10-10)
@@ -404,6 +404,7 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Shopify to ARK OS:** online sales come through the order pull as before. Then, last in every sync, ARK OS stock is set to Shopify's count: counted products get an "adjusted" movement ("Set to Shopify's count") so the ledger explains it; uncounted ones are set directly. A product with changes still waiting to go to Shopify is skipped until they have gone. Shopify going below zero shows as 0 here.
 - **Cadence:** ARK OS changes reach Shopify at once; Shopify's side (orders, manual stock changes) reaches ARK OS on each sync (nightly, Sync now). Webhooks would make that immediate; they aren't built.
 - **First sync resets the 44 counted products** to Shopify's quantities. This also undoes the dip the history backfill caused (it took the Shopify sales since 2 Sep off hand-counted stock).
+- **"Sync from website" also syncs stock** (user: only one stock should show): after a complete product pull it sends pending changes and mirrors Shopify's count, same as the nightly run. The list shows a single number.
 - **Permissions:** `read_inventory`, `write_inventory` and `read_locations` on the Shopify app (Test connection lists what is missing). Product price and detail changes are not pushed to Shopify yet; that would need `write_products`.
 
 
@@ -451,3 +452,26 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Refunds are not automatic.** Cancelling a paid booking tells the staff member to refund in Stripe; the existing refund webhook then updates the payment here.
 - **Add / edit by hand** (`staff_save_registration`): name, email, phone, date, tickets and quantities, paid, optional ticket email. Staff skip sales windows but not capacity or a ticket's stock, unless they tick the override. Editing keeps each kept ticket's original price; new tickets get today's price. Only admin, lead and the event's facilitator can change bookings; sales and others can view.
 - **Not done:** per-event CSV/PDF export from this page (the schedule's attendee export still works and now leaves out cancelled bookings), the CRM activity feed and marketing lists still include cancelled bookings, and partial refunds from this screen.
+
+## Members portal: My Property (2026-10-10)
+- **Who sees it:** an active member who is the owner of at least one lot (`lots.owner_contact_id` = their contact). The tab appears after Guests; with several lots a pill row switches between them. Page: `/portal/property`.
+- **What it shows** (the owner version of `/estate/[id]`): the lot and home, photos, maintenance log, household, hospitality. Hidden from owners: price, lot status, CRM links, other owners, guest emails/phones/totals (stays show first name and dates only).
+- **What owners can change:** their household (add, edit, remove); ask the team for work (lands in the maintenance log as *open*, "Requested by the owner in the portal"); block their own dates for personal use and release them; the notes for the hospitality team. Everything else (lot details, rates, listing, joining or leaving hospitality, photos) stays with staff.
+- **How it's enforced:** no write access to `lots` or `stays` for owners. RLS lets owners manage `lot_household` and read `lot_maintenance` for lots they own (`owns_lot`); the rest goes through `my_properties`, `my_property_stays`, `owner_block_dates`, `owner_cancel_block`, `owner_set_listing_notes` and `owner_request_work` (security definer, each checks ownership). Owner blocks use the existing no-overlap rule, so they can't cover a confirmed guest stay.
+- **Not built:** owner photo uploads, editing the home's details, cost approval on requested work, and staff notification when a request comes in (staff see it in the maintenance log).
+
+## Stewards and properties, step 1 (2026-10-10)
+- **Many stewards per property:** `property_stewards (lot_id, contact_id)`. `lots.owner_contact_id` stays as the *primary* steward; a trigger adds it to the link table, and the table was backfilled from it. A primary steward can't be removed from the property page until the owner is changed in Edit lot. Every linked steward sees the property under My Property (`owns_lot`, `my_properties` now read the link table).
+- **Navigation both ways:** the property page lists its stewards (add and remove) and links to each CRM profile; a steward's CRM profile lists their properties with links back.
+- **Property page tabs:** Overview (everything that was there), Financials and Schedule (placeholders), Maintenance log (the existing log moved here). Tab is `?tab=` on `/estate/[id]`.
+- **Club amenities** (`amenities`: name, category, active, position) are the facilities members and stewards use: Sauna, Cold plunge, Spa deck, Jungle gym, Cowork, Farm. They are separate from the per-home listing features (Pool, Wifi…) in `src/lib/estate.ts`. Everyone signed in can read them; admin and lead manage them. There's no screen to edit them yet.
+- **Still open from the spec:** the maintenance log stays on `lot_maintenance` for now; moving it to a live query over Operations tasks is Request 4.
+
+## Stewards and properties, step 2: property financials (2026-10-10)
+- **One ledger:** invoices to stewards and payouts to them are rows in `finance_entries` with `lot_id` set, so Finance Receivables/Payables, Transactions and the totals include them with no parallel numbers. Income = owed to The ARK (HOA fee, maintenance, other service); expense = owed to the steward (hospitality payout, with a period). Each row names the steward (`contact_id`).
+- **Colones only:** a row linked to a property must be in CRC (database check).
+- **Drafts:** a new `draft` status means not owed yet. Drafts are hidden from the Finance lists and totals and from the CRM activity feed, and don't count against fees. "Sent" is `unpaid`. "Overdue" is not stored: it is unpaid with a due date before today, worked out when shown, so there is no job to run.
+- **Where to edit:** property rows are created and edited on the property's Financials tab (admin only). Clicking one in Finance opens that tab; the Finance lists show a link to the property. Mark paid / Received works from either place.
+- **Fees current:** `steward_fees_current(contact)` is true when the steward has no unpaid property invoice past its due date. Other money they owe (dues, tickets) doesn't count. Request 3 uses it. The CRM profile shows "Fees current / not current" to estate staff, and the open amounts to admins only.
+- **Payouts (D5):** entered by hand, with the period they cover. Nothing is calculated from bookings yet.
+- **Not built:** auto-generated invoices or PDFs (you upload them), a steward-facing view of their own balance (Requests 3 and 5), and per-steward invoice splitting when a property has several stewards (each row is billed to one).

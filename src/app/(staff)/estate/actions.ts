@@ -387,3 +387,124 @@ export async function unblock(lotId: string, stayId: string): Promise<ActionResu
   revalidatePath(`/hospitality/${lotId}`);
   return ok("Opened up again");
 }
+
+// Stewards ------------------------------------------------------------------------
+
+export async function addSteward(lotId: string, contactId: string): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  if (!contactId) return fail("Choose a person.");
+  const { error } = await supabase.from("property_stewards").insert({ lot_id: lotId, contact_id: contactId });
+  if (error) return fail(error.code === "23505" ? "They’re already a steward of this property." : friendly(error));
+  refresh(lotId);
+  return ok("Steward added");
+}
+
+export async function removeSteward(lotId: string, contactId: string): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  const { data: lot } = await supabase.from("lots").select("owner_contact_id").eq("id", lotId).single();
+  if (lot?.owner_contact_id === contactId) {
+    return fail("They’re the primary steward. Change the owner in Edit lot first.");
+  }
+  const { error } = await supabase.from("property_stewards").delete().eq("lot_id", lotId).eq("contact_id", contactId);
+  if (error) return fail(friendly(error));
+  refresh(lotId);
+  return ok("Steward removed");
+}
+
+// Property financials ---------------------------------------------------------------
+// Rows live in the finance ledger (admin only). All amounts are colones.
+
+const dateOrNull = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+
+const refreshMoney = (lotId?: string | null) => {
+  refresh(lotId);
+  revalidatePath("/finance", "layout");
+  revalidatePath("/crm", "layout");
+};
+
+/** Add or edit an invoice to a steward (income) or a payout to one (expense). */
+export async function savePropertyEntry(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const { supabase, staff } = await staffOrThrow("admin");
+  const id = field(data, "id");
+  const lotId = field(data, "lot_id");
+  if (!lotId) return fail("Missing property.");
+
+  if (data.get("intent") === "delete" && id) {
+    const { data: e } = await supabase.from("finance_entries").select("file_path").eq("id", id).eq("lot_id", lotId).single();
+    const { error } = await supabase.from("finance_entries").delete().eq("id", id).eq("lot_id", lotId);
+    if (error) return fail(friendly(error));
+    if (e?.file_path) await supabase.storage.from("finance").remove([e.file_path]);
+    refreshMoney(lotId);
+    return ok("Deleted");
+  }
+
+  const kind = field(data, "kind");
+  if (kind !== "income" && kind !== "expense") return fail("Choose an invoice or a payout.");
+  const contactId = field(data, "contact_id");
+  if (!contactId) return fail("Choose the steward.");
+  const { data: link } = await supabase
+    .from("property_stewards")
+    .select("contact:contacts(name)")
+    .eq("lot_id", lotId)
+    .eq("contact_id", contactId)
+    .maybeSingle();
+  if (!link) return fail("That person isn’t a steward of this property.");
+  const amount = Number(field(data, "amount"));
+  if (!(amount > 0)) return fail("Enter an amount above zero.");
+  const date = dateOrNull(field(data, "entry_date"));
+  if (!date) return fail("Pick a date.");
+  const status = pick(
+    [["draft", ""], ["unpaid", ""], ["paid", ""]] as const,
+    field(data, "status"),
+    "unpaid",
+  );
+  const due = dateOrNull(field(data, "due_date"));
+  if (kind === "income" && status === "unpaid" && !due) return fail("Set a due date so we can tell when it’s late.");
+  const start = dateOrNull(field(data, "period_start"));
+  const end = dateOrNull(field(data, "period_end"));
+  if (start && end && end < start) return fail("The period ends before it starts.");
+
+  const { data: line } = await supabase.from("business_lines").select("id").eq("name", "Real estate").maybeSingle();
+  const row = {
+    kind,
+    lot_id: lotId,
+    contact_id: contactId,
+    party: link.contact?.name ?? null,
+    entry_date: date,
+    amount,
+    currency: "CRC",
+    business_line_id: line?.id ?? null,
+    category: field(data, "category"),
+    description: field(data, "description"),
+    reference: field(data, "reference"),
+    status,
+    due_date: status === "unpaid" ? due : null,
+    period_start: kind === "expense" ? start : null,
+    period_end: kind === "expense" ? end : null,
+    doc_kind: kind === "income" ? "invoice" : null,
+    file_path: field(data, "file_path"),
+    file_name: field(data, "file_name"),
+  };
+  const { error } = id
+    ? await supabase.from("finance_entries").update(row).eq("id", id).eq("lot_id", lotId)
+    : await supabase.from("finance_entries").insert({ ...row, created_by: staff.id });
+  if (error) return fail(friendly(error));
+  refreshMoney(lotId);
+  const what = kind === "income" ? "Invoice" : "Payout";
+  return ok(id ? `${what} saved` : status === "draft" ? `${what} saved as a draft` : `${what} added`);
+}
+
+/** Send a draft (it becomes owed) or mark an invoice or payout paid. */
+export async function setPropertyEntryStatus(id: string, status: "unpaid" | "paid"): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("admin");
+  const { data: e, error } = await supabase
+    .from("finance_entries")
+    .update({ status })
+    .eq("id", id)
+    .not("lot_id", "is", null)
+    .select("lot_id")
+    .single();
+  if (error) return fail(friendly(error));
+  refreshMoney(e.lot_id);
+  return ok(status === "paid" ? "Marked as paid" : "Sent");
+}

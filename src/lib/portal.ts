@@ -15,6 +15,8 @@ export const loadPortal = cache(async () => {
     supabase.from("cities").select("*").eq("active", true).order("position").order("name"),
     supabase.rpc("public_org").maybeSingle(),
   ]);
+  // "My Property" shows for members who own a lot.
+  const ownsProperty = v.memberId ? ((await v.supabase.rpc("my_properties")).data ?? []).length > 0 : false;
   const list = cities ?? [];
   const home = list.find((c) => c.is_home) ?? list[0] ?? null;
   // The schedule is the home city's unless a member's record says otherwise.
@@ -22,6 +24,7 @@ export const loadPortal = cache(async () => {
   return {
     ...v,
     me,
+    ownsProperty,
     cities: list,
     city,
     home,
