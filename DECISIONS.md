@@ -486,3 +486,11 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Access:** every steward with a linked property passes the gate whatever their status, including suspended, and with or without a membership (`gate_state`). The member portal and amenities still require an active membership, so a non-member steward has no login there. Members keep their access through their membership. The steward portal (Request 5) will decide what a non-active steward can view (D3 default: view-only).
 - **Where:** a panel on the CRM profile, and a Stewards tab under Real estate (filter by status, sort by months active, agreement, fees, ready-to-activate).
 - **Not done:** the Active Stewardship Agreement's terms aren't in the repo (only the signed date and file are recorded).
+
+## Stewards and properties, step 4: the maintenance log is Operations tasks (2026-10-10)
+- **One record:** work on a property is an Operations task with `lot_id`. The property's Maintenance log tab is a live query over those tasks (open and completed shown apart, completed ones with the money spent), so finishing a task on the board puts it in the log with nothing else to do. Tasks gained: property, work type, cost (colones by default), who did it (for contractors), and "show to the owner".
+- **Old log:** `lot_maintenance` is renamed `lot_maintenance_archive` and its rows were copied into tasks (the live table was empty). Nothing reads it any more; drop it once you're sure.
+- **Who sees what:** estate staff (admin, lead, sales) can read and update tasks linked to a property, on top of the usual task rules; other tasks are unchanged. Owners never read the tasks table: My Property uses `my_property_work`, which returns title, type, Open / In progress / Done, date, who did it, cost and details for tasks marked visible to the owner.
+- **Owner requests:** "Ask the team for work" now creates an unassigned maintenance task linked to the lot, in Backlog, on the Operations board.
+- **Linking from either place:** the Operations task drawer has a Property field (and type, cost, contractor, owner visibility when one is chosen); the property page has its own New task drawer. Task cards show the property.
+- **Not done:** deleting a task from the property page needs admin, lead or the creator (the normal task rule); recurring services are Request 5.

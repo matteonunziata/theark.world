@@ -232,11 +232,12 @@ export async function loadSampleData(): Promise<ActionResult> {
       { lot_id: l12, name: "Theo Weber", relation: "child", birth_year: 2019, notes: "At Arkadia, Seeds group." },
       { lot_id: l7, name: "Sofía Herrera", relation: "owner", contact_id: C["Sofía"], lives_on_site: false },
     ]);
-    await supabase.from("lot_maintenance").insert([
-      { lot_id: l12, title: "Pool pump replaced", category: "pool", performed_on: addDays(td, -21), cost: 640, done_by: "Piscinas Malpaís", created_by: staff.id },
-      { lot_id: l12, title: "Garden trim and mulch", category: "garden", performed_on: addDays(td, -6), cost: 85000, currency: "CRC", done_by: "Farm crew", created_by: staff.id },
-      { lot_id: l12, title: "Annual roof inspection", category: "inspection", status: "scheduled", performed_on: addDays(td, 12), created_by: staff.id },
-      { lot_id: l7, title: "Site cleared for foundations", category: "build", performed_on: addDays(td, -60), created_by: staff.id },
+    const done = (d: string) => `${d}T12:00:00Z`;
+    await supabase.from("tasks").insert([
+      { lot_id: l12, kind: "maintenance", title: "Pool pump replaced", maint_category: "pool", status: "done", due_date: addDays(td, -21), completed_at: done(addDays(td, -21)), cost: 640, currency: "USD", done_by: "Piscinas Malpaís", created_by: staff.id },
+      { lot_id: l12, kind: "maintenance", title: "Garden trim and mulch", maint_category: "garden", status: "done", due_date: addDays(td, -6), completed_at: done(addDays(td, -6)), cost: 85000, currency: "CRC", done_by: "Farm crew", created_by: staff.id },
+      { lot_id: l12, kind: "maintenance", title: "Annual roof inspection", maint_category: "inspection", status: "next", due_date: addDays(td, 12), created_by: staff.id },
+      { lot_id: l7, kind: "maintenance", title: "Site cleared for foundations", maint_category: "build", status: "done", due_date: addDays(td, -60), completed_at: done(addDays(td, -60)), created_by: staff.id },
     ]);
     await supabase.from("stays").insert([
       { lot_id: l12, guest_name: "Sofia Marín", email: "sofia@example.com", guests: 4, check_in: addDays(td, -2), check_out: addDays(td, 3), nightly_rate: 320, total: 1600, paid: true, source: "direct", created_by: staff.id },

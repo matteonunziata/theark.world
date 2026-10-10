@@ -16,7 +16,6 @@ import {
   LOT_KINDS,
   LOT_STATUS,
   MAINT_CATEGORIES,
-  MAINT_STATUS,
   nights,
   RELATIONS,
   STAY_KINDS,
@@ -151,35 +150,51 @@ export async function saveHousehold(_prev: ActionResult, data: FormData): Promis
   return ok(id ? "Saved" : `${name} added`);
 }
 
-export async function saveMaintenance(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+/** Work on a property is an Operations task linked to the lot; this is its form on the property page. */
+export async function saveLotTask(_prev: ActionResult, data: FormData): Promise<ActionResult> {
   const { supabase, staff } = await staffOrThrow(...ESTATE);
   const id = field(data, "id");
   const lotId = field(data, "lot_id");
+  if (!lotId) return fail("Missing property.");
   if (data.get("intent") === "delete" && id) {
-    const { error } = await supabase.from("lot_maintenance").delete().eq("id", id);
+    const { error, count } = await supabase.from("tasks").delete({ count: "exact" }).eq("id", id).eq("lot_id", lotId);
     if (error) return fail(friendly(error));
+    if (!count) return fail("You can’t delete this task. Ask an admin.");
     refresh(lotId);
-    return ok("Log entry deleted");
+    revalidatePath("/operations", "layout");
+    return ok("Task deleted");
   }
   const title = field(data, "title");
-  if (!title || !lotId) return fail("Say what was done.");
+  if (!title) return fail("Say what needs doing.");
+  const { data: lot } = await supabase.from("lots").select("code, name").eq("id", lotId).single();
+  const cost = Number(field(data, "cost"));
   const row = {
     lot_id: lotId,
     title,
-    details: field(data, "details"),
-    category: pick(MAINT_CATEGORIES, field(data, "category"), "repair"),
-    status: pick(MAINT_STATUS, field(data, "status"), "done"),
-    performed_on: field(data, "performed_on") ?? undefined,
-    cost: num(data, "cost"),
-    currency: cur(field(data, "currency")),
+    description: field(data, "description"),
+    kind: "maintenance",
+    maint_category: pick(MAINT_CATEGORIES, field(data, "maint_category"), "repair"),
+    status: pick(
+      [["backlog", ""], ["next", ""], ["doing", ""], ["review", ""], ["done", ""]] as const,
+      field(data, "status"),
+      "backlog",
+    ),
+    assignee_id: field(data, "assignee_id"),
+    due_date: dateOrNull(field(data, "due_date")),
+    cost: Number.isFinite(cost) && cost > 0 ? cost : null,
+    currency: "CRC",
     done_by: field(data, "done_by"),
+    owner_visible: data.get("owner_visible") === "on",
+    location: lot ? (lot.name ?? `Lot ${lot.code}`) : null,
   };
   const { error } = id
-    ? await supabase.from("lot_maintenance").update(row).eq("id", id)
-    : await supabase.from("lot_maintenance").insert({ ...row, created_by: staff.id });
+    ? await supabase.from("tasks").update(row).eq("id", id).eq("lot_id", lotId)
+    : await supabase.from("tasks").insert({ ...row, created_by: staff.id });
   if (error) return fail(friendly(error));
   refresh(lotId);
-  return ok(id ? "Log entry saved" : "Logged");
+  revalidatePath("/operations", "layout");
+  revalidatePath("/portal/property");
+  return ok(id ? "Task saved" : "Task added to Operations");
 }
 
 export async function saveStay(_prev: ActionResult, data: FormData): Promise<ActionResult> {

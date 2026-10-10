@@ -12,7 +12,6 @@ import {
   label,
   lotTitle,
   MAINT_CATEGORIES,
-  MAINT_STATUS,
   nights,
   RELATIONS,
 } from "@/lib/estate";
@@ -80,7 +79,7 @@ export function PropertyView({
 }: {
   lot: Prop;
   household: Tables<"lot_household">[];
-  logs: Tables<"lot_maintenance">[];
+  logs: Database["public"]["Functions"]["my_property_work"]["Returns"];
   stays: Stay[];
   today: string;
   steward: { status: string; active_since: string | null } | null;
@@ -166,8 +165,8 @@ export function PropertyView({
                       <b>{l.title}</b>
                       <span style={{ ...muted, fontSize: 13.5, whiteSpace: "nowrap" }}>
                         {l.status !== "done"
-                          ? label(MAINT_STATUS, l.status)
-                          : fmtDate(l.performed_on, { month: "short", day: "numeric", year: "numeric" })}
+                          ? l.status === "in_progress" ? "In progress" : "Open"
+                          : fmtDate(l.on_date, { month: "short", day: "numeric", year: "numeric" })}
                       </span>
                     </div>
                     <div style={{ ...muted, fontSize: 13.5 }}>

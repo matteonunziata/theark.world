@@ -14,8 +14,6 @@ import {
   LOT_KINDS,
   LOT_STATUS,
   lotTitle,
-  MAINT_CATEGORIES,
-  MAINT_STATUS,
   nights,
   RELATIONS,
   STAY_KINDS,
@@ -23,9 +21,10 @@ import {
 } from "@/lib/estate";
 import { money } from "@/lib/schedule";
 import { type Stay, StayDrawer } from "../../hospitality/stay-drawer";
-import { addSteward, removeSteward, saveHousehold, saveLot, saveMaintenance, setHospitality } from "../actions";
+import { addSteward, removeSteward, saveHousehold, saveLot, setHospitality } from "../actions";
 import { LotFields } from "../lot-fields";
 import { LotFinancials } from "./lot-financials";
+import { LotMaintenance } from "./lot-maintenance";
 
 const TABS = [
   ["overview", "Overview"],
@@ -36,7 +35,6 @@ const TABS = [
 
 type Lot = Tables<"lots">;
 type Member = Tables<"lot_household">;
-type Log = Tables<"lot_maintenance"> & { logged_by: string | null };
 type Person = { id: string; name: string };
 type LotRef = { id: string; code: string; name: string | null; estate_lot_id: string | null };
 
@@ -44,7 +42,8 @@ export function LotView({
   lot,
   stewards,
   household,
-  logs,
+  tasks,
+  team,
   stays,
   people,
   lots,
@@ -59,7 +58,8 @@ export function LotView({
   ledger: Tables<"finance_entries">[];
   isAdmin: boolean;
   household: Member[];
-  logs: Log[];
+  tasks: Tables<"tasks">[];
+  team: { id: string; name: string }[];
   stays: Stay[];
   people: Person[];
   lots: LotRef[];
@@ -70,7 +70,6 @@ export function LotView({
   const edit = useDrawer<null>();
   const hosp = useDrawer<null>();
   const fam = useDrawer<Member>();
-  const log = useDrawer<Log>();
   const stay = useDrawer<Stay>();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
@@ -91,10 +90,6 @@ export function LotView({
   const photo = estatePhoto(lot.photo_path);
   const aerial = estatePhoto(lot.aerial_path);
   const sold = lot.status === "sold" || lot.status === "not_for_sale";
-  const open = logs.filter((l) => l.status !== "done");
-  const spent = logs
-    .filter((l) => l.status === "done" && l.cost)
-    .reduce<Record<string, number>>((a, l) => ({ ...a, [l.currency]: (a[l.currency] ?? 0) + Number(l.cost) }), {});
   const homeLine = [
     lot.bedrooms !== null ? `${lot.bedrooms} bed` : null,
     lot.bathrooms !== null ? `${Number(lot.bathrooms)} bath` : null,
@@ -132,45 +127,9 @@ export function LotView({
         ))}
       </nav>
 
-      {tab === "maintenance" && 
-          <section className="panel">
-            <h2>
-              Maintenance log
-              <button type="button" className="btn primary sm" onClick={log.openNew}>Log work</button>
-            </h2>
-            {(open.length > 0 || Object.keys(spent).length > 0) && (
-              <p className="muted" style={{ margin: "-4px 0 10px", fontSize: 13.5 }}>
-                {open.length ? `${open.length} open or scheduled. ` : ""}
-                {Object.keys(spent).length
-                  ? `Spent so far: ${Object.entries(spent).map(([c, v]) => money(v, c)).join(" and ")}.`
-                  : ""}
-              </p>
-            )}
-            {!logs.length ? (
-              <p className="muted" style={{ margin: 0 }}>Nothing logged yet. Record repairs, garden and pool work, inspections, and what they cost.</p>
-            ) : (
-              <div className="mlog">
-                {logs.map((l) => (
-                  <button key={l.id} type="button" className="mlog-row" onClick={() => log.openItem(l)}>
-                    <span className="d">{fmtDate(l.performed_on, { month: "short", day: "numeric", year: "numeric" })}</span>
-                    <span>
-                      <b>{l.title}</b>
-                      <span className="muted">
-                        {" "}· {label(MAINT_CATEGORIES, l.category)}
-                        {l.done_by ? ` · ${l.done_by}` : ""}
-                      </span>
-                      {l.details && <span className="det">{l.details}</span>}
-                    </span>
-                    <span className="r">
-                      {l.status !== "done" && <span className={`tag-sm ${l.status === "open" ? "low" : ""}`}>{label(MAINT_STATUS, l.status)}</span>}
-                      {l.cost !== null && <span className="amt">{money(l.cost, l.currency)}</span>}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-}
+      {tab === "maintenance" && (
+        <LotMaintenance lotId={lot.id} tasks={tasks} team={team} today={today} />
+      )}
       {tab === "financials" &&
         (isAdmin ? (
           <LotFinancials lotId={lot.id} entries={ledger} stewards={stewards} primaryId={lot.owner_contact_id} today={today} />
@@ -537,71 +496,6 @@ export function LotView({
         <div className="fld">
           <label htmlFor="hh-notes">Notes</label>
           <textarea id="hh-notes" name="notes" rows={3} defaultValue={fam.item?.notes ?? ""} placeholder="School, allergies, pets, anything the team should know" />
-        </div>
-      </Drawer>
-
-      <Drawer
-        key={log.item?.id ?? "new-log"}
-        title={log.item ? "Edit log entry" : "Log work"}
-        open={log.open}
-        onClose={log.close}
-        action={saveMaintenance}
-        footer={
-          <>
-            {log.item && <ConfirmButton />}
-            <span className="spacer" />
-            <button type="button" className="btn ghost" onClick={log.close}>Cancel</button>
-            <button type="submit" className="btn primary">Save</button>
-          </>
-        }
-      >
-        <input type="hidden" name="lot_id" value={lot.id} />
-        {log.item && <input type="hidden" name="id" value={log.item.id} />}
-        <div className="fld">
-          <label htmlFor="m-title">What was done</label>
-          <input id="m-title" name="title" required defaultValue={log.item?.title ?? ""} placeholder="e.g. Pool pump replaced" />
-        </div>
-        <div className="grid2">
-          <div className="fld">
-            <label htmlFor="m-cat">Type</label>
-            <select id="m-cat" name="category" defaultValue={log.item?.category ?? "repair"}>
-              {MAINT_CATEGORIES.map(([k, l]) => (
-                <option key={k} value={k}>{l}</option>
-              ))}
-            </select>
-          </div>
-          <div className="fld">
-            <label htmlFor="m-status">Status</label>
-            <select id="m-status" name="status" defaultValue={log.item?.status ?? "done"}>
-              {MAINT_STATUS.map(([k, l]) => (
-                <option key={k} value={k}>{l}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="grid2">
-          <div className="fld">
-            <label htmlFor="m-date">Date</label>
-            <input id="m-date" name="performed_on" type="date" defaultValue={log.item?.performed_on ?? today} />
-          </div>
-          <div className="fld">
-            <label htmlFor="m-by">Done by</label>
-            <input id="m-by" name="done_by" defaultValue={log.item?.done_by ?? ""} placeholder="Person or company" />
-          </div>
-        </div>
-        <div className="fld">
-          <label htmlFor="m-cost">Cost</label>
-          <div style={{ display: "flex", gap: 6 }}>
-            <input id="m-cost" name="cost" inputMode="decimal" defaultValue={log.item?.cost ?? ""} style={{ flex: 1 }} />
-            <select name="currency" aria-label="Currency" defaultValue={log.item?.currency ?? "USD"} style={{ width: 84 }}>
-              <option>USD</option>
-              <option>CRC</option>
-            </select>
-          </div>
-        </div>
-        <div className="fld">
-          <label htmlFor="m-det">Details</label>
-          <textarea id="m-det" name="details" rows={4} defaultValue={log.item?.details ?? ""} />
         </div>
       </Drawer>
 

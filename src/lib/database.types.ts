@@ -2201,7 +2201,7 @@ export type Database = {
         }
         Relationships: []
       }
-      lot_maintenance: {
+      lot_maintenance_archive: {
         Row: {
           category: string
           cost: number | null
@@ -3928,6 +3928,12 @@ export type Database = {
           id: string
           kind: string
           location: string | null
+          lot_id: string | null
+          maint_category: string | null
+          cost: number | null
+          currency: string
+          done_by: string | null
+          owner_visible: boolean
           position: number
           priority: string
           status: string
@@ -3945,6 +3951,12 @@ export type Database = {
           id?: string
           kind?: string
           location?: string | null
+          lot_id?: string | null
+          maint_category?: string | null
+          cost?: number | null
+          currency?: string
+          done_by?: string | null
+          owner_visible?: boolean
           position?: number
           priority?: string
           status?: string
@@ -3962,6 +3974,12 @@ export type Database = {
           id?: string
           kind?: string
           location?: string | null
+          lot_id?: string | null
+          maint_category?: string | null
+          cost?: number | null
+          currency?: string
+          done_by?: string | null
+          owner_visible?: boolean
           position?: number
           priority?: string
           status?: string
@@ -4854,6 +4872,13 @@ export type Database = {
       }
       my_guests: { Args: never; Returns: Json };
       owns_lot: { Args: { p_lot: string }; Returns: boolean };
+      my_property_work: {
+        Args: { p_lot: string };
+        Returns: {
+          id: string; title: string; category: string; status: string; on_date: string;
+          done_by: string | null; cost: number | null; currency: string; details: string | null;
+        }[];
+      };
       steward_activate: { Args: { p_contact: string }; Returns: undefined };
       steward_deactivate: { Args: { p_contact: string; p_reason: string | null }; Returns: undefined };
       steward_suspend: { Args: { p_contact: string; p_reason: string }; Returns: undefined };

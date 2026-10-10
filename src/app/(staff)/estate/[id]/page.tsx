@@ -23,7 +23,7 @@ export default async function LotPage({ params, searchParams }: Props & { search
     await Promise.all([
       supabase.from("lots").select("*").eq("id", id).maybeSingle(),
       supabase.from("lot_household").select("*").eq("lot_id", id).order("created_at"),
-      supabase.from("lot_maintenance").select("*").eq("lot_id", id).order("performed_on", { ascending: false }),
+      supabase.from("tasks").select("*").eq("lot_id", id),
       supabase
         .from("stays")
         .select("*")
@@ -51,10 +51,8 @@ export default async function LotPage({ params, searchParams }: Props & { search
         stewards={stewards}
         tab={["financials", "schedule", "maintenance"].includes(tab ?? "") ? tab! : "overview"}
         household={household ?? []}
-        logs={(logs ?? []).map((l) => ({
-          ...l,
-          logged_by: team?.find((t) => t.id === l.created_by)?.name ?? null,
-        }))}
+        tasks={logs ?? []}
+        team={(team ?? []).map((t) => ({ id: t.id, name: t.name }))}
         stays={stays ?? []}
         people={(people ?? []).map((p) => ({ id: p.id, name: p.name }))}
         lots={lots ?? []}
