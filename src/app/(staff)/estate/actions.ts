@@ -193,7 +193,7 @@ export async function saveLotTask(_prev: ActionResult, data: FormData): Promise<
   if (error) return fail(friendly(error));
   refresh(lotId);
   revalidatePath("/operations", "layout");
-  revalidatePath("/portal/property");
+  revalidatePath("/steward");
   return ok(id ? "Task saved" : "Task added to Operations");
 }
 

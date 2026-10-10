@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type ReactNode, useActionState, useEffect, useTransition } from "react";
 import { useToast } from "@/components/toast";
 import type { ActionResult } from "@/lib/action-result";
@@ -12,27 +13,16 @@ import {
   label,
   lotTitle,
   MAINT_CATEGORIES,
-  nights,
   RELATIONS,
 } from "@/lib/estate";
 import { money } from "@/lib/schedule";
 import { eligibleOn, monthsActive } from "@/lib/steward";
-import { blockMyDates, cancelMyDates, deactivateMyself, requestWork, saveMyHousehold, saveMyNotes } from "./actions";
+import { deactivateMyself, requestWork, saveMyHousehold, saveMyNotes } from "./actions";
 
 type Prop = Database["public"]["Functions"]["my_properties"]["Returns"][number];
 
-type Stay = {
-  id: string;
-  kind: string;
-  status: string;
-  label: string;
-  guests: number | null;
-  check_in: string;
-  check_out: string;
-};
-
 /** A form that runs a server action and reports the result in a toast. */
-function Form({
+export function Form({
   action,
   children,
   submit,
@@ -62,7 +52,7 @@ function Form({
   );
 }
 
-const Fld = ({ id, text, children }: { id: string; text: string; children: ReactNode }) => (
+export const Fld = ({ id, text, children }: { id: string; text: string; children: ReactNode }) => (
   <div>
     <label htmlFor={id}>{text}</label>
     {children}
@@ -73,14 +63,12 @@ export function PropertyView({
   lot,
   household,
   logs,
-  stays,
   today,
   steward,
 }: {
   lot: Prop;
   household: Tables<"lot_household">[];
   logs: Database["public"]["Functions"]["my_property_work"]["Returns"];
-  stays: Stay[];
   today: string;
   steward: { status: string; active_since: string | null } | null;
 }) {
@@ -274,53 +262,9 @@ export function PropertyView({
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
-                <h3 style={{ fontSize: 16, margin: "0 0 6px" }}>Upcoming</h3>
-                {stays.length === 0 ? (
-                  <p style={{ ...muted, marginTop: 0 }}>No upcoming stays or blocked dates.</p>
-                ) : (
-                  stays.map((s) => (
-                    <div key={s.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "6px 0" }}>
-                      <span>
-                        <b>{s.label}</b>
-                        {s.status === "inquiry" && <span style={muted}> · inquiry</span>}
-                        <span style={{ display: "block", ...muted, fontSize: 13.5 }}>
-                          {fmtDate(s.check_in)} – {fmtDate(s.check_out)} · {nights(s.check_in, s.check_out)} nights
-                          {s.check_in <= today ? " · here now" : ""}
-                        </span>
-                      </span>
-                      {s.kind === "owner" && (
-                        <button
-                          type="button"
-                          className="pv-btn ghost sm"
-                          disabled={busy}
-                          onClick={() =>
-                            start(async () => {
-                              const r = await cancelMyDates(s.id);
-                              toast(r.ok ? (r.message ?? "Done") : (r.error ?? "Couldn’t save"));
-                            })
-                          }
-                        >
-                          Release
-                        </button>
-                      )}
-                    </div>
-                  ))
-                )}
-                <details style={{ marginTop: 12 }}>
-                  <summary style={summary}>I’m using the home</summary>
-                  <Form action={blockMyDates} submit="Block these dates" reset>
-                    <input type="hidden" name="lot_id" value={lot.id} />
-                    <Fld id="bd-from" text="Arriving">
-                      <input id="bd-from" name="from" type="date" className="pv-input" min={today} required />
-                    </Fld>
-                    <Fld id="bd-to" text="Leaving">
-                      <input id="bd-to" name="to" type="date" className="pv-input" min={today} required />
-                    </Fld>
-                    <Fld id="bd-note" text="Note for the team">
-                      <input id="bd-note" name="note" className="pv-input" placeholder="Optional" />
-                    </Fld>
-                  </Form>
-                </details>
+                <p style={{ margin: "0 0 10px" }}>
+                  <Link href={`/steward?tab=schedule&lot=${lot.id}`}>Manage availability and see what’s booked →</Link>
+                </p>
                 <details style={{ marginTop: 10 }}>
                   <summary style={summary}>Notes for the hospitality team</summary>
                   <Form action={saveMyNotes} submit="Save notes">
@@ -341,8 +285,8 @@ export function PropertyView({
               </>
             ) : (
               <p style={{ ...muted, margin: 0 }}>
-                Not listed. Stewards in the active stewardship programme can offer their home to guests when they’re
-                away. Ask the team how it works.
+                Hospitality is off. Turn it on from the <Link href={`/steward?tab=schedule&lot=${lot.id}`}>Schedule</Link> tab to
+                offer your home to guests when you’re away.
               </p>
             )}
           </section>

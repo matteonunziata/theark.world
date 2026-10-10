@@ -22,7 +22,7 @@ export default async function PortalLogin({ searchParams }: PageProps<"/portal/l
         <h1>Sign in</h1>
         <p>
           Enter your email and we’ll send you a link to sign in, no password
-          needed. Team members and facilitators sign in here too.
+          needed. Members, active stewards, team members and facilitators all sign in here.
         </p>
         {typeof error === "string" && (
           <p className="auth-err" role="alert">

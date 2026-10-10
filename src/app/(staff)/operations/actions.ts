@@ -81,7 +81,7 @@ export async function saveTask(
   revalidatePath("/operations", "layout");
   revalidatePath("/dashboard");
   revalidatePath("/estate", "layout");
-  revalidatePath("/portal/property");
+  revalidatePath("/steward");
 
   // Someone new is on it (and it isn't the person saving): a word on Slack.
   if (row.assignee_id && row.assignee_id !== before?.assignee_id && row.assignee_id !== staff.id) {

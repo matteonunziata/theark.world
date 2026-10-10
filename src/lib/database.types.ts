@@ -4929,6 +4929,21 @@ export type Database = {
       }
       my_guests: { Args: never; Returns: Json };
       owns_lot: { Args: { p_lot: string }; Returns: boolean };
+      current_contact_id: { Args: never; Returns: string | null };
+      my_steward_profile: {
+        Args: never;
+        Returns: { id: string; name: string; email: string | null; active_since: string | null }[];
+      };
+      current_active_steward_id: { Args: never; Returns: string | null };
+      is_active_steward_email: { Args: { p_email: string }; Returns: boolean };
+      steward_set_hospitality: { Args: { p_lot: string; p_on: boolean }; Returns: undefined };
+      my_property_services: {
+        Args: { p_lot: string };
+        Returns: {
+          id: string; title: string; maint_category: string; freq: string; every: number;
+          weekday: number | null; month_day: number | null; start_date: string; end_date: string | null;
+        }[];
+      };
       generate_service_tasks: { Args: { p_service?: string | null; p_days?: number }; Returns: number };
       resync_service: { Args: { p_service: string }; Returns: number };
       my_property_work: {
