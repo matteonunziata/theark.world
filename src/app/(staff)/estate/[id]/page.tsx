@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/auth";
-import { todayIn } from "@/lib/dates";
+import { addDays, todayIn } from "@/lib/dates";
 import { lotTitle } from "@/lib/estate";
 import { LotView } from "./lot-view";
 
@@ -19,7 +19,7 @@ export default async function LotPage({ params, searchParams }: Props & { search
   const { tab } = await searchParams;
   const { supabase, staff } = await requireStaff("estate");
   const today = todayIn();
-  const [{ data: lot }, { data: household }, { data: logs }, { data: stays }, { data: people }, { data: team }, { data: lots }, { data: links }, { data: money }] =
+  const [{ data: lot }, { data: household }, { data: logs }, { data: stays }, { data: people }, { data: team }, { data: lots }, { data: links }, { data: money }, { data: services }, { data: pastStays }] =
     await Promise.all([
       supabase.from("lots").select("*").eq("id", id).maybeSingle(),
       supabase.from("lot_household").select("*").eq("lot_id", id).order("created_at"),
@@ -39,6 +39,13 @@ export default async function LotPage({ params, searchParams }: Props & { search
       staff.role === "admin"
         ? supabase.from("finance_entries").select("*").eq("lot_id", id).order("entry_date", { ascending: false })
         : Promise.resolve({ data: [] }),
+      tab === "schedule"
+        ? supabase.from("property_services").select("*").eq("lot_id", id).order("created_at")
+        : Promise.resolve({ data: [] }),
+      // The calendar also looks back a couple of months.
+      tab === "schedule"
+        ? supabase.from("stays").select("*").eq("lot_id", id).gte("check_out", addDays(today, -62)).neq("status", "cancelled").order("check_in")
+        : Promise.resolve({ data: [] }),
     ]);
   if (!lot) notFound();
   const stewards = (links ?? [])
@@ -57,6 +64,8 @@ export default async function LotPage({ params, searchParams }: Props & { search
         people={(people ?? []).map((p) => ({ id: p.id, name: p.name }))}
         lots={lots ?? []}
         ledger={money ?? []}
+        services={services ?? []}
+        calendarStays={pastStays ?? []}
         isAdmin={staff.role === "admin"}
         today={today}
       />

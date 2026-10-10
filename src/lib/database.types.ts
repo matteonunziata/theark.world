@@ -2072,6 +2072,60 @@ export type Database = {
         }
         Relationships: []
       }
+      property_services: {
+        Row: {
+          active: boolean
+          assignee_id: string | null
+          created_at: string
+          end_date: string | null
+          every: number
+          freq: string
+          id: string
+          lot_id: string
+          maint_category: string
+          month_day: number | null
+          notes: string | null
+          owner_visible: boolean
+          start_date: string
+          title: string
+          weekday: number | null
+        }
+        Insert: {
+          active?: boolean
+          assignee_id?: string | null
+          created_at?: string
+          end_date?: string | null
+          every?: number
+          freq: string
+          id?: string
+          lot_id: string
+          maint_category?: string
+          month_day?: number | null
+          notes?: string | null
+          owner_visible?: boolean
+          start_date: string
+          title: string
+          weekday?: number | null
+        }
+        Update: {
+          active?: boolean
+          assignee_id?: string | null
+          created_at?: string
+          end_date?: string | null
+          every?: number
+          freq?: string
+          id?: string
+          lot_id?: string
+          maint_category?: string
+          month_day?: number | null
+          notes?: string | null
+          owner_visible?: boolean
+          start_date?: string
+          title?: string
+          weekday?: number | null
+        }
+        Relationships: []
+      }
       amenities: {
         Row: { active: boolean; category: string; created_at: string; id: string; name: string; position: number }
         Insert: { active?: boolean; category?: string; created_at?: string; id?: string; name: string; position?: number }
@@ -3928,6 +3982,7 @@ export type Database = {
           id: string
           kind: string
           location: string | null
+          service_id: string | null
           lot_id: string | null
           maint_category: string | null
           cost: number | null
@@ -3951,6 +4006,7 @@ export type Database = {
           id?: string
           kind?: string
           location?: string | null
+          service_id?: string | null
           lot_id?: string | null
           maint_category?: string | null
           cost?: number | null
@@ -3974,6 +4030,7 @@ export type Database = {
           id?: string
           kind?: string
           location?: string | null
+          service_id?: string | null
           lot_id?: string | null
           maint_category?: string | null
           cost?: number | null
@@ -4872,6 +4929,8 @@ export type Database = {
       }
       my_guests: { Args: never; Returns: Json };
       owns_lot: { Args: { p_lot: string }; Returns: boolean };
+      generate_service_tasks: { Args: { p_service?: string | null; p_days?: number }; Returns: number };
+      resync_service: { Args: { p_service: string }; Returns: number };
       my_property_work: {
         Args: { p_lot: string };
         Returns: {

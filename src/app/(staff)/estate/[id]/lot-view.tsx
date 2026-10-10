@@ -25,6 +25,7 @@ import { addSteward, removeSteward, saveHousehold, saveLot, setHospitality } fro
 import { LotFields } from "../lot-fields";
 import { LotFinancials } from "./lot-financials";
 import { LotMaintenance } from "./lot-maintenance";
+import { LotSchedule } from "./lot-schedule";
 
 const TABS = [
   ["overview", "Overview"],
@@ -50,12 +51,16 @@ export function LotView({
   today,
   tab,
   ledger,
+  services,
+  calendarStays,
   isAdmin,
 }: {
   lot: Lot;
   stewards: { id: string; name: string; email: string | null; phone: string | null }[];
   tab: string;
   ledger: Tables<"finance_entries">[];
+  services: Tables<"property_services">[];
+  calendarStays: Stay[];
   isAdmin: boolean;
   household: Member[];
   tasks: Tables<"tasks">[];
@@ -140,12 +145,7 @@ export function LotView({
           </section>
         ))}
       {tab === "schedule" && (
-        <section className="panel">
-          <h2>Schedule</h2>
-          <p className="muted" style={{ margin: 0 }}>
-            Hospitality availability and maintenance services for this property will live here.
-          </p>
-        </section>
+        <LotSchedule lot={lot} stays={calendarStays} tasks={tasks} services={services} team={team} today={today} />
       )}
 
       {tab === "overview" && (

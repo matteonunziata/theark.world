@@ -523,3 +523,64 @@ export async function setPropertyEntryStatus(id: string, status: "unpaid" | "pai
   refreshMoney(e.lot_id);
   return ok(status === "paid" ? "Marked as paid" : "Sent");
 }
+
+// Recurring services ----------------------------------------------------------------
+
+const FREQ = ["once", "weekly", "monthly", "yearly"];
+
+/** Add or edit a property's recurring service, then rebuild its upcoming tasks from the new rule. */
+export async function saveService(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  const id = field(data, "id");
+  const lotId = field(data, "lot_id");
+  if (!lotId) return fail("Missing property.");
+
+  if (data.get("intent") === "delete" && id) {
+    // Upcoming tasks that haven't started go with it; finished ones stay in the log.
+    await supabase.from("tasks").delete().eq("service_id", id).eq("status", "backlog").gte("due_date", todayIn());
+    const { error } = await supabase.from("property_services").delete().eq("id", id).eq("lot_id", lotId);
+    if (error) return fail(friendly(error));
+    refresh(lotId);
+    revalidatePath("/operations", "layout");
+    return ok("Service removed");
+  }
+
+  const title = field(data, "title");
+  if (!title) return fail("Name the service.");
+  const freq = field(data, "freq") ?? "";
+  if (!FREQ.includes(freq)) return fail("Choose how often.");
+  const start = dateOrNull(field(data, "start_date"));
+  if (!start) return fail("Pick a start date.");
+  const end = dateOrNull(field(data, "end_date"));
+  if (end && end < start) return fail("The end date is before the start.");
+  const every = Math.min(52, Math.max(1, Math.round(num(data, "every") ?? 1)));
+  const weekday = Math.round(num(data, "weekday") ?? Number.NaN);
+  const monthDay = Math.round(num(data, "month_day") ?? Number.NaN);
+  if (freq === "weekly" && !(weekday >= 0 && weekday <= 6)) return fail("Choose the day of the week.");
+  if (freq === "monthly" && !(monthDay >= 1 && monthDay <= 31)) return fail("Choose the day of the month.");
+
+  const row = {
+    lot_id: lotId,
+    title,
+    maint_category: pick(MAINT_CATEGORIES, field(data, "maint_category"), "cleaning"),
+    freq,
+    every: freq === "once" ? 1 : every,
+    weekday: freq === "weekly" ? weekday : null,
+    month_day: freq === "monthly" ? monthDay : null,
+    start_date: start,
+    end_date: freq === "once" ? null : end,
+    assignee_id: field(data, "assignee_id"),
+    notes: field(data, "notes"),
+    owner_visible: data.get("owner_visible") === "on",
+    active: data.get("active") === "on",
+  };
+  const saved = id
+    ? await supabase.from("property_services").update(row).eq("id", id).eq("lot_id", lotId).select("id").single()
+    : await supabase.from("property_services").insert(row).select("id").single();
+  if (saved.error) return fail(friendly(saved.error));
+  const { data: made, error } = await supabase.rpc("resync_service", { p_service: saved.data.id });
+  if (error) return fail(friendly(error));
+  refresh(lotId);
+  revalidatePath("/operations", "layout");
+  return ok(row.active ? `Saved. ${made ?? 0} upcoming task${made === 1 ? "" : "s"} on the board.` : "Saved and paused");
+}
