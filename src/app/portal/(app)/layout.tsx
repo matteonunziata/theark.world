@@ -20,7 +20,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/portal">)
           initials={initials(p.me?.name ?? p.staff?.name ?? "")}
           isStaff={!!p.staff}
           isMember={!!p.memberId}
-          hasProperty={p.ownsProperty}
+          hasProperty={!!p.memberId && !!p.stewardId}
         >
           {children}
         </PortalShell>
