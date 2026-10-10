@@ -394,7 +394,7 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 
 - **The catalog now comes from Shopify's Admin API,** not only the public feed. It runs with every Shopify sync (nightly, Sync now) before the orders pull, so an order for a new product finds it, and from the shop's "Sync from website" button while Shopify is connected (the old public-feed path is the fallback when it isn't). Needs the app's `read_products` scope; cost also needs `read_inventory`, and without it cost is skipped and the sync says so.
 - **What is pulled:** new variants (counting off, so no alerts); for existing ones price, online availability, photo, product group, variant, SKU, barcode, Shopify status and Shopify's own stock count. **Never overwritten:** name, category, description (filled only when empty), an uploaded photo, ARK OS stock, member price and the low-stock alert.
-- **Stock is shown beside, not merged** (my default; the question was left open): `shopify_stock` is Shopify's count, shown under ARK OS's count on Products & stock. Sales entered in ARK OS only never go back to Shopify, so overwriting would lose them.
+- **Stock is one number** (superseded by Round 23): Products & stock shows only ARK OS's count, which mirrors Shopify's. `shopify_stock` is kept as the last count read from Shopify but isn't shown.
 - **For sale online** means the product is active, published to the online store and the variant can be bought. Archived or draft products are off sale online. A variant that is missing from a complete pull is taken off sale online, never deleted, because sales point at it.
 
 ## Round 23: Stock both ways with Shopify (2026-10-10)
@@ -404,6 +404,7 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Shopify to ARK OS:** online sales come through the order pull as before. Then, last in every sync, ARK OS stock is set to Shopify's count: counted products get an "adjusted" movement ("Set to Shopify's count") so the ledger explains it; uncounted ones are set directly. A product with changes still waiting to go to Shopify is skipped until they have gone. Shopify going below zero shows as 0 here.
 - **Cadence:** ARK OS changes reach Shopify at once; Shopify's side (orders, manual stock changes) reaches ARK OS on each sync (nightly, Sync now). Webhooks would make that immediate; they aren't built.
 - **First sync resets the 44 counted products** to Shopify's quantities. This also undoes the dip the history backfill caused (it took the Shopify sales since 2 Sep off hand-counted stock).
+- **"Sync from website" also syncs stock** (user: only one stock should show): after a complete product pull it sends pending changes and mirrors Shopify's count, same as the nightly run. The list shows a single number.
 - **Permissions:** `read_inventory`, `write_inventory` and `read_locations` on the Shopify app (Test connection lists what is missing). Product price and detail changes are not pushed to Shopify yet; that would need `write_products`.
 
 

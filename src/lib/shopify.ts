@@ -598,10 +598,14 @@ export async function pullProducts(sb: Sb, i: Integration & { shop_domain: strin
 }
 
 /** The shop's "Sync from website" button: the same pull, or null while Shopify isn't connected. */
-export async function pullProductsNow(sb: Sb): Promise<ProductsResult | null> {
+export async function pullProductsNow(sb: Sb): Promise<(ProductsResult & { stock: StockResult | null }) | null> {
   const i = await getIntegration(sb);
   if (!ready(i)) return null;
-  return pullProducts(sb, i, await tokenFor(sb, i));
+  const token = await tokenFor(sb, i);
+  const r = await pullProducts(sb, i, token);
+  // A complete pull also puts ARK OS's counts in step with Shopify's, so the two never show different stock.
+  const stock = r.more ? null : await syncStock(sb, i, token);
+  return { ...r, stock };
 }
 
 // Orders from Shopify ---------------------------------------------------------------
