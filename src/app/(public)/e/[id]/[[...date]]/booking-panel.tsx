@@ -8,6 +8,7 @@ import type { Tables } from "@/lib/database.types";
 import { dayLabel, timeRange } from "@/lib/dates";
 import { money } from "@/lib/schedule";
 import { type BookingResult, bookSession } from "../../actions";
+import { PaymentStep } from "./payment-step";
 
 type Ticket = Tables<"ticket_types">;
 type Count = { session_date: string; ticket_type_id: string | null; taken: number };
@@ -61,6 +62,9 @@ export function BookingPanel({
   const [result, setResult] = useState<BookingResult | null>(null);
   const [pending, start] = useTransition();
   const [leaving, setLeaving] = useState(false);
+  // Paying inside the page: shown right after booking when Stripe's form is available.
+  const [payStep, setPayStep] = useState(false);
+  const [paid, setPaid] = useState<"paid" | "pending" | "unknown" | null>(null);
 
   const taken = (d: string) =>
     counts.filter((c) => c.session_date === d).reduce((n, c) => n + Number(c.taken), 0);
@@ -72,7 +76,29 @@ export function BookingPanel({
   const [formError, setFormError] = useState<string | null>(null);
   const setTicketQty = (id: string, n: number) => setQty((q) => ({ ...q, [id]: n }));
 
-  if (result?.ok && result.held) {
+  if (result?.ok && result.embedded && payStep && !paid) {
+    return (
+      <section className="panel">
+        <h2>Payment</h2>
+        <p className="muted" style={{ marginTop: 0 }}>
+          {o.title}, {picked && dayLabel(picked, today)}, {timeRange(o)}
+          {result.summary ? ` · ${result.summary}` : ""}
+        </p>
+        <PaymentStep token={result.token} onPaid={(state) => { setPaid(state); setPayStep(false); }} />
+        {result.held ? (
+          <p className="muted" style={{ marginBottom: 0 }}>Your spot is held for 30 minutes while you pay.</p>
+        ) : (
+          <p style={{ marginBottom: 0 }}>
+            <button type="button" className="linkish" onClick={() => setPayStep(false)}>
+              Pay later at the front desk
+            </button>
+          </p>
+        )}
+      </section>
+    );
+  }
+
+  if (result?.ok && result.held && !paid) {
     // Meals: the spot is held until it's paid. Online, that means straight to Stripe.
     return (
       <section className="panel">
@@ -90,9 +116,15 @@ export function BookingPanel({
                 Then show your pass to the team at La Cocineta.
               </p>
               <p>
-                <a className="btn primary" href={result.payUrl}>
-                  {result.price ? `Pay ${result.price}` : "Pay now"}
-                </a>
+                {result.embedded ? (
+                  <button type="button" className="btn primary" onClick={() => setPayStep(true)}>
+                    {result.price ? `Pay ${result.price}` : "Pay now"}
+                  </button>
+                ) : (
+                  <a className="btn primary" href={result.payUrl}>
+                    {result.price ? `Pay ${result.price}` : "Pay now"}
+                  </a>
+                )}
               </p>
             </>
           ) : result.paymentLink ? (
@@ -128,9 +160,15 @@ export function BookingPanel({
           </p>
           {result.summary && <p>{result.summary}</p>}
           <p className="muted">
-            {result.emailed
-              ? "Your ticket is on its way to your inbox."
-              : "Keep your ticket handy. Show it to security when you arrive."}
+            {paid === "paid"
+              ? "Payment received. Your ticket is on its way to your inbox."
+              : paid === "pending"
+                ? "Your bank is still confirming the payment. We’ll email your ticket as soon as it clears."
+                : paid === "unknown"
+                  ? "We’re confirming your payment. If you were charged, your receipt and ticket will arrive by email shortly."
+                  : result.emailed
+                    ? "Your ticket is on its way to your inbox."
+                    : "Keep your ticket handy. Show it to security when you arrive."}
           </p>
           {isMember && picked && <Going list={attendees[picked] ?? []} taken={taken(picked)} />}
           <p>
@@ -152,11 +190,17 @@ export function BookingPanel({
             />
           )}
           <p />
-          {result.payUrl ? (
+          {paid ? null : result.payUrl ? (
             <>
-              <a className="btn primary" href={result.payUrl}>
-                Pay {result.price} now
-              </a>
+              {result.embedded ? (
+                <button type="button" className="btn primary" onClick={() => setPayStep(true)}>
+                  Pay {result.price} now
+                </button>
+              ) : (
+                <a className="btn primary" href={result.payUrl}>
+                  Pay {result.price} now
+                </a>
+              )}
               <p className="muted" style={{ marginTop: 8 }}>
                 Your spot is held. You can also pay from your ticket later, or at the front desk.
               </p>
@@ -270,8 +314,11 @@ export function BookingPanel({
                 website: String(fd.get("ms_trap_x") ?? ""),
               });
               setResult(r);
+              setPaid(null);
               if (r.ok) onBooked?.();
-              if (r.ok && r.held && r.payUrl) {
+              // Pay inside the page when we can; otherwise held bookings go to Stripe's page.
+              if (r.ok && r.embedded) setPayStep(true);
+              else if (r.ok && r.held && r.payUrl) {
                 setLeaving(true);
                 window.location.assign(r.payUrl);
               }

@@ -40,6 +40,7 @@ export default async function StripePage() {
   const key = !!process.env.STRIPE_SECRET_KEY;
   const hook = !!process.env.STRIPE_WEBHOOK_SECRET;
   const service = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const publishable = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const on = key && service;
   const live = stripeLive();
   const recent = (payments ?? []).filter((p) => p.paid_at >= since && p.status === "paid");
@@ -104,6 +105,7 @@ export default async function StripePage() {
             {check(key, "STRIPE_SECRET_KEY", "from Stripe → Developers → API keys (sk_test_… while testing).")}
             {check(service, "SUPABASE_SERVICE_ROLE_KEY", "lets ARK OS record a payment the moment Stripe confirms it.")}
             {check(hook, "STRIPE_WEBHOOK_SECRET", "the endpoint’s signing secret (whsec_…), from the webhook below.")}
+            {check(publishable, "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "pk_test_… from the same page. With it, event tickets are paid on our own page; without it people go to Stripe’s page.")}
           </ul>
           {!on && (
             <p className="note">

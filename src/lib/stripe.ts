@@ -87,8 +87,7 @@ export async function findStripePrice(name: string): Promise<StripePrice | null>
   return all.find((p) => p.name.toLowerCase() === n) ?? all.find((p) => p.name.toLowerCase().startsWith(n)) ?? null;
 }
 
-/** Start a Checkout session and return Stripe's URL for it. */
-export async function createCheckout(i: {
+export type CheckoutInput = {
   kind: PaymentKind;
   /** What the person sees on Stripe, e.g. "Day pass, Tue 7 Oct". */
   title: string;
@@ -101,15 +100,15 @@ export async function createCheckout(i: {
   /** Kept on the session; record_stripe_payment() reads it back. */
   meta: Record<string, string | null | undefined>;
   cancelPath: string;
-}) {
-  const s = stripe();
-  if (!s) throw new Error("Stripe isn’t set up.");
-  const origin = await siteUrl();
+};
+
+/** What every Checkout session carries, hosted or embedded. */
+export function checkoutParams(i: CheckoutInput) {
   const metadata: Record<string, string> = { kind: i.kind };
   for (const [k, v] of Object.entries(i.meta)) if (v) metadata[k] = v.slice(0, 500);
   if (!i.priceId && !(i.amount && i.currency)) throw new Error("Nothing to charge.");
-  const session = await s.checkout.sessions.create({
-    mode: "payment",
+  return {
+    mode: "payment" as const,
     line_items: [
       i.priceId
         ? { quantity: 1, price: i.priceId }
@@ -129,11 +128,44 @@ export async function createCheckout(i: {
       ...(i.email ? { receipt_email: i.email } : {}),
     },
     metadata,
+  };
+}
+
+/** Start a Checkout session and return Stripe's URL for it. */
+export async function createCheckout(i: CheckoutInput) {
+  const s = stripe();
+  if (!s) throw new Error("Stripe isn’t set up.");
+  const origin = await siteUrl();
+  const session = await s.checkout.sessions.create({
+    ...checkoutParams(i),
     success_url: `${origin}/pay/done?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: origin + i.cancelPath,
   });
   if (!session.url) throw new Error("Stripe didn’t return a checkout page.");
   return session.url;
+}
+
+/** The key the browser uses to show Stripe's payment form. Public by design. */
+export const stripePublishableKey = () => process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? null;
+
+/** Can the payment form sit inside our own pages? Otherwise people go to Stripe's page. */
+export const stripeEmbeddedReady = () => stripeReady() && !!stripePublishableKey();
+
+/**
+ * A Checkout session that is paid inside our own page (Stripe's embedded form), so
+ * nobody is sent away. It never redirects; the page hears when it completes and then
+ * asks for the payment to be recorded, the same way the return page and the webhook do.
+ */
+export async function createEmbeddedCheckout(i: CheckoutInput) {
+  const s = stripe();
+  if (!s) throw new Error("Stripe isn’t set up.");
+  const session = await s.checkout.sessions.create({
+    ...checkoutParams(i),
+    ui_mode: "embedded_page",
+    redirect_on_completion: "never",
+  });
+  if (!session.client_secret) throw new Error("Stripe didn’t return a payment form.");
+  return { id: session.id, clientSecret: session.client_secret };
 }
 
 export type Fulfilled =

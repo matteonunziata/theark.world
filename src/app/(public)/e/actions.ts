@@ -5,7 +5,9 @@ import { fail, friendly } from "@/lib/action-result";
 import { sendTicketEmail } from "@/lib/email";
 import { notifyLater } from "@/lib/slack";
 import { bookingMessage } from "@/lib/slack-format";
-import { stripeReady } from "@/lib/stripe";
+import { createEmbeddedCheckout, fmtAmount, fulfillCheckout, stripeEmbeddedReady, stripePublishableKey, stripeReady } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { ticketCheckout } from "@/lib/ticket-checkout";
 import { createClient } from "@/lib/supabase/server";
 import { loadEvent } from "./load";
 
@@ -22,6 +24,8 @@ export type BookingResult =
       held: boolean;
       /** "2 × Early Bird, 1 × Lunch"; null when nothing was bought. */
       summary: string | null;
+      /** Pay inside the page (Stripe's form) rather than on Stripe's own page. */
+      embedded: boolean;
     }
   | { ok: false; error: string };
 
@@ -126,7 +130,51 @@ export async function bookSession(input: {
     price,
     held,
     summary,
+    embedded: !!payUrl && stripeEmbeddedReady(),
   };
+}
+
+export type PaymentStart =
+  | { ok: true; clientSecret: string; sessionId: string; publishableKey: string; amount: string; summary: string }
+  | { ok: false; error: string };
+
+/** Open Stripe's payment form for a booking, from the ticket's own token. */
+export async function startTicketPayment(token: string): Promise<PaymentStart> {
+  const admin = createAdminClient();
+  const publishableKey = stripePublishableKey();
+  if (!admin || !publishableKey || !stripeReady()) return { ok: false, error: "Online payment isn’t open yet." };
+  const t = await ticketCheckout(admin, token);
+  if (!t.ok) {
+    return {
+      ok: false,
+      error:
+        t.reason === "paid"
+          ? "This booking is already paid."
+          : t.reason === "lapsed"
+            ? "The hold on your spot has ended. Please book again."
+            : "This can’t be paid online. Pay at the front desk.",
+    };
+  }
+  try {
+    const { id, clientSecret } = await createEmbeddedCheckout(t.input);
+    return { ok: true, clientSecret, sessionId: id, publishableKey, amount: fmtAmount(t.amount, t.currency), summary: t.summary };
+  } catch (e) {
+    console.error("Embedded ticket checkout failed", e);
+    return { ok: false, error: "We couldn’t open the payment form. Nothing was charged. Try again in a minute." };
+  }
+}
+
+/** The form says it's complete: record the payment now, without waiting for the webhook. */
+export async function confirmTicketPayment(sessionId: string): Promise<{ state: "paid" | "pending" | "unknown" }> {
+  if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) return { state: "unknown" };
+  try {
+    const r = await fulfillCheckout(sessionId);
+    if (r.state === "paid") return r.kind === "ticket" ? { state: "paid" } : { state: "unknown" };
+    return { state: r.state === "pending" ? "pending" : "unknown" };
+  } catch (e) {
+    console.error("Couldn’t record ticket payment", sessionId, e);
+    return { state: "unknown" };
+  }
 }
 
 /** For the portal's booking modal: the same details as the event page. */
