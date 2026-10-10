@@ -68,14 +68,16 @@ export async function saveContact(
     return ok("Deleted");
   }
 
-  const name = field(data, "name");
+  const name = [field(data, "first_name"), field(data, "last_name")]
+    .filter(Boolean)
+    .join(" ");
   const email = field(data, "email")?.toLowerCase() ?? null;
   const type = field(data, "type") ?? "contact";
   const tier = field(data, "tier") ?? "";
   const status = field(data, "membership_status") ?? "active";
   const since = field(data, "member_since");
   const until = field(data, "renews_on");
-  if (!name) return fail("Enter a name.");
+  if (!name) return fail("Enter a first name.");
   if (email && !EMAIL.test(email)) return fail("Enter a valid email.");
   if (!PTYPES.some((t) => t[0] === type)) return fail("Choose a type.");
   if (!MSTATUS.some((m) => m[0] === status)) return fail("Choose a status.");
