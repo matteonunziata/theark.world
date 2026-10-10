@@ -75,6 +75,7 @@ export function ProfileView({
   memberships,
   sales,
   properties,
+  stewardFinance,
   currency,
   now,
   role,
@@ -102,6 +103,8 @@ export function ProfileView({
   }[];
   currency: string;
   properties: { id: string; code: string; name: string | null }[];
+  /** Property invoices and payouts, in colones. Admins only; null for others. */
+  stewardFinance: { fees_current: boolean; owed_to_ark: number | null; owed_to_steward: number | null } | null;
   now: string;
   role: string;
   orgName: string;
@@ -162,6 +165,18 @@ export function ProfileView({
                   <Link href={`/estate/${l.id}`}>{l.name ? `${l.name} (Lot ${l.code})` : `Lot ${l.code}`}</Link>
                 </p>
               ))}
+              {stewardFinance && (
+                <p style={{ margin: "10px 0 0" }}>
+                  <span className={`tag-sm ${stewardFinance.fees_current ? "" : "out"}`}>
+                    {stewardFinance.fees_current ? "Fees current" : "Fees not current"}
+                  </span>
+                  {stewardFinance.owed_to_ark !== null && (
+                    <span className="muted" style={{ fontSize: 13.5 }}>
+                      {" "}Owes {fmtMoney(stewardFinance.owed_to_ark, "CRC")} · is owed {fmtMoney(stewardFinance.owed_to_steward ?? 0, "CRC")}
+                    </span>
+                  )}
+                </p>
+              )}
             </section>
           )}
           <ActivityPanel items={activity} currency={currency} now={now} />

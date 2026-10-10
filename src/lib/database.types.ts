@@ -1350,6 +1350,9 @@ export type Database = {
           entry_date: string
           file_name: string | null
           file_path: string | null
+          lot_id: string | null
+          period_end: string | null
+          period_start: string | null
           id: string
           kind: string
           method: string | null
@@ -1373,6 +1376,9 @@ export type Database = {
           entry_date?: string
           file_name?: string | null
           file_path?: string | null
+          lot_id?: string | null
+          period_end?: string | null
+          period_start?: string | null
           id?: string
           kind: string
           method?: string | null
@@ -1396,6 +1402,9 @@ export type Database = {
           entry_date?: string
           file_name?: string | null
           file_path?: string | null
+          lot_id?: string | null
+          period_end?: string | null
+          period_start?: string | null
           id?: string
           kind?: string
           method?: string | null
@@ -1406,6 +1415,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "finance_entries_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "lots"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "finance_entries_contact_id_fkey"
             columns: ["contact_id"]
@@ -4763,6 +4779,8 @@ export type Database = {
       }
       my_guests: { Args: never; Returns: Json };
       owns_lot: { Args: { p_lot: string }; Returns: boolean };
+      steward_fees_current: { Args: { p_contact: string }; Returns: boolean | null };
+      steward_finance: { Args: { p_contact: string }; Returns: Json };
       my_properties: {
         Args: never;
         Returns: {

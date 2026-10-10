@@ -63,6 +63,14 @@ export default async function ContactPage({
       </>
     );
   }
+  const props = (links.data ?? []).flatMap((l) => (l.lot ? [l.lot] : []));
+  const sf = props.length
+    ? ((await supabase.rpc("steward_finance", { p_contact: id })).data as {
+        fees_current: boolean;
+        owed_to_ark: number | null;
+        owed_to_steward: number | null;
+      } | null)
+    : null;
   // A Stripe link for the member's next term, at their rate and discount.
   const c = contact.data;
   const tier = (tiers.data ?? []).find((t) => t.key === c.tier);
@@ -104,7 +112,8 @@ export default async function ContactPage({
       activity={activity.data ?? []}
       memberships={memberships.data ?? []}
       sales={sales.data ?? []}
-      properties={(links.data ?? []).flatMap((l) => (l.lot ? [l.lot] : []))}
+      properties={props}
+      stewardFinance={sf}
       currency={org.data?.currency ?? "CRC"}
       now={new Date().toISOString()}
       role={staff.role}

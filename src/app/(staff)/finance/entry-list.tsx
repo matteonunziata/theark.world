@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useToast } from "@/components/toast";
 import { fmtDate } from "@/lib/dates";
@@ -66,6 +68,9 @@ export function EntryList({
   mode: Mode;
 }) {
   const [target, setTarget] = useState<DrawerTarget | null>(null);
+  const router = useRouter();
+  // Property invoices and payouts are edited on the property's Financials tab.
+  const open = (e: Entry) => (e.lot_id ? router.push(`/estate/${e.lot_id}?tab=financials`) : setTarget({ entry: e }));
   const [q, setQ] = useState("");
   const [kind, setKind] = useState("");
   const [line, setLine] = useState("");
@@ -161,7 +166,7 @@ export function EntryList({
             const l = lineOf(e.business_line_id);
             const late = e.status === "unpaid" ? overdueDays(e.due_date, today) : null;
             return (
-              <div className="row erow" key={e.id} role="button" tabIndex={0} onClick={() => setTarget({ entry: e })} onKeyDown={(ev) => ev.key === "Enter" && setTarget({ entry: e })}>
+              <div className="row erow" key={e.id} role="button" tabIndex={0} onClick={() => open(e)} onKeyDown={(ev) => ev.key === "Enter" && open(e)}>
                 <span>
                   {owed ? (e.due_date ? fmtDate(e.due_date) : "No due date") : fmtDate(e.entry_date)}
                   {late !== null && late > 0 && <span className="tag-sm out" style={{ display: "block", width: "fit-content" }}>{late} days late</span>}
@@ -174,6 +179,15 @@ export function EntryList({
                       .filter(Boolean)
                       .join(" · ")}
                   </span>
+                  {e.lot && (
+                    <Link
+                      href={`/estate/${e.lot.id}?tab=financials`}
+                      className="tag-sm"
+                      onClick={(ev) => ev.stopPropagation()}
+                    >
+                      {e.lot.name ?? `Lot ${e.lot.code}`}
+                    </Link>
+                  )}
                   {(e.doc_kind || e.file_path) && (
                     <span className="tag-sm">
                       {docName(e.doc_kind)}

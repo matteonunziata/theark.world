@@ -465,3 +465,12 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Property page tabs:** Overview (everything that was there), Financials and Schedule (placeholders), Maintenance log (the existing log moved here). Tab is `?tab=` on `/estate/[id]`.
 - **Club amenities** (`amenities`: name, category, active, position) are the facilities members and stewards use: Sauna, Cold plunge, Spa deck, Jungle gym, Cowork, Farm. They are separate from the per-home listing features (Pool, Wifi…) in `src/lib/estate.ts`. Everyone signed in can read them; admin and lead manage them. There's no screen to edit them yet.
 - **Still open from the spec:** the maintenance log stays on `lot_maintenance` for now; moving it to a live query over Operations tasks is Request 4.
+
+## Stewards and properties, step 2: property financials (2026-10-10)
+- **One ledger:** invoices to stewards and payouts to them are rows in `finance_entries` with `lot_id` set, so Finance Receivables/Payables, Transactions and the totals include them with no parallel numbers. Income = owed to The ARK (HOA fee, maintenance, other service); expense = owed to the steward (hospitality payout, with a period). Each row names the steward (`contact_id`).
+- **Colones only:** a row linked to a property must be in CRC (database check).
+- **Drafts:** a new `draft` status means not owed yet. Drafts are hidden from the Finance lists and totals and from the CRM activity feed, and don't count against fees. "Sent" is `unpaid`. "Overdue" is not stored: it is unpaid with a due date before today, worked out when shown, so there is no job to run.
+- **Where to edit:** property rows are created and edited on the property's Financials tab (admin only). Clicking one in Finance opens that tab; the Finance lists show a link to the property. Mark paid / Received works from either place.
+- **Fees current:** `steward_fees_current(contact)` is true when the steward has no unpaid property invoice past its due date. Other money they owe (dues, tickets) doesn't count. Request 3 uses it. The CRM profile shows "Fees current / not current" to estate staff, and the open amounts to admins only.
+- **Payouts (D5):** entered by hand, with the period they cover. Nothing is calculated from bookings yet.
+- **Not built:** auto-generated invoices or PDFs (you upload them), a steward-facing view of their own balance (Requests 3 and 5), and per-steward invoice splitting when a property has several stewards (each row is billed to one).

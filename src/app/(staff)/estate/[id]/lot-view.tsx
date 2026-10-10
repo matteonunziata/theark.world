@@ -25,6 +25,7 @@ import { money } from "@/lib/schedule";
 import { type Stay, StayDrawer } from "../../hospitality/stay-drawer";
 import { addSteward, removeSteward, saveHousehold, saveLot, saveMaintenance, setHospitality } from "../actions";
 import { LotFields } from "../lot-fields";
+import { LotFinancials } from "./lot-financials";
 
 const TABS = [
   ["overview", "Overview"],
@@ -49,10 +50,14 @@ export function LotView({
   lots,
   today,
   tab,
+  ledger,
+  isAdmin,
 }: {
   lot: Lot;
   stewards: { id: string; name: string; email: string | null; phone: string | null }[];
   tab: string;
+  ledger: Tables<"finance_entries">[];
+  isAdmin: boolean;
   household: Member[];
   logs: Log[];
   stays: Stay[];
@@ -166,13 +171,20 @@ export function LotView({
             )}
           </section>
 }
-      {(tab === "financials" || tab === "schedule") && (
+      {tab === "financials" &&
+        (isAdmin ? (
+          <LotFinancials lotId={lot.id} entries={ledger} stewards={stewards} primaryId={lot.owner_contact_id} today={today} />
+        ) : (
+          <section className="panel">
+            <h2>Financials</h2>
+            <p className="muted" style={{ margin: 0 }}>Only admins can see a property’s invoices and payouts.</p>
+          </section>
+        ))}
+      {tab === "schedule" && (
         <section className="panel">
-          <h2>{tab === "financials" ? "Financials" : "Schedule"}</h2>
+          <h2>Schedule</h2>
           <p className="muted" style={{ margin: 0 }}>
-            {tab === "financials"
-              ? "What the steward owes The ARK, and what The ARK owes them, will live here."
-              : "Hospitality availability and maintenance services for this property will live here."}
+            Hospitality availability and maintenance services for this property will live here.
           </p>
         </section>
       )}

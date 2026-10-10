@@ -165,7 +165,7 @@ function EntryForm({
 }
 
 /** Upload a receipt/invoice (photo or PDF) to the private finance bucket. */
-function FileField({ path: initialPath, name: initialName }: { path?: string | null; name?: string | null }) {
+export function FileField({ path: initialPath, name: initialName }: { path?: string | null; name?: string | null }) {
   const [path, setPath] = useState(initialPath ?? "");
   const [name, setName] = useState(initialName ?? "");
   const [busy, setBusy] = useState(false);

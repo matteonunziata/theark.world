@@ -3,6 +3,7 @@ import { fmtMoney } from "@/lib/shop";
 
 export type Entry = Tables<"finance_entries"> & {
   contact?: { id: string; name: string } | null;
+  lot?: { id: string; code: string; name: string | null } | null;
 };
 export type Line = Tables<"business_lines">;
 

@@ -17,9 +17,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function LotPage({ params, searchParams }: Props & { searchParams: Promise<{ tab?: string }> }) {
   const { id } = await params;
   const { tab } = await searchParams;
-  const { supabase } = await requireStaff("estate");
+  const { supabase, staff } = await requireStaff("estate");
   const today = todayIn();
-  const [{ data: lot }, { data: household }, { data: logs }, { data: stays }, { data: people }, { data: team }, { data: lots }, { data: links }] =
+  const [{ data: lot }, { data: household }, { data: logs }, { data: stays }, { data: people }, { data: team }, { data: lots }, { data: links }, { data: money }] =
     await Promise.all([
       supabase.from("lots").select("*").eq("id", id).maybeSingle(),
       supabase.from("lot_household").select("*").eq("lot_id", id).order("created_at"),
@@ -35,6 +35,10 @@ export default async function LotPage({ params, searchParams }: Props & { search
       supabase.from("team_members").select("id, name"),
       supabase.from("lots").select("id, code, name, estate_lot_id"),
       supabase.from("property_stewards").select("contact_id, created_at").eq("lot_id", id).order("created_at"),
+      // The ledger is admin only; for anyone else this is empty.
+      staff.role === "admin"
+        ? supabase.from("finance_entries").select("*").eq("lot_id", id).order("entry_date", { ascending: false })
+        : Promise.resolve({ data: [] }),
     ]);
   if (!lot) notFound();
   const stewards = (links ?? [])
@@ -54,6 +58,8 @@ export default async function LotPage({ params, searchParams }: Props & { search
         stays={stays ?? []}
         people={(people ?? []).map((p) => ({ id: p.id, name: p.name }))}
         lots={lots ?? []}
+        ledger={money ?? []}
+        isAdmin={staff.role === "admin"}
         today={today}
       />
     </div>
