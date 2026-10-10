@@ -60,7 +60,7 @@ export async function loadAnalytics(supabase: SupabaseClient<Database>, { p, d }
     }
   }
   const live = regs.filter(
-    (r) => ids.has(r.offering_id) && (r.checked_in_at || r.status === "confirmed" || !r.hold_until || new Date(r.hold_until) > new Date()),
+    (r) => ids.has(r.offering_id) && r.status !== "cancelled" && (r.checked_in_at || r.status === "confirmed" || !r.hold_until || new Date(r.hold_until) > new Date()),
   );
 
   const held = new Map<string, number>();

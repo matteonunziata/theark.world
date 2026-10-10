@@ -1,0 +1,35 @@
+/* Event page: price card, About, location, and the booking form's steppers. */
+.linkish { background: none; border: 0; padding: 0; font: inherit; color: var(--primary, #2f5d3f); text-decoration: underline; cursor: pointer; }
+.stepper { display: inline-flex; align-items: center; gap: 4px; flex: none; }
+.stepper button { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 18px; line-height: 1; cursor: pointer; }
+.stepper button:disabled { opacity: 0.4; cursor: default; }
+.stepper output { min-width: 28px; text-align: center; font-weight: 600; }
+.tkrow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.tkrow b { display: block; font-weight: 600; }
+.tkrow span { color: var(--muted); font-size: 13.5px; }
+.tkrow.off { opacity: 0.6; }
+
+.evp-head { margin-top: 6px; }
+.evp-head .ev-cover { max-height: 420px; border-radius: 18px; }
+.evp-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: 28px; align-items: start; margin-top: 22px; }
+.evp-main { display: grid; gap: 28px; min-width: 0; }
+.evp-main h2 { font-size: 22px; margin: 0 0 10px; }
+.evp-about { white-space: pre-line; margin: 0; max-width: 64ch; }
+.evp-about.clamp { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.evp-side { display: grid; gap: 14px; position: sticky; top: 16px; }
+.evp-price { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.evp-price b { display: block; font-size: 19px; }
+.evp-price span { color: var(--muted); font-size: 13.5px; }
+.evp-actions { display: flex; align-items: center; gap: 8px; }
+.evp-loc h3 { font-size: 18px; margin: 0 0 6px; }
+.evp-loc h3 a { color: inherit; }
+.evp-loc p { margin: 0 0 8px; color: var(--muted); }
+.evp-loc-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 18px; align-items: start; }
+.evp-map { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); aspect-ratio: 16 / 10; background: var(--surface-2, #eee); }
+.evp-map iframe { width: 100%; height: 100%; border: 0; display: block; }
+.evp-map-open { position: absolute; top: 8px; left: 8px; background: #fff; color: #1a5fb4; padding: 6px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); }
+@media (max-width: 820px) {
+  .evp-grid { grid-template-columns: minmax(0, 1fr); }
+  .evp-side { position: static; order: -1; }
+  .evp-loc-grid { grid-template-columns: minmax(0, 1fr); }
+}

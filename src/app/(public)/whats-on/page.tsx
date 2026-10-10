@@ -13,7 +13,7 @@ import "./events.css";
 export const metadata: Metadata = {
   title: { absolute: "Events & experiences — The ARK, Santa Teresa" },
   description:
-    "Events, experiences and expeditions at The ARK in Santa Teresa: markets, music, dinners, ceremonies, time on the land and the water. Open to the village, with members first in line.",
+    "Events, experiences and expeditions at The ARK in Santa Teresa: markets, music, dinners, ceremonies, time on the land and the water. Open to the village, with special prices for members.",
 };
 
 const MEMBERSHIP = "/ark-membership";
@@ -38,17 +38,22 @@ export default async function EventsPage() {
   const seen = new Set<string>();
   const next = upcoming.filter((s) => (seen.has(s.o.id) ? false : (seen.add(s.o.id), true)));
 
+  // Every upcoming date per event, so the date filters can find the right one.
+  const byOffering = new Map<string, typeof upcoming>();
+  for (const s of upcoming) byOffering.set(s.o.id, [...(byOffering.get(s.o.id) ?? []), s]);
   const rows: EventRow[] = next.map((s) => ({
-    key: `${s.o.id}|${s.date}`,
-    id: s.o.id,
-    date: s.date,
-    month: fmtDate(s.date, { month: "short" }),
-    day: fmtDate(s.date, { day: "numeric" }),
-    year: s.date.slice(0, 4),
+    key: s.o.id,
+    id: s.o.slug ?? s.o.id,
+    slots: (byOffering.get(s.o.id) ?? []).slice(0, 60).map((x) => ({
+      date: x.date,
+      month: fmtDate(x.date, { month: "short" }),
+      day: fmtDate(x.date, { day: "numeric" }),
+      year: x.date.slice(0, 4),
+      when: [fmtDate(x.date, { weekday: "long" }), timeRange(x.o)].filter(Boolean).join(" · "),
+    })),
     kind: kindName(s.o.kind),
-    when: [fmtDate(s.date, { weekday: "long" }), timeRange(s.o)].filter(Boolean).join(" · "),
     title: s.o.title,
-    desc: s.o.description ?? "",
+    desc: s.o.short_description ?? s.o.description ?? "",
     price: priceLabel(s.o, tickets ?? []),
     cta: s.o.access === "members" && !memberId ? "Members only" : "Details",
     cover: coverUrl(s.o.cover_path),
@@ -93,7 +98,7 @@ export default async function EventsPage() {
             <h1>Events &amp; experiences at The ARK</h1>
             <p className="hero-sub">
               Gather for a market, a dinner or a night of music. Or slow down with an experience: time on the land,
-              the water and with the people who live here. Open to the village, with members first in line.
+              the water and with the people who live here. Open to the village, with special prices for members.
             </p>
             <div className="btn-row">
               <a className="btn btn-accent" href="#upcoming">See what’s coming up</a>
@@ -112,7 +117,7 @@ export default async function EventsPage() {
               <div className="featured-body">
                 <span className="tag tag-dark">Next up · {kindName(featured.o.kind)}</span>
                 <h2>{featured.o.title}</h2>
-                {featured.o.description && <p>{featured.o.description}</p>}
+                {(featured.o.short_description ?? featured.o.description) && <p>{featured.o.short_description ?? featured.o.description}</p>}
                 <dl className="facts">
                   <dt>When</dt>
                   <dd>
@@ -125,7 +130,7 @@ export default async function EventsPage() {
                   <dd>{priceLabel(featured.o, tickets ?? [])}</dd>
                 </dl>
                 <div className="btn-row" style={{ marginTop: 8 }}>
-                  <Link className="btn btn-primary" href={`/e/${featured.o.id}/${featured.date}`}>
+                  <Link className="btn btn-primary" href={`/e/${featured.o.slug ?? featured.o.id}/${featured.date}`}>
                     {featured.o.access === "members" && !memberId ? "See details" : featured.o.kind === "event" ? "Get tickets" : "Reserve a place"}
                   </Link>
                 </div>
@@ -146,15 +151,15 @@ export default async function EventsPage() {
               </p>
             </div>
           </div>
-          <EventsList events={rows} />
+          <EventsList events={rows} today={today} />
         </div>
       </section>
 
       <section className="band-section">
         <div className="wrap members-band dark">
           <div>
-            <h3>Members are first in.</h3>
-            <p>Early access to every event and experience, and 10% off tickets, 20% on Annual.</p>
+            <h3>Members enjoy special prices.</h3>
+            <p>Enjoy exclusive member pricing for events and experiences.</p>
           </div>
           <div className="btn-row">
             <Link className="btn btn-accent" href={`${MEMBERSHIP}/apply`}>Apply for membership</Link>

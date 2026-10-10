@@ -38,7 +38,7 @@ import {
 import type { StripePrice } from "@/lib/stripe";
 import type { EventsData } from "./data";
 
-const LOCATIONS = ["The Shala", "Spa deck", "Cowork lounge", "Courts", "Gym", "The House", "Farm"];
+const LOCATIONS = ["The Ark", "The Shala", "La Cocineta", "Spa deck", "Cowork lounge", "Courts", "Gym", "The House", "Farm"];
 
 type Reg = EventsData["registrations"][number];
 type Person = EventsData["team"][number];
@@ -55,6 +55,8 @@ export function EventsView({
   registrations,
   team,
   cities,
+  scheduleItems,
+  images,
   stripePrices,
 }: EventsData & {
   mode: "week" | "all";
@@ -243,6 +245,8 @@ export function EventsView({
         team={team}
         cities={cities}
         tickets={tickets.filter((t) => t.offering_id === offering.item?.id)}
+        scheduleItems={scheduleItems.filter((x) => x.offering_id === offering.item?.id)}
+        images={images.filter((x) => x.offering_id === offering.item?.id)}
         stripePrices={stripePrices}
         canEdit={offering.item ? canManage(offering.item) : canCreate}
         canDelete={canCreate}
@@ -284,6 +288,9 @@ const EMPTY: Record<Kind, string> = {
 };
 const kindsLabel = (kinds: Kind[]) => kinds.map((k) => `${kindName(k).toLowerCase()}s`).join(" or ");
 type City = EventsData["cities"][number];
+type ScheduleItem = EventsData["scheduleItems"][number];
+type EventImage = EventsData["images"][number];
+type DraftItem = { key: number; day: string; start: string; end: string; title: string; location: string; description: string };
 
 function OfferingDrawer({
   open,
@@ -292,6 +299,8 @@ function OfferingDrawer({
   team,
   cities,
   tickets,
+  scheduleItems,
+  images,
   stripePrices,
   canEdit,
   canDelete,
@@ -304,6 +313,8 @@ function OfferingDrawer({
   team: Person[];
   cities: City[];
   tickets: TicketType[];
+  scheduleItems: ScheduleItem[];
+  images: EventImage[];
   stripePrices: StripePrice[];
   canEdit: boolean;
   canDelete: boolean;
@@ -318,6 +329,19 @@ function OfferingDrawer({
   const [rows, setRows] = useState<DraftTicket[]>(tickets.map((t, i) => ({ ...t, key: i })));
   const [nextKey, setNextKey] = useState(rows.length);
   const [cover, setCover] = useState(o?.cover_path ?? "");
+  const [gallery, setGallery] = useState<string[]>(images.map((x) => x.path));
+  const [items, setItems] = useState<DraftItem[]>(
+    scheduleItems.map((x, i) => ({
+      key: i,
+      day: x.day,
+      start: x.start_time.slice(0, 5),
+      end: x.end_time?.slice(0, 5) ?? "",
+      title: x.title,
+      location: x.location ?? "",
+      description: x.description ?? "",
+    })),
+  );
+  const [nextItem, setNextItem] = useState(items.length);
   const [uploading, setUploading] = useState(false);
   const toast = useToast();
   const days = o?.days ?? [dow(today)];
@@ -339,6 +363,35 @@ function OfferingDrawer({
     }
     setUploading(false);
   }
+
+  async function uploadGallery(files: FileList) {
+    setUploading(true);
+    try {
+      const added: string[] = [];
+      for (const file of Array.from(files)) {
+        const blob = await resizeImage(file, 1600);
+        const path = `${crypto.randomUUID()}.jpg`;
+        const { error } = await createClient()
+          .storage.from("covers")
+          .upload(path, blob, { contentType: "image/jpeg" });
+        if (error) throw error;
+        added.push(path);
+      }
+      setGallery((g) => [...g, ...added]);
+    } catch {
+      toast("Couldn’t upload that photo. Try a JPG or PNG under 10 MB.");
+    }
+    setUploading(false);
+  }
+
+  const moveImage = (i: number, by: number) =>
+    setGallery((g) => {
+      const next = [...g];
+      const j = i + by;
+      if (j < 0 || j >= next.length) return g;
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
 
   return (
     <Drawer
@@ -386,9 +439,20 @@ function OfferingDrawer({
           </div>
         </div>
         <div className="fld">
-          <label htmlFor="e-desc">Description</label>
-          <textarea id="e-desc" name="description" defaultValue={o?.description ?? ""} placeholder="What to expect, what to bring" />
+          <label htmlFor="e-short">Short description</label>
+          <input id="e-short" name="short_description" maxLength={160} defaultValue={o?.short_description ?? ""} placeholder="One line for the event cards" />
         </div>
+        <div className="fld">
+          <label htmlFor="e-desc">Long description</label>
+          <textarea id="e-desc" name="description" rows={6} defaultValue={o?.description ?? ""} placeholder="What to expect, what to bring" />
+        </div>
+        {curKind !== "class" && (
+          <div className="fld">
+            <label htmlFor="e-slug">Link</label>
+            <input id="e-slug" name="slug" defaultValue={o?.slug ?? ""} placeholder="e.g. farm-to-table-dinner" pattern="[a-z0-9]+(-[a-z0-9]+)*" />
+            <span className="hint">The public link will be /e/{`{link}`}. Lowercase letters, numbers and dashes. Leave empty to use the standard link.</span>
+          </div>
+        )}
         <div className="grid2">
           <div className="fld">
             <label htmlFor="e-fac">Facilitator</label>
@@ -421,6 +485,13 @@ function OfferingDrawer({
           </div>
         </div>
 
+        {curKind !== "class" && (
+          <div className="fld">
+            <label htmlFor="e-addr">Address</label>
+            <input id="e-addr" name="location_address" defaultValue={o?.location_address ?? ""} placeholder="e.g. Calle Bella Vista, Santa Teresa, Puntarenas" />
+            <span className="hint">Used for the map and “Get directions” on the event page. Leave empty to search Maps for the location name.</span>
+          </div>
+        )}
         {cities.length > 0 && (
           <div className="fld">
             <label htmlFor="e-city">City</label>
@@ -541,6 +612,23 @@ function OfferingDrawer({
           </div>
         </div>
 
+        {curKind !== "class" && (
+          <>
+            <div className="subhead">Booking closes</div>
+            <div className="grid2">
+              <div className="fld">
+                <label htmlFor="e-bcd">Date</label>
+                <input id="e-bcd" name="closes_date" type="date" defaultValue={o?.booking_closes_at?.slice(0, 10) ?? ""} />
+              </div>
+              <div className="fld">
+                <label htmlFor="e-bct">Time</label>
+                <input id="e-bct" name="closes_time" type="time" defaultValue={o?.booking_closes_at?.slice(11, 16) ?? ""} />
+              </div>
+            </div>
+            <span className="hint">Leave both empty for no cut-off. After this, online booking shows “Registration closed”. Staff can still add people.</span>
+          </>
+        )}
+
         <div className="subhead">Booking cutoff</div>
         <div className="grid2">
           <div className="fld">
@@ -604,8 +692,9 @@ function OfferingDrawer({
           </div>
         </div>
         <p className="subhint">
-          Add ticket types for paid or guest entry. Leave empty if it’s free or
-          included in membership. “Pay to confirm” holds the spot until it’s paid (meals);
+          Add ticket types for paid or guest entry, such as Early Bird, General or VIP. Set dates for when each
+          is on sale, or have one open when another sells out. Mark extras like lunch as optional add-ons.
+          Leave empty if it’s free or included in membership. “Pay to confirm” holds the spot until it’s paid (meals);
           a Stripe product sets the price.
         </p>
         {rows.map((t) => (
@@ -629,6 +718,29 @@ function OfferingDrawer({
                   {sp.name}, {money(sp.amount, sp.currency)}
                 </option>
               ))}
+            </select>
+            <select name="t_kind" aria-label="Ticket role" defaultValue={t.kind ?? "main"}>
+              <option value="main">Main admission</option>
+              <option value="addon">Optional add-on</option>
+            </select>
+            <input name="t_max" type="number" min={1} placeholder="Max per order (10)" defaultValue={t.max_per_order ?? ""} aria-label="Most per order" />
+            <label className="hint" style={{ display: "grid", gap: 2 }}>
+              On sale from
+              <input name="t_from" type="datetime-local" defaultValue={t.sales_start?.slice(0, 16) ?? ""} />
+            </label>
+            <label className="hint" style={{ display: "grid", gap: 2 }}>
+              On sale until
+              <input name="t_to" type="datetime-local" defaultValue={t.sales_end?.slice(0, 16) ?? ""} />
+            </label>
+            <select name="t_after" aria-label="Opens when another sells out" defaultValue={t.unlocks_after_ticket_id ?? ""}>
+              <option value="">On sale as soon as the dates allow</option>
+              {rows
+                .filter((x) => x.id && x.id !== t.id)
+                .map((x) => (
+                  <option key={x.id} value={x.id}>
+                    Opens when “{x.name || "ticket"}” sells out
+                  </option>
+                ))}
             </select>
             <div className="full">
               <input name="t_link" type="url" placeholder="Outside payment link, only used while Stripe is off" defaultValue={t.payment_link ?? ""} aria-label="Payment link" />
@@ -677,10 +789,78 @@ function OfferingDrawer({
           </div>
         </div>
 
+        {curKind !== "class" && (
+          <>
+            <div className="subhead">Schedule</div>
+            <p className="subhint">Add the parts of the event: sessions, meals, performances. They show in time order on the event page.</p>
+            {items.map((it) => (
+              <div className="trow" key={it.key}>
+                <input name="s_day" type="date" aria-label="Day" value={it.day} onChange={(e) => setItems(items.map((x) => (x.key === it.key ? { ...x, day: e.target.value } : x)))} />
+                <input name="s_start" type="time" aria-label="Starts" value={it.start} onChange={(e) => setItems(items.map((x) => (x.key === it.key ? { ...x, start: e.target.value } : x)))} />
+                <input name="s_end" type="time" aria-label="Ends" value={it.end} onChange={(e) => setItems(items.map((x) => (x.key === it.key ? { ...x, end: e.target.value } : x)))} />
+                <input name="s_title" placeholder="Session name" aria-label="Session name" value={it.title} onChange={(e) => setItems(items.map((x) => (x.key === it.key ? { ...x, title: e.target.value } : x)))} />
+                <input name="s_loc" list="locs" placeholder="Location" aria-label="Location" value={it.location} onChange={(e) => setItems(items.map((x) => (x.key === it.key ? { ...x, location: e.target.value } : x)))} />
+                <div className="full">
+                  <input name="s_desc" placeholder="Short description (optional)" aria-label="Short description" value={it.description} onChange={(e) => setItems(items.map((x) => (x.key === it.key ? { ...x, description: e.target.value } : x)))} />
+                  <button type="button" className="btn ghost" onClick={() => setItems(items.filter((x) => x.key !== it.key))}>
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+            {canEdit && (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  const last = items[items.length - 1];
+                  setItems([...items, { key: nextItem, day: last?.day ?? startDate, start: last?.end || last?.start || "", end: "", title: "", location: "", description: "" }]);
+                  setNextItem(nextItem + 1);
+                }}
+              >
+                Add schedule item
+              </button>
+            )}
+          </>
+        )}
+
+        {curKind !== "class" && (
+          <>
+            <div className="subhead">More photos</div>
+            <p className="subhint">Menus, programs, venue and promo images. They show on the event page after the cover.</p>
+            {gallery.map((path, i) => (
+              <div className="cover-ed" key={path}>
+                <input type="hidden" name="gallery_path" value={path} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={coverUrl(path) ?? ""} alt="" />
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button type="button" className="btn ghost" disabled={i === 0} onClick={() => moveImage(i, -1)}>Move up</button>
+                  <button type="button" className="btn ghost" disabled={i === gallery.length - 1} onClick={() => moveImage(i, 1)}>Move down</button>
+                  <button type="button" className="btn ghost" onClick={() => setGallery(gallery.filter((x) => x !== path))}>Remove</button>
+                </div>
+              </div>
+            ))}
+            {canEdit && (
+              <label className="btn" style={{ cursor: "pointer", display: "inline-block" }}>
+                {uploading ? "Uploading…" : "Add photos"}
+                <input type="file" accept="image/*" multiple hidden onChange={(e) => e.target.files?.length && uploadGallery(e.target.files)} />
+              </label>
+            )}
+          </>
+        )}
+
         {o && (
           <>
+            {o.kind !== "class" && (
+              <>
+                <div className="subhead">Registrations</div>
+                <p style={{ margin: "0 0 8px", fontSize: 13.5 }}>
+                  <Link href={`/events/registrations/${o.id}`}>Registrations, sales and attendees</Link>
+                </p>
+              </>
+            )}
             <div className="subhead">Share</div>
-            <ShareLink path={`/e/${o.id}`} />
+            <ShareLink path={`/e/${o.slug ?? o.id}`} />
             {o.kind === "class" && (
               <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--muted)" }}>
                 <a href={`/qr/${o.id}`} target="_blank" rel="noopener noreferrer">

@@ -11,9 +11,9 @@ type Props = PageProps<"/e/[id]/[[...date]]">;
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const { supabase } = await getViewer();
-  const { data } = await supabase.from("offerings").select("title, description").eq("id", id).maybeSingle();
+  const { data } = await supabase.from("offerings").select("title, description, short_description").eq(/^[0-9a-f]{8}-/i.test(id) ? "id" : "slug", id).maybeSingle();
   return data
-    ? { title: data.title, description: data.description ?? undefined }
+    ? { title: data.title, description: data.short_description ?? data.description ?? undefined }
     : { title: "Event" };
 }
 

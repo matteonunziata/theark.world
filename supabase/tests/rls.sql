@@ -275,6 +275,162 @@ select pg_temp.expect(
   'member sees only their own booking');
 reset role;
 
+-- Event setup: schedule, gallery, booking cut-off ---------------------------------------
+
+insert into public.event_schedule_items (offering_id, day, start_time, title)
+select id, public.org_today() + 3, '10:00', 'Opening' from public.offerings where title = 'Open event';
+insert into public.event_images (offering_id, path)
+select id, 'test.jpg' from public.offerings where title = 'Open event';
+
+select pg_temp.act_as(null);
+select pg_temp.expect((select count(*) from public.event_schedule_items) = 1, 'anon sees the schedule of a published event');
+select pg_temp.expect((select count(*) from public.event_images) = 1, 'anon sees the gallery of a published event');
+do $$ begin
+  begin
+    insert into public.event_schedule_items (offering_id, day, start_time, title)
+    select id, public.org_today(), '09:00', 'Sneaky' from public.offerings where title = 'Open event';
+    raise exception 'RLS test failed: anon added a schedule item';
+  exception when insufficient_privilege or check_violation then null; end;
+end $$;
+reset role;
+
+update public.offerings set booking_closes_at = public.org_now() - interval '1 hour' where title = 'Open event';
+do $$ begin
+  begin
+    insert into public.registrations (offering_id, session_date, name, email, source)
+    select id, public.org_today() + 5, 'Late', 'late@example.com', 'public' from public.offerings where title = 'Open event';
+    raise exception 'RLS test failed: booked online after the cut-off';
+  exception when raise_exception then
+    if sqlerrm like 'RLS test failed%' then raise; end if;
+    if sqlerrm <> 'Registration closed.' then raise; end if;
+  end;
+end $$;
+insert into public.registrations (offering_id, session_date, name, email, source)
+select id, public.org_today() + 5, 'Staff add', 'staffadd@example.com', 'staff' from public.offerings where title = 'Open event';
+delete from public.registrations where email = 'staffadd@example.com';
+update public.offerings set booking_closes_at = null where title = 'Open event';
+delete from public.event_schedule_items; delete from public.event_images;
+
+-- Tickets: sales windows, release order, add-ons, seats --------------------------------------
+
+insert into public.offerings (kind, title, start_date, status, access, repeat, capacity)
+values ('event', 'Ticket logic', public.org_today() + 3, 'published', 'everyone', 'none', 5);
+insert into public.ticket_types (offering_id, name, price, qty, kind, position)
+select id, 'Early Bird', 10000, 2, 'main', 0 from public.offerings where title = 'Ticket logic';
+insert into public.ticket_types (offering_id, name, price, kind, position, unlocks_after_ticket_id)
+select o.id, 'General', 15000, 'main', 1, t.id
+from public.offerings o join public.ticket_types t on t.offering_id = o.id and t.name = 'Early Bird'
+where o.title = 'Ticket logic';
+insert into public.ticket_types (offering_id, name, price, kind, position, max_per_order)
+select id, 'Lunch', 5000, 'addon', 2, 3 from public.offerings where title = 'Ticket logic';
+insert into public.ticket_types (offering_id, name, price, kind, position, sales_start)
+select id, 'Later', 1, 'main', 3, public.org_now() + interval '1 day' from public.offerings where title = 'Ticket logic';
+
+create or replace function pg_temp.try_book(who text, items jsonb) returns text
+language plpgsql as $$
+begin
+  perform public.book_tickets(
+    (select id from public.offerings where title = 'Ticket logic'),
+    public.org_today() + 3, who, who || '@example.com', null, items);
+  return 'ok';
+exception when raise_exception then return sqlerrm;
+end $$;
+create or replace function pg_temp.item(nm text, q int) returns jsonb
+language sql as $$
+  select jsonb_build_object('ticket_type_id', (select id from public.ticket_types where name = nm
+    and offering_id = (select id from public.offerings where title = 'Ticket logic')), 'qty', q) $$;
+
+select pg_temp.act_as(null);
+select pg_temp.expect(pg_temp.try_book('a1', jsonb_build_array(pg_temp.item('General', 1))) = 'General isn''t available yet.',
+  'a ticket that opens when another sells out stays shut');
+select pg_temp.expect(pg_temp.try_book('a2', jsonb_build_array(pg_temp.item('Lunch', 1))) like 'Choose a main ticket first%',
+  'an add-on cannot be booked alone');
+select pg_temp.expect(pg_temp.try_book('a3', jsonb_build_array(pg_temp.item('Later', 1))) = 'Later isn''t on sale yet.',
+  'a ticket before its sales start cannot be booked');
+select pg_temp.expect(pg_temp.try_book('a4', jsonb_build_array(pg_temp.item('Lunch', 4), pg_temp.item('Early Bird', 1))) like 'You can book up to 3%',
+  'the per-order limit holds');
+select pg_temp.expect(pg_temp.try_book('b1', jsonb_build_array(pg_temp.item('Early Bird', 2), pg_temp.item('Lunch', 2))) = 'ok',
+  'two main tickets and an add-on book together');
+select pg_temp.expect(pg_temp.try_book('b2', jsonb_build_array(pg_temp.item('Early Bird', 1))) = 'Early Bird just sold out.',
+  'a sold-out ticket cannot be booked');
+select pg_temp.expect(pg_temp.try_book('b3', jsonb_build_array(pg_temp.item('General', 3))) = 'ok',
+  'the next ticket opens once the first sells out');
+select pg_temp.expect(pg_temp.try_book('b4', jsonb_build_array(pg_temp.item('General', 1))) = 'Sorry, this session just filled up.',
+  'seats, not bookings, count against capacity');
+reset role;
+select pg_temp.expect((select sum(taken) from public.session_counts(
+  (select id from public.offerings where title = 'Ticket logic'), public.org_today(), public.org_today() + 5)) = 5,
+  'add-ons take no seat in the counts');
+delete from public.offerings where title = 'Ticket logic';
+
+-- Registrations: add by hand, edit, cancel ---------------------------------------------------
+
+insert into public.offerings (kind, title, start_date, status, access, repeat, capacity)
+values ('event', 'Registration admin', public.org_today() + 3, 'published', 'everyone', 'none', 3);
+insert into public.ticket_types (offering_id, name, price, kind, position)
+select id, 'GA', 10000, 'main', 0 from public.offerings where title = 'Registration admin';
+
+select pg_temp.act_as(pg_temp.id('outsider'));
+do $$
+begin
+  begin
+    perform public.staff_save_registration(
+      (select id from public.offerings where title = 'Registration admin'), null,
+      public.org_today() + 3, 'Eve', null, null, '[]'::jsonb, false);
+    raise exception 'RLS test failed: someone outside the team added a booking';
+  exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+
+select pg_temp.act_as(pg_temp.id('admin'));
+create temp table _reg (id uuid, token text) on commit drop;
+grant all on _reg to authenticated;
+insert into _reg
+select s.registration_id, s.qr_token from public.staff_save_registration(
+  (select id from public.offerings where title = 'Registration admin'), null,
+  public.org_today() + 3, 'Ana', 'ana@example.com', '+506 8888 0000',
+  jsonb_build_array(jsonb_build_object('ticket_type_id',
+    (select id from public.ticket_types where name = 'GA' and offering_id = (select id from public.offerings where title = 'Registration admin')), 'qty', 2)),
+  true) s;
+select pg_temp.expect((select seats from public.registrations where id = (select id from _reg)) = 2,
+  'staff add books the seats');
+do $$
+begin
+  begin
+    perform public.staff_save_registration(
+      (select id from public.offerings where title = 'Registration admin'), null,
+      public.org_today() + 3, 'Bo', null, null,
+      jsonb_build_array(jsonb_build_object('ticket_type_id',
+        (select id from public.ticket_types where name = 'GA' and offering_id = (select id from public.offerings where title = 'Registration admin')), 'qty', 2)),
+      false);
+    raise exception 'RLS test failed: staff add went past capacity without an override';
+  exception when raise_exception then
+    if sqlerrm like 'RLS test failed%' then raise; end if;
+  end;
+end $$;
+select public.staff_set_registration_cancelled((select id from _reg), true);
+select pg_temp.expect((select status from public.registrations where id = (select id from _reg)) = 'cancelled',
+  'staff can cancel a booking');
+select pg_temp.expect(not public.registration_live((select r from public.registrations r where r.id = (select id from _reg))),
+  'a cancelled booking is not live');
+select pg_temp.expect((select coalesce(sum(taken), 0) from public.session_counts(
+  (select id from public.offerings where title = 'Registration admin'), public.org_today(), public.org_today() + 5)) = 0,
+  'a cancelled booking frees its seats');
+do $$
+begin
+  begin
+    perform public.check_in((select token from _reg));
+    raise exception 'RLS test failed: a cancelled ticket was checked in';
+  exception when raise_exception then
+    if sqlerrm like 'RLS test failed%' then raise; end if;
+  end;
+end $$;
+select public.staff_set_registration_cancelled((select id from _reg), false);
+select pg_temp.expect((select status from public.registrations where id = (select id from _reg)) = 'confirmed',
+  'staff can restore a cancelled booking');
+reset role;
+delete from public.offerings where title = 'Registration admin';
+
 -- Check-in ---------------------------------------------------------------------------
 
 update public.offerings set start_date = public.org_today()

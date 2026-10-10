@@ -2455,6 +2455,7 @@ export type Database = {
           city_id: string | null
           cover_path: string | null
           booking_cutoff_minutes: number | null
+          booking_closes_at: string | null
           created_at: string
           created_by: string | null
           days: number[]
@@ -2466,9 +2467,12 @@ export type Database = {
           id: string
           kind: string
           location: string | null
+          location_address: string | null
           facilitator_pay_tier: number
           repeat: string
           start_date: string
+          short_description: string | null
+          slug: string | null
           start_time: string | null
           month_mode: string
           status: string
@@ -2482,6 +2486,7 @@ export type Database = {
           city_id?: string | null
           cover_path?: string | null
           booking_cutoff_minutes?: number | null
+          booking_closes_at?: string | null
           created_at?: string
           created_by?: string | null
           days?: number[]
@@ -2493,9 +2498,12 @@ export type Database = {
           id?: string
           kind: string
           location?: string | null
+          location_address?: string | null
           facilitator_pay_tier?: number
           repeat?: string
           start_date: string
+          short_description?: string | null
+          slug?: string | null
           start_time?: string | null
           month_mode?: string
           status?: string
@@ -2509,6 +2517,7 @@ export type Database = {
           city_id?: string | null
           cover_path?: string | null
           booking_cutoff_minutes?: number | null
+          booking_closes_at?: string | null
           created_at?: string
           created_by?: string | null
           days?: number[]
@@ -2520,9 +2529,12 @@ export type Database = {
           id?: string
           kind?: string
           location?: string | null
+          location_address?: string | null
           facilitator_pay_tier?: number
           repeat?: string
           start_date?: string
+          short_description?: string | null
+          slug?: string | null
           start_time?: string | null
           month_mode?: string
           status?: string
@@ -2961,6 +2973,48 @@ export type Database = {
         }
         Relationships: []
       }
+      registration_items: {
+        Row: {
+          currency: string
+          id: string
+          qty: number
+          registration_id: string
+          ticket_type_id: string | null
+          unit_price: number
+        }
+        Insert: {
+          currency?: string
+          id?: string
+          qty: number
+          registration_id: string
+          ticket_type_id?: string | null
+          unit_price?: number
+        }
+        Update: {
+          currency?: string
+          id?: string
+          qty?: number
+          registration_id?: string
+          ticket_type_id?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_items_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_items_ticket_type_id_fkey"
+            columns: ["ticket_type_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       registrations: {
         Row: {
           checked_in_at: string | null
@@ -2980,6 +3034,9 @@ export type Database = {
           hold_until: string | null
           ticket_type_id: string | null
           user_id: string | null
+          phone: string | null
+          seats: number
+          cancelled_at: string | null
         }
         Insert: {
           checked_in_at?: string | null
@@ -2999,6 +3056,9 @@ export type Database = {
           hold_until?: string | null
           ticket_type_id?: string | null
           user_id?: string | null
+          phone?: string | null
+          seats?: number
+          cancelled_at?: string | null
         }
         Update: {
           checked_in_at?: string | null
@@ -3018,6 +3078,9 @@ export type Database = {
           hold_until?: string | null
           ticket_type_id?: string | null
           user_id?: string | null
+          phone?: string | null
+          seats?: number
+          cancelled_at?: string | null
         }
         Relationships: [
           {
@@ -3873,6 +3936,79 @@ export type Database = {
           },
         ]
       }
+      event_images: {
+        Row: {
+          id: string
+          offering_id: string
+          path: string
+          position: number
+        }
+        Insert: {
+          id?: string
+          offering_id: string
+          path: string
+          position?: number
+        }
+        Update: {
+          id?: string
+          offering_id?: string
+          path?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_images_offering_id_fkey"
+            columns: ["offering_id"]
+            isOneToOne: false
+            referencedRelation: "offerings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_schedule_items: {
+        Row: {
+          day: string
+          description: string | null
+          end_time: string | null
+          id: string
+          location: string | null
+          offering_id: string
+          position: number
+          start_time: string
+          title: string
+        }
+        Insert: {
+          day: string
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          offering_id: string
+          position?: number
+          start_time: string
+          title: string
+        }
+        Update: {
+          day?: string
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          offering_id?: string
+          position?: number
+          start_time?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_schedule_items_offering_id_fkey"
+            columns: ["offering_id"]
+            isOneToOne: false
+            referencedRelation: "offerings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_types: {
         Row: {
           currency: string
@@ -3885,6 +4021,11 @@ export type Database = {
           position: number
           price: number
           qty: number | null
+          kind: string
+          max_per_order: number
+          sales_end: string | null
+          sales_start: string | null
+          unlocks_after_ticket_id: string | null
         }
         Insert: {
           currency?: string
@@ -3897,6 +4038,11 @@ export type Database = {
           position?: number
           price?: number
           qty?: number | null
+          kind?: string
+          max_per_order?: number
+          sales_end?: string | null
+          sales_start?: string | null
+          unlocks_after_ticket_id?: string | null
         }
         Update: {
           currency?: string
@@ -3909,6 +4055,11 @@ export type Database = {
           position?: number
           price?: number
           qty?: number | null
+          kind?: string
+          max_per_order?: number
+          sales_end?: string | null
+          sales_start?: string | null
+          unlocks_after_ticket_id?: string | null
         }
         Relationships: [
           {
@@ -4760,6 +4911,41 @@ export type Database = {
       refresh_membership_caches: { Args: never; Returns: number };
       has_access_today: { Args: { cid: string }; Returns: boolean };
       is_portal_member: { Args: { cid: string }; Returns: boolean };
+      staff_save_registration: {
+        Args: {
+          p_email: string;
+          p_items: Json;
+          p_name: string;
+          p_offering_id: string;
+          p_override?: boolean;
+          p_paid: boolean;
+          p_phone: string;
+          p_registration_id?: string;
+          p_session_date: string;
+        };
+        Returns: { qr_token: string; registration_id: string }[];
+      };
+      staff_set_registration_cancelled: {
+        Args: { p_cancelled: boolean; p_registration_id: string };
+        Returns: undefined;
+      };
+      book_tickets: {
+        Args: {
+          p_email: string;
+          p_items?: Json;
+          p_name: string;
+          p_offering_id: string;
+          p_phone?: string;
+          p_session_date: string;
+        };
+        Returns: { qr_token: string; registration_id: string }[];
+      };
+      ticket_availability: {
+        Args: { p_date: string; p_offering_id: string };
+        Returns: { state: string; taken: number; ticket_type_id: string }[];
+      };
+      ticket_state: { Args: { p_date: string; p_ticket: string }; Returns: string };
+      ticket_taken: { Args: { p_date: string; p_ticket: string }; Returns: number };
       book_session: {
         Args: {
           p_email: string;

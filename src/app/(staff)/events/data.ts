@@ -5,7 +5,7 @@ import { requireStaff } from "@/lib/auth";
 export async function loadEvents(from: string, to: string) {
   const v = await requireStaff("events");
   const { supabase } = v;
-  const [offerings, tickets, cancels, regs, team, org, cities] = await Promise.all([
+  const [offerings, tickets, cancels, regs, team, org, cities, scheduleItems, images] = await Promise.all([
     supabase.from("offerings").select("*").order("title"),
     supabase.from("ticket_types").select("*").order("position"),
     supabase
@@ -18,6 +18,7 @@ export async function loadEvents(from: string, to: string) {
       .select("id, offering_id, session_date, name, email, ticket_type_id, paid, source, qr_token, checked_in_at, status, hold_until")
       .gte("session_date", from)
       .lte("session_date", to)
+      .neq("status", "cancelled")
       .order("created_at"),
     supabase
       .from("team_members")
@@ -26,6 +27,8 @@ export async function loadEvents(from: string, to: string) {
       .order("name"),
     supabase.rpc("public_org").maybeSingle(),
     supabase.from("cities").select("id, name, is_home").order("position"),
+    supabase.from("event_schedule_items").select("*").order("day").order("start_time"),
+    supabase.from("event_images").select("*").order("position"),
   ]);
   return {
     staff: v.staff,
@@ -36,6 +39,8 @@ export async function loadEvents(from: string, to: string) {
     team: team.data ?? [],
     orgName: org.data?.name ?? "The ARK",
     cities: cities.data ?? [],
+    scheduleItems: scheduleItems.data ?? [],
+    images: images.data ?? [],
   };
 }
 

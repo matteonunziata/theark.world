@@ -41,6 +41,7 @@ export async function GET(req: Request) {
       (r) =>
         r.offering_id === s.o.id &&
         r.session_date === s.date &&
+        r.status !== "cancelled" &&
         (r.checked_in_at || r.status === "confirmed" || !r.hold_until || new Date(r.hold_until) > new Date()),
     );
     return {

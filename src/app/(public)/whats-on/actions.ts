@@ -21,8 +21,14 @@ export async function hostEnquiry(_prev: ActionResult, data: FormData): Promise<
     ["Guests", esc(field(data, "guests") ?? "Not said")],
     ["Dates", esc(field(data, "dates") ?? "Not said")],
     ["Spaces", esc(field(data, "spaces") ?? "")],
+    ["Phone / WhatsApp", esc(field(data, "phone") ?? "Not said")],
+    ["Instagram / Facebook", esc(field(data, "social") ?? "Not said")],
+    ["Duration", esc(field(data, "duration") ?? "Not said")],
+    ["Ticketed or free", esc(field(data, "ticketing") ?? "Not sure yet")],
   ];
+  const short = field(data, "short");
   const details = field(data, "details");
+  const extra = field(data, "extra");
 
   const admin = createAdminClient();
   const { data: org } = admin ? await admin.from("org_settings").select("email").maybeSingle() : { data: null };
@@ -36,10 +42,12 @@ export async function hostEnquiry(_prev: ActionResult, data: FormData): Promise<
       heading: name,
       body: `<p style="margin:0 0 14px">${esc(name)} (${esc(email)}) would like to host an event.</p>
 ${detailRows(rows)}
-${details ? `<p style="margin:14px 0 0">“${esc(details)}”</p>` : ""}`,
+${short ? `<p style="margin:14px 0 0"><b>${esc(short)}</b></p>` : ""}
+${details ? `<p style="margin:14px 0 0">“${esc(details)}”</p>` : ""}
+${extra ? `<p style="margin:14px 0 0">Also: ${esc(extra)}</p>` : ""}`,
       cta: { label: "Reply", href: `mailto:${email}` },
     },
-    text: `${name} (${email}) would like to host an event.\n${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}\n${details ?? ""}\n${await siteUrl()}`,
+    text: `${name} (${email}) would like to host an event.\n${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}\n${short ?? ""}\n${details ?? ""}\n${extra ?? ""}\n${await siteUrl()}`,
   });
   return ok("Thank you. We’ll be in touch soon.");
 }

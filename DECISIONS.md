@@ -406,3 +406,48 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **First sync resets the 44 counted products** to Shopify's quantities. This also undoes the dip the history backfill caused (it took the Shopify sales since 2 Sep off hand-counted stock).
 - **Permissions:** `read_inventory`, `write_inventory` and `read_locations` on the Shopify app (Test connection lists what is missing). Product price and detail changes are not pushed to Shopify yet; that would need `write_products`.
 
+
+## Events: setup, schedule, gallery, links, cut-off (2026-10-09)
+- **Source:** "The Ark — Events Platform Changes" (Downloads). Phase 1 covers sections 1.1–1.6 and 3.3. Ticket logic, the public event page redesign, embedded Stripe checkout and per-event analytics are later phases.
+- **Descriptions:** `offerings.short_description` is the card line; the existing `description` is now the long description. Cards and the featured event use the short one when it's set.
+- **Link:** `offerings.slug` (lowercase letters, numbers, dashes; unique; events and experiences only). `/e/<slug>` works alongside `/e/<id>`; `loadEvent` accepts either. The old id links keep working. A `/events/<slug>` path comes with the public page redesign.
+- **Booking closes** (`offerings.booking_closes_at`, venue-local date and time, both or neither): a trigger on `registrations` refuses online (portal and public) inserts after it, with "Registration closed." Staff-added bookings are still allowed. It is separate from the per-session `booking_cutoff_minutes`.
+- **Schedule** (`event_schedule_items`: day, start, end, title, location, description) and **gallery** (`event_images`, ordered). Both are saved as a whole list from the offering form and shown on the event page. The cover photo stays on `offerings.cover_path`.
+- **Locations:** "The Ark" and "La Cocineta" added to the location suggestions.
+- **Members banner:** "Members enjoy special prices." with "Enjoy exclusive member pricing for events and experiences." The early-access wording and the 10% / 20% figures are gone from the copy; the discount rules themselves are unchanged.
+- **Host an event form:** adds phone (WhatsApp), Instagram or Facebook, duration, ticketed or free, short and long description, and additional information. It still emails the team and stores nothing.
+- **Payments for events** will use Stripe (embedded Payment Element), not Tilopay.
+
+## Events: tickets (2026-10-09)
+- **Ticket types** (`ticket_types`) gain `kind` (main admission or optional add-on), `sales_start` / `sales_end` (venue-local), `max_per_order` (default 10) and `unlocks_after_ticket_id` (on sale only once that ticket has sold out for the date). Dates and release order combine: a ticket is on sale when its window is open and, if it has a predecessor, that one is sold out.
+- **Bookings hold many tickets.** `registration_items` (ticket type, quantity, price at the time of sale). `registrations.seats` is the number of main tickets; capacity counts seats, and add-ons take no seat. `registrations.ticket_type_id` stays as the first main ticket so older reports keep working. Bookings made before this have one item, backfilled.
+- **`book_tickets(offering, date, name, email, phone, items)`** is the single way to book; `book_session` now calls it with one ticket. It checks windows, release order, per-order limits, stock per ticket, add-ons needing a main ticket, and seats against capacity, all under the offering's row lock so two people can't oversell.
+- **Add-ons** must come with at least one main ticket. They have their own stock and limit.
+- **Availability** for the booking page: `ticket_availability(offering, date)` returns taken and a state (ok, not_started, ended, sold_out, locked) per ticket.
+- **Revenue:** `ticket_sales_for_month` sums quantity times the price at the time of sale. The CRM activity feed (`contact_activity`) still shows one price per booking until it's updated.
+- **Not done yet:** the public booking form still takes one main ticket at a time. The quantity stepper, add-on picker and phone field come with the booking page rebuild (Phase 3), and Stripe payment for multi-ticket orders with the embedded checkout (Phase 4).
+
+## Events: public pages and booking form (2026-10-10)
+- **Date filters** on the public events list: All, Today, This week (today to Sunday), This weekend (Saturday and Sunday; on a weekend it's what's left), This month (today to the 31st), Next month. Each card shows the event's first date inside the range; events with none drop out. Ranges are worked out in the venue's time zone (`src/lib/event-filters.ts`).
+- **Event page** follows the GHL layout: cover, About this event (folded with Read more), photos, schedule, location, and a price card with Share and Get tickets. The location name opens Google Maps; "Get directions" and a small map use `offerings.location_address` (street address), or search Maps for the place name in Santa Teresa when it's empty.
+- **Link stays `/e/<slug>`**, not `/events/<slug>`: `/events` is the staff area, so a public slug there could clash with a staff page.
+- **Booking form:** name, email and phone (WhatsApp preferred; required for non-members), a quantity stepper per ticket, optional add-ons under "Optional extras", and a live total. "Other dates" is gone; events with several dates keep a small "Change date" link. Members are included without choosing tickets; they choose tickets only to pay (for guests, say).
+- **Per-date availability** (`ticket_availability`, one call per upcoming date) drives which tickets are open, sold out, or opening later, and each ticket's stock.
+- **Paying** still goes to Stripe's hosted page for now. `/pay/ticket/<token>` charges the whole order (all items at their booked prices) as one amount; the embedded checkout replaces this in Phase 4.
+
+## Events: payment inside the page (2026-10-10)
+- **Flow:** choose tickets → details → Book → Stripe's payment form on the same page → confirmation. Booking happens first (held for 30 minutes if the ticket is "pay to confirm"), then the form charges that booking. Stripe still processes the card; the customer never leaves the page.
+- **How:** Stripe Embedded Checkout (`ui_mode: embedded_page`, `redirect_on_completion: never`), so the existing Checkout machinery is unchanged: the same session metadata, the same `record_stripe_payment`, the same webhook (`checkout.session.completed`). When the form completes, the page asks `confirmTicketPayment` to record it straight away (safe to repeat; the webhook may get there first). Held bookings get their ticket email after payment, as before.
+- **Needs `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`** (pk_test_… while testing) in addition to the existing secret key, service role key and webhook secret. Without it everything falls back to Stripe's own page (`/pay/ticket/<token>`), as before. Settings → Integrations → Stripe shows whether it's set.
+- **Pay later:** a booking that isn't "pay to confirm" can skip the form ("Pay later at the front desk") and pay from the booking confirmation or the ticket page.
+- **One charge, one place:** `src/lib/ticket-checkout.ts` works out what to charge (whole order at the prices it was booked at, or the Stripe product for a single meal), for both the embedded form and the hosted page.
+- **Not built:** coupon codes (the GHL form has them; the document didn't ask), Apple/Google Pay tuning, and a Tilopay option for events.
+
+## Events: registrations, analytics and manual management (2026-10-10)
+- **Where:** `/events/registrations/<event id>`, linked from the event's edit drawer ("Registrations, sales and attendees"). Events and experiences only; classes keep their own analytics.
+- **Numbers:** Registrations are confirmed bookings. Pending payment (a held booking still inside its 30 minutes), cancelled and lapsed holds are counted apart; a lapsed hold never became a booking and is hidden. Tickets sold counts every ticket in confirmed bookings (add-ons included, listed separately by type), plus the spots of bookings with no ticket. Revenue is what's been paid on confirmed bookings, per currency; unpaid-but-confirmed shows as "still to collect". A paid booking that was cancelled shows as "to refund". Bookings per day uses the venue's time zone. An optional date filter narrows everything to one session.
+- **Live:** the page listens for booking changes (Supabase Realtime on `registrations` and `registration_items`) and refreshes within a second, and refreshes once a minute as a fallback.
+- **Cancel** (`registrations.status = 'cancelled'`, `cancelled_at`): keeps the record and any payment, frees the seats and tickets, drops the booking from every count, roster, gate list, portal "my bookings" and Slack summary, and blocks check-in. **Restore** brings it back if there are spots. **Remove** deletes the booking entirely (use it for mistakes; cancel keeps a record).
+- **Refunds are not automatic.** Cancelling a paid booking tells the staff member to refund in Stripe; the existing refund webhook then updates the payment here.
+- **Add / edit by hand** (`staff_save_registration`): name, email, phone, date, tickets and quantities, paid, optional ticket email. Staff skip sales windows but not capacity or a ticket's stock, unless they tick the override. Editing keeps each kept ticket's original price; new tickets get today's price. Only admin, lead and the event's facilitator can change bookings; sales and others can view.
+- **Not done:** per-event CSV/PDF export from this page (the schedule's attendee export still works and now leaves out cancelled bookings), the CRM activity feed and marketing lists still include cancelled bookings, and partial refunds from this screen.

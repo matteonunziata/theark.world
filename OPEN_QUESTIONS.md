@@ -167,3 +167,4 @@
 - **Who is "community manager"?** Checkout uses the Shop staff role plus admins. Add a separate role?
 - **Receipts on WhatsApp** open a chat with a ready message; automatic sending needs the WhatsApp template set up.
 - **The old sale form on Sales** (no discount, no payment record) could be retired once Checkout is trusted.
+

@@ -25,9 +25,10 @@ export default async function DashboardPage() {
         .lte("session_date", we),
       supabase
         .from("registrations")
-        .select("id", { count: "exact", head: true })
+        .select("id, status", { count: "exact", head: true })
         .gte("session_date", ws)
-        .lte("session_date", we),
+        .lte("session_date", we)
+        .neq("status", "cancelled"),
       // Open to-dos plus anything finished today, so a tick doesn't vanish.
       supabase
         .from("tasks")

@@ -20,6 +20,7 @@ export default async function Me() {
           .select("id, session_date, qr_token, checked_in_at, status, hold_until, offering:offerings(title, start_time, end_time, location)")
           .or(`user_id.eq.${p.user!.id},contact_id.eq.${me.id}`)
           .gte("session_date", today)
+          .neq("status", "cancelled")
           .order("session_date")
       : Promise.resolve({ data: [] as never[] }),
     me?.tier

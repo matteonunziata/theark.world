@@ -31,10 +31,11 @@ export default async function MyClasses() {
           .lte("session_date", to),
         supabase
           .from("registrations")
-          .select("offering_id, session_date")
+          .select("offering_id, session_date, status")
           .in("offering_id", ids)
           .gte("session_date", today)
-          .lte("session_date", to),
+          .lte("session_date", to)
+          .neq("status", "cancelled"),
       ])
     : [{ data: [] }, { data: [] }];
 

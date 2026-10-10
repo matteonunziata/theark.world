@@ -14,7 +14,8 @@ export default async function SecurityPage() {
     .select(
       "id, name, qr_token, checked_in_at, paid, ticket_type_id, offering:offerings(title, start_time), ticket:ticket_types(name, price)",
     )
-    .eq("session_date", today),
+    .eq("session_date", today)
+    .neq("status", "cancelled"),
     supabase.rpc("todays_guests"),
   ]);
   const rows = (data ?? [])
