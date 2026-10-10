@@ -387,3 +387,26 @@ export async function unblock(lotId: string, stayId: string): Promise<ActionResu
   revalidatePath(`/hospitality/${lotId}`);
   return ok("Opened up again");
 }
+
+// Stewards ------------------------------------------------------------------------
+
+export async function addSteward(lotId: string, contactId: string): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  if (!contactId) return fail("Choose a person.");
+  const { error } = await supabase.from("property_stewards").insert({ lot_id: lotId, contact_id: contactId });
+  if (error) return fail(error.code === "23505" ? "They’re already a steward of this property." : friendly(error));
+  refresh(lotId);
+  return ok("Steward added");
+}
+
+export async function removeSteward(lotId: string, contactId: string): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  const { data: lot } = await supabase.from("lots").select("owner_contact_id").eq("id", lotId).single();
+  if (lot?.owner_contact_id === contactId) {
+    return fail("They’re the primary steward. Change the owner in Edit lot first.");
+  }
+  const { error } = await supabase.from("property_stewards").delete().eq("lot_id", lotId).eq("contact_id", contactId);
+  if (error) return fail(friendly(error));
+  refresh(lotId);
+  return ok("Steward removed");
+}

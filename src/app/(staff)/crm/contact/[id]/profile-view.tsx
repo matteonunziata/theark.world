@@ -74,6 +74,7 @@ export function ProfileView({
   activity,
   memberships,
   sales,
+  properties,
   currency,
   now,
   role,
@@ -100,6 +101,7 @@ export function ProfileView({
     payments: { method: string }[];
   }[];
   currency: string;
+  properties: { id: string; code: string; name: string | null }[];
   now: string;
   role: string;
   orgName: string;
@@ -152,6 +154,16 @@ export function ProfileView({
 
       <div className="prof-grid">
         <div>
+          {properties.length > 0 && (
+            <section className="panel">
+              <h2>{properties.length > 1 ? "Properties" : "Property"}</h2>
+              {properties.map((l) => (
+                <p key={l.id} style={{ margin: "0 0 6px" }}>
+                  <Link href={`/estate/${l.id}`}>{l.name ? `${l.name} (Lot ${l.code})` : `Lot ${l.code}`}</Link>
+                </p>
+              ))}
+            </section>
+          )}
           <ActivityPanel items={activity} currency={currency} now={now} />
           <section className="panel">
             <h2>Notes</h2>

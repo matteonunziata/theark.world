@@ -23,8 +23,15 @@ import {
 } from "@/lib/estate";
 import { money } from "@/lib/schedule";
 import { type Stay, StayDrawer } from "../../hospitality/stay-drawer";
-import { saveHousehold, saveLot, saveMaintenance, setHospitality } from "../actions";
+import { addSteward, removeSteward, saveHousehold, saveLot, saveMaintenance, setHospitality } from "../actions";
 import { LotFields } from "../lot-fields";
+
+const TABS = [
+  ["overview", "Overview"],
+  ["financials", "Financials"],
+  ["schedule", "Schedule"],
+  ["maintenance", "Maintenance log"],
+] as const;
 
 type Lot = Tables<"lots">;
 type Member = Tables<"lot_household">;
@@ -34,16 +41,18 @@ type LotRef = { id: string; code: string; name: string | null; estate_lot_id: st
 
 export function LotView({
   lot,
-  owner,
+  stewards,
   household,
   logs,
   stays,
   people,
   lots,
   today,
+  tab,
 }: {
   lot: Lot;
-  owner: { id: string; name: string; email: string | null; phone: string | null } | null;
+  stewards: { id: string; name: string; email: string | null; phone: string | null }[];
+  tab: string;
   household: Member[];
   logs: Log[];
   stays: Stay[];
@@ -60,6 +69,13 @@ export function LotView({
   const stay = useDrawer<Stay>();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const [newSteward, setNewSteward] = useState("");
+  const steward = async (run: () => Promise<{ ok: boolean; message?: string; error?: string }>) => {
+    setBusy(true);
+    const r = await run();
+    setBusy(false);
+    toast(r.ok ? (r.message ?? "Saved") : (r.error ?? "Couldn’t save"));
+  };
   const hospitality = async (on: boolean) => {
     setBusy(true);
     const r = await setHospitality(lot.id, on);
@@ -103,6 +119,66 @@ export function LotView({
         </button>
       </div>
 
+      <nav className="tabs" aria-label="Property">
+        {TABS.map(([key, text]) => (
+          <Link key={key} href={key === "overview" ? `/estate/${lot.id}` : `/estate/${lot.id}?tab=${key}`} aria-current={tab === key ? "page" : undefined}>
+            {text}
+          </Link>
+        ))}
+      </nav>
+
+      {tab === "maintenance" && 
+          <section className="panel">
+            <h2>
+              Maintenance log
+              <button type="button" className="btn primary sm" onClick={log.openNew}>Log work</button>
+            </h2>
+            {(open.length > 0 || Object.keys(spent).length > 0) && (
+              <p className="muted" style={{ margin: "-4px 0 10px", fontSize: 13.5 }}>
+                {open.length ? `${open.length} open or scheduled. ` : ""}
+                {Object.keys(spent).length
+                  ? `Spent so far: ${Object.entries(spent).map(([c, v]) => money(v, c)).join(" and ")}.`
+                  : ""}
+              </p>
+            )}
+            {!logs.length ? (
+              <p className="muted" style={{ margin: 0 }}>Nothing logged yet. Record repairs, garden and pool work, inspections, and what they cost.</p>
+            ) : (
+              <div className="mlog">
+                {logs.map((l) => (
+                  <button key={l.id} type="button" className="mlog-row" onClick={() => log.openItem(l)}>
+                    <span className="d">{fmtDate(l.performed_on, { month: "short", day: "numeric", year: "numeric" })}</span>
+                    <span>
+                      <b>{l.title}</b>
+                      <span className="muted">
+                        {" "}· {label(MAINT_CATEGORIES, l.category)}
+                        {l.done_by ? ` · ${l.done_by}` : ""}
+                      </span>
+                      {l.details && <span className="det">{l.details}</span>}
+                    </span>
+                    <span className="r">
+                      {l.status !== "done" && <span className={`tag-sm ${l.status === "open" ? "low" : ""}`}>{label(MAINT_STATUS, l.status)}</span>}
+                      {l.cost !== null && <span className="amt">{money(l.cost, l.currency)}</span>}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+}
+      {(tab === "financials" || tab === "schedule") && (
+        <section className="panel">
+          <h2>{tab === "financials" ? "Financials" : "Schedule"}</h2>
+          <p className="muted" style={{ margin: 0 }}>
+            {tab === "financials"
+              ? "What the steward owes The ARK, and what The ARK owes them, will live here."
+              : "Hospitality availability and maintenance services for this property will live here."}
+          </p>
+        </section>
+      )}
+
+      {tab === "overview" && (
+        <>
       <div className="lot-photos">
         {[
           ["Lot and home", photo],
@@ -170,15 +246,15 @@ export function LotView({
                   <dd>{lot.price !== null ? money(lot.price, lot.currency) : "Not set"}</dd>
                 </>
               )}
-              <dt>Owner</dt>
+              <dt>{stewards.length > 1 ? "Stewards" : "Steward"}</dt>
               <dd>
-                {owner ? (
-                  <>
-                    <Link href={`/crm/contact/${owner.id}`}>{owner.name}</Link>
-                    {(owner.email || owner.phone) && (
-                      <span className="muted"> · {[owner.email, owner.phone].filter(Boolean).join(" · ")}</span>
-                    )}
-                  </>
+                {stewards.length ? (
+                  stewards.map((o, i) => (
+                    <span key={o.id}>
+                      {i > 0 && ", "}
+                      <Link href={`/crm/contact/${o.id}`}>{o.name}</Link>
+                    </span>
+                  ))
                 ) : (
                   "—"
                 )}
@@ -208,47 +284,42 @@ export function LotView({
               </>
             )}
           </section>
-
-          <section className="panel">
-            <h2>
-              Maintenance log
-              <button type="button" className="btn primary sm" onClick={log.openNew}>Log work</button>
-            </h2>
-            {(open.length > 0 || Object.keys(spent).length > 0) && (
-              <p className="muted" style={{ margin: "-4px 0 10px", fontSize: 13.5 }}>
-                {open.length ? `${open.length} open or scheduled. ` : ""}
-                {Object.keys(spent).length
-                  ? `Spent so far: ${Object.entries(spent).map(([c, v]) => money(v, c)).join(" and ")}.`
-                  : ""}
-              </p>
-            )}
-            {!logs.length ? (
-              <p className="muted" style={{ margin: 0 }}>Nothing logged yet. Record repairs, garden and pool work, inspections, and what they cost.</p>
-            ) : (
-              <div className="mlog">
-                {logs.map((l) => (
-                  <button key={l.id} type="button" className="mlog-row" onClick={() => log.openItem(l)}>
-                    <span className="d">{fmtDate(l.performed_on, { month: "short", day: "numeric", year: "numeric" })}</span>
-                    <span>
-                      <b>{l.title}</b>
-                      <span className="muted">
-                        {" "}· {label(MAINT_CATEGORIES, l.category)}
-                        {l.done_by ? ` · ${l.done_by}` : ""}
-                      </span>
-                      {l.details && <span className="det">{l.details}</span>}
-                    </span>
-                    <span className="r">
-                      {l.status !== "done" && <span className={`tag-sm ${l.status === "open" ? "low" : ""}`}>{label(MAINT_STATUS, l.status)}</span>}
-                      {l.cost !== null && <span className="amt">{money(l.cost, l.currency)}</span>}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
         </div>
 
         <aside className="student-side">
+          <section className="card">
+            <h2>{stewards.length > 1 ? "Stewards" : "Steward"}</h2>
+            {stewards.length ? (
+              stewards.map((o) => (
+                <div key={o.id} className="fam" style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                  <span>
+                    <Link href={`/crm/contact/${o.id}`}><b>{o.name}</b></Link>
+                    {o.id === lot.owner_contact_id && <span className="muted"> · primary</span>}
+                    <span className="muted" style={{ display: "block", fontSize: 13 }}>
+                      {[o.email, o.phone].filter(Boolean).join(" · ") || " "}
+                    </span>
+                  </span>
+                  <button type="button" className="btn ghost sm" disabled={busy} onClick={() => steward(() => removeSteward(lot.id, o.id))}>
+                    Remove
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p className="muted" style={{ fontSize: 13.5 }}>No steward linked yet.</p>
+            )}
+            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+              <select aria-label="Add a steward" value={newSteward} onChange={(e) => setNewSteward(e.target.value)} style={{ flex: 1 }}>
+                <option value="">Add a steward…</option>
+                {people.filter((p) => !stewards.some((o) => o.id === p.id)).map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <button type="button" className="btn sm" disabled={busy || !newSteward} onClick={() => steward(() => addSteward(lot.id, newSteward)).then(() => setNewSteward(""))}>
+                Add
+              </button>
+            </div>
+          </section>
+
           <section className="card">
             <h2>Household</h2>
             {household.length ? (
@@ -319,6 +390,8 @@ export function LotView({
           </section>
         </aside>
       </div>
+        </>
+      )}
 
       <Drawer
         title="Edit lot"

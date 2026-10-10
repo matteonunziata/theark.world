@@ -1981,6 +1981,33 @@ export type Database = {
           },
         ]
       }
+      amenities: {
+        Row: { active: boolean; category: string; created_at: string; id: string; name: string; position: number }
+        Insert: { active?: boolean; category?: string; created_at?: string; id?: string; name: string; position?: number }
+        Update: { active?: boolean; category?: string; created_at?: string; id?: string; name?: string; position?: number }
+        Relationships: []
+      }
+      property_stewards: {
+        Row: { contact_id: string; created_at: string; lot_id: string }
+        Insert: { contact_id: string; created_at?: string; lot_id: string }
+        Update: { contact_id?: string; created_at?: string; lot_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "property_stewards_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_stewards_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "lots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lot_household: {
         Row: {
           birth_year: number | null

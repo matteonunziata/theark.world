@@ -14,11 +14,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: data ? lotTitle(data) : "Lot" };
 }
 
-export default async function LotPage({ params }: Props) {
+export default async function LotPage({ params, searchParams }: Props & { searchParams: Promise<{ tab?: string }> }) {
   const { id } = await params;
+  const { tab } = await searchParams;
   const { supabase } = await requireStaff("estate");
   const today = todayIn();
-  const [{ data: lot }, { data: household }, { data: logs }, { data: stays }, { data: people }, { data: team }, { data: lots }] =
+  const [{ data: lot }, { data: household }, { data: logs }, { data: stays }, { data: people }, { data: team }, { data: lots }, { data: links }] =
     await Promise.all([
       supabase.from("lots").select("*").eq("id", id).maybeSingle(),
       supabase.from("lot_household").select("*").eq("lot_id", id).order("created_at"),
@@ -33,14 +34,18 @@ export default async function LotPage({ params }: Props) {
       supabase.from("contacts").select("id, name, email, phone").order("name"),
       supabase.from("team_members").select("id, name"),
       supabase.from("lots").select("id, code, name, estate_lot_id"),
+      supabase.from("property_stewards").select("contact_id, created_at").eq("lot_id", id).order("created_at"),
     ]);
   if (!lot) notFound();
-  const owner = (people ?? []).find((p) => p.id === lot.owner_contact_id) ?? null;
+  const stewards = (links ?? [])
+    .map((l) => (people ?? []).find((p) => p.id === l.contact_id))
+    .filter((p): p is NonNullable<typeof p> => !!p);
   return (
     <div className="page">
       <LotView
         lot={lot}
-        owner={owner}
+        stewards={stewards}
+        tab={["financials", "schedule", "maintenance"].includes(tab ?? "") ? tab! : "overview"}
         household={household ?? []}
         logs={(logs ?? []).map((l) => ({
           ...l,

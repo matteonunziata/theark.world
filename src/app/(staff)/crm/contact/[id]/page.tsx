@@ -12,7 +12,7 @@ export default async function ContactPage({
 }: PageProps<"/crm/contact/[id]">) {
   const { id } = await params;
   const { supabase, staff } = await requireStaff("crm");
-  const [contact, notes, stages, enrollments, sequences, owners, org, tiers, discounts, activity, memberships, sales] =
+  const [contact, notes, stages, enrollments, sequences, owners, org, tiers, discounts, activity, memberships, sales, links] =
     await Promise.all([
       supabase.from("contacts").select("*").eq("id", id).maybeSingle(),
       supabase
@@ -50,6 +50,7 @@ export default async function ContactPage({
         .eq("contact_id", id)
         .order("created_at", { ascending: false })
         .limit(20),
+      supabase.from("property_stewards").select("lot:lots(id, code, name)").eq("contact_id", id),
     ]);
   if (!contact.data) {
     return (
@@ -103,6 +104,7 @@ export default async function ContactPage({
       activity={activity.data ?? []}
       memberships={memberships.data ?? []}
       sales={sales.data ?? []}
+      properties={(links.data ?? []).flatMap((l) => (l.lot ? [l.lot] : []))}
       currency={org.data?.currency ?? "CRC"}
       now={new Date().toISOString()}
       role={staff.role}
