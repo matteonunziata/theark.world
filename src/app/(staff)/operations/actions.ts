@@ -19,6 +19,24 @@ const pick = <T extends readonly (readonly [string, string])[]>(
   d: string,
 ) => (list.some(([k]) => k === v) ? (v as string) : d);
 
+const MAINT = ["repair", "garden", "pool", "cleaning", "inspection", "build", "other"];
+
+/** Cost, type, contractor and owner visibility only mean something on a property. */
+function propertyWork(data: FormData) {
+  if (!field(data, "lot_id")) {
+    return { maint_category: null, cost: null, currency: "CRC", done_by: null, owner_visible: true };
+  }
+  const cat = field(data, "maint_category");
+  const cost = Number(field(data, "cost"));
+  return {
+    maint_category: MAINT.includes(cat ?? "") ? cat : "repair",
+    cost: Number.isFinite(cost) && cost > 0 ? cost : null,
+    currency: "CRC",
+    done_by: field(data, "done_by"),
+    owner_visible: data.get("owner_visible") === "on",
+  };
+}
+
 export async function saveTask(
   _prev: ActionResult,
   data: FormData,
@@ -49,6 +67,9 @@ export async function saveTask(
     due_date: field(data, "due_date"),
     location: field(data, "location"),
     status: pick(STATUSES, field(data, "status"), "backlog"),
+    // Work on a property: shows in that property's maintenance log.
+    lot_id: field(data, "lot_id"),
+    ...propertyWork(data),
   };
   const { data: before } = id
     ? await supabase.from("tasks").select("assignee_id").eq("id", id).maybeSingle()
@@ -59,6 +80,8 @@ export async function saveTask(
   if (error) return fail(friendly(error));
   revalidatePath("/operations", "layout");
   revalidatePath("/dashboard");
+  revalidatePath("/estate", "layout");
+  revalidatePath("/steward");
 
   // Someone new is on it (and it isn't the person saving): a word on Slack.
   if (row.assignee_id && row.assignee_id !== before?.assignee_id && row.assignee_id !== staff.id) {

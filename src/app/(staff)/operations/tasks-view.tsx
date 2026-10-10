@@ -5,6 +5,7 @@ import { Avatar } from "@/components/avatar";
 import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
 import { useToast } from "@/components/toast";
 import type { Tables } from "@/lib/database.types";
+import { MAINT_CATEGORIES } from "@/lib/estate";
 import { colorVar } from "@/lib/roles";
 import {
   dueClass,
@@ -20,6 +21,7 @@ import {
 import { saveTask, setTaskStatus } from "./actions";
 
 type Task = Tables<"tasks">;
+type LotRef = { id: string; code: string; name: string | null };
 type Person = { id: string; name: string; status: string };
 type Division = { id: string; name: string; color: string };
 
@@ -33,6 +35,7 @@ export function TasksView({
   tasks,
   team,
   divisions,
+  lots,
 }: {
   view: "board" | "list";
   today: string;
@@ -41,6 +44,7 @@ export function TasksView({
   tasks: Task[];
   team: Person[];
   divisions: Division[];
+  lots: LotRef[];
 }) {
   const [f, setF] = useState({ asg: initialAssignee, div: "", pri: "", kind: "", status: "open" });
   const [showDone, setShowDone] = useState(false);
@@ -52,6 +56,10 @@ export function TasksView({
     cur.map((t) => (t.id === m.id ? { ...t, status: m.status } : t)),
   );
 
+  const lotName = (id: string | null) => {
+    const l = lots.find((x) => x.id === id);
+    return l ? (l.name ?? `Lot ${l.code}`) : "";
+  };
   const person = (id: string | null) => team.find((m) => m.id === id);
   const div = (id: string | null) => divisions.find((d) => d.id === id);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -172,7 +180,7 @@ export function TasksView({
                     >
                       {(t.kind !== "task" || d) && (
                         <span className="tkind">
-                          {[t.kind !== "task" ? kindLabel(t.kind) : "", d?.name ?? ""].filter(Boolean).join(", ")}
+                          {[t.kind !== "task" ? kindLabel(t.kind) : "", d?.name ?? "", lotName(t.lot_id)].filter(Boolean).join(", ")}
                         </span>
                       )}
                       <b>{t.title}</b>
@@ -267,6 +275,7 @@ export function TasksView({
         t={drawer.item}
         team={team}
         divisions={divisions}
+        lots={lots}
         onClose={drawer.close}
       />
     </>
@@ -278,15 +287,19 @@ function TaskDrawer({
   t,
   team,
   divisions,
+  lots,
   onClose,
 }: {
   open: boolean;
   t: Task | null;
   team: Person[];
   divisions: Division[];
+  lots: LotRef[];
   onClose: () => void;
 }) {
   const [status, setStatus] = useState(t?.status ?? "backlog");
+  const [kind, setKind] = useState(t?.kind ?? "task");
+  const [lotId, setLotId] = useState(t?.lot_id ?? "");
   return (
     <Drawer
       title={t ? "Edit task" : "New task"}
@@ -349,7 +362,7 @@ function TaskDrawer({
         </div>
         <div className="fld">
           <label htmlFor="t-kind">Type</label>
-          <select id="t-kind" name="kind" defaultValue={t?.kind ?? "task"}>
+          <select id="t-kind" name="kind" value={kind} onChange={(e) => setKind(e.target.value)}>
             {TASK_KINDS.map(([k, l]) => (
               <option key={k} value={k}>{l}</option>
             ))}
@@ -371,6 +384,43 @@ function TaskDrawer({
           </datalist>
         </div>
       </div>
+      <div className="fld">
+        <label htmlFor="t-lot">Property</label>
+        <select id="t-lot" name="lot_id" value={lotId} onChange={(e) => setLotId(e.target.value)}>
+          <option value="">Not tied to a property</option>
+          {lots.map((l) => (
+            <option key={l.id} value={l.id}>{l.name ? `${l.name} (Lot ${l.code})` : `Lot ${l.code}`}</option>
+          ))}
+        </select>
+      </div>
+      {lotId && (
+        <>
+          <div className="grid2">
+            <div className="fld">
+              <label htmlFor="t-mcat">Work type</label>
+              <select id="t-mcat" name="maint_category" defaultValue={t?.maint_category ?? "repair"}>
+                {MAINT_CATEGORIES.map(([k, l]) => (
+                  <option key={k} value={k}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <div className="fld">
+              <label htmlFor="t-cost">Cost (₡)</label>
+              <input id="t-cost" name="cost" type="number" min={0} step="any" defaultValue={t?.cost ?? ""} placeholder="Optional" />
+            </div>
+          </div>
+          <div className="grid2">
+            <div className="fld">
+              <label htmlFor="t-doneby">Done by</label>
+              <input id="t-doneby" name="done_by" defaultValue={t?.done_by ?? ""} placeholder="Contractor or company" />
+            </div>
+            <label className="check" style={{ alignSelf: "end", paddingBottom: 8 }}>
+              <input type="checkbox" name="owner_visible" defaultChecked={t?.owner_visible ?? true} />
+              Show to the owner
+            </label>
+          </div>
+        </>
+      )}
       <div className="fld">
         <span style={{ fontSize: 13.5, fontWeight: 600 }}>Stage</span>
         <div className="movebar">

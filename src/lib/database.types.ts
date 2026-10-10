@@ -1997,6 +1997,135 @@ export type Database = {
           },
         ]
       }
+      steward_rules: {
+        Row: { auto_activate: boolean; grace_days: number; id: boolean; months_to_eligible: number }
+        Insert: { auto_activate?: boolean; grace_days?: number; id?: boolean; months_to_eligible?: number }
+        Update: { auto_activate?: boolean; grace_days?: number; id?: boolean; months_to_eligible?: number }
+        Relationships: []
+      }
+      stewardships: {
+        Row: {
+          agreement_name: string | null
+          agreement_path: string | null
+          agreement_signed_at: string | null
+          active_since: string | null
+          contact_id: string
+          created_at: string
+          status: string
+          status_changed_at: string
+          status_reason: string | null
+        }
+        Insert: {
+          agreement_name?: string | null
+          agreement_path?: string | null
+          agreement_signed_at?: string | null
+          active_since?: string | null
+          contact_id: string
+          created_at?: string
+          status?: string
+          status_changed_at?: string
+          status_reason?: string | null
+        }
+        Update: {
+          agreement_name?: string | null
+          agreement_path?: string | null
+          agreement_signed_at?: string | null
+          active_since?: string | null
+          contact_id?: string
+          created_at?: string
+          status?: string
+          status_changed_at?: string
+          status_reason?: string | null
+        }
+        Relationships: []
+      }
+      steward_status_history: {
+        Row: {
+          changed_by: string | null
+          contact_id: string
+          created_at: string
+          from_status: string | null
+          id: string
+          reason: string | null
+          source: string
+          to_status: string
+        }
+        Insert: {
+          changed_by?: string | null
+          contact_id: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          source: string
+          to_status: string
+        }
+        Update: {
+          changed_by?: string | null
+          contact_id?: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          source?: string
+          to_status?: string
+        }
+        Relationships: []
+      }
+      property_services: {
+        Row: {
+          active: boolean
+          assignee_id: string | null
+          created_at: string
+          end_date: string | null
+          every: number
+          freq: string
+          id: string
+          lot_id: string
+          maint_category: string
+          month_day: number | null
+          notes: string | null
+          owner_visible: boolean
+          start_date: string
+          title: string
+          weekday: number | null
+        }
+        Insert: {
+          active?: boolean
+          assignee_id?: string | null
+          created_at?: string
+          end_date?: string | null
+          every?: number
+          freq: string
+          id?: string
+          lot_id: string
+          maint_category?: string
+          month_day?: number | null
+          notes?: string | null
+          owner_visible?: boolean
+          start_date: string
+          title: string
+          weekday?: number | null
+        }
+        Update: {
+          active?: boolean
+          assignee_id?: string | null
+          created_at?: string
+          end_date?: string | null
+          every?: number
+          freq?: string
+          id?: string
+          lot_id?: string
+          maint_category?: string
+          month_day?: number | null
+          notes?: string | null
+          owner_visible?: boolean
+          start_date?: string
+          title?: string
+          weekday?: number | null
+        }
+        Relationships: []
+      }
       amenities: {
         Row: { active: boolean; category: string; created_at: string; id: string; name: string; position: number }
         Insert: { active?: boolean; category?: string; created_at?: string; id?: string; name: string; position?: number }
@@ -2126,7 +2255,7 @@ export type Database = {
         }
         Relationships: []
       }
-      lot_maintenance: {
+      lot_maintenance_archive: {
         Row: {
           category: string
           cost: number | null
@@ -3853,6 +3982,13 @@ export type Database = {
           id: string
           kind: string
           location: string | null
+          service_id: string | null
+          lot_id: string | null
+          maint_category: string | null
+          cost: number | null
+          currency: string
+          done_by: string | null
+          owner_visible: boolean
           position: number
           priority: string
           status: string
@@ -3870,6 +4006,13 @@ export type Database = {
           id?: string
           kind?: string
           location?: string | null
+          service_id?: string | null
+          lot_id?: string | null
+          maint_category?: string | null
+          cost?: number | null
+          currency?: string
+          done_by?: string | null
+          owner_visible?: boolean
           position?: number
           priority?: string
           status?: string
@@ -3887,6 +4030,13 @@ export type Database = {
           id?: string
           kind?: string
           location?: string | null
+          service_id?: string | null
+          lot_id?: string | null
+          maint_category?: string | null
+          cost?: number | null
+          currency?: string
+          done_by?: string | null
+          owner_visible?: boolean
           position?: number
           priority?: string
           status?: string
@@ -4779,6 +4929,48 @@ export type Database = {
       }
       my_guests: { Args: never; Returns: Json };
       owns_lot: { Args: { p_lot: string }; Returns: boolean };
+      current_contact_id: { Args: never; Returns: string | null };
+      my_steward_profile: {
+        Args: never;
+        Returns: { id: string; name: string; email: string | null; active_since: string | null }[];
+      };
+      current_active_steward_id: { Args: never; Returns: string | null };
+      is_active_steward_email: { Args: { p_email: string }; Returns: boolean };
+      steward_set_hospitality: { Args: { p_lot: string; p_on: boolean }; Returns: undefined };
+      my_property_services: {
+        Args: { p_lot: string };
+        Returns: {
+          id: string; title: string; maint_category: string; freq: string; every: number;
+          weekday: number | null; month_day: number | null; start_date: string; end_date: string | null;
+        }[];
+      };
+      generate_service_tasks: { Args: { p_service?: string | null; p_days?: number }; Returns: number };
+      resync_service: { Args: { p_service: string }; Returns: number };
+      my_property_work: {
+        Args: { p_lot: string };
+        Returns: {
+          id: string; title: string; category: string; status: string; on_date: string;
+          done_by: string | null; cost: number | null; currency: string; details: string | null;
+        }[];
+      };
+      steward_activate: { Args: { p_contact: string }; Returns: undefined };
+      steward_deactivate: { Args: { p_contact: string; p_reason: string | null }; Returns: undefined };
+      steward_suspend: { Args: { p_contact: string; p_reason: string }; Returns: undefined };
+      steward_unsuspend: { Args: { p_contact: string; p_reason: string | null }; Returns: undefined };
+      steward_deactivate_self: { Args: { p_reason: string | null }; Returns: undefined };
+      steward_set_agreement: {
+        Args: { p_contact: string; p_signed: string | null; p_path: string | null; p_name: string | null };
+        Returns: undefined;
+      };
+      reconcile_stewards: { Args: never; Returns: number };
+      stewards_overview: {
+        Args: never;
+        Returns: {
+          contact_id: string; name: string; email: string | null; status: string;
+          active_since: string | null; agreement_signed_at: string | null;
+          fees_current: boolean | null; fees_ok: boolean; properties: number; status_reason: string | null;
+        }[];
+      };
       steward_fees_current: { Args: { p_contact: string }; Returns: boolean | null };
       steward_finance: { Args: { p_contact: string }; Returns: Json };
       my_properties: {

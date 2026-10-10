@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
+import { todayIn } from "@/lib/dates";
 import { siteUrl } from "@/lib/email";
 import { fmtAmount, stripeReady, TERM_NAME, termPrice } from "@/lib/stripe";
 import { ProfileView } from "./profile-view";
@@ -71,6 +72,30 @@ export default async function ContactPage({
         owed_to_steward: number | null;
       } | null)
     : null;
+  // Active stewardship (admins keep it current: this drops anyone who lost active status).
+  let stewardship = null;
+  if (props.length > 0) {
+    if (staff.role === "admin") await supabase.rpc("reconcile_stewards");
+    const [{ data: row }, { data: hist }, { data: rules }, { data: ov }, { data: team }] = await Promise.all([
+      supabase.from("stewardships").select("*").eq("contact_id", id).maybeSingle(),
+      supabase.from("steward_status_history").select("*").eq("contact_id", id).order("created_at", { ascending: false }),
+      supabase.from("steward_rules").select("*").maybeSingle(),
+      supabase.rpc("stewards_overview"),
+      supabase.from("team_members").select("id, name"),
+    ]);
+    const o = (ov ?? []).find((x) => x.contact_id === id);
+    if (row) {
+      stewardship = {
+        s: row,
+        history: (hist ?? []).map((h) => ({ ...h, by: team?.find((t) => t.id === h.changed_by)?.name ?? null })),
+        months: rules?.months_to_eligible ?? 48,
+        graceDays: rules?.grace_days ?? 30,
+        feesCurrent: o?.fees_current ?? true,
+        feesOk: o?.fees_ok ?? true,
+        today: todayIn(org.data?.timezone ?? undefined),
+      };
+    }
+  }
   // A Stripe link for the member's next term, at their rate and discount.
   const c = contact.data;
   const tier = (tiers.data ?? []).find((t) => t.key === c.tier);
@@ -114,6 +139,7 @@ export default async function ContactPage({
       sales={sales.data ?? []}
       properties={props}
       stewardFinance={sf}
+      stewardship={stewardship}
       currency={org.data?.currency ?? "CRC"}
       now={new Date().toISOString()}
       role={staff.role}

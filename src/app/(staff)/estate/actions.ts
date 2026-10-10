@@ -16,7 +16,6 @@ import {
   LOT_KINDS,
   LOT_STATUS,
   MAINT_CATEGORIES,
-  MAINT_STATUS,
   nights,
   RELATIONS,
   STAY_KINDS,
@@ -151,35 +150,51 @@ export async function saveHousehold(_prev: ActionResult, data: FormData): Promis
   return ok(id ? "Saved" : `${name} added`);
 }
 
-export async function saveMaintenance(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+/** Work on a property is an Operations task linked to the lot; this is its form on the property page. */
+export async function saveLotTask(_prev: ActionResult, data: FormData): Promise<ActionResult> {
   const { supabase, staff } = await staffOrThrow(...ESTATE);
   const id = field(data, "id");
   const lotId = field(data, "lot_id");
+  if (!lotId) return fail("Missing property.");
   if (data.get("intent") === "delete" && id) {
-    const { error } = await supabase.from("lot_maintenance").delete().eq("id", id);
+    const { error, count } = await supabase.from("tasks").delete({ count: "exact" }).eq("id", id).eq("lot_id", lotId);
     if (error) return fail(friendly(error));
+    if (!count) return fail("You can’t delete this task. Ask an admin.");
     refresh(lotId);
-    return ok("Log entry deleted");
+    revalidatePath("/operations", "layout");
+    return ok("Task deleted");
   }
   const title = field(data, "title");
-  if (!title || !lotId) return fail("Say what was done.");
+  if (!title) return fail("Say what needs doing.");
+  const { data: lot } = await supabase.from("lots").select("code, name").eq("id", lotId).single();
+  const cost = Number(field(data, "cost"));
   const row = {
     lot_id: lotId,
     title,
-    details: field(data, "details"),
-    category: pick(MAINT_CATEGORIES, field(data, "category"), "repair"),
-    status: pick(MAINT_STATUS, field(data, "status"), "done"),
-    performed_on: field(data, "performed_on") ?? undefined,
-    cost: num(data, "cost"),
-    currency: cur(field(data, "currency")),
+    description: field(data, "description"),
+    kind: "maintenance",
+    maint_category: pick(MAINT_CATEGORIES, field(data, "maint_category"), "repair"),
+    status: pick(
+      [["backlog", ""], ["next", ""], ["doing", ""], ["review", ""], ["done", ""]] as const,
+      field(data, "status"),
+      "backlog",
+    ),
+    assignee_id: field(data, "assignee_id"),
+    due_date: dateOrNull(field(data, "due_date")),
+    cost: Number.isFinite(cost) && cost > 0 ? cost : null,
+    currency: "CRC",
     done_by: field(data, "done_by"),
+    owner_visible: data.get("owner_visible") === "on",
+    location: lot ? (lot.name ?? `Lot ${lot.code}`) : null,
   };
   const { error } = id
-    ? await supabase.from("lot_maintenance").update(row).eq("id", id)
-    : await supabase.from("lot_maintenance").insert({ ...row, created_by: staff.id });
+    ? await supabase.from("tasks").update(row).eq("id", id).eq("lot_id", lotId)
+    : await supabase.from("tasks").insert({ ...row, created_by: staff.id });
   if (error) return fail(friendly(error));
   refresh(lotId);
-  return ok(id ? "Log entry saved" : "Logged");
+  revalidatePath("/operations", "layout");
+  revalidatePath("/steward");
+  return ok(id ? "Task saved" : "Task added to Operations");
 }
 
 export async function saveStay(_prev: ActionResult, data: FormData): Promise<ActionResult> {
@@ -507,4 +522,65 @@ export async function setPropertyEntryStatus(id: string, status: "unpaid" | "pai
   if (error) return fail(friendly(error));
   refreshMoney(e.lot_id);
   return ok(status === "paid" ? "Marked as paid" : "Sent");
+}
+
+// Recurring services ----------------------------------------------------------------
+
+const FREQ = ["once", "weekly", "monthly", "yearly"];
+
+/** Add or edit a property's recurring service, then rebuild its upcoming tasks from the new rule. */
+export async function saveService(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  const id = field(data, "id");
+  const lotId = field(data, "lot_id");
+  if (!lotId) return fail("Missing property.");
+
+  if (data.get("intent") === "delete" && id) {
+    // Upcoming tasks that haven't started go with it; finished ones stay in the log.
+    await supabase.from("tasks").delete().eq("service_id", id).eq("status", "backlog").gte("due_date", todayIn());
+    const { error } = await supabase.from("property_services").delete().eq("id", id).eq("lot_id", lotId);
+    if (error) return fail(friendly(error));
+    refresh(lotId);
+    revalidatePath("/operations", "layout");
+    return ok("Service removed");
+  }
+
+  const title = field(data, "title");
+  if (!title) return fail("Name the service.");
+  const freq = field(data, "freq") ?? "";
+  if (!FREQ.includes(freq)) return fail("Choose how often.");
+  const start = dateOrNull(field(data, "start_date"));
+  if (!start) return fail("Pick a start date.");
+  const end = dateOrNull(field(data, "end_date"));
+  if (end && end < start) return fail("The end date is before the start.");
+  const every = Math.min(52, Math.max(1, Math.round(num(data, "every") ?? 1)));
+  const weekday = Math.round(num(data, "weekday") ?? Number.NaN);
+  const monthDay = Math.round(num(data, "month_day") ?? Number.NaN);
+  if (freq === "weekly" && !(weekday >= 0 && weekday <= 6)) return fail("Choose the day of the week.");
+  if (freq === "monthly" && !(monthDay >= 1 && monthDay <= 31)) return fail("Choose the day of the month.");
+
+  const row = {
+    lot_id: lotId,
+    title,
+    maint_category: pick(MAINT_CATEGORIES, field(data, "maint_category"), "cleaning"),
+    freq,
+    every: freq === "once" ? 1 : every,
+    weekday: freq === "weekly" ? weekday : null,
+    month_day: freq === "monthly" ? monthDay : null,
+    start_date: start,
+    end_date: freq === "once" ? null : end,
+    assignee_id: field(data, "assignee_id"),
+    notes: field(data, "notes"),
+    owner_visible: data.get("owner_visible") === "on",
+    active: data.get("active") === "on",
+  };
+  const saved = id
+    ? await supabase.from("property_services").update(row).eq("id", id).eq("lot_id", lotId).select("id").single()
+    : await supabase.from("property_services").insert(row).select("id").single();
+  if (saved.error) return fail(friendly(saved.error));
+  const { data: made, error } = await supabase.rpc("resync_service", { p_service: saved.data.id });
+  if (error) return fail(friendly(error));
+  refresh(lotId);
+  revalidatePath("/operations", "layout");
+  return ok(row.active ? `Saved. ${made ?? 0} upcoming task${made === 1 ? "" : "s"} on the board.` : "Saved and paused");
 }

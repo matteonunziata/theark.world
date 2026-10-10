@@ -7,14 +7,14 @@ import { RELATIONS } from "@/lib/estate";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Owners act through RLS and the owner_* functions, which check ownership themselves. */
+/** Stewards act through RLS and the owner_* functions, which check ownership and active status themselves. */
 async function owner() {
   const v = await getViewer();
-  if (!v.memberId) throw new Error("Sign in to the members portal.");
+  if (!v.stewardId) throw new Error("The steward platform is for active stewards.");
   return v.supabase;
 }
 
-const refresh = () => revalidatePath("/portal/property");
+const refresh = () => revalidatePath("/steward");
 
 export async function saveMyHousehold(_prev: ActionResult, data: FormData): Promise<ActionResult> {
   const supabase = await owner();
@@ -100,4 +100,22 @@ export async function saveMyNotes(_prev: ActionResult, data: FormData): Promise<
   if (error) return fail(friendly(error));
   refresh();
   return ok("Notes saved");
+}
+
+/** A steward steps back from active stewardship. The 48-month clock goes back to 0. */
+export async function deactivateMyself(): Promise<ActionResult> {
+  const supabase = await owner();
+  const { error } = await supabase.rpc("steward_deactivate_self", { p_reason: "Stepped back" });
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok("You’re no longer an active steward.");
+}
+
+/** Hospitality on or off for their own home. */
+export async function setMyHospitality(lotId: string, on: boolean): Promise<ActionResult> {
+  const supabase = await owner();
+  const { error } = await supabase.rpc("steward_set_hospitality", { p_lot: lotId, p_on: on });
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok(on ? "Hospitality is on" : "Hospitality is off");
 }

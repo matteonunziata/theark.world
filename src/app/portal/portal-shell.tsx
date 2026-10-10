@@ -12,9 +12,9 @@ const NAV = [
   { href: "/portal/guests", label: "Guests", icon: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5"/><path d="M18 11v6M15 14h6"/>' },
 ];
 const PROPERTY = {
-  href: "/portal/property",
-  label: "My Property",
-  short: "Property",
+  href: "/steward",
+  label: "Steward platform",
+  short: "Steward",
   icon: '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/>',
 };
 const ME = { href: "/portal/me", label: "Me", icon: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.2-6 8-6s7 2 8 6"/>' };
@@ -30,7 +30,7 @@ export function PortalShell({
   isStaff: boolean;
   /** Team members are members too, so they can have both. */
   isMember: boolean;
-  /** Members who own a lot get a My Property tab. */
+  /** Active stewards get a link across to the steward platform. */
   hasProperty: boolean;
   children: React.ReactNode;
 }) {

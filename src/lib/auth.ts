@@ -13,9 +13,9 @@ export const getViewer = cache(async () => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { supabase, user: null, staff: null, memberId: null };
+  if (!user) return { supabase, user: null, staff: null, memberId: null, stewardId: null };
 
-  const [{ data: staff }, { data: memberId }] = await Promise.all([
+  const [{ data: staff }, { data: memberId }, { data: stewardId }] = await Promise.all([
     supabase
       .from("team_members")
       .select("*")
@@ -23,12 +23,15 @@ export const getViewer = cache(async () => {
       .eq("status", "active")
       .maybeSingle(),
     supabase.rpc("current_member_contact_id"),
+    // Only an active steward gets the steward platform; they needn't be a member.
+    supabase.rpc("current_active_steward_id"),
   ]);
   return {
     supabase,
     user,
     staff,
     memberId: memberId ?? null,
+    stewardId: stewardId ?? null,
   };
 });
 

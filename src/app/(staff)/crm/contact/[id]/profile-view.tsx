@@ -20,6 +20,7 @@ import { dayLabel, fmtDate, todayIn } from "@/lib/dates";
 import { fmtMoney } from "@/lib/shop";
 import { nextStep, stepDue } from "@/lib/sequences";
 import { type Activity, ActivityPanel } from "./activity-panel";
+import { StewardshipPanel } from "./stewardship-panel";
 import { addNote, enroll, replacePass, sendWelcome, setStage, updateEnrollment } from "../../actions";
 import {
   type Contact,
@@ -76,6 +77,7 @@ export function ProfileView({
   sales,
   properties,
   stewardFinance,
+  stewardship,
   currency,
   now,
   role,
@@ -103,6 +105,7 @@ export function ProfileView({
   }[];
   currency: string;
   properties: { id: string; code: string; name: string | null }[];
+  stewardship: Omit<React.ComponentProps<typeof StewardshipPanel>, "isAdmin"> | null;
   /** Property invoices and payouts, in colones. Admins only; null for others. */
   stewardFinance: { fees_current: boolean; owed_to_ark: number | null; owed_to_steward: number | null } | null;
   now: string;
@@ -179,6 +182,7 @@ export function ProfileView({
               )}
             </section>
           )}
+          {stewardship && <StewardshipPanel {...stewardship} isAdmin={role === "admin"} />}
           <ActivityPanel items={activity} currency={currency} now={now} />
           <section className="panel">
             <h2>Notes</h2>
