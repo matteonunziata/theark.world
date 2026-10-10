@@ -18,6 +18,7 @@ export async function loadEvents(from: string, to: string) {
       .select("id, offering_id, session_date, name, email, ticket_type_id, paid, source, qr_token, checked_in_at, status, hold_until")
       .gte("session_date", from)
       .lte("session_date", to)
+      .neq("status", "cancelled")
       .order("created_at"),
     supabase
       .from("team_members")

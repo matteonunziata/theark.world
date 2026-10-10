@@ -363,6 +363,74 @@ select pg_temp.expect((select sum(taken) from public.session_counts(
   'add-ons take no seat in the counts');
 delete from public.offerings where title = 'Ticket logic';
 
+-- Registrations: add by hand, edit, cancel ---------------------------------------------------
+
+insert into public.offerings (kind, title, start_date, status, access, repeat, capacity)
+values ('event', 'Registration admin', public.org_today() + 3, 'published', 'everyone', 'none', 3);
+insert into public.ticket_types (offering_id, name, price, kind, position)
+select id, 'GA', 10000, 'main', 0 from public.offerings where title = 'Registration admin';
+
+select pg_temp.act_as(pg_temp.id('outsider'));
+do $$
+begin
+  begin
+    perform public.staff_save_registration(
+      (select id from public.offerings where title = 'Registration admin'), null,
+      public.org_today() + 3, 'Eve', null, null, '[]'::jsonb, false);
+    raise exception 'RLS test failed: someone outside the team added a booking';
+  exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+
+select pg_temp.act_as(pg_temp.id('admin'));
+create temp table _reg (id uuid, token text) on commit drop;
+grant all on _reg to authenticated;
+insert into _reg
+select s.registration_id, s.qr_token from public.staff_save_registration(
+  (select id from public.offerings where title = 'Registration admin'), null,
+  public.org_today() + 3, 'Ana', 'ana@example.com', '+506 8888 0000',
+  jsonb_build_array(jsonb_build_object('ticket_type_id',
+    (select id from public.ticket_types where name = 'GA' and offering_id = (select id from public.offerings where title = 'Registration admin')), 'qty', 2)),
+  true) s;
+select pg_temp.expect((select seats from public.registrations where id = (select id from _reg)) = 2,
+  'staff add books the seats');
+do $$
+begin
+  begin
+    perform public.staff_save_registration(
+      (select id from public.offerings where title = 'Registration admin'), null,
+      public.org_today() + 3, 'Bo', null, null,
+      jsonb_build_array(jsonb_build_object('ticket_type_id',
+        (select id from public.ticket_types where name = 'GA' and offering_id = (select id from public.offerings where title = 'Registration admin')), 'qty', 2)),
+      false);
+    raise exception 'RLS test failed: staff add went past capacity without an override';
+  exception when raise_exception then
+    if sqlerrm like 'RLS test failed%' then raise; end if;
+  end;
+end $$;
+select public.staff_set_registration_cancelled((select id from _reg), true);
+select pg_temp.expect((select status from public.registrations where id = (select id from _reg)) = 'cancelled',
+  'staff can cancel a booking');
+select pg_temp.expect(not public.registration_live((select r from public.registrations r where r.id = (select id from _reg))),
+  'a cancelled booking is not live');
+select pg_temp.expect((select coalesce(sum(taken), 0) from public.session_counts(
+  (select id from public.offerings where title = 'Registration admin'), public.org_today(), public.org_today() + 5)) = 0,
+  'a cancelled booking frees its seats');
+do $$
+begin
+  begin
+    perform public.check_in((select token from _reg));
+    raise exception 'RLS test failed: a cancelled ticket was checked in';
+  exception when raise_exception then
+    if sqlerrm like 'RLS test failed%' then raise; end if;
+  end;
+end $$;
+select public.staff_set_registration_cancelled((select id from _reg), false);
+select pg_temp.expect((select status from public.registrations where id = (select id from _reg)) = 'confirmed',
+  'staff can restore a cancelled booking');
+reset role;
+delete from public.offerings where title = 'Registration admin';
+
 -- Check-in ---------------------------------------------------------------------------
 
 update public.offerings set start_date = public.org_today()

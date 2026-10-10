@@ -179,7 +179,7 @@ export async function buildDigest(sb: Sb, today = todayIn()): Promise<Digest> {
     sb.from("org_settings").select("name").maybeSingle(),
     sb.from("offerings").select("*").eq("status", "published").lte("start_date", today),
     sb.from("session_cancellations").select("offering_id, session_date").eq("session_date", today),
-    sb.from("registrations").select("offering_id").eq("session_date", today),
+    sb.from("registrations").select("offering_id").eq("session_date", today).neq("status", "cancelled"),
     sb.rpc("todays_guests"),
     sb
       .from("tasks")
@@ -192,7 +192,8 @@ export async function buildDigest(sb: Sb, today = todayIn()): Promise<Digest> {
       .from("registrations")
       .select("id", { count: "exact", head: true })
       .gte("created_at", dayStart(yesterday))
-      .lt("created_at", dayStart(today)),
+      .lt("created_at", dayStart(today))
+      .neq("status", "cancelled"),
     sb
       .from("payments")
       .select("amount, currency")

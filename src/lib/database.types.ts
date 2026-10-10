@@ -3036,6 +3036,7 @@ export type Database = {
           user_id: string | null
           phone: string | null
           seats: number
+          cancelled_at: string | null
         }
         Insert: {
           checked_in_at?: string | null
@@ -3057,6 +3058,7 @@ export type Database = {
           user_id?: string | null
           phone?: string | null
           seats?: number
+          cancelled_at?: string | null
         }
         Update: {
           checked_in_at?: string | null
@@ -3078,6 +3080,7 @@ export type Database = {
           user_id?: string | null
           phone?: string | null
           seats?: number
+          cancelled_at?: string | null
         }
         Relationships: [
           {
@@ -4908,6 +4911,24 @@ export type Database = {
       refresh_membership_caches: { Args: never; Returns: number };
       has_access_today: { Args: { cid: string }; Returns: boolean };
       is_portal_member: { Args: { cid: string }; Returns: boolean };
+      staff_save_registration: {
+        Args: {
+          p_email: string;
+          p_items: Json;
+          p_name: string;
+          p_offering_id: string;
+          p_override?: boolean;
+          p_paid: boolean;
+          p_phone: string;
+          p_registration_id?: string;
+          p_session_date: string;
+        };
+        Returns: { qr_token: string; registration_id: string }[];
+      };
+      staff_set_registration_cancelled: {
+        Args: { p_cancelled: boolean; p_registration_id: string };
+        Returns: undefined;
+      };
       book_tickets: {
         Args: {
           p_email: string;

@@ -44,6 +44,7 @@ export default async function PortalHome() {
           .from("registrations")
           .select("id, session_date, qr_token, status, offering:offerings(title, start_time, end_time, location)")
           .or(`user_id.eq.${p.user!.id},contact_id.eq.${me.id}`)
+          .neq("status", "cancelled")
           .order("session_date")
       : Promise.resolve({ data: [] as never[] }),
   ]);

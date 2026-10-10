@@ -851,6 +851,14 @@ function OfferingDrawer({
 
         {o && (
           <>
+            {o.kind !== "class" && (
+              <>
+                <div className="subhead">Registrations</div>
+                <p style={{ margin: "0 0 8px", fontSize: 13.5 }}>
+                  <Link href={`/events/registrations/${o.id}`}>Registrations, sales and attendees</Link>
+                </p>
+              </>
+            )}
             <div className="subhead">Share</div>
             <ShareLink path={`/e/${o.slug ?? o.id}`} />
             {o.kind === "class" && (
