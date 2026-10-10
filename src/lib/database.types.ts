@@ -4735,6 +4735,38 @@ export type Database = {
         Returns: undefined
       }
       my_guests: { Args: never; Returns: Json };
+      owns_lot: { Args: { p_lot: string }; Returns: boolean };
+      my_properties: {
+        Args: never;
+        Returns: {
+          id: string; code: string; name: string | null; zone: string | null; kind: string;
+          status: string; features: string | null; size_m2: number | null;
+          description: string | null; photo_path: string | null; aerial_path: string | null;
+          home_status: string; home_name: string | null; bedrooms: number | null;
+          bathrooms: number | null; built_m2: number | null; home_notes: string | null;
+          estate_lot_id: string | null; in_hospitality: boolean; hospitality_since: string | null;
+          nightly_rate: number | null; rate_currency: string; max_guests: number | null;
+          min_nights: number; listing_notes: string | null; listing_published: boolean;
+          check_in_time: string; check_out_time: string;
+        }[];
+      };
+      my_property_stays: {
+        Args: { p_lot: string };
+        Returns: {
+          id: string; kind: string; status: string; label: string;
+          guests: number | null; check_in: string; check_out: string;
+        }[];
+      };
+      owner_block_dates: {
+        Args: { p_lot: string; p_from: string; p_to: string; p_note: string | null };
+        Returns: undefined;
+      };
+      owner_cancel_block: { Args: { p_stay: string }; Returns: undefined };
+      owner_set_listing_notes: { Args: { p_lot: string; p_notes: string | null }; Returns: undefined };
+      owner_request_work: {
+        Args: { p_lot: string; p_title: string; p_category: string; p_details: string | null };
+        Returns: undefined;
+      };
       todays_guests: {
         Args: never;
         Returns: { guest_name: string; host_name: string; token: string; status: string; used_at: string | null }[];
