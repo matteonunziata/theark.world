@@ -1997,6 +1997,81 @@ export type Database = {
           },
         ]
       }
+      steward_rules: {
+        Row: { auto_activate: boolean; grace_days: number; id: boolean; months_to_eligible: number }
+        Insert: { auto_activate?: boolean; grace_days?: number; id?: boolean; months_to_eligible?: number }
+        Update: { auto_activate?: boolean; grace_days?: number; id?: boolean; months_to_eligible?: number }
+        Relationships: []
+      }
+      stewardships: {
+        Row: {
+          agreement_name: string | null
+          agreement_path: string | null
+          agreement_signed_at: string | null
+          active_since: string | null
+          contact_id: string
+          created_at: string
+          status: string
+          status_changed_at: string
+          status_reason: string | null
+        }
+        Insert: {
+          agreement_name?: string | null
+          agreement_path?: string | null
+          agreement_signed_at?: string | null
+          active_since?: string | null
+          contact_id: string
+          created_at?: string
+          status?: string
+          status_changed_at?: string
+          status_reason?: string | null
+        }
+        Update: {
+          agreement_name?: string | null
+          agreement_path?: string | null
+          agreement_signed_at?: string | null
+          active_since?: string | null
+          contact_id?: string
+          created_at?: string
+          status?: string
+          status_changed_at?: string
+          status_reason?: string | null
+        }
+        Relationships: []
+      }
+      steward_status_history: {
+        Row: {
+          changed_by: string | null
+          contact_id: string
+          created_at: string
+          from_status: string | null
+          id: string
+          reason: string | null
+          source: string
+          to_status: string
+        }
+        Insert: {
+          changed_by?: string | null
+          contact_id: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          source: string
+          to_status: string
+        }
+        Update: {
+          changed_by?: string | null
+          contact_id?: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          source?: string
+          to_status?: string
+        }
+        Relationships: []
+      }
       amenities: {
         Row: { active: boolean; category: string; created_at: string; id: string; name: string; position: number }
         Insert: { active?: boolean; category?: string; created_at?: string; id?: string; name: string; position?: number }
@@ -4779,6 +4854,24 @@ export type Database = {
       }
       my_guests: { Args: never; Returns: Json };
       owns_lot: { Args: { p_lot: string }; Returns: boolean };
+      steward_activate: { Args: { p_contact: string }; Returns: undefined };
+      steward_deactivate: { Args: { p_contact: string; p_reason: string | null }; Returns: undefined };
+      steward_suspend: { Args: { p_contact: string; p_reason: string }; Returns: undefined };
+      steward_unsuspend: { Args: { p_contact: string; p_reason: string | null }; Returns: undefined };
+      steward_deactivate_self: { Args: { p_reason: string | null }; Returns: undefined };
+      steward_set_agreement: {
+        Args: { p_contact: string; p_signed: string | null; p_path: string | null; p_name: string | null };
+        Returns: undefined;
+      };
+      reconcile_stewards: { Args: never; Returns: number };
+      stewards_overview: {
+        Args: never;
+        Returns: {
+          contact_id: string; name: string; email: string | null; status: string;
+          active_since: string | null; agreement_signed_at: string | null;
+          fees_current: boolean | null; fees_ok: boolean; properties: number; status_reason: string | null;
+        }[];
+      };
       steward_fees_current: { Args: { p_contact: string }; Returns: boolean | null };
       steward_finance: { Args: { p_contact: string }; Returns: Json };
       my_properties: {

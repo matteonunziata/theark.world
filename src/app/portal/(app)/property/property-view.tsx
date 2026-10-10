@@ -17,7 +17,8 @@ import {
   RELATIONS,
 } from "@/lib/estate";
 import { money } from "@/lib/schedule";
-import { blockMyDates, cancelMyDates, requestWork, saveMyHousehold, saveMyNotes } from "./actions";
+import { eligibleOn, monthsActive } from "@/lib/steward";
+import { blockMyDates, cancelMyDates, deactivateMyself, requestWork, saveMyHousehold, saveMyNotes } from "./actions";
 
 type Prop = Database["public"]["Functions"]["my_properties"]["Returns"][number];
 
@@ -75,12 +76,14 @@ export function PropertyView({
   logs,
   stays,
   today,
+  steward,
 }: {
   lot: Prop;
   household: Tables<"lot_household">[];
   logs: Tables<"lot_maintenance">[];
   stays: Stay[];
   today: string;
+  steward: { status: string; active_since: string | null } | null;
 }) {
   const toast = useToast();
   const [busy, start] = useTransition();
@@ -202,6 +205,30 @@ export function PropertyView({
         </div>
 
         <aside style={{ display: "grid", gap: 20 }}>
+          {steward?.status === "active" && steward.active_since && (
+            <section className="pv-panel">
+              <h2>Active stewardship</h2>
+              <p style={{ marginTop: 0 }}>
+                <b>Month {monthsActive(steward.active_since, today)} of 48</b>
+                <span style={muted}> · profit-share eligible {fmtDate(eligibleOn(steward.active_since, 48), { month: "long", year: "numeric" })}</span>
+              </p>
+              <button
+                type="button"
+                className="pv-btn ghost sm"
+                disabled={busy}
+                onClick={() => {
+                  if (!window.confirm("Step back from active stewardship? Your 48-month clock goes back to 0, and you start again from month 0 if you return.")) return;
+                  start(async () => {
+                    const r = await deactivateMyself();
+                    toast(r.ok ? (r.message ?? "Done") : (r.error ?? "Couldn’t save"));
+                  });
+                }}
+              >
+                Step back from active stewardship
+              </button>
+            </section>
+          )}
+
           <section className="pv-panel">
             <h2>Household</h2>
             {household.length === 0 && (

@@ -16,10 +16,11 @@ export default async function PropertyPage({ searchParams }: { searchParams: Pro
   if (!mine.length) redirect("/portal");
   const { lot: want } = await searchParams;
   const lot = mine.find((l) => l.id === want) ?? mine[0];
-  const [{ data: household }, { data: logs }, { data: stays }] = await Promise.all([
+  const [{ data: household }, { data: logs }, { data: stays }, { data: steward }] = await Promise.all([
     p.supabase.from("lot_household").select("*").eq("lot_id", lot.id).order("created_at"),
     p.supabase.from("lot_maintenance").select("*").eq("lot_id", lot.id).order("performed_on", { ascending: false }),
     lot.in_hospitality ? p.supabase.rpc("my_property_stays", { p_lot: lot.id }) : Promise.resolve({ data: [] }),
+    p.supabase.from("stewardships").select("status, active_since").eq("contact_id", p.memberId).maybeSingle(),
   ]);
   return (
     <>
@@ -39,6 +40,7 @@ export default async function PropertyPage({ searchParams }: { searchParams: Pro
         logs={logs ?? []}
         stays={stays ?? []}
         today={todayIn(p.timezone)}
+        steward={steward ?? null}
       />
     </>
   );

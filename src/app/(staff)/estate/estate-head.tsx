@@ -17,6 +17,7 @@ export function EstateHead() {
         items={[
           { href: "/estate", label: "Inventory" },
           { href: "/estate/map", label: "Map" },
+          { href: "/estate/stewards", label: "Stewards" },
         ]}
       />
     </>

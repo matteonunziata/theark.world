@@ -101,3 +101,12 @@ export async function saveMyNotes(_prev: ActionResult, data: FormData): Promise<
   refresh();
   return ok("Notes saved");
 }
+
+/** A steward steps back from active stewardship. The 48-month clock goes back to 0. */
+export async function deactivateMyself(): Promise<ActionResult> {
+  const supabase = await owner();
+  const { error } = await supabase.rpc("steward_deactivate_self", { p_reason: "Stepped back" });
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok("You’re no longer an active steward.");
+}
