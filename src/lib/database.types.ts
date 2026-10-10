@@ -2887,6 +2887,13 @@ export type Database = {
           updated_at: string
           variant: string | null
           web_url: string | null
+          barcode: string | null
+          cost: number | null
+          shopify_product_id: string | null
+          shopify_status: string | null
+          shopify_stock: number | null
+          shopify_synced_at: string | null
+          sku: string | null
         }
         Insert: {
           active?: boolean
@@ -2909,6 +2916,13 @@ export type Database = {
           updated_at?: string
           variant?: string | null
           web_url?: string | null
+          barcode?: string | null
+          cost?: number | null
+          shopify_product_id?: string | null
+          shopify_status?: string | null
+          shopify_stock?: number | null
+          shopify_synced_at?: string | null
+          sku?: string | null
         }
         Update: {
           active?: boolean
@@ -2931,6 +2945,13 @@ export type Database = {
           updated_at?: string
           variant?: string | null
           web_url?: string | null
+          barcode?: string | null
+          cost?: number | null
+          shopify_product_id?: string | null
+          shopify_status?: string | null
+          shopify_stock?: number | null
+          shopify_synced_at?: string | null
+          sku?: string | null
         }
         Relationships: []
       }

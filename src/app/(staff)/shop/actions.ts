@@ -10,6 +10,8 @@ import {
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
 import { fetchCatalog } from "@/lib/farm-catalog";
+import * as shopify from "@/lib/shopify";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { CATEGORIES, SHOP_METHODS, type ShopMethod } from "@/lib/shop";
 
 /** Every shop page shows the ledger one way or another. */
@@ -252,6 +254,20 @@ export async function recordStock(
  * anything edited here (name, category, photo, notes) is left alone. */
 export async function syncFromWebsite(): Promise<ActionResult> {
   const { supabase } = await staffOrThrow("admin", "shop");
+  // With Shopify connected, pull from its Admin API (stock counts, sku, status
+  // and all). Writes use the service role, like the nightly sync.
+  const admin = createAdminClient();
+  if (admin) {
+    try {
+      const r = await shopify.pullProductsNow(admin);
+      if (r) {
+        refresh();
+        return r.errors.length ? fail(`${shopify.productsLine(r)} ${r.errors[0]}`) : ok(shopify.productsLine(r));
+      }
+    } catch (e) {
+      return fail(e instanceof Error ? e.message : "Couldn’t reach Shopify.");
+    }
+  }
   let rows;
   try {
     rows = await fetchCatalog();

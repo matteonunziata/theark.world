@@ -162,6 +162,14 @@ export function ShopView({
                   ) : (
                     <span className="muted">Not counted</span>
                   )}
+                  {p.shopify_stock !== null && (
+                    <>
+                      <br />
+                      <span className="muted" style={{ fontSize: 12.5 }}>
+                        Shopify {Number(p.shopify_stock)}
+                      </span>
+                    </>
+                  )}
                 </span>
                 <span className="muted" style={{ fontSize: 13 }}>{canEdit ? "Edit" : "View"}</span>
               </button>
@@ -286,6 +294,11 @@ function ProductDrawer({
           <label htmlFor="p-desc">Description</label>
           <textarea id="p-desc" name="description" defaultValue={p?.description ?? ""} placeholder="What it is, how it’s made, anything the shop team should know" />
         </div>
+        {p?.shopify_synced_at && (
+          <p className="muted" style={{ fontSize: 13, margin: "0 0 12px" }}>
+            From Shopify: {[p.sku ? `SKU ${p.sku}` : null, p.barcode ? `barcode ${p.barcode}` : null, p.cost !== null ? `cost ${fmtMoney(p.cost, "CRC")}` : null, p.shopify_stock !== null ? `${Number(p.shopify_stock)} in stock there` : null, p.shopify_status && p.shopify_status !== "ACTIVE" ? p.shopify_status.toLowerCase() : null].filter(Boolean).join(" · ") || "synced"}
+          </p>
+        )}
         {p?.web_url && (
           <p className="muted" style={{ fontSize: 13, margin: "0 0 12px" }}>
             On the online shop:{" "}

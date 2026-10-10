@@ -74,7 +74,6 @@
 
 - **Shopify orders: history and speed.** Online orders now come into ARK OS (Round 20), but only those placed after the first sync and only when a sync runs (nightly, or Sync now). Backfill the last 60 days, and add Shopify webhooks so an order shows within a minute?
 - **Shopify orders: partial refunds.** An order refunded in part stays counted in full; one refunded in full, voided or cancelled comes back out. Count partial refunds by line?
-- **Shopify orders: unmatched lines.** A line whose variant isn't in the catalog (a product added in Shopify since the last "Sync from website", a gift card, a custom item) is kept on the order but isn't in the sales ledger. Run the catalog sync before each order pull so these don't happen?
 - **Shop sales into Finance.** Shop revenue isn't posted to the Finance ledger. A daily or weekly summary entry under the Farm shop business line, created automatically, or keep entering deposits by hand?
 - **Member prices.** No product has a member price yet, so the member share on the Overview just shows who bought while an active member. Set member prices on the products that should have one (the drawer has the field).
 - **Costs.** Products have no cost price, so there's no margin figure. Worth adding a cost per unit, at least for bought-in goods?
@@ -128,7 +127,6 @@
 - **Which business line?** Imported payments are sorted by keywords in their description, and anything unclear goes to Other. After the first import, look at Finance → Other: if many share a description, tell me and I'll add it to the rules.
 - **Adding buyers to the CRM.** The import links payments to people already in the CRM and adds nobody. Should past buyers who aren't in the CRM be added as contacts (tagged "Stripe"), or kept out?
 - **Fees on new payments.** Imported payments bring Stripe's fees into Finance; payments taken through ARK OS's checkout don't yet. Add them there too, so the monthly fee expense is complete?
-- **Portal shop: should the catalog refresh by itself?** It only changes when someone runs "Sync from website" in the shop's Products tab, so a product that sells out in Shopify can still show in the portal until then. A nightly sync would fix that.
 - **Portal shop: delivery?** Orders are pickup at The ARK only. Delivery would need an address, a fee or Shopify's shipping rates, and a decision on who delivers.
 - **Portal shop: who is told to prepare the order?** A paid order shows in Slack's payments (if on), the shop ledger and Shopify (tagged `pickup`). A Slack message of its own, or a "ready for pickup" step, isn't built.
 - **Portal shop: stock.** Orders decrement Shopify's stock, but the portal only learns of sell-outs at the next "Sync from website", and a member can pay for something that sold out in between. Nothing refunds automatically.

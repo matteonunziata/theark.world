@@ -389,3 +389,10 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Payments:** BAC card (staff type the authorization code), SINPE (reference; the number is set in Settings → Organization), cash (change due), and Pay with account (Tilopay saved card). Payments live in `sale_payments`, apart from the Stripe `payments` table.
 - **Tilopay** is off until `TILOPAY_ENABLED=1` plus `TILOPAY_API_USER`, `TILOPAY_API_PASSWORD`, `TILOPAY_API_KEY` are set. `contacts.tilopay_card_token` holds the token only. The charge call in `src/lib/tilopay.ts` is a placeholder (see OPEN_QUESTIONS).
 - **Receipts:** email (Resend) and a WhatsApp link with a short text, offered when a customer is attached.
+
+## Round 22: Shopify products into ARK OS (2026-10-10)
+
+- **The catalog now comes from Shopify's Admin API,** not only the public feed. It runs with every Shopify sync (nightly, Sync now) before the orders pull, so an order for a new product finds it, and from the shop's "Sync from website" button while Shopify is connected (the old public-feed path is the fallback when it isn't). Needs the app's `read_products` scope; cost also needs `read_inventory`, and without it cost is skipped and the sync says so.
+- **What is pulled:** new variants (counting off, so no alerts); for existing ones price, online availability, photo, product group, variant, SKU, barcode, Shopify status and Shopify's own stock count. **Never overwritten:** name, category, description (filled only when empty), an uploaded photo, ARK OS stock, member price and the low-stock alert.
+- **Stock is shown beside, not merged** (my default; the question was left open): `shopify_stock` is Shopify's count, shown under ARK OS's count on Products & stock. Sales entered in ARK OS only never go back to Shopify, so overwriting would lose them.
+- **For sale online** means the product is active, published to the online store and the variant can be bought. Archived or draft products are off sale online. A variant that is missing from a complete pull is taken off sale online, never deleted, because sales point at it.

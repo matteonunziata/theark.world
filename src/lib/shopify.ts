@@ -13,6 +13,7 @@ import {
   normEmail,
 } from "@/lib/shopify-map";
 import { contactName, type OrderNode, optedOutOfMarketing, toRecord } from "@/lib/shopify-orders-map";
+import { type ProductNode, type ProductRow, toProductRows } from "@/lib/shopify-products-map";
 
 // Shopify sync. Who is a member goes out as customer tags (ark-member10,
 // ark-member20). The codes member10 and member20 in Shopify are limited to the
@@ -410,6 +411,157 @@ async function link(sb: Sb, contactId: string, customerId: string) {
     .upsert({ provider: "shopify", contact_id: contactId, external_id: customerId, synced_at: new Date().toISOString() }, { onConflict: "provider,contact_id" });
 }
 
+// Products from Shopify -------------------------------------------------------------
+
+export type ProductsResult = {
+  created: number;
+  updated: number;
+  /** Products no longer in Shopify (or archived) that were taken off sale online. */
+  gone: number;
+  /** Ran out of time: the rest come on the next run. */
+  more: boolean;
+  /** Cost needs the read_inventory permission; why it was skipped, if it was. */
+  costNote: string | null;
+  errors: string[];
+};
+
+export const productsLine = (p: ProductsResult) =>
+  `Products: ${p.created} new, ${p.updated} updated${p.gone ? `, ${p.gone} taken off sale online` : ""}` +
+  `${p.more ? ", more waiting for the next run" : ""}${p.costNote ? `. Cost not pulled: ${p.costNote}` : ""}.`;
+
+const PRODUCT_FIELDS = `
+  id title handle status descriptionHtml onlineStoreUrl
+  featuredMedia { preview { image { url } } }
+  collections(first: 10) { nodes { handle } }
+  variants(first: 50) {
+    nodes { id title price sku barcode inventoryQuantity availableForSale media(first: 1) { nodes { preview { image { url } } } } }
+    pageInfo { hasNextPage }
+  }`;
+
+/** Unit cost per variant. Needs read_inventory; the rest of the pull doesn't. */
+async function variantCosts(shop: string, token: string) {
+  const costs = new Map<string, number>();
+  let after: string | null = null;
+  for (let page = 0; page < 30; page++) {
+    const d: { productVariants: { nodes: { id: string; inventoryItem: { unitCost: { amount: string } | null } | null }[]; pageInfo: { hasNextPage: boolean; endCursor: string | null } } } =
+      await graphql(
+        shop,
+        token,
+        `query($after: String) { productVariants(first: 100, after: $after) { nodes { id inventoryItem { unitCost { amount } } } pageInfo { hasNextPage endCursor } } }`,
+        { after },
+      );
+    for (const v of d.productVariants.nodes) {
+      const amount = v.inventoryItem?.unitCost?.amount;
+      if (amount !== undefined) costs.set(numericGid(v.id), Number(amount));
+    }
+    if (!d.productVariants.pageInfo.hasNextPage) break;
+    after = d.productVariants.pageInfo.endCursor;
+  }
+  return costs;
+}
+const numericGid = (gid: string) => gid.split("/").pop() ?? gid;
+
+/**
+ * Bring the catalog in from Shopify's Admin API: new products, and price,
+ * photo, sku, barcode, status and Shopify's own stock count for the ones
+ * already here. What the shop team edits in ARK OS (name, category, notes, an
+ * uploaded photo) and ARK OS's own stock are never overwritten. A variant that
+ * is archived or gone in Shopify is taken off sale online, never deleted,
+ * because its sales history points at it.
+ */
+export async function pullProducts(sb: Sb, i: Integration & { shop_domain: string; secret: string }, token: string, started = Date.now()): Promise<ProductsResult> {
+  const r: ProductsResult = { created: 0, updated: 0, gone: 0, more: false, costNote: null, errors: [] };
+  const nodes: ProductNode[] = [];
+  let after: string | null = null;
+  for (let page = 0; page < 60; page++) {
+    if (Date.now() - started > BUDGET_MS) {
+      r.more = true;
+      break;
+    }
+    const d: { products: { nodes: ProductNode[]; pageInfo: { hasNextPage: boolean; endCursor: string | null } } } = await graphql(
+      i.shop_domain,
+      token,
+      `query($after: String) { products(first: 5, after: $after, sortKey: ID) { nodes {${PRODUCT_FIELDS}} pageInfo { hasNextPage endCursor } } }`,
+      { after },
+    );
+    nodes.push(...d.products.nodes);
+    if (!d.products.pageInfo.hasNextPage) break;
+    after = d.products.pageInfo.endCursor;
+    if (page === 59) r.more = true;
+  }
+  for (const p of nodes) {
+    if (p.variants.pageInfo.hasNextPage) r.errors.push(`${p.title}: has more than 50 variants, the rest were skipped`);
+  }
+  const rows = toProductRows(nodes);
+
+  let costs = new Map<string, number>();
+  if (!r.more) {
+    try {
+      costs = await variantCosts(i.shop_domain, token);
+    } catch (e) {
+      r.costNote = errorText(e);
+    }
+  }
+
+  const { data: existing, error } = await sb.from("products").select("id, external_id, description, online").not("external_id", "is", null).limit(5000);
+  if (error) throw new Error(error.message);
+  const byExt = new Map(existing.map((p) => [p.external_id as string, p]));
+  const now = new Date().toISOString();
+  const shared = (row: ProductRow) => ({
+    price: row.price,
+    online: row.online,
+    web_url: row.web_url,
+    image_url: row.image_url,
+    product_group: row.product_group,
+    variant: row.variant,
+    sku: row.sku,
+    barcode: row.barcode,
+    shopify_status: row.shopify_status,
+    shopify_stock: row.shopify_stock,
+    shopify_product_id: row.shopify_product_id,
+    shopify_synced_at: now,
+    ...(costs.has(row.external_id) ? { cost: costs.get(row.external_id) } : {}),
+  });
+
+  // Counting stays off until someone counts, so a new product raises no alerts.
+  const fresh = rows.filter((row) => !byExt.has(row.external_id));
+  if (fresh.length) {
+    const { error } = await sb
+      .from("products")
+      .insert(fresh.map((row) => ({ ...shared(row), external_id: row.external_id, name: row.name, category: row.category, description: row.description, track_stock: false, low_at: 0 })));
+    if (error) throw new Error(error.message);
+    r.created = fresh.length;
+  }
+  for (const row of rows) {
+    const p = byExt.get(row.external_id);
+    if (!p) continue;
+    const { error } = await sb
+      .from("products")
+      .update({ ...shared(row), ...(p.description ? {} : { description: row.description }) })
+      .eq("id", p.id);
+    if (error) r.errors.push(`${row.name}: ${error.message}`);
+    else r.updated++;
+  }
+
+  // Only a complete pull can say a variant is gone.
+  if (!r.more && !r.errors.length) {
+    const seen = new Set(rows.map((row) => row.external_id));
+    const gone = existing.filter((p) => p.online !== false && !seen.has(p.external_id as string));
+    for (const p of gone) {
+      const { error } = await sb.from("products").update({ online: false, shopify_synced_at: now }).eq("id", p.id);
+      if (!error) r.gone++;
+    }
+  }
+  return r;
+}
+
+/** The shop's "Sync from website" button: the same pull, or null while Shopify isn't connected. */
+export async function pullProductsNow(sb: Sb): Promise<ProductsResult | null> {
+  const i = await getIntegration(sb);
+  if (!ready(i)) return null;
+  return pullProducts(sb, i, await tokenFor(sb, i));
+}
+
 // Orders from Shopify ---------------------------------------------------------------
 
 export type OrdersResult = {
@@ -527,6 +679,7 @@ export async function pullOrders(sb: Sb, i: Integration & { shop_domain: string;
 
 export type SyncResult = {
   orders: OrdersResult | null;
+  products: ProductsResult | null;
   members: number;
   tagged: number;
   untagged: number;
@@ -546,7 +699,7 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
   if (!ready(i)) return { error: "Shopify isn’t connected." };
   const started = Date.now();
   const startedAt = new Date().toISOString();
-  const r: SyncResult = { orders: null, members: 0, tagged: 0, untagged: 0, created: 0, noEmail: 0, left: 0, errors: [] };
+  const r: SyncResult = { orders: null, products: null, members: 0, tagged: 0, untagged: 0, created: 0, noEmail: 0, left: 0, errors: [] };
 
   let token: string;
   try {
@@ -610,6 +763,14 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
     r.errors.push(errorText(e));
   }
 
+  // The catalog goes first so an order for a new product finds it.
+  try {
+    r.products = await pullProducts(sb, i, token, started);
+    r.errors.push(...r.products.errors);
+  } catch (e) {
+    r.errors.push(`Products: ${errorText(e)}`);
+  }
+
   // Online orders come in whether or not the tags could be set (a missing
   // discount code, say, has nothing to do with them).
   try {
@@ -626,6 +787,7 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
     detail:
       `${plural(r.members, "member")} entitled today. Tagged ${r.tagged} (${r.created} new in Shopify), took the tag off ${r.untagged}` +
       `${r.noEmail ? `, ${r.noEmail} without an email skipped` : ""}${r.left ? `, ${r.left} left for the next run` : ""}` +
+      `${r.products ? ` ${productsLine(r.products)}` : ""}` +
       `${r.orders ? ` ${ordersLine(r.orders)}` : ""}` +
       `${r.errors.length ? `, ${plural(r.errors.length, "failure")}: ${r.errors.slice(0, 4).join(" | ")}` : "."}`,
   });

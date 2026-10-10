@@ -125,6 +125,7 @@ export async function syncShopifyNow(): Promise<ActionResult> {
   if (r.created) parts.push(`${r.created} new in Shopify`);
   if (r.noEmail) parts.push(`${r.noEmail} skipped, no email`);
   if (r.left) parts.push(`${r.left} left, sync again`);
+  if (r.products) parts.push(shopify.productsLine(r.products).replace(/\.$/, ""));
   if (r.orders) parts.push(shopify.ordersLine(r.orders).replace(/\.$/, ""));
   if (r.errors.length) return fail(`Synced (${parts.join(", ")}), but ${r.errors.length} failed: ${r.errors[0]}`);
   return ok(`Synced: ${parts.join(", ")}`);
