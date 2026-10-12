@@ -26,7 +26,8 @@ export default async function LoginPage({
         </div>
         <h1>Sign in</h1>
         <p>
-          Enter your email and we’ll send you a link to sign in. The same
+          Sign in with your email and password. First time, or forgot it?
+          We’ll email you a link, then you can set a password. The same
           sign-in works for the team, facilitators and members.
         </p>
         {typeof error === "string" && (

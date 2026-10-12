@@ -3,12 +3,16 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { useEffect, useRef, useState } from "react";
 import { sendSignInLink } from "@/app/auth/actions";
+import { afterEmailSignIn } from "@/lib/after-sign-in";
 import { createLinkClient } from "@/lib/supabase/link-client";
 
 /** One sign-in for the team and members; the email says who someone is. */
 export function MagicLinkForm({ next }: { next: string }) {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "sent-code">("idle");
   const [email, setEmail] = useState("");
+  const [typed, setTyped] = useState("");
+  const [password, setPassword] = useState("");
+  const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState("");
   const [verifying, setVerifying] = useState(false);
   const busy = useRef(false);
@@ -23,9 +27,9 @@ export function MagicLinkForm({ next }: { next: string }) {
     }
   }, [next]);
 
-  async function send(form: FormData) {
+  async function send() {
     if (busy.current) return;
-    const value = String(form.get("email") ?? "").trim().toLowerCase();
+    const value = typed.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       setError("Enter a valid email.");
       return;
@@ -79,6 +83,38 @@ export function MagicLinkForm({ next }: { next: string }) {
     setState("sent");
   }
 
+  async function signInWithPassword(form: FormData) {
+    const value = typed.trim().toLowerCase();
+    const pw = String(form.get("password") ?? "");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      setError("Enter a valid email.");
+      return;
+    }
+    if (!pw) {
+      setError("Enter your password, or email yourself a link.");
+      return;
+    }
+    setSigningIn(true);
+    setError("");
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      { isSingleton: false, auth: { detectSessionInUrl: false } },
+    );
+    const { error } = await supabase.auth.signInWithPassword({ email: value, password: pw });
+    if (error) {
+      setSigningIn(false);
+      setPassword("");
+      setError(
+        error.status === 429
+          ? "Too many tries. Wait a few minutes, or email yourself a link."
+          : "That email and password didn’t match. First time, or forgot it? Email yourself a link.",
+      );
+      return;
+    }
+    window.location.replace(next);
+  }
+
   async function verify(form: FormData) {
     const token = String(form.get("code") ?? "").replace(/\D/g, "");
     if (token.length < 6) {
@@ -92,13 +128,13 @@ export function MagicLinkForm({ next }: { next: string }) {
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
       { isSingleton: false, auth: { detectSessionInUrl: false } },
     );
-    const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
     if (error) {
       setVerifying(false);
       setError("That code didn’t work. Check it, or ask for a new one.");
       return;
     }
-    window.location.replace(next);
+    window.location.replace(afterEmailSignIn(data.user, next));
   }
 
   if (state === "sending") {
@@ -157,7 +193,7 @@ export function MagicLinkForm({ next }: { next: string }) {
     );
   }
   return (
-    <form action={send}>
+    <form action={signInWithPassword}>
       {error && (
         <p className="auth-err" role="alert">
           {error}
@@ -169,12 +205,28 @@ export function MagicLinkForm({ next }: { next: string }) {
           id="m-email"
           name="email"
           type="email"
-          autoComplete="email"
+          autoComplete="username"
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
           required
         />
       </div>
-      <button type="submit" className="btn primary auth-btn">
-        Email me a sign-in link
+      <div className="fld">
+        <label htmlFor="m-password">Password</label>
+        <input
+          id="m-password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      </div>
+      <button type="submit" className="btn primary auth-btn" disabled={signingIn}>
+        {signingIn ? "Signing in…" : "Sign in"}
+      </button>
+      <button type="button" className="linkish-sm" style={{ margin: "12px auto 0" }} onClick={send}>
+        First time, or forgot your password? Email me a link
       </button>
     </form>
   );

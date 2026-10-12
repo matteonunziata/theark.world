@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
+import type { User } from "@supabase/supabase-js";
+import { afterEmailSignIn } from "@/lib/after-sign-in";
 
 /**
  * Finishes an email sign-in. The link arrives with the session in the URL
@@ -36,20 +38,23 @@ export function Confirm({ next }: { next: string }) {
       const access_token = hash.get("access_token");
       const refresh_token = hash.get("refresh_token");
       const token_hash = query.get("token_hash");
+      let user: User | null = null;
       if (access_token && refresh_token) {
-        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+        const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
         if (error) throw error;
+        user = data.user;
       } else if (token_hash) {
-        const { error } = await supabase.auth.verifyOtp({
+        const { data, error } = await supabase.auth.verifyOtp({
           token_hash,
           type: (query.get("type") as "magiclink" | "email" | null) ?? "email",
         });
         if (error) throw error;
+        user = data.user;
       } else {
         throw new Error("That sign-in link is incomplete or was already used. Ask for a new one.");
       }
       // A full load, so the server sees the new session cookies.
-      window.location.replace(next);
+      window.location.replace(afterEmailSignIn(user, next));
     }
 
     run().catch((e: Error) => {
