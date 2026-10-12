@@ -61,7 +61,9 @@ export async function requireStaff(module?: ModuleKey) {
 export async function staffOrThrow(...roles: string[]) {
   const v = await getViewer();
   if (!v.staff) throw new Error("You need to be signed in as staff.");
-  if (roles.length && !roles.includes(v.staff.role)) {
+  // Community managers have the same data access as division leads.
+  const role = v.staff.role === "community_manager" ? "lead" : v.staff.role;
+  if (roles.length && !roles.includes(v.staff.role) && !roles.includes(role)) {
     throw new Error("You don’t have access to do that.");
   }
   return { ...v, staff: v.staff };
