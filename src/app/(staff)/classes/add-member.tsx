@@ -9,6 +9,7 @@ export function AddMember({ offeringId, date }: { offeringId: string; date: stri
   const [open, setOpen] = useState(false);
   const [members, setMembers] = useState<MemberHit[] | null>(null);
   const [picked, setPicked] = useState("");
+  const [q, setQ] = useState("");
   const [pending, start] = useTransition();
   const toast = useToast();
 
@@ -30,6 +31,9 @@ export function AddMember({ offeringId, date }: { offeringId: string; date: stri
     });
   }
 
+  const needle = q.trim().toLowerCase();
+  const shown = members?.filter((m) => !needle || m.name.toLowerCase().includes(needle) || m.id === picked) ?? null;
+
   if (!open) {
     return (
       <button type="button" className="btn" onClick={show}>
@@ -41,6 +45,15 @@ export function AddMember({ offeringId, date }: { offeringId: string; date: stri
   return (
     <div className="fld" style={{ maxWidth: 420, flex: "1 1 320px" }}>
       <label htmlFor="am-pick">Add a member to this class</label>
+      <input
+        type="search"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Search members by name"
+        autoComplete="off"
+        aria-label="Search members"
+        disabled={members === null}
+      />
       <div style={{ display: "flex", gap: 8 }}>
         <select
           id="am-pick"
@@ -49,8 +62,8 @@ export function AddMember({ offeringId, date }: { offeringId: string; date: stri
           disabled={members === null}
           style={{ flex: 1 }}
         >
-          <option value="">{members === null ? "Loading members…" : "Choose a member"}</option>
-          {members?.map((m) => (
+          <option value="">{members === null ? "Loading members…" : needle && shown?.length === 0 ? "No members match" : "Choose a member"}</option>
+          {shown?.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name}
               {m.tier ? ` · ${tierName(m.tier)}` : ""}
