@@ -34,6 +34,9 @@ export function Shell({
           <Logo height={24} />
         </Link>
         <AskAi variant="bar" />
+        <a className="topbar-portal" href="/portal">
+          Portal
+        </a>
         <button
           type="button"
           aria-expanded={open}
