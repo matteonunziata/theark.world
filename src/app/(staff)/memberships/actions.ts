@@ -218,7 +218,7 @@ async function priceFor(
 
 /** The price shown in the drawer once a person and a tier are chosen. */
 export async function quoteTier(contactId: string | null, tierKey: string): Promise<Quote | null> {
-  const { supabase } = await staffOrThrow("memberships");
+  const { supabase } = await staffOrThrow("admin", "lead", "sales", "community_manager");
   if (!tierKey) return null;
   return priceFor(supabase, contactId, tierKey);
 }
