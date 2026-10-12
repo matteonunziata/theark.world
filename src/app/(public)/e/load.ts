@@ -80,7 +80,10 @@ export async function loadEvent(id: string, date?: string | null) {
       counts: counts ?? [],
       sessions: upcoming.map((s) => ({ date: s.date, cancelled: s.cancelled, closed: registrationClosed || bookingClosed(o, s.date, now) })),
       attendees,
-      canBook: !!memberId || (o.kind !== "class" && o.access === "everyone"),
+      // Guests can book events, and classes whose tickets are paid first (breakfast, lunch).
+      canBook:
+        !!memberId ||
+        (o.access === "everyone" && (o.kind !== "class" || (tickets ?? []).some((t) => t.pay_first))),
     },
   };
 }

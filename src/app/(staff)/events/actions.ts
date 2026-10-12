@@ -122,13 +122,12 @@ export async function saveOffering(
     capacity: capacity > 0 ? capacity : null,
     booking_cutoff_minutes: cutoffMinutes,
     facilitator_pay_tier: tier === 2 || tier === 3 ? tier : 1,
-    // Classes are members-only; events choose.
+    // Classes are members-only unless set to everyone, which only takes effect
+    // when the class has a pay-first ticket (breakfast, lunch). Events open to everyone by default.
     access:
-      kind === "class"
-        ? "members"
-        : field(data, "access") === "members"
-          ? "members"
-          : "everyone",
+      field(data, "access") === "everyone" || (kind !== "class" && field(data, "access") !== "members")
+        ? "everyone"
+        : "members",
     status: field(data, "status") === "draft" ? "draft" : "published",
     cover_path: field(data, "cover_path"),
   };
