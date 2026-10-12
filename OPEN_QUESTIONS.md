@@ -168,3 +168,5 @@
 - **Receipts on WhatsApp** open a chat with a ready message; automatic sending needs the WhatsApp template set up.
 - **The old sale form on Sales** (no discount, no payment record) could be retired once Checkout is trusted.
 
+- **Discounted rate for non-active stewards**: needs a pricing rule before it can be built. Price is based on when they bought their land; what are the date bands and the rate for each?
+- **Photo on passes bought online**: only passes issued by staff require a photo today. Should the portal or the pass page ask buyers for one too?
