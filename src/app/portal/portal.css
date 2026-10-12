@@ -35,13 +35,13 @@
 .pv-main { max-width: 1120px; margin: 0 auto; padding: 24px 20px 96px; }
 
 /* hero */
-.pv-hero { position: relative; overflow: hidden; border-radius: 28px; min-height: 0; padding: 28px 32px; display: flex; flex-direction: column; justify-content: flex-end; color: var(--pv-cream); background: radial-gradient(120% 120% at 0% 0%, var(--pv-green-2) 0%, var(--pv-green) 55%, #142519 100%); background-size: cover; background-position: center; }
+.pv-hero { position: relative; overflow: hidden; border-radius: 28px; min-height: 0; padding: 20px 28px; display: flex; flex-direction: column; justify-content: flex-end; color: var(--pv-cream); background: radial-gradient(120% 120% at 0% 0%, var(--pv-green-2) 0%, var(--pv-green) 55%, #142519 100%); background-size: cover; background-position: center; }
 .pv-hero.has-img::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 20, 14, 0.35) 0%, rgba(10, 20, 14, 0.82) 100%); }
 .pv-hero.has-img h1 { text-shadow: 0 2px 18px rgba(10, 20, 14, 0.45); }
 .pv-hero > * { position: relative; }
 .pv-hero .mark { position: absolute !important; right: -70px; top: -60px; width: 420px !important; height: 420px !important; opacity: 0.12; }
 .pv-hero .eyebrow { text-transform: uppercase; letter-spacing: 0.14em; font-size: 12px; font-weight: 600; opacity: 0.85; }
-.pv-hero h1 { font-size: clamp(30px, 5vw, 48px); line-height: 1.02; margin: 6px 0 0; color: var(--pv-cream); max-width: 16ch; }
+.pv-hero h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.02; margin: 6px 0 0; color: var(--pv-cream); max-width: 16ch; }
 .pv-hero p { margin: 0; max-width: 54ch; font-size: 17px; opacity: 0.9; }
 .pv-hero .cta { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; }
 
@@ -148,7 +148,7 @@
   .pv-nav { display: none; }
   .pv-top-in { padding: 10px 16px; gap: 10px; }
   .pv-main { padding: 16px 16px 110px; }
-  .pv-hero { padding: 26px 22px; min-height: 300px; border-radius: 22px; }
+  .pv-hero { padding: 18px 20px; min-height: 0; border-radius: 20px; }
   .pv-hero .mark { width: 300px !important; height: 300px !important; }
   .pv-big { grid-template-columns: 1fr; }
   .pv-big .img { min-height: 200px; }
