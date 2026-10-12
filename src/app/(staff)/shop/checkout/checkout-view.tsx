@@ -6,6 +6,7 @@ import { tierName } from "@/lib/crm";
 import { avatarUrl } from "@/lib/covers";
 import { CATEGORIES, fmtMoney, productImage } from "@/lib/shop";
 import {
+  addCustomer,
   type Customer,
   completeSale,
   emailReceipt,
@@ -53,11 +54,18 @@ export function CheckoutView({
   const [methodPick, setMethod] = useState<Method | null>(null);
   const [ref, setRef] = useState("");
   const [cash, setCash] = useState("");
+  // null = follow the customer's email; a string = what the cashier typed.
+  const [emailTyped, setEmailTyped] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [pending, start] = useTransition();
   // The sale being finished, kept for the receipt after the basket clears.
-  const [done, setDone] = useState<{ customer: Customer | null; method: Method } | null>(null);
+  const [done, setDone] = useState<{
+    customer: Customer | null;
+    method: Method;
+    email: string;
+    emailed: { ok: boolean; message: string } | null;
+  } | null>(null);
 
   const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const cats = useMemo(() => CATEGORIES.filter((c) => products.some((p) => p.category === c)), [products]);
@@ -73,6 +81,7 @@ export function CheckoutView({
   const discount = lines.reduce((n, l) => n + Math.round((Math.round(l.p.price * l.qty) * pct) / 100), 0);
   const total = subtotal - discount;
 
+  const receiptTo = (emailTyped ?? customer?.email ?? "").trim();
   const methods = METHODS.filter(([m]) => m !== "tilopay_account" || (tilopay && customer?.has_card));
   // A method that is no longer offered (customer removed or changed) counts as none.
   const method = methods.some(([m]) => m === methodPick) ? methodPick : null;
@@ -103,6 +112,7 @@ export function CheckoutView({
     setMethod(null);
     setRef("");
     setCash("");
+    setEmailTyped(null);
     setError(null);
     setReceipt(null);
     setDone(null);
@@ -110,6 +120,9 @@ export function CheckoutView({
 
   const confirm = () => {
     if (!method || !ready) return;
+    if (receiptTo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(receiptTo)) {
+      return setError("That receipt email doesn’t look right. Fix it or clear it.");
+    }
     setError(null);
     start(async () => {
       const res = await completeSale({
@@ -118,15 +131,25 @@ export function CheckoutView({
         method,
         reference: ref,
         cashReceived: method === "cash" ? cashNum : undefined,
+        receiptEmail: receiptTo || undefined,
       });
       if (!res.ok) return setError(res.error);
-      setDone({ customer, method });
+      setDone({ customer, method, email: receiptTo, emailed: res.emailed });
       setReceipt(res.receipt);
     });
   };
 
   if (receipt && done) {
-    return <Confirmation receipt={receipt} customer={done.customer} method={done.method} onNext={reset} />;
+    return (
+      <Confirmation
+        receipt={receipt}
+        customer={done.customer}
+        method={done.method}
+        email={done.email}
+        emailed={done.emailed}
+        onNext={reset}
+      />
+    );
   }
 
   return (
@@ -322,6 +345,19 @@ export function CheckoutView({
               </>
             )}
 
+            <div className="fld">
+              <label htmlFor="co-email">Email the receipt to (optional)</label>
+              <input
+                id="co-email"
+                type="email"
+                inputMode="email"
+                placeholder="Leave empty for no email"
+                value={emailTyped ?? customer?.email ?? ""}
+                onChange={(e) => setEmailTyped(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+
             {error && <div className="form-error" role="alert">{error}</div>}
             <button type="button" className="btn primary co-pay" disabled={!ready || pending} onClick={confirm}>
               {pending ? "Working…" : `Confirm ${fmtMoney(total)}`}
@@ -337,6 +373,7 @@ function CustomerPanel({ customer, onPick }: { customer: Customer | null; onPick
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Customer[]>([]);
   const [busy, setBusy] = useState(false);
+  const [adding, setAdding] = useState(false);
   const seq = useRef(0);
 
   useEffect(() => {
@@ -380,6 +417,20 @@ function CustomerPanel({ customer, onPick }: { customer: Customer | null; onPick
       </section>
     );
   }
+  if (adding) {
+    return (
+      <NewCustomer
+        initial={q.trim()}
+        onCancel={() => setAdding(false)}
+        onAdded={(c) => {
+          onPick(c);
+          setAdding(false);
+          setQ("");
+          setResults([]);
+        }}
+      />
+    );
+  }
   return (
     <section className="co-box">
       <h3>Customer <span className="muted">(optional)</span></h3>
@@ -416,7 +467,63 @@ function CustomerPanel({ customer, onPick }: { customer: Customer | null; onPick
         ))}
         {!busy && q.trim().length >= 2 && results.length === 0 && <li className="muted">No one found.</li>}
       </ul>
+      <button type="button" className="btn" onClick={() => setAdding(true)}>
+        {q.trim().length >= 2 && !busy && results.length === 0 ? "Add them as a new customer" : "New customer"}
+      </button>
       <p className="muted co-guest">Guest sale: no discount, no account payment.</p>
+    </section>
+  );
+}
+
+function NewCustomer({
+  initial,
+  onAdded,
+  onCancel,
+}: {
+  initial: string;
+  onAdded: (c: Customer) => void;
+  onCancel: () => void;
+}) {
+  const toast = useToast();
+  // Whatever was typed in the search box becomes the starting point.
+  const [name, setName] = useState(/[@\d]/.test(initial) ? "" : initial);
+  const [email, setEmail] = useState(initial.includes("@") ? initial : "");
+  const [phone, setPhone] = useState(/^[\d\s+()-]{6,}$/.test(initial) ? initial : "");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+  const save = () => {
+    setError(null);
+    start(async () => {
+      const r = await addCustomer({ name, email, phone });
+      if (!r.ok) return setError(r.error);
+      toast(r.existing ? `${r.customer.name} was already in the CRM` : `${r.customer.name} added to the CRM`);
+      onAdded(r.customer);
+    });
+  };
+  return (
+    <section className="co-box">
+      <h3>New customer</h3>
+      <div className="fld">
+        <label htmlFor="nc-name">Name</label>
+        <input id="nc-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+      </div>
+      <div className="fld">
+        <label htmlFor="nc-email">Email</label>
+        <input id="nc-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" />
+      </div>
+      <div className="fld">
+        <label htmlFor="nc-phone">Phone</label>
+        <input id="nc-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="off" />
+      </div>
+      {error && <div className="form-error" role="alert">{error}</div>}
+      <div className="co-actions">
+        <button type="button" className="btn primary" disabled={pending || !name.trim()} onClick={save}>
+          {pending ? "Adding…" : "Add to CRM"}
+        </button>
+        <button type="button" className="btn" disabled={pending} onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
     </section>
   );
 }
@@ -425,15 +532,21 @@ function Confirmation({
   receipt,
   customer,
   method,
+  email,
+  emailed,
   onNext,
 }: {
   receipt: Receipt;
   customer: Customer | null;
   method: Method;
+  email: string;
+  emailed: { ok: boolean; message: string } | null;
   onNext: () => void;
 }) {
   const toast = useToast();
   const [sending, start] = useTransition();
+  const [resend, setResend] = useState(email);
+  const [status, setStatus] = useState(emailed?.message ?? "");
   const label = METHODS.find(([m]) => m === method)?.[1] ?? method;
   const digits = customer?.phone?.replace(/\D/g, "") ?? "";
   const wa = digits
@@ -455,30 +568,39 @@ function Confirmation({
       {receipt.change_due != null && receipt.change_due > 0 && (
         <div className="co-change">Change due {fmtMoney(receipt.change_due)}</div>
       )}
-      {customer && (
-        <div className="co-actions">
-          {customer.email && (
-            <button
-              type="button"
-              className="btn"
-              disabled={sending}
-              onClick={() =>
-                start(async () => {
-                  const r = await emailReceipt(receipt.sale_id, customer.email);
-                  toast(r.message);
-                })
-              }
-            >
-              Email receipt
-            </button>
-          )}
-          {wa && (
-            <a className="btn" href={wa} target="_blank" rel="noreferrer">
-              WhatsApp receipt
-            </a>
-          )}
-        </div>
-      )}
+      {status && <p className="muted" role="status">{status}</p>}
+      <div className="fld">
+        <label htmlFor="co-resend">{emailed?.ok ? "Send it again to" : "Email the receipt to"}</label>
+        <input
+          id="co-resend"
+          type="email"
+          inputMode="email"
+          value={resend}
+          onChange={(e) => setResend(e.target.value)}
+          autoComplete="off"
+        />
+      </div>
+      <div className="co-actions">
+        <button
+          type="button"
+          className="btn"
+          disabled={sending || !resend.trim()}
+          onClick={() =>
+            start(async () => {
+              const r = await emailReceipt(receipt.sale_id, resend.trim());
+              setStatus(r.message);
+              toast(r.message);
+            })
+          }
+        >
+          {sending ? "Sending…" : "Email receipt"}
+        </button>
+        {wa && (
+          <a className="btn" href={wa} target="_blank" rel="noreferrer">
+            WhatsApp receipt
+          </a>
+        )}
+      </div>
       <button type="button" className="btn primary co-pay" onClick={onNext}>
         Next customer
       </button>
