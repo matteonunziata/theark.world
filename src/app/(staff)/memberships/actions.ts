@@ -169,7 +169,7 @@ async function sendApprovalPass(
 
 /** Approve, decline or reopen a membership application (public.review_application). */
 export async function reviewApplication(id: string, status: string): Promise<ActionResult> {
-  const { supabase } = await staffOrThrow("memberships");
+  const { supabase } = await staffOrThrow("admin", "lead", "sales", "community_manager");
   if (!REVIEW.includes(status)) return fail("Unknown status.");
   const { error } = await supabase.rpc("review_application", { p_id: id, p_status: status });
   if (error) return fail(friendly(error));
@@ -192,7 +192,7 @@ export async function addMember(
   _prev: ActionResult,
   data: FormData,
 ): Promise<ActionResult> {
-  const { supabase } = await staffOrThrow("memberships");
+  const { supabase } = await staffOrThrow("admin", "lead", "sales", "community_manager");
   const isNew = field(data, "mode") === "new";
   let contact = field(data, "contact_id");
   const tier = field(data, "tier");
