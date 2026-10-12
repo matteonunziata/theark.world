@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Avatar } from "@/components/avatar";
+import { AddMember } from "./add-member";
 import { TIERS, tierClass, tierColor, tierName } from "@/lib/crm";
 
 type M = {
@@ -13,7 +14,7 @@ type M = {
   interests: string[];
 };
 
-export function MembersView({ members }: { members: M[] }) {
+export function MembersView({ members, tiers }: { members: M[]; tiers: { key: string; name: string }[] }) {
   const [q, setQ] = useState("");
   const [tier, setTier] = useState("");
   const needle = q.trim().toLowerCase();
@@ -42,6 +43,7 @@ export function MembersView({ members }: { members: M[] }) {
             <option key={k} value={k}>{l}</option>
           ))}
         </select>
+        <AddMember tiers={tiers} />
       </div>
       {!list.length ? (
         <div className="empty">

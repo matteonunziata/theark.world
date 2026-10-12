@@ -16,7 +16,7 @@ export default async function MembershipsPage() {
       .select("id, tier, status, starts_on, ends_on, activate_by, contact:contacts(id, name, location, interests)")
       .neq("status", "revoked")
       .or(`ends_on.is.null,ends_on.gte.${today}`),
-    supabase.from("membership_tiers").select("key, name, spots, period").order("position"),
+    supabase.from("membership_tiers").select("key, name, spots, period").eq("active", true).order("position"),
     supabase.from("org_settings").select("member_cap").single(),
   ]);
   const period = (key: string) => tiers?.find((t) => t.key === key)?.period;
@@ -66,7 +66,7 @@ export default async function MembershipsPage() {
           </span>
         </div>
       </div>
-      <MembersView members={members} />
+      <MembersView members={members} tiers={(tiers ?? []).map((t) => ({ key: t.key, name: t.name }))} />
     </>
   );
 }
