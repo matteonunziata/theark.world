@@ -9,6 +9,7 @@ import {
   ok,
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
+import { todayIn } from "@/lib/dates";
 import { listStripePrices } from "@/lib/stripe";
 
 const PERIODS = ["day", "week", "month", "quarter", "half", "year", "once"];
@@ -118,4 +119,30 @@ export async function reviewApplication(id: string, status: string): Promise<Act
   revalidatePath("/memberships", "layout");
   revalidatePath("/crm", "layout");
   return ok(status === "approved" ? "Approved" : status === "declined" ? "Declined" : "Updated");
+}
+
+/** Give an existing contact (or team member) a tier from the Members page. */
+export async function addMember(
+  _prev: ActionResult,
+  data: FormData,
+): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("memberships");
+  const contact = field(data, "contact_id");
+  const tier = field(data, "tier");
+  const starts = field(data, "starts");
+  const ends = field(data, "ends");
+  if (!contact) return fail("Search for a person first.");
+  if (!tier) return fail("Choose a tier.");
+  const future = !!starts && starts > todayIn();
+  const { error } = await supabase.rpc("set_membership", {
+    p_contact: contact,
+    p_tier: tier,
+    p_status: future ? "upcoming" : "active",
+    p_starts: starts,
+    p_ends: ends,
+  });
+  if (error) return fail(friendly(error));
+  revalidatePath("/memberships", "layout");
+  revalidatePath("/crm", "layout");
+  return ok("Member added");
 }
