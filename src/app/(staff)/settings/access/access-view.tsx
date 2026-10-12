@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { Drawer, useDrawer } from "@/components/drawer";
-import { MODULES, type ModuleKey, ROLES } from "@/lib/roles";
-import { saveRoleAccess } from "../actions";
+import { useActionState, useEffect, useEffectEvent, useState } from "react";
+import { useToast } from "@/components/toast";
+import type { ActionResult } from "@/lib/action-result";
+import { MODULES, ROLES } from "@/lib/roles";
+import { resetRoleAccess, saveAccessMatrix } from "../actions";
 
-type Role = (typeof ROLES)[number];
+const defaults = (role: string) =>
+  MODULES.filter((m) => (m.roles as string[]).includes(role)).map((m) => m.key);
 
 export function AccessView({
   counts,
@@ -17,115 +19,98 @@ export function AccessView({
   saved: Record<string, string[]>;
   canEdit: boolean;
 }) {
-  const drawer = useDrawer<Role>();
-  const [checked, setChecked] = useState<string[]>([]);
-  const current = (r: Role) =>
-    saved[r.key] ??
-    MODULES.filter((m) => (m.roles as string[]).includes(r.key)).map(
-      (m) => m.key,
-    );
-  const names = (r: Role) =>
-    r.key === "admin"
-      ? "Every page"
-      : MODULES.filter((m) => current(r).includes(m.key))
-          .map((m) => m.name)
-          .join(", ") || "No pages";
+  const toast = useToast();
+  const initial = () =>
+    Object.fromEntries(
+      ROLES.map((r) => [r.key, saved[r.key] ?? defaults(r.key)]),
+    ) as Record<string, string[]>;
+  const [sel, setSel] = useState(initial);
+  const [state, action, pending] = useActionState(saveAccessMatrix, {
+    ok: false,
+  } as ActionResult);
+  const onSaved = useEffectEvent((m: string) => toast(m));
+  useEffect(() => {
+    if (state.ok && state.message) onSaved(state.message);
+  }, [state]);
 
-  const r = drawer.item;
+  const toggle = (role: string, mod: string, on: boolean) =>
+    setSel((s) => ({
+      ...s,
+      [role]: on ? [...s[role], mod] : s[role].filter((k) => k !== mod),
+    }));
+
   return (
-    <>
-      <div className="roles">
-        {ROLES.map((role) => {
-          const n = counts[role.key] ?? 0;
-          const editable = canEdit && role.key !== "admin";
-          return (
-            <div className="role" key={role.key}>
-              <b>{role.name}</b>
-              <span className="d muted">
-                {role.desc}
-                <br />
-                Pages: {names(role)}
-              </span>
-              <span className="n">
-                {n} {n === 1 ? "person" : "people"}
-                {editable && (
-                  <>
-                    {" · "}
-                    <button
-                      type="button"
-                      className="link"
-                      onClick={() => {
-                        setChecked(current(role));
-                        drawer.openItem(role);
-                      }}
-                    >
-                      Edit
-                    </button>
-                  </>
-                )}
-              </span>
-            </div>
-          );
-        })}
+    <form action={action}>
+      {!state.ok && state.error && (
+        <div className="form-error" role="alert">
+          {state.error}
+        </div>
+      )}
+      <div className="table-wrap">
+        <table className="lines-table">
+          <thead>
+            <tr>
+              <th>Access level</th>
+              {MODULES.map((m) => (
+                <th key={m.key} style={{ textAlign: "center" }}>
+                  {m.name}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {ROLES.map((r) => {
+              const n = counts[r.key] ?? 0;
+              const admin = r.key === "admin";
+              return (
+                <tr key={r.key}>
+                  <td>
+                    <b>{r.name}</b>
+                    <div className="muted">
+                      {r.desc} · {n} {n === 1 ? "person" : "people"}
+                    </div>
+                  </td>
+                  {MODULES.map((m) => (
+                    <td key={m.key} style={{ textAlign: "center" }}>
+                      <input
+                        type="checkbox"
+                        name={`${r.key}:${m.key}`}
+                        aria-label={`${r.name}: ${m.name}`}
+                        checked={admin || sel[r.key].includes(m.key)}
+                        disabled={admin || !canEdit}
+                        onChange={(e) => toggle(r.key, m.key, e.target.checked)}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-      <Drawer
-        title={r ? `${r.name} access` : "Access"}
-        open={drawer.open}
-        onClose={drawer.close}
-        action={saveRoleAccess}
-        footer={
-          <>
-            <button type="submit" className="btn primary">
-              Save
-            </button>
-            <button
-              type="submit"
-              name="intent"
-              value="reset"
-              className="btn"
-              formNoValidate
-            >
-              Reset to default
-            </button>
-            <span className="spacer" />
-            <button type="button" className="btn" onClick={drawer.close}>
-              Cancel
-            </button>
-          </>
-        }
-      >
-        {r && (
-          <>
-            <input type="hidden" name="role" value={r.key} />
-            <p className="muted">
-              Choose the pages {r.name} can open. Changes apply the next time
-              they load a page.
-            </p>
-            {MODULES.map((m) => (
-              <label key={m.key} className="check">
-                <input
-                  type="checkbox"
-                  name="modules"
-                  value={m.key}
-                  checked={checked.includes(m.key)}
-                  onChange={(e) =>
-                    setChecked((c) =>
-                      e.target.checked
-                        ? [...c, m.key]
-                        : c.filter((k) => k !== (m.key as ModuleKey)),
-                    )
-                  }
-                />{" "}
-                {m.name}
-              </label>
-            ))}
-            <p className="hint">
-              This sets which pages show up. What someone can read or change
-              inside a page is still limited by the database.
-            </p>
-          </>
-        )}
-      </Drawer>
-    </>
+      {canEdit && (
+        <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+          <button type="submit" className="btn primary" disabled={pending}>
+            Save access
+          </button>
+          <button
+            type="button"
+            className="btn"
+            disabled={pending}
+            onClick={async () => {
+              await resetRoleAccess();
+              setSel(
+                Object.fromEntries(
+                  ROLES.map((r) => [r.key, defaults(r.key)]),
+                ) as Record<string, string[]>,
+              );
+              toast("Back to the default pages");
+            }}
+          >
+            Reset all to default
+          </button>
+        </div>
+      )}
+    </form>
   );
 }

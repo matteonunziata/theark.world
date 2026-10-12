@@ -231,30 +231,30 @@ export async function saveCity(
   return ok(id ? "City saved" : `${name} added`);
 }
 
-/** Which pages an access level can open. Admins always see everything. */
-export async function saveRoleAccess(
+/** Save the access-level grid. Admins always see everything, so they're skipped. */
+export async function saveAccessMatrix(
   _prev: ActionResult,
   data: FormData,
 ): Promise<ActionResult> {
   const { supabase } = await staffOrThrow("admin");
-  const role = field(data, "role");
-  if (!role || role === "admin" || !ROLES.some((r) => r.key === role)) {
-    return fail("Choose an access level.");
+  const rows = [];
+  for (const r of ROLES) {
+    if (r.key === "admin") continue;
+    const modules = MODULES.filter((m) => data.get(`${r.key}:${m.key}`)).map(
+      (m) => m.key,
+    );
+    if (!modules.length) return fail(`${r.name} needs at least one page.`);
+    rows.push({ role: r.key, modules, updated_at: new Date().toISOString() });
   }
-  if (data.get("intent") === "reset") {
-    const { error } = await supabase.from("role_access").delete().eq("role", role);
-    if (error) return fail(friendly(error));
-    revalidatePath("/", "layout");
-    return ok("Back to the default pages");
-  }
-  const modules = data
-    .getAll("modules")
-    .filter((k): k is string => MODULES.some((m) => m.key === k));
-  if (!modules.length) return fail("Pick at least one page.");
-  const { error } = await supabase
-    .from("role_access")
-    .upsert({ role, modules, updated_at: new Date().toISOString() });
+  const { error } = await supabase.from("role_access").upsert(rows);
   if (error) return fail(friendly(error));
   revalidatePath("/", "layout");
   return ok("Access saved");
+}
+
+/** Put every access level back on its default pages. */
+export async function resetRoleAccess(): Promise<void> {
+  const { supabase } = await staffOrThrow("admin");
+  await supabase.from("role_access").delete().neq("role", "admin");
+  revalidatePath("/", "layout");
 }
