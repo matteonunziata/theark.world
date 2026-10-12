@@ -35,7 +35,7 @@
 .pv-main { max-width: 1120px; margin: 0 auto; padding: 24px 20px 96px; }
 
 /* hero */
-.pv-hero { position: relative; overflow: hidden; border-radius: 28px; min-height: 340px; padding: 40px; display: flex; flex-direction: column; justify-content: flex-end; color: var(--pv-cream); background: radial-gradient(120% 120% at 0% 0%, var(--pv-green-2) 0%, var(--pv-green) 55%, #142519 100%); background-size: cover; background-position: center; }
+.pv-hero { position: relative; overflow: hidden; border-radius: 28px; min-height: 180px; padding: 40px; display: flex; flex-direction: column; justify-content: flex-end; color: var(--pv-cream); background: radial-gradient(120% 120% at 0% 0%, var(--pv-green-2) 0%, var(--pv-green) 55%, #142519 100%); background-size: cover; background-position: center; }
 .pv-hero.has-img::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 20, 14, 0.35) 0%, rgba(10, 20, 14, 0.82) 100%); }
 .pv-hero.has-img h1 { text-shadow: 0 2px 18px rgba(10, 20, 14, 0.45); }
 .pv-hero > * { position: relative; }
