@@ -19,6 +19,7 @@ export default async function CrmLayout({ children }: LayoutProps<"/crm">) {
         items={[
           { href: "/crm/people", label: "People" },
           { href: "/crm/pipelines", label: "Pipelines" },
+          { href: "/crm/duplicates", label: "Duplicates" },
           { href: "/crm/workflows", label: "Workflows" },
           { href: "/crm/queue", label: "Send queue" },
         ]}
