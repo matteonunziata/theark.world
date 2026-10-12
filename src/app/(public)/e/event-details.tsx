@@ -125,6 +125,8 @@ export function EventDetails({
     const next = ev.sessions.find((x) => !x.cancelled) ?? null;
     const bookable = !!next && !next.closed && ev.canBook && !ev.registrationClosed;
     const label = priceLabel(o, tickets);
+    // Meals (breakfast, lunch) have no price card: each date has its own Book button.
+    const meal = o.kind === "class" && tickets.some((t) => t.pay_first);
     return (
       <>
         <div className="evp-head">
@@ -157,6 +159,7 @@ export function EventDetails({
             {(o.location || o.location_address) && <LocationBlock name={o.location} address={o.location_address} />}
           </div>
           <aside className="evp-side">
+            {!meal && (
             <div className="evp-price">
               <div>
                 <b>{label}</b>
@@ -178,6 +181,7 @@ export function EventDetails({
                 ) : null}
               </div>
             </div>
+            )}
             <div id="book">{booking}</div>
             {tickets.length > 0 && ticketList}
           </aside>

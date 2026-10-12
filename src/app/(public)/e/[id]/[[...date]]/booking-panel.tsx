@@ -72,7 +72,9 @@ export function BookingPanel({
   const ticketLeft = (t: Ticket, d: string) =>
     t.qty ? Math.max(0, t.qty - (availability[d]?.[t.id]?.taken ?? 0)) : null;
   const stateOf = (t: Ticket, d: string) => availability[d]?.[t.id]?.state ?? "ok";
-  const [qty, setQty] = useState<Record<string, number>>({});
+  // A meal: one pay-first ticket and nothing else. No ticket picker; one is booked.
+  const quick = tickets.length === 1 && tickets[0].kind === "main" && tickets[0].pay_first ? tickets[0] : null;
+  const [qty, setQty] = useState<Record<string, number>>(quick ? { [quick.id]: 1 } : {});
   const [formError, setFormError] = useState<string | null>(null);
   const setTicketQty = (id: string, n: number) => setQty((q) => ({ ...q, [id]: n }));
 
@@ -317,7 +319,10 @@ export function BookingPanel({
               setPaid(null);
               if (r.ok) onBooked?.();
               // Pay inside the page when we can; otherwise held bookings go to Stripe's page.
-              if (r.ok && r.embedded) setPayStep(true);
+              if (r.ok && quick && r.held && r.payUrl) {
+                setLeaving(true);
+                window.location.assign(r.payUrl);
+              } else if (r.ok && r.embedded) setPayStep(true);
               else if (r.ok && r.held && r.payUrl) {
                 setLeaving(true);
                 window.location.assign(r.payUrl);
@@ -349,7 +354,7 @@ export function BookingPanel({
               the payment goes through.
             </p>
           )}
-          {tickets.length > 0 && (
+          {tickets.length > 0 && !quick && (
             <fieldset className="fld" style={{ border: 0, padding: 0 }}>
               <legend style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 6 }}>Tickets</legend>
               {isMember && (
@@ -366,7 +371,7 @@ export function BookingPanel({
               )}
             </fieldset>
           )}
-          {totalLabel && (
+          {totalLabel && !quick && (
             <div className="tk" style={{ borderTop: "1px solid var(--line)", marginTop: 8 }}>
               <div>
                 <b>Total</b>
@@ -390,6 +395,11 @@ export function BookingPanel({
   return (
     <section className="panel">
       <h2>{sessions.length > 1 ? "Upcoming dates" : "Date"}</h2>
+      {result && !result.ok && (
+        <div className="form-error" role="alert">
+          {result.error}
+        </div>
+      )}
       {!canBook && (
         <div className="banner">
           This is for members. <Link href={loginHref}>Sign in</Link> to book.
@@ -428,13 +438,36 @@ export function BookingPanel({
               <button
                 type="button"
                 className={`btn ${off ? "" : "primary"}`}
-                disabled={off}
+                disabled={off || pending || leaving}
                 onClick={() => {
                   setResult(null);
+                  if (quick && isMember) {
+                    // Signed in: no form. Book the meal and go straight to payment.
+                    setFormError(null);
+                    start(async () => {
+                      const r = await bookSession({
+                        offeringId: o.id,
+                        date: s.date,
+                        name: "",
+                        email: "",
+                        items: [{ ticketTypeId: quick.id, qty: 1 }],
+                      });
+                      setResult(r);
+                      if (r.ok) onBooked?.();
+                      if (r.ok && r.held && r.payUrl) {
+                        setLeaving(true);
+                        window.location.assign(r.payUrl);
+                      } else if (r.ok && r.embedded) {
+                        setPicked(s.date);
+                        setPayStep(true);
+                      }
+                    });
+                    return;
+                  }
                   setPicked(s.date);
                 }}
               >
-                {s.cancelled ? "Cancelled" : s.closed ? "Closed" : l === 0 ? "Full" : "Book"}
+                {s.cancelled ? "Cancelled" : s.closed ? "Closed" : l === 0 ? "Full" : pending ? "Booking…" : "Book"}
               </button>
             </div>
           );
