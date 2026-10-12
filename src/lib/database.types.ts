@@ -5249,6 +5249,12 @@ export type Database = {
         Returns: string | null;
       };
       refresh_membership_caches: { Args: never; Returns: number };
+      can_issue_pass: { Args: never; Returns: boolean };
+      add_member_contact: {
+        Args: { p_first: string; p_last: string | null; p_phone: string | null; p_email: string | null };
+        Returns: string;
+      };
+      set_contact_photo: { Args: { p_contact: string; p_path: string }; Returns: undefined };
       has_access_today: { Args: { cid: string }; Returns: boolean };
       is_portal_member: { Args: { cid: string }; Returns: boolean };
       staff_save_registration: {

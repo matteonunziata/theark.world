@@ -193,15 +193,43 @@ export async function addMember(
   data: FormData,
 ): Promise<ActionResult> {
   const { supabase } = await staffOrThrow("memberships");
-  const contact = field(data, "contact_id");
+  const isNew = field(data, "mode") === "new";
+  let contact = field(data, "contact_id");
   const tier = field(data, "tier");
   const starts = field(data, "starts");
   const ends = field(data, "ends");
-  if (!contact) return fail("Search for a person first.");
+  const photo = field(data, "photo_path");
+  if (isNew) {
+    if (!field(data, "first_name")) return fail("Enter a first name.");
+    const email = field(data, "email");
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("Enter a valid email.");
+  } else if (!contact) {
+    return fail("Search for a person first.");
+  }
   if (!tier) return fail("Choose a tier.");
+  // Every pass carries a photo: a new one now, or one the person already has.
+  if (!photo) {
+    if (isNew) return fail("Add a photo of the person.");
+    const { data: c } = await supabase.from("contacts").select("photo_path").eq("id", contact!).maybeSingle();
+    if (!c?.photo_path) return fail("Add a photo of the person.");
+  }
+  if (isNew) {
+    const { data: id, error } = await supabase.rpc("add_member_contact", {
+      p_first: field(data, "first_name")!,
+      p_last: field(data, "last_name"),
+      p_phone: field(data, "phone"),
+      p_email: field(data, "email"),
+    });
+    if (error || !id) return fail(friendly(error));
+    contact = id;
+  }
+  if (photo) {
+    const { error } = await supabase.rpc("set_contact_photo", { p_contact: contact!, p_path: photo });
+    if (error) return fail(friendly(error));
+  }
   const future = !!starts && starts > todayIn();
   const { error } = await supabase.rpc("set_membership", {
-    p_contact: contact,
+    p_contact: contact!,
     p_tier: tier,
     p_status: future ? "upcoming" : "active",
     p_starts: starts,
@@ -210,5 +238,5 @@ export async function addMember(
   if (error) return fail(friendly(error));
   revalidatePath("/memberships", "layout");
   revalidatePath("/crm", "layout");
-  return ok("Member added");
+  return ok(isNew ? "Person and membership added" : "Member added");
 }
