@@ -21,8 +21,8 @@ export default async function PortalLogin({ searchParams }: PageProps<"/portal/l
         </div>
         <h1>Sign in</h1>
         <p>
-          Enter your email and we’ll send you a link to sign in, no password
-          needed. Members, active stewards, team members and facilitators all sign in here.
+          Sign in with your email and password. First time, or forgot it?
+          We’ll email you a link, then you can set a password. Members, active stewards, team members and facilitators all sign in here.
         </p>
         {typeof error === "string" && (
           <p className="auth-err" role="alert">
