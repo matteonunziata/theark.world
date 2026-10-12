@@ -63,9 +63,19 @@ export function GuestyForm({
   const [state, save, saving] = useActionState(saveGuesty, { ok: false } as ActionResult);
   const [pending, start] = useTransition();
   const [armed, setArmed] = useState(false);
+  // React clears an uncontrolled form after every submit, which would wipe the
+  // credentials just because Guesty said no. Keep them in state instead.
+  const [clientId, setClientId] = useState(i.client_id ?? "");
+  const [secret, setSecret] = useState("");
   useEffect(() => {
     if (state.ok && state.message) toast(state.message);
   }, [state, toast]);
+  // After a successful save the secret is kept server-side; empty the box.
+  const [seen, setSeen] = useState(state);
+  if (state !== seen) {
+    setSeen(state);
+    if (state.ok) setSecret("");
+  }
   const run = (fn: () => Promise<ActionResult>) =>
     start(async () => {
       const r = await fn();
@@ -150,7 +160,16 @@ export function GuestyForm({
           <div className="grid2">
             <div className="fld">
               <label htmlFor="gy-id">Client id</label>
-              <input id="gy-id" name="client_id" defaultValue={i.client_id ?? ""} placeholder="0oa…" required autoComplete="off" />
+              <input
+                id="gy-id"
+                name="client_id"
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                placeholder="0oa…"
+                required
+                autoComplete="off"
+                spellCheck={false}
+              />
             </div>
             <div className="fld">
               <label htmlFor="gy-sec">Client secret</label>
@@ -159,6 +178,8 @@ export function GuestyForm({
                 name="secret"
                 type="password"
                 autoComplete="off"
+                value={secret}
+                onChange={(e) => setSecret(e.target.value)}
                 placeholder={hasSecret ? "Saved. Paste a new one to replace it." : ""}
               />
             </div>
@@ -166,7 +187,7 @@ export function GuestyForm({
           <div className="grid2">
             <div className="fld">
               <label htmlFor="gy-dir">Which way</label>
-              <select id="gy-dir" name="direction" defaultValue={i.direction === "both" ? "both" : "pull"}>
+              <select id="gy-dir" name="direction" defaultValue={i.direction === "pull" ? "pull" : "both"}>
                 <option value="pull">Guesty → ARK OS only</option>
                 <option value="both">Both ways</option>
               </select>

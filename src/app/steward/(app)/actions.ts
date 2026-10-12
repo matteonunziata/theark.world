@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { type ActionResult, fail, field, friendly, ok } from "@/lib/action-result";
 import { getViewer } from "@/lib/auth";
+import { pushSoon } from "@/lib/guesty";
 import { RELATIONS } from "@/lib/estate";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -79,6 +80,7 @@ export async function blockMyDates(_prev: ActionResult, data: FormData): Promise
     if (error.code === "23P01") return fail("Those dates overlap a confirmed stay. Pick other dates.");
     return fail(friendly(error));
   }
+  pushSoon();
   refresh();
   return ok("Dates saved. Guests can’t book them.");
 }
@@ -87,6 +89,7 @@ export async function cancelMyDates(stayId: string): Promise<ActionResult> {
   const supabase = await owner();
   const { error } = await supabase.rpc("owner_cancel_block", { p_stay: stayId });
   if (error) return fail(friendly(error));
+  pushSoon();
   refresh();
   return ok("Dates released");
 }

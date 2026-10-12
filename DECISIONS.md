@@ -509,3 +509,10 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **What a steward sees:** Overview (lot, home, household, maintenance with "Ask the team for work", hospitality notes, status and the 48-month clock with a step-back button) and Schedule. Schedule is a calendar with Hospitality and Maintenance layers; they turn hospitality on or off, block and release their own dates (these close the nights on Guesty through the existing sync), and see the recurring services view-only. Rates, publishing, photos and the services themselves stay with the team.
 - **Moved:** My Property (`/portal/property`) is now `/steward`; the old address redirects. The members portal shows a "Steward" link for members who are active stewards. A member who owns a lot but isn't an active steward no longer sees it.
 - **Not built:** a steward's own balance and invoices on the platform, and a separate domain for it.
+
+## Guesty both ways, always (2026-10-12)
+
+- **Pushes are immediate.** Saving, blocking, opening up or deleting a stay (staff or steward) calls `pushSoon()`, which runs `pushNow` after the response with the service-role client. The daily cron and "Sync now" still catch anything that failed. Quiet when Guesty is off or set to "Guesty → ARK OS only".
+- **Moves and deletes free the old nights.** `stays.guesty_pushed_from/to` remember the range sent; a trigger queues the old range in `guesty_frees` when a pushed stay's dates or home change or it is deleted, and the next push releases it before blocking the new nights. This closes the date-change question in Round 16.
+- **"Both ways" is the default** for a new connection. The connection form keeps what was typed after a failed attempt and cleans quotes and spaces from pasted credentials.
+

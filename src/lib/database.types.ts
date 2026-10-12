@@ -1740,6 +1740,30 @@ export type Database = {
           },
         ]
       }
+      guesty_frees: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          listing_id: string
+          start_date: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          listing_id: string
+          start_date: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          listing_id?: string
+          start_date?: string
+        }
+        Relationships: []
+      }
       guesty_listings: {
         Row: {
           accommodates: number | null
@@ -3509,6 +3533,8 @@ export type Database = {
           external_id: string | null
           external_ref: string | null
           guesty_pushed_at: string | null
+          guesty_pushed_from: string | null
+          guesty_pushed_to: string | null
           check_in: string
           check_out: string
           contact_id: string | null
@@ -3535,6 +3561,8 @@ export type Database = {
           external_id?: string | null
           external_ref?: string | null
           guesty_pushed_at?: string | null
+          guesty_pushed_from?: string | null
+          guesty_pushed_to?: string | null
           check_in: string
           check_out: string
           contact_id?: string | null
@@ -3561,6 +3589,8 @@ export type Database = {
           external_id?: string | null
           external_ref?: string | null
           guesty_pushed_at?: string | null
+          guesty_pushed_from?: string | null
+          guesty_pushed_to?: string | null
           check_in?: string
           check_out?: string
           contact_id?: string | null
