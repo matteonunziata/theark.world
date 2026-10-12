@@ -1917,6 +1917,7 @@ export type Database = {
           client_id: string | null
           sync_details: boolean
           token_expires_at: string | null
+          stock_sync_lock: string | null
           webhook_id: string | null
           webhook_signing_secret: string | null
           account_name: string | null
@@ -1942,6 +1943,7 @@ export type Database = {
           client_id?: string | null
           sync_details?: boolean
           token_expires_at?: string | null
+          stock_sync_lock?: string | null
           webhook_id?: string | null
           webhook_signing_secret?: string | null
           account_name?: string | null
@@ -1967,6 +1969,7 @@ export type Database = {
           client_id?: string | null
           sync_details?: boolean
           token_expires_at?: string | null
+          stock_sync_lock?: string | null
           webhook_id?: string | null
           webhook_signing_secret?: string | null
           account_name?: string | null
