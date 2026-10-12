@@ -584,3 +584,13 @@ export async function saveService(_prev: ActionResult, data: FormData): Promise<
   revalidatePath("/operations", "layout");
   return ok(row.active ? `Saved. ${made ?? 0} upcoming task${made === 1 ? "" : "s"} on the board.` : "Saved and paused");
 }
+
+/** Real estate > Stewards: pick a contact and the lot they steward. */
+export async function addStewardToLot(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const lotId = field(data, "lot_id");
+  if (!field(data, "contact_id")) return fail("Search for a person first.");
+  if (!lotId) return fail("Choose a lot.");
+  const res = await addSteward(lotId, field(data, "contact_id")!);
+  if (res.ok) revalidatePath("/estate/stewards");
+  return res;
+}

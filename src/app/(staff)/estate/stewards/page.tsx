@@ -4,6 +4,7 @@ import { requireStaff } from "@/lib/auth";
 import { fmtDate, todayIn } from "@/lib/dates";
 import { monthsActive, STEWARD_STATUS, stewardStatusName } from "@/lib/steward";
 import { EstateHead } from "../estate-head";
+import { AddSteward } from "./add-steward";
 
 export const metadata: Metadata = { title: "Stewards" };
 
@@ -16,9 +17,10 @@ export default async function StewardsPage({
   const { status, sort } = await searchParams;
   // Admins keep it current: anyone who lost active status drops out before the list loads.
   if (staff.role === "admin") await supabase.rpc("reconcile_stewards");
-  const [{ data: all }, { data: rules }] = await Promise.all([
+  const [{ data: all }, { data: rules }, { data: lots }] = await Promise.all([
     supabase.rpc("stewards_overview"),
     supabase.from("steward_rules").select("*").maybeSingle(),
+    supabase.from("lots").select("id, code, name").neq("kind", "rental").order("code"),
   ]);
   const today = todayIn();
   const months = rules?.months_to_eligible ?? 48;
@@ -41,6 +43,9 @@ export default async function StewardsPage({
   return (
     <div className="page">
       <EstateHead />
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <AddSteward lots={lots ?? []} />
+      </div>
       <nav className="tabs" aria-label="Filter stewards" style={{ marginBottom: 16 }}>
         <Link href={href(null)} aria-current={!filter ? "page" : undefined}>All ({all?.length ?? 0})</Link>
         {STEWARD_STATUS.map(([k, name]) => (
