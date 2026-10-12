@@ -1,6 +1,6 @@
 import { Shell } from "@/components/shell";
 import { ToastProvider } from "@/components/toast";
-import { requireStaff } from "@/lib/auth";
+import { getRoleAccess, requireStaff } from "@/lib/auth";
 import { MODULES, modulesFor } from "@/lib/roles";
 
 export default async function StaffLayout({
@@ -11,7 +11,7 @@ export default async function StaffLayout({
     supabase.rpc("public_org").maybeSingle(),
     supabase.rpc("is_school_staff"),
   ]);
-  const mods = modulesFor(staff.role);
+  const mods = modulesFor(staff.role, await getRoleAccess());
   if (school && !mods.some((m) => m.key === "school")) {
     const at = mods.findIndex((m) => m.key === "operations");
     mods.splice(at < 0 ? mods.length : at, 0, MODULES.find((m) => m.key === "school")!);

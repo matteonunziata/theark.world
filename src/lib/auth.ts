@@ -2,7 +2,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import type { Tables } from "@/lib/database.types";
-import { canSee, type ModuleKey } from "@/lib/roles";
+import { canSee, type ModuleKey, type RoleAccess } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 
 export type Staff = Tables<"team_members">;
@@ -35,6 +35,13 @@ export const getViewer = cache(async () => {
   };
 });
 
+/** Saved page access per role (Settings → Access levels). */
+export const getRoleAccess = cache(async (): Promise<RoleAccess> => {
+  const supabase = await createClient();
+  const { data } = await supabase.from("role_access").select("role, modules");
+  return Object.fromEntries((data ?? []).map((r) => [r.role, r.modules]));
+});
+
 /** For staff pages: redirect anyone who isn't active staff. */
 export async function requireStaff(module?: ModuleKey) {
   const v = await getViewer();
@@ -42,7 +49,7 @@ export async function requireStaff(module?: ModuleKey) {
   if (!v.staff) redirect(v.memberId ? "/portal" : "/no-access");
   if (
     module &&
-    !canSee(v.staff.role, module) &&
+    !canSee(v.staff.role, module, await getRoleAccess()) &&
     !(module === "finance" && v.staff.finance_role)
   ) {
     redirect("/");
