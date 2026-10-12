@@ -77,3 +77,18 @@ export async function setCancelled(registrationId: string, cancelled: boolean) {
   refresh();
   return ok(cancelled ? "Booking cancelled" : "Booking restored");
 }
+
+export type PickMember = { id: string; name: string; email: string | null; phone: string | null };
+
+/** Active members a staff member can pick from when adding an attendee by hand. */
+export async function listMembers(): Promise<PickMember[]> {
+  const { supabase } = await staffOrThrow("admin", "lead", "facilitator");
+  const { data } = await supabase
+    .from("contacts")
+    .select("id, name, email, phone")
+    .eq("type", "member")
+    .eq("membership_status", "active")
+    .order("name")
+    .limit(1000);
+  return data ?? [];
+}
