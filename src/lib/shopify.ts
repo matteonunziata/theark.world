@@ -1163,7 +1163,7 @@ export async function ensureStockWebhook(sb: Sb, i: Integration & { shop_domain:
   const c = await graphql<{ webhookSubscriptionCreate: { webhookSubscription: { id: string } | null; userErrors: UserErrors } }>(
     i.shop_domain,
     token,
-    `mutation($uri: URL!) { webhookSubscriptionCreate(topic: ${STOCK_TOPIC}, webhookSubscription: { uri: $uri, format: JSON }) { webhookSubscription { id } userErrors { field message } } }`,
+    `mutation($uri: String!) { webhookSubscriptionCreate(topic: ${STOCK_TOPIC}, webhookSubscription: { uri: $uri, format: JSON }) { webhookSubscription { id } userErrors { field message } } }`,
     { uri },
   );
   userErrors(c.webhookSubscriptionCreate.userErrors);
