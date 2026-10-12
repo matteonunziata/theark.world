@@ -76,6 +76,9 @@ export function Shell({
           <a className="linkish side-portal" href="/portal">
             Member portal
           </a>
+          <a className="linkish side-portal" href="/auth/password?next=/">
+            Change password
+          </a>
           <form action="/auth/signout" method="post">
             <button type="submit" className="linkish">
               Sign out

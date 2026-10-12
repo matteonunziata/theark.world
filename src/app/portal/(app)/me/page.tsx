@@ -166,6 +166,9 @@ export default async function Me() {
               )
             )}
           </section>
+          <Link className="pv-btn ghost" href="/auth/password?next=/portal/me">
+            Change password
+          </Link>
           <form action="/auth/signout?to=portal" method="post">
             <button type="submit" className="pv-btn ghost">
               Sign out
