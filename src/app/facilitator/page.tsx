@@ -22,8 +22,8 @@ export default async function FacilitatorLogin({
         </div>
         <h1>Facilitators</h1>
         <p>
-          Enter the email The ARK has for you. We’ll send you a link to sign in
-          and see your classes and who’s coming.
+          Sign in with the email The ARK has for you to see your classes and
+          who’s coming. First time? We’ll email you a link, then you can set a password.
         </p>
         {typeof error === "string" && (
           <p className="auth-err" role="alert">

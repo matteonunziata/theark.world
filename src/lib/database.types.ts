@@ -4993,6 +4993,8 @@ export type Database = {
         Returns: undefined;
       };
       reconcile_stewards: { Args: never; Returns: number };
+      find_duplicate_contacts: { Args: never; Returns: { a_id: string; b_id: string; reason: string }[] };
+      merge_contacts: { Args: { p_keep: string; p_drop: string }; Returns: undefined };
       stewards_overview: {
         Args: never;
         Returns: {
