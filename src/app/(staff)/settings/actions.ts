@@ -9,7 +9,7 @@ import {
   ok,
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
-import { COLORS, ROLES, TYPES } from "@/lib/roles";
+import { COLORS, MODULES, ROLES, TYPES } from "@/lib/roles";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -229,4 +229,32 @@ export async function saveCity(
   if (error) return fail(friendly(error));
   revalidatePath("/", "layout");
   return ok(id ? "City saved" : `${name} added`);
+}
+
+/** Which pages an access level can open. Admins always see everything. */
+export async function saveRoleAccess(
+  _prev: ActionResult,
+  data: FormData,
+): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("admin");
+  const role = field(data, "role");
+  if (!role || role === "admin" || !ROLES.some((r) => r.key === role)) {
+    return fail("Choose an access level.");
+  }
+  if (data.get("intent") === "reset") {
+    const { error } = await supabase.from("role_access").delete().eq("role", role);
+    if (error) return fail(friendly(error));
+    revalidatePath("/", "layout");
+    return ok("Back to the default pages");
+  }
+  const modules = data
+    .getAll("modules")
+    .filter((k): k is string => MODULES.some((m) => m.key === k));
+  if (!modules.length) return fail("Pick at least one page.");
+  const { error } = await supabase
+    .from("role_access")
+    .upsert({ role, modules, updated_at: new Date().toISOString() });
+  if (error) return fail(friendly(error));
+  revalidatePath("/", "layout");
+  return ok("Access saved");
 }

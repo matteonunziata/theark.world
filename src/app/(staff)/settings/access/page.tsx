@@ -1,34 +1,28 @@
 import type { Metadata } from "next";
-import { requireStaff } from "@/lib/auth";
-import { ROLES } from "@/lib/roles";
+import { getRoleAccess, requireStaff } from "@/lib/auth";
+import { AccessView } from "./access-view";
 
 export const metadata: Metadata = { title: "Access levels" };
 
 export default async function AccessPage() {
-  const { supabase } = await requireStaff("settings");
+  const { supabase, staff } = await requireStaff("settings");
   const { data: team } = await supabase
     .from("team_members")
     .select("role")
     .eq("status", "active");
+  const counts: Record<string, number> = {};
+  for (const m of team ?? []) counts[m.role] = (counts[m.role] ?? 0) + 1;
   return (
     <>
-      <div className="roles">
-        {ROLES.map((r) => {
-          const n = (team ?? []).filter((m) => m.role === r.key).length;
-          return (
-            <div className="role" key={r.key}>
-              <b>{r.name}</b>
-              <span className="d muted">{r.desc}</span>
-              <span className="n">
-                {n} {n === 1 ? "person" : "people"}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      <AccessView
+        counts={counts}
+        saved={(await getRoleAccess()) as Record<string, string[]>}
+        canEdit={staff.role === "admin"}
+      />
       <p className="note">
-        Access is enforced by the database, not just this screen. Finance is
-        visible to admins only. Only people added to the team can sign in.
+        Admins see every page. The database still decides what each person can
+        read or change inside a page. Finance is visible to admins and anyone
+        with a finance role. Only people added to the team can sign in.
       </p>
     </>
   );

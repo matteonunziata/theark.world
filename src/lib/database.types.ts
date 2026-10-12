@@ -3309,6 +3309,24 @@ export type Database = {
           },
         ]
       }
+      role_access: {
+        Row: {
+          modules: string[]
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          modules?: string[]
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          modules?: string[]
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sample_records: {
         Row: {
           record_id: string

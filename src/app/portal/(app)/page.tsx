@@ -117,22 +117,6 @@ export default async function PortalHome() {
           {greeting(p.timezone)}
           {first ? `, ${first}` : ""}.
         </h1>
-        <p>
-          Here’s what’s happening this week, who’s around, and where we’re headed next.
-        </p>
-        <div className="cta">
-          <Link className="pv-btn light" href="/portal/schedule">
-            See what’s on
-          </Link>
-          <Link className="pv-btn ghost" href="/portal/people">
-            Who’s here
-          </Link>
-          {p.memberId && (
-            <Link className="pv-btn ghost" href="/portal/guests">
-              Invite a guest
-            </Link>
-          )}
-        </div>
       </section>
 
       {next?.offering && (

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getViewer } from "@/lib/auth";
+import { getRoleAccess, getViewer } from "@/lib/auth";
 import { homeFor } from "@/lib/roles";
 
 export default async function Home() {
@@ -7,7 +7,7 @@ export default async function Home() {
   // One sign-in: the email decides who someone is. More than one place, they choose.
   const places = [staff, memberId, stewardId].filter(Boolean).length;
   if (places > 1 && !staff) redirect("/choose");
-  if (staff) redirect(homeFor(staff.role));
+  if (staff) redirect(homeFor(staff.role, await getRoleAccess()));
   if (memberId) redirect("/portal");
   if (stewardId) redirect("/steward");
   redirect(user ? "/no-access" : "/login");

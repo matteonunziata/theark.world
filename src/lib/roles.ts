@@ -26,6 +26,11 @@ export const ROLES = [
     name: "Marketing",
     desc: "Brand strategy, content, social, email and marketing analytics.",
   },
+  {
+    key: "community_manager",
+    name: "Community manager",
+    desc: "Members, events and day-to-day community work.",
+  },
 ] as const;
 
 export type Role = (typeof ROLES)[number]["key"];
@@ -67,9 +72,14 @@ export const MODULES: {
     key: "dashboard",
     name: "Dashboard",
     href: "/dashboard",
-    roles: ["admin", "lead", "sales", "shop"],
+    roles: ["admin", "lead", "sales", "shop", "community_manager"],
   },
-  { key: "crm", name: "CRM", href: "/crm", roles: ["admin", "lead", "sales"] },
+  {
+    key: "crm",
+    name: "CRM",
+    href: "/crm",
+    roles: ["admin", "lead", "sales", "community_manager"],
+  },
   {
     key: "estate",
     name: "Real estate",
@@ -86,13 +96,13 @@ export const MODULES: {
     key: "memberships",
     name: "Memberships",
     href: "/memberships",
-    roles: ["admin", "lead", "sales"],
+    roles: ["admin", "lead", "sales", "community_manager"],
   },
   {
     key: "events",
     name: "Schedule",
     href: "/events",
-    roles: ["admin", "lead", "sales"],
+    roles: ["admin", "lead", "sales", "community_manager"],
   },
   {
     key: "security",
@@ -123,7 +133,7 @@ export const MODULES: {
     key: "operations",
     name: "Operations",
     href: "/operations",
-    roles: ["admin", "lead", "sales", "shop", "crew", "marketing"],
+    roles: ["admin", "lead", "sales", "shop", "crew", "marketing", "community_manager"],
   },
   { key: "finance", name: "Finance", href: "/finance", roles: ["admin"] },
   {
@@ -134,14 +144,22 @@ export const MODULES: {
   },
 ];
 
-export const modulesFor = (role: string) =>
-  MODULES.filter((m) => (m.roles as string[]).includes(role));
+/** Page access saved in Settings → Access levels, by role. Admins are never limited. */
+export type RoleAccess = Partial<Record<string, string[]>>;
 
-export const canSee = (role: string, key: ModuleKey) =>
-  modulesFor(role).some((m) => m.key === key);
+export const modulesFor = (role: string, access?: RoleAccess) => {
+  const saved = role === "admin" ? undefined : access?.[role];
+  return MODULES.filter((m) =>
+    saved ? saved.includes(m.key) : (m.roles as string[]).includes(role),
+  );
+};
+
+export const canSee = (role: string, key: ModuleKey, access?: RoleAccess) =>
+  modulesFor(role, access).some((m) => m.key === key);
 
 /** Where someone lands after signing in. */
-export const homeFor = (role: string) => modulesFor(role)[0]?.href ?? "/";
+export const homeFor = (role: string, access?: RoleAccess) =>
+  modulesFor(role, access)[0]?.href ?? "/no-access";
 
 export const TYPES = [
   ["team", "Team member"],

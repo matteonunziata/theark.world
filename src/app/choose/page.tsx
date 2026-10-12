@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/logo";
-import { getViewer } from "@/lib/auth";
+import { getRoleAccess, getViewer } from "@/lib/auth";
 import { homeFor } from "@/lib/roles";
 
 export const metadata: Metadata = { title: "Where to?" };
@@ -16,7 +16,7 @@ export default async function ChoosePage() {
   if (!user) redirect("/login");
   const places = [
     staff && {
-      href: homeFor(staff.role),
+      href: homeFor(staff.role, await getRoleAccess()),
       title: "Team portal",
       text:
         staff.role === "facilitator"
