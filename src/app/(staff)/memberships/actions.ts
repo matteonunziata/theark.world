@@ -9,7 +9,8 @@ import {
   ok,
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
-import { todayIn } from "@/lib/dates";
+import { fmtDate, todayIn } from "@/lib/dates";
+import { sendPassEmail, siteUrl } from "@/lib/email";
 import { listStripePrices } from "@/lib/stripe";
 
 const PERIODS = ["day", "week", "month", "quarter", "half", "year", "once"];
@@ -110,15 +111,80 @@ export async function saveDiscount(
 
 const REVIEW = ["new", "reviewing", "approved", "declined"];
 
+/**
+ * Approving an application sends the applicant a free day pass: the one made
+ * when they applied if there is one, otherwise a new one. Skips a pass that has
+ * already been used. Never throws: the approval itself has already gone through.
+ */
+async function sendApprovalPass(
+  supabase: Awaited<ReturnType<typeof staffOrThrow>>["supabase"],
+  id: string,
+): Promise<boolean> {
+  const { data: a } = await supabase
+    .from("membership_applications")
+    .select("contact_id, free_pass_id, contact:contacts(name, email, pass_token)")
+    .eq("id", id)
+    .maybeSingle();
+  if (!a?.contact?.email) return false;
+
+  let passId = a.free_pass_id;
+  let activateBy: string | null = null;
+  if (passId) {
+    const { data: pass } = await supabase
+      .from("memberships")
+      .select("status, activate_by")
+      .eq("id", passId)
+      .maybeSingle();
+    if (!pass || pass.status !== "unused" || !pass.activate_by) return false;
+    activateBy = pass.activate_by;
+  } else {
+    const d = new Date(`${todayIn()}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + 90);
+    activateBy = d.toISOString().slice(0, 10);
+    const { data: made, error } = await supabase
+      .from("memberships")
+      .insert({ contact_id: a.contact_id, tier: "day", status: "unused", activate_by: activateBy, source: "application" })
+      .select("id")
+      .single();
+    if (error) {
+      console.error("Approval pass failed", error);
+      return false;
+    }
+    passId = made.id;
+    await supabase.from("membership_applications").update({ free_pass_id: passId }).eq("id", id);
+  }
+
+  const [origin, { data: org }] = await Promise.all([siteUrl(), supabase.rpc("public_org").maybeSingle()]);
+  return sendPassEmail({
+    to: a.contact.email,
+    name: a.contact.name,
+    what: "Day Pass",
+    days: 1,
+    useBy: fmtDate(activateBy, { weekday: "long", month: "long", day: "numeric" }),
+    url: `${origin}/p/${a.contact.pass_token}`,
+    orgName: org?.name ?? "The ARK",
+    free: true,
+  });
+}
+
 /** Approve, decline or reopen a membership application (public.review_application). */
 export async function reviewApplication(id: string, status: string): Promise<ActionResult> {
   const { supabase } = await staffOrThrow("memberships");
   if (!REVIEW.includes(status)) return fail("Unknown status.");
   const { error } = await supabase.rpc("review_application", { p_id: id, p_status: status });
   if (error) return fail(friendly(error));
+  let sent = false;
+  if (status === "approved") {
+    try {
+      sent = await sendApprovalPass(supabase, id);
+    } catch (e) {
+      console.error("Approval pass email failed", e);
+    }
+  }
   revalidatePath("/memberships", "layout");
   revalidatePath("/crm", "layout");
-  return ok(status === "approved" ? "Approved" : status === "declined" ? "Declined" : "Updated");
+  if (status === "approved") return ok(sent ? "Approved. Day pass sent" : "Approved");
+  return ok(status === "declined" ? "Declined" : "Updated");
 }
 
 /** Give an existing contact (or team member) a tier from the Members page. */
