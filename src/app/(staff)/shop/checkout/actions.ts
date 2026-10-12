@@ -46,7 +46,7 @@ export async function addCustomer(input: {
   email: string;
   phone: string;
 }): Promise<{ ok: true; customer: Customer; existing: boolean } | { ok: false; error: string }> {
-  const { supabase } = await staffOrThrow("admin", "shop");
+  const { supabase } = await staffOrThrow("admin", "lead", "shop", "community_manager");
   const name = input.name.trim();
   const email = input.email.trim();
   if (!name) return { ok: false, error: "Enter a name." };
@@ -70,7 +70,7 @@ export async function addCustomer(input: {
 }
 
 export async function searchCustomers(q: string): Promise<Customer[]> {
-  const { supabase } = await staffOrThrow("admin", "shop");
+  const { supabase } = await staffOrThrow("admin", "lead", "shop", "community_manager");
   if (q.trim().length < 2) return [];
   const { data } = await supabase.rpc("checkout_customers", { p_q: q });
   return (data ?? []).map((c) => ({ ...c, discount_percent: Number(c.discount_percent) }));
@@ -89,7 +89,7 @@ export async function completeSale(input: {
   cashReceived?: number;
   receiptEmail?: string;
 }): Promise<SaleResult> {
-  const { supabase } = await staffOrThrow("admin", "shop");
+  const { supabase } = await staffOrThrow("admin", "lead", "shop", "community_manager");
   const contact = input.contactId || null;
   let reference = input.reference?.trim() || null;
 
@@ -166,7 +166,7 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 
 /** Email the receipt of a finished sale to its customer. */
 export async function emailReceipt(saleId: string, to: string | null): Promise<{ ok: boolean; message: string }> {
-  const { supabase } = await staffOrThrow("admin", "shop");
+  const { supabase } = await staffOrThrow("admin", "lead", "shop", "community_manager");
   const { data: sale } = await supabase
     .from("sales")
     .select("total, subtotal, discount, discount_percent, created_at, items:sale_items(name, quantity, unit_price, discount)")
