@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { Columns } from "@/components/charts";
 import { Drawer, useDrawer } from "@/components/drawer";
 import { useToast } from "@/components/toast";
@@ -11,7 +11,7 @@ import { fmtDate } from "@/lib/dates";
 import { money } from "@/lib/schedule";
 import { emailTicket, removeBooking, setPaid } from "../../actions";
 import { LiveRefresh } from "./live";
-import { saveRegistration, setCancelled } from "./actions";
+import { listMembers, type PickMember, saveRegistration, setCancelled } from "./actions";
 
 export type Row = {
   id: string;
@@ -327,6 +327,13 @@ function RegistrationDrawer({
   const held = (id: string) => row?.items.find((i) => i.ticketId === id)?.qty ?? 0;
   const today = new Date().toISOString().slice(0, 10);
   const first = dates.find((d) => d >= today) ?? dates[dates.length - 1] ?? today;
+  const [members, setMembers] = useState<PickMember[] | null>(null);
+  const [fill, setFill] = useState<PickMember | null>(null);
+
+  useEffect(() => {
+    if (open && !row && canManage && members === null) listMembers().then(setMembers);
+    if (!open) setFill(null);
+  }, [open, row, canManage, members]);
 
   return (
     <Drawer
@@ -398,18 +405,36 @@ function RegistrationDrawer({
           </dl>
         )}
 
+        {!row && (
+          <div className="fld">
+            <label htmlFor="r-member">Existing member</label>
+            <select
+              id="r-member"
+              value={fill?.id ?? ""}
+              onChange={(e) => setFill(members?.find((m) => m.id === e.target.value) ?? null)}
+              disabled={members === null}
+            >
+              <option value="">{members === null ? "Loading members…" : "Choose a member, or type a guest below"}</option>
+              {members?.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="fld">
           <label htmlFor="r-name">Name</label>
-          <input id="r-name" name="name" defaultValue={row?.name} required />
+          <input id="r-name" name="name" key={`n${fill?.id ?? ""}`} defaultValue={fill?.name ?? row?.name} required />
         </div>
         <div className="grid2">
           <div className="fld">
             <label htmlFor="r-email">Email</label>
-            <input id="r-email" name="email" type="email" defaultValue={row?.email ?? ""} />
+            <input id="r-email" name="email" type="email" key={`e${fill?.id ?? ""}`} defaultValue={fill?.email ?? row?.email ?? ""} />
           </div>
           <div className="fld">
             <label htmlFor="r-phone">Phone (WhatsApp)</label>
-            <input id="r-phone" name="phone" type="tel" defaultValue={row?.phone ?? ""} />
+            <input id="r-phone" name="phone" type="tel" key={`p${fill?.id ?? ""}`} defaultValue={fill?.phone ?? row?.phone ?? ""} />
           </div>
         </div>
         <div className="fld">

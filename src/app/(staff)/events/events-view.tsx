@@ -223,7 +223,7 @@ export function EventsView({
                       <i />
                       {kindName(o.kind)}
                       {o.location ? `, ${o.location}` : ""}
-                      {o.kind !== "class" && o.access === "everyone" ? ", public" : ""}
+                      {o.access === "everyone" ? ", public" : ""}
                     </span>
                   </span>
                   <span className="c-when">{whenLabel(o)}</span>
@@ -678,16 +678,12 @@ function OfferingDrawer({
           </div>
           <div className="fld">
             <label htmlFor="e-acc">Who can book</label>
-            {curKind === "class" ? (
-              <>
-                <input id="e-acc" readOnly value="Members only" />
-                <span className="hint">Classes are for members.</span>
-              </>
-            ) : (
-              <select id="e-acc" name="access" defaultValue={o?.access ?? "everyone"}>
-                <option value="everyone">Open to everyone</option>
-                <option value="members">Members only</option>
-              </select>
+            <select id="e-acc" name="access" defaultValue={o?.access ?? (curKind === "class" ? "members" : "everyone")}>
+              <option value="everyone">Open to everyone</option>
+              <option value="members">Members only</option>
+            </select>
+            {curKind === "class" && (
+              <span className="hint">Classes are for members. Only classes paid at booking (like breakfast and lunch) can be opened to everyone.</span>
             )}
           </div>
         </div>

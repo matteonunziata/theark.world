@@ -1359,6 +1359,7 @@ export type Database = {
           paid_on: string | null
           party: string | null
           reference: string | null
+          sale_id: string | null
           status: string
           updated_at: string
         }
@@ -1385,6 +1386,7 @@ export type Database = {
           paid_on?: string | null
           party?: string | null
           reference?: string | null
+          sale_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -1411,6 +1413,7 @@ export type Database = {
           paid_on?: string | null
           party?: string | null
           reference?: string | null
+          sale_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -4923,6 +4926,21 @@ export type Database = {
           membership_status: string | null;
           discount_percent: number;
           has_card: boolean;
+        }[];
+      };
+      checkout_add_customer: {
+        Args: { p_name: string; p_email: string; p_phone: string };
+        Returns: {
+          id: string;
+          name: string;
+          email: string | null;
+          phone: string | null;
+          photo_path: string | null;
+          tier: string | null;
+          membership_status: string | null;
+          discount_percent: number;
+          has_card: boolean;
+          created: boolean;
         }[];
       };
       checkout_card_token: {

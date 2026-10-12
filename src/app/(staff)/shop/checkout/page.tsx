@@ -8,8 +8,8 @@ export const metadata: Metadata = { title: "Farm shop checkout" };
 
 export default async function CheckoutPage() {
   const { supabase, staff } = await requireStaff("shop");
-  // Checkout is for the shop team and admins; division leads see the rest of the shop.
-  if (staff.role !== "admin" && staff.role !== "shop") redirect("/shop");
+  // Checkout is for admins, shop staff, division leads and community managers.
+  if (!["admin", "lead", "shop", "community_manager"].includes(staff.role)) redirect("/shop");
   const [{ data: products }, { data: org }] = await Promise.all([
     supabase
       .from("products")

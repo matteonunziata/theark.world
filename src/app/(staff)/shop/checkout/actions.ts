@@ -1,9 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { friendly } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { pushContact } from "@/lib/ghl";
 import { chargeSavedCard, tilopayReady } from "@/lib/tilopay";
 
 export type Customer = {
@@ -31,10 +34,43 @@ export type Receipt = {
   lines: { name: string; qty: number; gross: number; discount: number }[];
 };
 
-export type SaleResult = { ok: true; receipt: Receipt } | { ok: false; error: string };
+export type SaleResult =
+  | { ok: true; receipt: Receipt; emailed: { ok: boolean; message: string } | null }
+  | { ok: false; error: string };
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Add someone who isn't in the CRM yet. An existing email returns that person instead. */
+export async function addCustomer(input: {
+  name: string;
+  email: string;
+  phone: string;
+}): Promise<{ ok: true; customer: Customer; existing: boolean } | { ok: false; error: string }> {
+  const { supabase } = await staffOrThrow("admin", "lead", "shop", "community_manager");
+  const name = input.name.trim();
+  const email = input.email.trim();
+  if (!name) return { ok: false, error: "Enter a name." };
+  if (email && !EMAIL.test(email)) return { ok: false, error: "Enter a valid email." };
+  const { data, error } = await supabase.rpc("checkout_add_customer", {
+    p_name: name,
+    p_email: email,
+    p_phone: input.phone.trim(),
+  });
+  const c = data?.[0];
+  if (error || !c) return { ok: false, error: error ? friendly(error) : "Couldn’t add this person." };
+  const { created, ...customer } = c;
+  if (created) {
+    after(async () => {
+      const admin = createAdminClient();
+      if (admin) await pushContact(admin, c.id).catch(() => {});
+    });
+    revalidatePath("/crm", "layout");
+  }
+  return { ok: true, customer: { ...customer, discount_percent: Number(customer.discount_percent) }, existing: !created };
+}
 
 export async function searchCustomers(q: string): Promise<Customer[]> {
-  const { supabase } = await staffOrThrow("admin", "shop");
+  const { supabase } = await staffOrThrow("admin", "lead", "shop", "community_manager");
   if (q.trim().length < 2) return [];
   const { data } = await supabase.rpc("checkout_customers", { p_q: q });
   return (data ?? []).map((c) => ({ ...c, discount_percent: Number(c.discount_percent) }));
@@ -51,8 +87,9 @@ export async function completeSale(input: {
   method: Method;
   reference?: string;
   cashReceived?: number;
+  receiptEmail?: string;
 }): Promise<SaleResult> {
-  const { supabase } = await staffOrThrow("admin", "shop");
+  const { supabase } = await staffOrThrow("admin", "lead", "shop", "community_manager");
   const contact = input.contactId || null;
   let reference = input.reference?.trim() || null;
 
@@ -102,8 +139,11 @@ export async function completeSale(input: {
     change_due: number | null;
     lines: { name: string; qty: number; gross: number; discount: number }[];
   };
+  const to = input.receiptEmail?.trim() || null;
+  const emailed = to ? await emailReceipt(r.sale_id, to) : null;
   return {
     ok: true,
+    emailed,
     receipt: {
       sale_id: r.sale_id,
       total: Number(r.total),
@@ -126,13 +166,14 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 
 /** Email the receipt of a finished sale to its customer. */
 export async function emailReceipt(saleId: string, to: string | null): Promise<{ ok: boolean; message: string }> {
-  const { supabase } = await staffOrThrow("admin", "shop");
+  const { supabase } = await staffOrThrow("admin", "lead", "shop", "community_manager");
   const { data: sale } = await supabase
     .from("sales")
     .select("total, subtotal, discount, discount_percent, created_at, items:sale_items(name, quantity, unit_price, discount)")
     .eq("id", saleId)
     .maybeSingle();
-  if (!sale || !to) return { ok: false, message: "This customer has no email on file." };
+  if (!to || !EMAIL.test(to)) return { ok: false, message: "Enter a valid email address." };
+  if (!sale) return { ok: false, message: "That sale wasn’t found." };
   const rows = sale.items
     .map(
       (i) =>
