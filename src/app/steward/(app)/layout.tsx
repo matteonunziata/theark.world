@@ -26,6 +26,7 @@ export default async function StewardLayout({ children }: { children: React.Reac
                 <Link className="pv-btn ghost sm" href="/">Team portal</Link>
               )}
               <span className="pv-me" title={s.me?.name ?? ""}>{initials(s.me?.name ?? "")}</span>
+              <Link className="pv-btn ghost sm" href="/auth/password?next=/steward">Change password</Link>
               <form action="/auth/signout" method="post">
                 <button type="submit" className="pv-btn ghost sm">Sign out</button>
               </form>

@@ -49,11 +49,9 @@ export function PasswordForm({ next, canSkip }: { next: string; canSkip: boolean
       <button type="submit" className="btn primary auth-btn" disabled={saving}>
         {saving ? "Saving…" : "Save password"}
       </button>
-      {canSkip && (
-        <a className="linkish-sm" style={{ display: "block", textAlign: "center", margin: "12px auto 0" }} href={next}>
-          Skip for now
-        </a>
-      )}
+      <a className="linkish-sm" style={{ display: "block", textAlign: "center", margin: "12px auto 0" }} href={next}>
+        {canSkip ? "Skip for now" : "Cancel"}
+      </a>
     </form>
   );
 }
