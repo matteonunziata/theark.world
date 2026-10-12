@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables } from "@/lib/database.types";
 import { addDays, todayIn } from "@/lib/dates";
@@ -15,6 +16,7 @@ import {
   stayStatus,
   timeOfDay,
 } from "@/lib/guesty-map";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Guesty sync. Reservations come in as stays (matched on the Guesty
 // reservation id, so a change in Guesty updates the same stay), guests are
@@ -391,12 +393,31 @@ type PushResult = { pushed: number; freed: number; errors: string[] };
 /** Stays booked in ARK OS go to the Guesty calendar as unavailable nights; cancelled ones are freed again. */
 async function pushBlocks(sb: Sb, token: string, today: string): Promise<PushResult> {
   const r: PushResult = { pushed: 0, freed: 0, errors: [] };
+
+  // Nights of stays that moved or were deleted go first, so a moved stay can
+  // take its new nights without the old ones lingering.
+  const { data: frees } = await sb.from("guesty_frees").select("id, listing_id, start_date, end_date").order("created_at");
+  for (const f of frees ?? []) {
+    try {
+      await api(token, `/availability-pricing/api/calendar/listings/${encodeURIComponent(f.listing_id)}`, {
+        method: "PUT",
+        body: { startDate: f.start_date, endDate: f.end_date, status: "available", note: "" },
+      });
+      await sb.from("guesty_frees").delete().eq("id", f.id);
+      r.freed++;
+    } catch (e) {
+      r.errors.push(`Freeing ${f.start_date}: ${errorText(e)}`);
+      if (e instanceof GuestyError && e.status === 429) return r;
+    }
+    await pause(120);
+  }
+
   const { data: lots } = await sb.from("lots").select("id, guesty_listing_id").not("guesty_listing_id", "is", null);
   const listingOf = new Map((lots ?? []).map((l) => [l.id, l.guesty_listing_id as string]));
   if (!listingOf.size) return r;
   const { data: stays, error } = await sb
     .from("stays")
-    .select("id, lot_id, status, kind, guest_name, check_in, check_out, updated_at, guesty_pushed_at")
+    .select("id, lot_id, status, kind, guest_name, check_in, check_out, updated_at, guesty_pushed_at, guesty_pushed_from, guesty_pushed_to")
     .neq("source", "guesty")
     .gte("check_out", today)
     .in("lot_id", Array.from(listingOf.keys()))
@@ -414,7 +435,12 @@ async function pushBlocks(sb: Sb, token: string, today: string): Promise<PushRes
     const wantBlocked = s.status === "confirmed";
     if (wantBlocked && !changedSincePush) continue;
     if (!wantBlocked && !s.guesty_pushed_at) continue;
-    const range = blockRange(s.check_in, s.check_out);
+    // Free what was actually sent; block what the stay holds now.
+    const range = wantBlocked
+      ? blockRange(s.check_in, s.check_out)
+      : s.guesty_pushed_from && s.guesty_pushed_to
+        ? { startDate: s.guesty_pushed_from, endDate: s.guesty_pushed_to }
+        : blockRange(s.check_in, s.check_out);
     try {
       await api(token, `/availability-pricing/api/calendar/listings/${encodeURIComponent(listingId)}`, {
         method: "PUT",
@@ -424,7 +450,15 @@ async function pushBlocks(sb: Sb, token: string, today: string): Promise<PushRes
       });
       await sb
         .from("stays")
-        .update({ guesty_pushed_at: wantBlocked ? new Date().toISOString() : null })
+        .update(
+          wantBlocked
+            ? {
+                guesty_pushed_at: new Date().toISOString(),
+                guesty_pushed_from: range.startDate,
+                guesty_pushed_to: range.endDate,
+              }
+            : { guesty_pushed_at: null, guesty_pushed_from: null, guesty_pushed_to: null },
+        )
         .eq("id", s.id);
       if (wantBlocked) r.pushed++;
       else r.freed++;
@@ -529,6 +563,37 @@ export async function runSync(sb: Sb): Promise<SyncResult | { error: string }> {
     .update({ last_sync_at: startedAt, last_error: r.errors[0] ?? null })
     .eq("key", "guesty");
   return r;
+}
+
+/**
+ * Send stays booked or changed here to Guesty right away, without a full
+ * sync. Called after a stay is saved or deleted; quiet when Guesty is off or
+ * set to one way. Anything that fails is retried by the next push or sync.
+ */
+export async function pushNow(sb: Sb) {
+  try {
+    const i = await getIntegration(sb);
+    if (!ready(i) || i.direction !== "both") return;
+    const token = await tokenFor(sb, i);
+    const p = await pushBlocks(sb, token, todayIn());
+    if (p.pushed || p.freed || p.errors.length) {
+      await logEvent(sb, {
+        direction: "out",
+        kind: "push",
+        ok: p.errors.length === 0,
+        detail: `Blocked ${plural(p.pushed, "stay")} on the Guesty calendar${p.freed ? `, freed ${p.freed}` : ""}${p.errors.length ? `, ${p.errors.length} failed: ${p.errors[0]}` : ""}.`,
+      });
+    }
+    if (p.errors.length) await sb.from("integrations").update({ last_error: p.errors[0] }).eq("key", "guesty");
+  } catch (e) {
+    await logEvent(sb, { direction: "out", kind: "push", ok: false, detail: errorText(e) });
+  }
+}
+
+/** Call from a server action after a stay changes: pushes to Guesty once the response is on its way. */
+export function pushSoon() {
+  const admin = createAdminClient();
+  if (admin) after(() => pushNow(admin));
 }
 
 // Webhooks ------------------------------------------------------------------

@@ -510,6 +510,12 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Moved:** My Property (`/portal/property`) is now `/steward`; the old address redirects. The members portal shows a "Steward" link for members who are active stewards. A member who owns a lot but isn't an active steward no longer sees it.
 - **Not built:** a steward's own balance and invoices on the platform, and a separate domain for it.
 
+## Guesty both ways, always (2026-10-12)
+
+- **Pushes are immediate.** Saving, blocking, opening up or deleting a stay (staff or steward) calls `pushSoon()`, which runs `pushNow` after the response with the service-role client. The daily cron and "Sync now" still catch anything that failed. Quiet when Guesty is off or set to "Guesty → ARK OS only".
+- **Moves and deletes free the old nights.** `stays.guesty_pushed_from/to` remember the range sent; a trigger queues the old range in `guesty_frees` when a pushed stay's dates or home change or it is deleted, and the next push releases it before blocking the new nights. This closes the date-change question in Round 16.
+- **"Both ways" is the default** for a new connection. The connection form keeps what was typed after a failed attempt and cleans quotes and spaces from pasted credentials.
+
 ## Sign-in: confirm the email once, then a password
 - **Email link/code once, then a password.** The sign-in form takes email and password. "First time, or forgot your password? Email me a link" sends the same link-and-code email as before. After using it, anyone without a password lands on `/auth/password` to set one (skippable); that flag is `user_metadata.has_password`, set when the password is saved. Later sign-ins are email and password only. The page also serves as "Change your password" for signed-in people.
 - **Staying signed in.** Supabase sessions refresh on their own and the cookie lasts about a year, so people stay signed in on a device until they sign out. Password sign-in still goes through `getViewer`, so someone who is no longer on the team, a membership or an active stewardship gets "no access" even with a password.

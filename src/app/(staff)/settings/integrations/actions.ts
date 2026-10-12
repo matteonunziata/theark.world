@@ -129,14 +129,19 @@ export async function saveGuesty(_prev: ActionResult, data: FormData): Promise<A
   const current = await guesty.getIntegration(supabase);
   if (!current) return fail("Couldn’t read the integration.");
 
-  const clientId = field(data, "client_id");
-  const secret = field(data, "secret") ?? current.secret;
-  const direction = field(data, "direction") ?? "pull";
+  // Pasting from Guesty sometimes brings quotes or a line break along.
+  const clean = (v: string | null) => v?.replace(/^["'“”‘’\s]+|["'“”‘’\s]+$/g, "").replace(/\s+/g, "") || null;
+  const clientId = clean(field(data, "client_id"));
+  const secret = clean(field(data, "secret")) ?? current.secret;
+  const direction = field(data, "direction") ?? "both";
   const enabled = data.get("enabled") === "on";
   const syncDetails = data.get("sync_details") === "on";
   if (!clientId) return fail("Enter the client id.");
   if (!secret) return fail("Paste the client secret.");
   if (!["pull", "both"].includes(direction)) return fail("Choose a direction.");
+  if (clientId.startsWith("0oa") === false && secret.startsWith("0oa")) {
+    return fail("The client id and secret look swapped. The client id is the short one that starts with 0oa.");
+  }
 
   // New credentials are checked before they're kept, and the token that
   // comes back is saved (Guesty allows five a day).
@@ -150,7 +155,10 @@ export async function saveGuesty(_prev: ActionResult, data: FormData): Promise<A
       token = t;
     } catch (e) {
       await guesty.logEvent(supabase, { direction: "out", kind: "test", ok: false, detail: guestyError(e) });
-      return fail(guestyError(e));
+      const hint = clientId.startsWith("0oa")
+        ? ""
+        : " The client id usually starts with 0oa; check you copied the Client ID and not the application name.";
+      return fail(guestyError(e) + hint);
     }
   }
 

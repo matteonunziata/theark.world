@@ -11,6 +11,7 @@ import {
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
+import { pushSoon } from "@/lib/guesty";
 import {
   HOME_STATUS,
   LOT_KINDS,
@@ -205,6 +206,7 @@ export async function saveStay(_prev: ActionResult, data: FormData): Promise<Act
   if (data.get("intent") === "delete" && id) {
     const { error } = await supabase.from("stays").delete().eq("id", id);
     if (error) return fail(friendly(error));
+    pushSoon();
     refresh(lotId);
     return ok("Stay deleted");
   }
@@ -261,6 +263,7 @@ export async function saveStay(_prev: ActionResult, data: FormData): Promise<Act
     }
     return fail(friendly(error));
   }
+  pushSoon();
   refresh(lotId);
   return ok(id ? "Stay saved" : kind === "guest" ? "Stay booked" : "Dates blocked");
 }
@@ -389,6 +392,7 @@ export async function blockNights(lotId: string, from: string, to: string, label
     if (error.code === "23P01") return fail("Some of those nights are already booked.");
     return fail(friendly(error));
   }
+  pushSoon();
   refresh(lotId);
   revalidatePath(`/hospitality/${lotId}`);
   return ok(nights(from, to) === 1 ? "Night blocked" : `${nights(from, to)} nights blocked`);
@@ -398,6 +402,7 @@ export async function unblock(lotId: string, stayId: string): Promise<ActionResu
   const { supabase } = await staffOrThrow(...ESTATE);
   const { error } = await supabase.from("stays").delete().eq("id", stayId).eq("kind", "hold");
   if (error) return fail(friendly(error));
+  pushSoon();
   refresh(lotId);
   revalidatePath(`/hospitality/${lotId}`);
   return ok("Opened up again");
