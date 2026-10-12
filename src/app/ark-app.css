@@ -671,6 +671,7 @@ body.ask-open .ask-btn.top{visibility:hidden}
 @media (max-width: 860px){
   .main-top{display:none}
   .ask-btn.bar{display:inline-flex;margin-left:auto;margin-right:8px;background:none;border-color:var(--canopy-2);color:var(--canopy-ink);box-shadow:none}
+  .topbar-portal{margin-right:8px;border:1px solid var(--canopy-2);color:var(--canopy-ink);border-radius:9px;padding:7px 12px;font-weight:600;text-decoration:none}
 }
 
 /* ---- Marketing ---- */
