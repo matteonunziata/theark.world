@@ -114,7 +114,7 @@ export const MODULES: {
     key: "shop",
     name: "Farm shop",
     href: "/shop",
-    roles: ["admin", "lead", "shop"],
+    roles: ["admin", "lead", "shop", "community_manager"],
   },
   {
     // Admins, plus anyone in a school division (added in the staff layout).
