@@ -5250,6 +5250,13 @@ export type Database = {
       };
       refresh_membership_caches: { Args: never; Returns: number };
       can_issue_pass: { Args: never; Returns: boolean };
+      issue_paid_membership: {
+        Args: {
+          p_contact: string; p_tier: string; p_status: string; p_starts: string | null; p_ends: string | null;
+          p_method: string; p_reference: string | null; p_amount: number; p_currency: string;
+        };
+        Returns: string | null;
+      };
       add_member_contact: {
         Args: { p_first: string; p_last: string | null; p_phone: string | null; p_email: string | null };
         Returns: string;
