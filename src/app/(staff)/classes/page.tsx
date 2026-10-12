@@ -56,6 +56,9 @@ export default async function MyClasses() {
             and check people in.
           </p>
         </div>
+        <Link className="btn" href="/portal">
+          Members portal
+        </Link>
       </div>
 
       {!list.length ? (
