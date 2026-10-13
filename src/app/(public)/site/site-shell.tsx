@@ -3,25 +3,76 @@ import Link from "next/link";
 import { ArkFonts } from "@/components/ark-fonts";
 import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
+import { loadPublicLots, titledLotsLeft } from "@/lib/public-lots";
+import { NavMenu } from "./nav-menu";
 import { BrochureForm } from "./forms";
 import "../whats-on/events.css";
 import "./site.css";
 
-const LINKS = [
-  ["Stewardship", "/titled-lot-ownership"],
-  ["Homes", "/homes-for-sale"],
-  ["Membership", "/ark-membership"],
-  ["Stay", "/stay"],
-  ["Events", "/whats-on"],
-  ["Farm Shop", "/farm-shop"],
-  ["FAQ", "/faq"],
-] as const;
+const LOTS_TOTAL = 87;
+
+const groups = (left: number) =>
+  [
+    { label: "Shop", items: [["The Farm Shop", "/farm-shop"]], note: "Farm-fresh food, delivered" },
+    {
+      label: "Stewardship",
+      items: [
+        ["Interactive Map & Prices", "/live-lot-prices"],
+        ["Titled Lots", "/titled-lot-ownership"],
+        ["Fractional Ownership", "/fractional-ownership"],
+        ["Homes for Sale", "/homes-for-sale"],
+      ],
+      note: `Limited Opportunity · ${left}/${LOTS_TOTAL} lots available`,
+    },
+    {
+      label: "The Village",
+      items: [
+        ["The ARK Membership", "/ark-membership"],
+        ["The ARK Events", "/whats-on"],
+        ["The ARK Farm", "/farm-shop"],
+        ["The ARK House", "/ark-house"],
+        ["The ARK Padel", "/courts"],
+        ["Arkadia", "/about-arkadia"],
+        ["Tenet Records", "/tenet-records"],
+      ],
+      note: "Where we live, learn, work, play, and gather",
+    },
+    {
+      label: "Visit",
+      items: [
+        ["The ARK Rentals", "/stay"],
+        ["The ARK Events", "/whats-on"],
+        ["The ARK Membership", "/ark-membership"],
+      ],
+      note: "Spend the day or stay at The ARK",
+    },
+    {
+      label: "Contribute",
+      items: [
+        ["Host a Retreat / Event", "/contribute"],
+        ["Teach or Perform", "/contribute"],
+        ["Creator Opportunities", "/contribute"],
+      ],
+      note: "Over 300 attendees at Wellness Summit",
+    },
+    {
+      label: "Story",
+      items: [
+        ["Founder Bio", "/founder-bio"],
+        ["Philosophy", "/philosophy"],
+        ["FAQ", "/faq"],
+        ["Press & Media", "/press-media"],
+        ["Blog", "/blog"],
+      ],
+      note: "Santa Teresa · Nicoya Peninsula · Blue Zone",
+    },
+  ] as const;
 
 /** Nav, page frame and footer shared by the information pages. Same markup and classes as Stay and Events. */
 export const BROCHURE = "/site/brochure/the-ark-stewardship-brochure.pdf";
 
 export async function SiteShell({ children, here, brochure = true }: { children: React.ReactNode; here: string; brochure?: boolean }) {
-  const { memberId, staff } = await getViewer();
+  const [{ memberId, staff }, lots] = await Promise.all([getViewer(), loadPublicLots()]);
   return (
     <main className="evp sx">
       <ArkFonts />
@@ -30,13 +81,7 @@ export async function SiteShell({ children, here, brochure = true }: { children:
           <Link href="/home" aria-label="The ARK">
             <Logo tone="dark" height={40} />
           </Link>
-          <div className="nav-links">
-            {LINKS.map(([name, href]) => (
-              <Link key={href} href={href} aria-current={href === here ? "page" : undefined}>
-                {name}
-              </Link>
-            ))}
-          </div>
+          <NavMenu groups={groups(titledLotsLeft(lots))} here={here} />
           <div className="nav-right">
             {staff ? (
               <Link href="/estate" className="btn btn-primary sm">Staff view</Link>

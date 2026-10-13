@@ -2,6 +2,20 @@
    same tokens, buttons, nav, hero, band, form and footer. Only the layouts those pages need are added here. */
 .sx {
   .nav-links a[aria-current="page"] { color: var(--ink); }
+  .nav-group { position: relative; }
+  .nav-trigger { display: inline-flex; align-items: center; gap: 6px; padding: 12px 14px; border: 0; background: none; cursor: pointer; font: inherit; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--primary); }
+  .nav-trigger[aria-current="page"] { color: var(--ink); }
+  .nav-group.open .nav-trigger { background: #C4A18B; color: var(--ground); }
+  .nav-panel { position: absolute; top: 100%; left: 0; z-index: 30; min-width: 280px; padding: 12px 22px 14px; background: #F8F6F1; border: 2px solid #8A6F57; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  .nav-panel a { display: block; padding: 11px 0; font-size: 17px; text-transform: none; letter-spacing: 0; color: #6B6458; }
+  .nav-panel a:hover { color: var(--primary); }
+  .nav-panel p { margin: 10px 0 0; padding-top: 14px; border-top: 1px solid #C4A18B; font-size: 14px; color: #8A6F57; }
+  @media (max-width: 720px) {
+    .nav-links { gap: 0; }
+    .nav-trigger { padding: 12px 8px; }
+    .nav-group { position: static; }
+    .nav-panel { position: fixed; left: 16px; right: 16px; min-width: 0; }
+  }
   .btn-ghost-light { border-color: var(--on-dark); }
 
   /* Hero with a photo: Stay's treatment */
