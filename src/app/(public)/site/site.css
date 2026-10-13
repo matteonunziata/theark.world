@@ -178,3 +178,7 @@
 .sx .hero-tag { font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-dark-muted); }
 .sx .specs-list { grid-template-columns: auto 1fr; gap: 10px 32px; font-size: 17px; }
 .sx .specs-list dd { text-align: right; }
+.sx .pcards.two-up .pcard { flex: 1 1 calc((100% - 24px) / 2); }
+.sx .pcards.two-up .pcard .ph { height: 340px; }
+.sx .cards.four { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.sx .pcard .foot .btn-row { gap: 8px; }
