@@ -7,15 +7,20 @@ import { createClient } from "@/lib/supabase/server";
 
 export type Staff = Tables<"team_members">;
 
-/** The signed-in person: staff record, member contact, or neither. */
+/**
+ * The signed-in person: staff record, member contact, or neither.
+ * `memberId` is set while a pass or membership is live and is what lets
+ * someone book and interact. `portalId` is set for anyone who ever held one,
+ * so a lapsed pass holder can still sign in and is asked to buy another.
+ */
 export const getViewer = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { supabase, user: null, staff: null, memberId: null, stewardId: null };
+  if (!user) return { supabase, user: null, staff: null, memberId: null, portalId: null, stewardId: null };
 
-  const [{ data: staff }, { data: memberId }, { data: stewardId }] = await Promise.all([
+  const [{ data: staff }, { data: memberId }, { data: portalId }, { data: stewardId }] = await Promise.all([
     supabase
       .from("team_members")
       .select("*")
@@ -23,6 +28,7 @@ export const getViewer = cache(async () => {
       .eq("status", "active")
       .maybeSingle(),
     supabase.rpc("current_member_contact_id"),
+    supabase.rpc("current_portal_contact_id"),
     // Only an active steward gets the steward platform; they needn't be a member.
     supabase.rpc("current_active_steward_id"),
   ]);
@@ -31,6 +37,7 @@ export const getViewer = cache(async () => {
     user,
     staff,
     memberId: memberId ?? null,
+    portalId: memberId ?? portalId ?? null,
     stewardId: stewardId ?? null,
   };
 });

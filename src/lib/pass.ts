@@ -17,6 +17,7 @@ export type PassState = {
 export const PASS_STATE: Record<string, string> = {
   valid: "Valid today",
   unused: "Ready for your first visit",
+  no_photo: "Needs a photo",
   checked_in: "Checked in today",
   paused: "Membership paused",
   inactive: "No active membership",
@@ -60,6 +61,8 @@ export function passReason(p: PassState, timeZone = "America/Costa_Rica") {
           : name;
     case "unused":
       return `${name}, first visit. Use by ${p.activate_by ? short(p.activate_by) : "soon"}`;
+    case "no_photo":
+      return `${name}: no photo yet. They add one in the member app before the pass can start`;
     case "checked_in":
       return p.checked_in_at ? `Already checked in at ${time(p.checked_in_at)}` : "Already checked in today";
     case "not_started":

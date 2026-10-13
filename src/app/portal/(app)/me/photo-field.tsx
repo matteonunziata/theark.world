@@ -8,8 +8,19 @@ import { avatarUrl } from "@/lib/covers";
 import { createClient } from "@/lib/supabase/client";
 import { setPhoto } from "../../actions";
 
-/** Members add a photo so facilitators can greet them by name at the door. */
-export function PhotoField({ name, initial }: { name: string; initial: string | null }) {
+/**
+ * Members add a photo so security can let them in and facilitators can greet
+ * them by name. It is required, so a saved photo can be replaced but not removed.
+ */
+export function PhotoField({
+  name,
+  initial,
+  onChange,
+}: {
+  name: string;
+  initial: string | null;
+  onChange?: (path: string | null) => void;
+}) {
   const [path, setPath] = useState(initial);
   const [busy, setBusy] = useState(false);
   const toast = useToast();
@@ -31,19 +42,11 @@ export function PhotoField({ name, initial }: { name: string; initial: string | 
       if (!res.ok) throw new Error(res.error);
       if (path) await supabase.storage.from("avatars").remove([path]);
       setPath(next);
+      onChange?.(next);
       toast("Photo saved");
     } catch {
       toast("Couldn’t upload that photo. Try a JPG or PNG under 10 MB.");
     }
-    setBusy(false);
-  }
-
-  async function remove() {
-    setBusy(true);
-    const res = await setPhoto(null);
-    if (res.ok && path) await createClient().storage.from("avatars").remove([path]);
-    if (res.ok) setPath(null);
-    toast(res.ok ? "Photo removed" : (res.error ?? "Couldn’t remove it."));
     setBusy(false);
   }
 
@@ -57,7 +60,7 @@ export function PhotoField({ name, initial }: { name: string; initial: string | 
       )}
       <div>
         <b>Your photo</b>
-        <p>Helps facilitators and the team welcome you by name.</p>
+        <p>Required. Security lets you in by it, and the team can welcome you by name.</p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <label className="pv-btn sm" style={{ cursor: "pointer" }}>
             {busy ? "Saving…" : src ? "Change photo" : "Add a photo"}
@@ -69,11 +72,6 @@ export function PhotoField({ name, initial }: { name: string; initial: string | 
               onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
             />
           </label>
-          {src && (
-            <button type="button" className="pv-btn ghost sm" onClick={remove} disabled={busy}>
-              Remove
-            </button>
-          )}
         </div>
       </div>
     </div>

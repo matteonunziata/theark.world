@@ -14,7 +14,8 @@ export default async function WelcomePage() {
   const p = await loadPortal();
   const { me } = p;
   if (!me) redirect("/portal");
-  if (me.onboarded_at) redirect("/portal");
+  // A lapsed pass has nothing to set up; a missing photo keeps this page open.
+  if (p.lapsed || (me.onboarded_at && me.photo_path)) redirect("/portal");
   const first = me.name.split(/\s+/)[0];
   return (
     <ToastProvider>
@@ -25,8 +26,9 @@ export default async function WelcomePage() {
           <span className="eyebrow">Welcome to {p.orgName}</span>
           <h1>Good to have you here{first ? `, ${first}` : ""}.</h1>
           <p className="lead">
-            Two minutes to set up your profile, so the people you meet here know who you are. You can change
-            any of it later under Me.
+            {me.onboarded_at
+              ? "One thing before you go in: add a photo. Security lets you in by it."
+              : "Two minutes to set up your profile, so the people you meet here know who you are. You can change any of it later under Me."}
           </p>
           <WelcomeForm
             me={{

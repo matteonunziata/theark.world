@@ -180,3 +180,6 @@
 - **Receipts for bought materials.** Only name, quantity and amount are recorded. Photo of the receipt?
 - **Notify my lead reaches Slack and the task thread only.** Should the lead also see it on their dashboard?
 - **Old `tasks.cost` is hidden by the app, not the database.** Move it into a leads-only table so the database enforces it too?
+
+- **Should running memberships without a photo be stopped at the gate too?** Today only an unused pass is (it can't start). 38 of 41 annual members had no photo on 2026-10-12, so turning them away needs a plan (a deadline, or staff taking photos at the door).
+- **Should day-pass holders appear in the member directory and "who's going"?** They don't now. They get the portal for booking, not the community.

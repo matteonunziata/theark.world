@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { ActionResult } from "@/lib/action-result";
 import { PhotoField } from "../(app)/me/photo-field";
 import { completeOnboarding } from "../actions";
@@ -20,6 +20,7 @@ export function WelcomeForm({
   };
 }) {
   const [state, action, pending] = useActionState(completeOnboarding, { ok: false } as ActionResult);
+  const [hasPhoto, setHasPhoto] = useState(!!me.photo_path);
 
   return (
     <form className="pv-form pv-panel" action={action}>
@@ -33,10 +34,10 @@ export function WelcomeForm({
         <span className="n">1</span>
         <div>
           <h2>You</h2>
-          <p>A photo helps the team and other members greet you by name.</p>
+          <p>A photo is required: security lets you in by it, and it helps the team greet you by name.</p>
         </div>
       </div>
-      <PhotoField name={me.name} initial={me.photo_path} />
+      <PhotoField name={me.name} initial={me.photo_path} onChange={(p) => setHasPhoto(!!p)} />
       <div>
         <label htmlFor="wf-name">Your name</label>
         <input id="wf-name" name="name" className="pv-input" defaultValue={me.name} required minLength={2} autoComplete="name" />
@@ -93,9 +94,10 @@ export function WelcomeForm({
       </label>
 
       <div>
-        <button type="submit" className="pv-btn" disabled={pending}>
+        <button type="submit" className="pv-btn" disabled={pending || !hasPhoto}>
           {pending ? "Saving…" : "Into the portal"}
         </button>
+        {!hasPhoto && <div className="hint">Add your photo to continue.</div>}
       </div>
     </form>
   );

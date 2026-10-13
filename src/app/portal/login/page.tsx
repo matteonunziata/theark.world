@@ -9,8 +9,8 @@ export const metadata: Metadata = { title: "Sign in" };
 
 export default async function PortalLogin({ searchParams }: PageProps<"/portal/login">) {
   const { error, next } = await searchParams;
-  const { memberId, staff } = await getViewer();
-  if (memberId || staff) redirect(typeof next === "string" && next.startsWith("/") ? next : "/");
+  const { portalId, staff } = await getViewer();
+  if (portalId || staff) redirect(typeof next === "string" && next.startsWith("/") ? next : "/");
   return (
     <main className="auth ark-type">
       <ArkFonts />
