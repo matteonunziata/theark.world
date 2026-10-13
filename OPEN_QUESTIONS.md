@@ -185,3 +185,8 @@
 - **Should day-pass holders appear in the member directory and "who's going"?** They don't now. They get the portal for booking, not the community.
 
 - **Arkadia:** should families see the weekly theme and homework on their private page? Per-student feedback to review (as in the parent-view mockup) isn't built.
+
+- **Stewardship application:** only two steps of the live form were captured (name, email and WhatsApp, then "About you"). What do the later steps ask?
+- **Public pages and the home route:** `/home` is the new landing page. Should `/` itself show it (and the sign-in redirect move), or stay as it is?
+- **Fractional shares:** the page's "23 shares remaining" figure is static copy. Should it come from the inventory (today the inventory holds one fractional row, lot 45)?
+- **Lot 45 and the live site's lot numbers:** the live site shows lot 80 for sale and lists a few prices that differ from the inventory. Which is right? The pages follow the inventory.
