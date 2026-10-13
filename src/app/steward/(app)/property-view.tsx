@@ -12,12 +12,10 @@ import {
   HOME_STATUS,
   label,
   lotTitle,
-  MAINT_CATEGORIES,
   RELATIONS,
 } from "@/lib/estate";
-import { money } from "@/lib/schedule";
 import { eligibleOn, monthsActive } from "@/lib/steward";
-import { deactivateMyself, requestWork, saveMyHousehold, saveMyNotes } from "./actions";
+import { deactivateMyself, saveMyHousehold } from "./actions";
 
 type Prop = Database["public"]["Functions"]["my_properties"]["Returns"][number];
 
@@ -65,19 +63,26 @@ export function PropertyView({
   logs,
   today,
   steward,
+  stewardName,
+  pendingBudgets,
+  charged,
+  nextStay,
 }: {
   lot: Prop;
   household: Tables<"lot_household">[];
   logs: Database["public"]["Functions"]["my_property_work"]["Returns"];
   today: string;
   steward: { status: string; active_since: string | null } | null;
+  stewardName: string | null;
+  pendingBudgets: number;
+  charged: number;
+  nextStay: string | null;
 }) {
   const toast = useToast();
   const [busy, start] = useTransition();
   const photo = estatePhoto(lot.photo_path);
   const aerial = estatePhoto(lot.aerial_path);
   const open = logs.filter((l) => l.status !== "done");
-  const done = logs.filter((l) => l.status === "done");
   const homeLine = [
     lot.bedrooms !== null ? `${lot.bedrooms} bed` : null,
     lot.bathrooms !== null ? `${Number(lot.bathrooms)} bath` : null,
@@ -96,6 +101,33 @@ export function PropertyView({
               "Your property at The ARK"}
           </p>
         </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginBottom: 20 }}>
+        {[
+          ["Steward", stewardName ?? "—", null],
+          ["Stewardship", steward?.status === "active" ? "Active" : "Not active", null],
+          ["Open work", String(open.length), "maintenance"],
+          ["Budgets to approve", String(pendingBudgets), "budgets"],
+          ["Charged for work", `₡${Math.round(charged).toLocaleString("en-US")}`, "billing"],
+          ...(lot.in_hospitality ? [["Next guests", nextStay ? fmtDate(nextStay, { month: "short", day: "numeric" }) : "None booked", "hospitality"]] : []),
+        ].map(([t, v, tab]) => {
+          const inner = (
+            <>
+              <div style={{ ...muted, fontSize: 13.5 }}>{t}</div>
+              <div style={{ fontSize: 22, fontWeight: 600 }}>{v}</div>
+            </>
+          );
+          return tab ? (
+            <Link key={t} className="pv-panel" style={{ padding: 16, color: "inherit", textDecoration: "none" }} href={`/steward?lot=${lot.id}&tab=${tab}`}>
+              {inner}
+            </Link>
+          ) : (
+            <div key={t} className="pv-panel" style={{ padding: 16 }}>
+              {inner}
+            </div>
+          );
+        })}
       </div>
 
       {(photo || aerial) && (
@@ -137,57 +169,6 @@ export function PropertyView({
             </dl>
             {lot.description && <p style={{ whiteSpace: "pre-line", margin: "14px 0 0" }}>{lot.description}</p>}
             {lot.home_notes && <p style={{ whiteSpace: "pre-line", margin: "10px 0 0" }}>{lot.home_notes}</p>}
-          </section>
-
-          <section className="pv-panel">
-            <h2>Maintenance</h2>
-            {logs.length === 0 ? (
-              <p style={{ ...muted, marginTop: 0 }}>
-                Nothing logged yet. Repairs, garden, pool and cleaning work the team does will show here.
-              </p>
-            ) : (
-              <div>
-                {[...open, ...done].map((l) => (
-                  <div key={l.id} className="pv-post">
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                      <b>{l.title}</b>
-                      <span style={{ ...muted, fontSize: 13.5, whiteSpace: "nowrap" }}>
-                        {l.status !== "done"
-                          ? l.status === "in_progress" ? "In progress" : "Open"
-                          : fmtDate(l.on_date, { month: "short", day: "numeric", year: "numeric" })}
-                      </span>
-                    </div>
-                    <div style={{ ...muted, fontSize: 13.5 }}>
-                      {label(MAINT_CATEGORIES, l.category)}
-                      {l.done_by ? ` · ${l.done_by}` : ""}
-                      {l.cost !== null ? ` · ${money(l.cost, l.currency)}` : ""}
-                    </div>
-                    {l.details && <div style={{ fontSize: 14.5, marginTop: 4 }}>{l.details}</div>}
-                  </div>
-                ))}
-              </div>
-            )}
-            <details style={{ marginTop: 14 }}>
-              <summary style={summary}>Ask the team for work</summary>
-              <Form action={requestWork} submit="Send request" reset>
-                <input type="hidden" name="lot_id" value={lot.id} />
-                <Fld id="rq-title" text="What do you need?">
-                  <input id="rq-title" name="title" className="pv-input" required placeholder="e.g. Pool pump is making noise" />
-                </Fld>
-                <Fld id="rq-cat" text="Type">
-                  <select id="rq-cat" name="category" className="pv-input" defaultValue="repair">
-                    {MAINT_CATEGORIES.filter(([k]) => k !== "build").map(([k, l]) => (
-                      <option key={k} value={k}>
-                        {l}
-                      </option>
-                    ))}
-                  </select>
-                </Fld>
-                <Fld id="rq-det" text="Details">
-                  <textarea id="rq-det" name="details" className="pv-input" rows={3} />
-                </Fld>
-              </Form>
-            </details>
           </section>
         </div>
 
@@ -240,55 +221,6 @@ export function PropertyView({
               <summary style={summary}>Add a person</summary>
               <MemberForm lotId={lot.id} first={household.length === 0} />
             </details>
-          </section>
-
-          <section className="pv-panel">
-            <h2>Hospitality</h2>
-            {lot.in_hospitality ? (
-              <>
-                <p style={{ marginTop: 0 }}>
-                  In the active stewardship programme
-                  {lot.hospitality_since
-                    ? ` since ${fmtDate(lot.hospitality_since, { month: "long", year: "numeric" })}`
-                    : ""}
-                  .{lot.listing_published ? " Your home is listed for guests." : " Your home isn’t listed for guests yet."}
-                </p>
-                <p style={{ ...muted, margin: "0 0 12px", fontSize: 14 }}>
-                  {[
-                    lot.nightly_rate !== null ? `${money(lot.nightly_rate, lot.rate_currency)} a night` : null,
-                    lot.max_guests ? `up to ${lot.max_guests} guests` : null,
-                    lot.min_nights > 1 ? `${lot.min_nights}-night minimum` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-                <p style={{ margin: "0 0 10px" }}>
-                  <Link href={`/steward?tab=schedule&lot=${lot.id}`}>Manage availability and see what’s booked →</Link>
-                </p>
-                <details style={{ marginTop: 10 }}>
-                  <summary style={summary}>Notes for the hospitality team</summary>
-                  <Form action={saveMyNotes} submit="Save notes">
-                    <input type="hidden" name="lot_id" value={lot.id} />
-                    <textarea
-                      name="notes"
-                      className="pv-input"
-                      rows={4}
-                      defaultValue={lot.listing_notes ?? ""}
-                      aria-label="Notes for the hospitality team"
-                      placeholder="House rules, check-in instructions, what you want kept private"
-                    />
-                  </Form>
-                </details>
-                <p style={{ ...muted, fontSize: 13.5, marginBottom: 0 }}>
-                  Rates and listing details are managed with the team. Message us to change them.
-                </p>
-              </>
-            ) : (
-              <p style={{ ...muted, margin: 0 }}>
-                Hospitality is off. Turn it on from the <Link href={`/steward?tab=schedule&lot=${lot.id}`}>Schedule</Link> tab to
-                offer your home to guests when you’re away.
-              </p>
-            )}
           </section>
         </aside>
       </div>
