@@ -76,6 +76,18 @@ export async function staffOrThrow(...roles: string[]) {
   return { ...v, staff: v.staff };
 }
 
+/** Admin and Shop staff, plus anyone given the "can edit shop" switch. */
+export const canEditShop = (staff: Pick<Staff, "role" | "can_edit_shop">) =>
+  staff.role === "admin" || staff.role === "shop" || staff.can_edit_shop;
+
+/** For shop server actions that change products or stock. */
+export async function shopEditorOrThrow() {
+  const v = await getViewer();
+  if (!v.staff) throw new Error("You need to be signed in as staff.");
+  if (!canEditShop(v.staff)) throw new Error("You don’t have access to do that.");
+  return { ...v, staff: v.staff };
+}
+
 /** Arkadia pages: admins and people in the school division. */
 export async function requireSchool() {
   const v = await requireStaff();

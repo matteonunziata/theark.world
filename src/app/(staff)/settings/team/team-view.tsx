@@ -275,6 +275,15 @@ function MemberDrawer({
           </span>
         </div>
         <div className="fld">
+          <label>
+            <input type="checkbox" name="can_edit_shop" defaultChecked={m?.can_edit_shop ?? false} /> Can edit farm
+            shop products and stock
+          </label>
+          <span className="hint">
+            For people whose access level isn’t Shop staff. Admin and Shop staff can always edit.
+          </span>
+        </div>
+        <div className="fld">
           <label htmlFor="m-resp">Responsibilities</label>
           <textarea id="m-resp" name="responsibilities" defaultValue={m?.responsibilities ?? ""} placeholder="What they own day to day" />
         </div>

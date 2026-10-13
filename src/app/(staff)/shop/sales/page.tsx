@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireStaff } from "@/lib/auth";
+import { canEditShop, requireStaff } from "@/lib/auth";
 import { addDays, todayIn } from "@/lib/dates";
 import { crStart } from "@/lib/shop-report";
 import { SalesView } from "./sales-view";
@@ -39,7 +39,7 @@ export default async function SalesPage({ searchParams }: PageProps<"/shop/sales
       moves={moves ?? []}
       products={products ?? []}
       currency={org?.currency ?? "CRC"}
-      canEdit={staff.role === "admin" || staff.role === "shop"}
+      canEdit={canEditShop(staff)}
       from={from}
       to={to}
       today={today}

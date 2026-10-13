@@ -786,6 +786,12 @@ export type Database = {
       contacts: {
         Row: {
           tilopay_card_token: string | null
+          stripe_customer_id: string | null
+          card_payment_method_id: string | null
+          card_brand: string | null
+          card_last4: string | null
+          card_exp_month: number | null
+          card_exp_year: number | null
           bio: string | null
           city_id: string | null
           created_at: string
@@ -830,6 +836,12 @@ export type Database = {
         }
         Insert: {
           tilopay_card_token?: string | null
+          stripe_customer_id?: string | null
+          card_payment_method_id?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
+          card_exp_month?: number | null
+          card_exp_year?: number | null
           bio?: string | null
           city_id?: string | null
           created_at?: string
@@ -874,6 +886,12 @@ export type Database = {
         }
         Update: {
           tilopay_card_token?: string | null
+          stripe_customer_id?: string | null
+          card_payment_method_id?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
+          card_exp_month?: number | null
+          card_exp_year?: number | null
           bio?: string | null
           city_id?: string | null
           created_at?: string
@@ -4477,6 +4495,7 @@ export type Database = {
           division_id: string | null
           email: string | null
           finance_role: string | null
+          can_edit_shop: boolean
           id: string
           name: string
           phone: string | null
@@ -4494,6 +4513,7 @@ export type Database = {
           division_id?: string | null
           email?: string | null
           finance_role?: string | null
+          can_edit_shop?: boolean
           id?: string
           name: string
           phone?: string | null
@@ -4511,6 +4531,7 @@ export type Database = {
           division_id?: string | null
           email?: string | null
           finance_role?: string | null
+          can_edit_shop?: boolean
           id?: string
           name?: string
           phone?: string | null
@@ -5875,6 +5896,10 @@ export type Database = {
           description: string | null;
           web_url: string | null;
         }[];
+      };
+      my_card: {
+        Args: never;
+        Returns: { brand: string; last4: string; exp_month: number; exp_year: number }[];
       };
       my_member_profile: {
         Args: never;

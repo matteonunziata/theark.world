@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireStaff } from "@/lib/auth";
+import { canEditShop, requireStaff } from "@/lib/auth";
 import { ShopView } from "./shop-view";
 
 export const metadata: Metadata = { title: "Products & stock" };
@@ -20,7 +20,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/shop/pr
       products={products ?? []}
       moves={moves ?? []}
       currency={org?.currency ?? "CRC"}
-      canEdit={staff.role === "admin" || staff.role === "shop"}
+      canEdit={canEditShop(staff)}
       initialLow={sp.low === "1"}
     />
   );
