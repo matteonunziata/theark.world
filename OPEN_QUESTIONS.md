@@ -180,3 +180,5 @@
 - **Receipts for bought materials.** Only name, quantity and amount are recorded. Photo of the receipt?
 - **Notify my lead reaches Slack and the task thread only.** Should the lead also see it on their dashboard?
 - **Old `tasks.cost` is hidden by the app, not the database.** Move it into a leads-only table so the database enforces it too?
+
+- **Class cancellation cut-off.** Members can cancel a class or event booking any time before it starts, with no refund rule and no notice to staff. Should there be a cut-off (say 2 or 24 hours before), a refund rule for paid bookings, or a Slack note to the facilitator?
