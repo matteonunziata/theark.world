@@ -143,7 +143,7 @@ export default async function TitledLotPage() {
             <p className="note">*Ocean Vista - 2 bedroom at The ARK - avg rental $300/night</p>
           </div>
           <div className="card" style={{ flex: "999 1 480px", padding: 32 }}>
-            <IncomeCalculator />
+            <IncomeCalculator rates={[200, 300, 400, 500]} initial={300} />
           </div>
         </div>
       </section>

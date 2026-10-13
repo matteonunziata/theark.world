@@ -156,3 +156,25 @@
 .sx .shares strong { font-family: var(--serif); font-weight: 400; font-size: 44px; color: var(--accent); line-height: 1.1; }
 .sx .shares span { color: var(--on-dark-muted); font-size: 16px; }
 .sx .members-band .eyebrow { color: var(--accent); }
+
+/* Steps across the page, down on narrow screens (Memberships timeline) */
+.sx .timeline { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0 20px; }
+.sx .timeline li { position: relative; padding-top: 44px; display: flex; flex-direction: column; gap: 6px; line-height: 1.5; }
+.sx .timeline li::before { content: ""; position: absolute; top: 8px; left: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--ground); border: 2px solid var(--primary); z-index: 1; }
+.sx .timeline li::after { content: ""; position: absolute; top: 15px; left: 16px; right: -20px; height: 2px; background: var(--hairline); }
+.sx .timeline li:last-child::after { display: none; }
+.sx .timeline li.now::before { background: var(--accent); border-color: var(--accent); }
+.sx .timeline b { font-family: var(--serif); font-size: 22px; font-weight: 400; color: var(--primary); }
+.sx .timeline span { font-size: 16px; color: var(--muted-2); }
+@media (max-width: 720px) {
+  .sx .timeline { grid-template-columns: 1fr; }
+  .sx .timeline li { padding: 0 0 28px 40px; }
+  .sx .timeline li::before { top: 4px; }
+  .sx .timeline li::after { display: block; top: 22px; bottom: -4px; left: 7px; right: auto; width: 2px; height: auto; }
+  .sx .timeline li:last-child::after { display: none; }
+}
+.sx .price { font-family: var(--serif); font-size: clamp(36px, 4vw, 48px); line-height: 1.1; color: var(--primary); font-variant-numeric: tabular-nums; }
+.sx .card.feature .price { color: var(--on-dark); }
+.sx .hero-tag { font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-dark-muted); }
+.sx .specs-list { grid-template-columns: auto 1fr; gap: 10px 32px; font-size: 17px; }
+.sx .specs-list dd { text-align: right; }
