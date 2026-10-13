@@ -20,10 +20,10 @@ export async function GET(request: Request, ctx: RouteContext<"/pay/membership/[
     .from("contacts")
     .select("id, name, email, tier, rate, discount:discounts(percent, active)");
   if (fromPortal) {
-    const { memberId, user } = await getViewer();
+    const { portalId, user } = await getViewer();
     if (!user) return Response.redirect(new URL("/portal/login?next=/portal/me", request.url), 303);
-    if (!memberId) return problem("member");
-    q = q.eq("id", memberId);
+    if (!portalId) return problem("member");
+    q = q.eq("id", portalId);
   } else {
     q = q.eq("pay_token", token);
   }

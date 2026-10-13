@@ -204,6 +204,7 @@ export async function sendPassEmail(m: {
       ? "Thank you for applying. A day with us is on us."
       : "Thank you, your payment went through.";
   const covers = m.days === 1 ? "one day, 8am to 8pm" : `${m.days} days in a row, 8am to 8pm`;
+  const login = `${await siteUrl()}/portal/login`;
   return sendEmail({
     to: m.to,
     subject: `Your ${m.what.toLowerCase()} for ${m.orgName}`,
@@ -220,11 +221,12 @@ ${detailRows([
 ])}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 6px">
 <img src="cid:pass-qr" width="200" height="200" alt="Pass QR code" style="display:block;border:0">
-</td></tr></table>`,
+</td></tr></table>
+<p style="margin:16px 0 0"><b>Add your photo first.</b> Security lets you in by it, and your pass can’t start without one. <a href="${login}" style="color:${BRAND.sea}">Sign in to the members portal</a> with this email to add it, and to book classes while your pass lasts.</p>`,
       cta: { label: "Open your pass", href: m.url },
       footnote: m.invitedBy ? "Come and see what it’s like." : m.free ? "We’ll be in touch about your application." : "Your receipt comes separately from Stripe.",
     },
-    text: `Hi ${first},\n\n${intro} Your ${m.what.toLowerCase()} covers ${covers}, starting the moment security checks you in. Use it by ${m.useBy}.\n\nShow your pass when you arrive: ${m.url}\n\n${m.invitedBy ? "Come and see what it’s like." : m.free ? "We’ll be in touch about your application." : "Your receipt comes separately from Stripe."}`,
+    text: `Hi ${first},\n\n${intro} Your ${m.what.toLowerCase()} covers ${covers}, starting the moment security checks you in. Use it by ${m.useBy}.\n\nAdd your photo first: security lets you in by it, and your pass can't start without one. Sign in to the members portal with this email to add it: ${login}\n\nShow your pass when you arrive: ${m.url}\n\n${m.invitedBy ? "Come and see what it’s like." : m.free ? "We’ll be in touch about your application." : "Your receipt comes separately from Stripe."}`,
     attachments: [{ filename: "pass.png", content: png, contentId: "pass-qr" }],
   });
 }

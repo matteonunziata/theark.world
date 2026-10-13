@@ -139,6 +139,34 @@ select pg_temp.expect(pg_temp.hook('email', 'not-on-team@theark.world') ? 'error
 select pg_temp.expect(pg_temp.hook('github', 'admin@theark.world') ? 'error',
   'hook rejects other providers');
 
+-- Passes open the portal; only a live one lets someone interact.
+insert into public.contacts (id, name, email) values
+  (pg_temp.id('lapsed_c'), 'Ended pass', 'ended@example.com'),
+  (pg_temp.id('fresh_c'), 'Fresh pass', 'fresh@example.com'),
+  (pg_temp.id('revoked_c'), 'Refunded pass', 'refunded@example.com');
+insert into public.memberships (contact_id, tier, status, starts_on, ends_on, activate_by) values
+  (pg_temp.id('lapsed_c'), 'day', 'active', public.org_today() - 5, public.org_today() - 5, null),
+  (pg_temp.id('fresh_c'), 'day', 'unused', null, null, public.org_today() + 90);
+insert into public.memberships (contact_id, tier, status, starts_on, revoked_at) values
+  (pg_temp.id('revoked_c'), 'day', 'revoked', null, now());
+select pg_temp.expect(pg_temp.hook('email', 'ended@example.com') = '{}',
+  'hook lets in someone whose pass has ended');
+select pg_temp.expect(pg_temp.hook('email', 'fresh@example.com') = '{}',
+  'hook lets in a new day-pass holder');
+select pg_temp.expect(pg_temp.hook('email', 'refunded@example.com') ? 'error',
+  'hook rejects a revoked pass');
+select pg_temp.expect(public.has_portal_login(pg_temp.id('lapsed_c')) and not public.has_portal_access(pg_temp.id('lapsed_c')),
+  'an ended pass signs in but cannot interact');
+select pg_temp.expect(public.has_portal_access(pg_temp.id('fresh_c')),
+  'a pass waiting for its first visit can interact');
+select pg_temp.expect(
+  (select state from public.gate_state(pg_temp.id('fresh_c'))) = 'no_photo',
+  'an unused pass without a photo needs one at the gate');
+update public.contacts set photo_path = 'contacts/test/photo.jpg' where id = pg_temp.id('fresh_c');
+select pg_temp.expect(
+  (select state from public.gate_state(pg_temp.id('fresh_c'))) = 'unused',
+  'an unused pass with a photo can start');
+
 -- Finance: admin only ----------------------------------------------------------
 
 select pg_temp.act_as(pg_temp.id('admin'));
@@ -1564,3 +1592,16 @@ reset role;
 select 'All RLS tests passed' as result;
 
 rollback;
+
+-- Arkadia curriculum and homework: school staff only --
+
+select pg_temp.act_as(pg_temp.id('teacher'));
+insert into public.school_curriculum (week_no, starts_on, title) values (1, '2026-10-12', 'Test week');
+insert into public.school_homework (title) values ('Test homework');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('facilitator'));
+select pg_temp.expect(
+  (select count(*) from public.school_curriculum) = 0 and (select count(*) from public.school_homework) = 0,
+  'other staff cannot read curriculum or homework');
+reset role;

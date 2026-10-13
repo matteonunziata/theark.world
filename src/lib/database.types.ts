@@ -3360,6 +3360,69 @@ export type Database = {
         }
         Relationships: []
       }
+      school_curriculum: {
+        Row: {
+          created_at: string
+          daily: Json
+          group_name: string | null
+          id: string
+          starts_on: string
+          summary: string | null
+          title: string
+          week_no: number
+        }
+        Insert: {
+          created_at?: string
+          daily?: Json
+          group_name?: string | null
+          id?: string
+          starts_on: string
+          summary?: string | null
+          title: string
+          week_no: number
+        }
+        Update: {
+          created_at?: string
+          daily?: Json
+          group_name?: string | null
+          id?: string
+          starts_on?: string
+          summary?: string | null
+          title?: string
+          week_no?: number
+        }
+        Relationships: []
+      }
+      school_homework: {
+        Row: {
+          assigned_on: string
+          created_at: string
+          details: string | null
+          due_on: string | null
+          group_name: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          assigned_on?: string
+          created_at?: string
+          details?: string | null
+          due_on?: string | null
+          group_name?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          assigned_on?: string
+          created_at?: string
+          details?: string | null
+          due_on?: string | null
+          group_name?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       school_schedule: {
         Row: {
           created_at: string
@@ -5569,6 +5632,8 @@ export type Database = {
       can_see_task: { Args: { t: string }; Returns: boolean };
       has_access_today: { Args: { cid: string }; Returns: boolean };
       is_portal_member: { Args: { cid: string }; Returns: boolean };
+      has_portal_login: { Args: { cid: string }; Returns: boolean };
+      has_portal_access: { Args: { cid: string }; Returns: boolean };
       staff_save_registration: {
         Args: {
           p_email: string;
@@ -5616,6 +5681,7 @@ export type Database = {
       };
       check_in: { Args: { p_token: string }; Returns: string };
       current_member_contact_id: { Args: never; Returns: string | null };
+      current_portal_contact_id: { Args: never; Returns: string | null };
       current_staff_id: { Args: never; Returns: string | null };
       dashboard_counts: {
         Args: never;

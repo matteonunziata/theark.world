@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Where to?" };
  * there; with several they choose.
  */
 export default async function ChoosePage() {
-  const { user, staff, memberId, stewardId } = await getViewer();
+  const { user, staff, portalId, stewardId } = await getViewer();
   if (!user) redirect("/login");
   const places = [
     staff && {
@@ -23,7 +23,7 @@ export default async function ChoosePage() {
           ? "Your classes and who’s coming."
           : "ARK OS, for the work of running The ARK.",
     },
-    (memberId || staff) && {
+    (portalId || staff) && {
       href: "/portal",
       title: "Members portal",
       text: "Schedule, bookings, the shop and the community.",
