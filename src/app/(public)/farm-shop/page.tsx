@@ -55,7 +55,7 @@ export default async function FarmShopPage({ searchParams }: PageProps<"/farm-sh
             <Link href="/shop" className="btn sm solid">Staff view</Link>
           ) : (
             <>
-              <Link href="/portal/login?next=/farm-shop" className="login">Member sign in</Link>
+              <Link href="/portal/login?next=/farm-shop" className="login">Sign in</Link>
               <Link href="/ark-membership" className="btn sm solid">Membership</Link>
             </>
           )}
