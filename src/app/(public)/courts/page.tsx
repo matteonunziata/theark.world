@@ -8,6 +8,7 @@ import { BOOKING_DAYS, courtMoney, HOLD_MINUTES, LEVELS, levelRange, type Public
 import { addDays, fmtDate, fmtTime, todayIn } from "@/lib/dates";
 import { stripeReady } from "@/lib/stripe";
 import { CourtBooker, type DayRow, type Me } from "./court-booker";
+import { SiteNavBar } from "../site/site-nav";
 import "./courts.css";
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 export default async function CourtsPage({ searchParams }: PageProps<"/courts">) {
   const sp = await searchParams;
-  const { supabase, memberId, staff } = await getViewer();
+  const { supabase, memberId } = await getViewer();
   const [{ data: org }, { data: courtsData }, { data: matches }, { data: me }] = await Promise.all([
     supabase.rpc("public_org").maybeSingle(),
     supabase.rpc("public_courts"),
@@ -55,29 +56,7 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
   return (
     <main className="crts">
       <ArkFonts />
-      <header className="crts-nav">
-        <Link href="/courts" aria-label="The ARK courts">
-          <Logo tone="dark" height={36} />
-        </Link>
-        <div className="links">
-          <a href="#book">Book</a>
-          <a href="#matches">Open matches</a>
-          <a href="#levels">Levels</a>
-          <a href="#info">Info</a>
-        </div>
-        <div className="right">
-          {staff ? (
-            <Link href="/events/courts" className="btn sm solid">Staff view</Link>
-          ) : memberId ? (
-            <Link href={portalHref} className="btn sm solid">Sign in</Link>
-          ) : (
-            <>
-              <Link href="/portal/login?next=/courts" className="login">Sign in</Link>
-              <a href="#book" className="btn sm solid">Book a court</a>
-            </>
-          )}
-        </div>
-      </header>
+      <SiteNavBar here="/courts" />
 
       <section className="crts-hero">
         <Image src="/courts-hero.jpg" alt="" fill priority sizes="100vw" className="bg" />

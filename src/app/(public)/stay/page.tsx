@@ -7,6 +7,7 @@ import { getViewer } from "@/lib/auth";
 import { addDays, fmtDate, todayIn } from "@/lib/dates";
 import { estatePhoto, nights } from "@/lib/estate";
 import { money } from "@/lib/schedule";
+import { SiteNavBar } from "../site/site-nav";
 import "../whats-on/events.css";
 import { EnquiryForm } from "./enquiry-form";
 import "./stay.css";
@@ -53,7 +54,7 @@ export default async function StayPage({ searchParams }: PageProps<"/stay">) {
   const n = dated ? nights(checkIn, checkOut) : 0;
   const showAll = sp.all === "1";
 
-  const { supabase, memberId, staff } = await getViewer();
+  const { supabase } = await getViewer();
   const { data } = await supabase.rpc("public_listings", {
     p_check_in: dated ? checkIn : null,
     p_check_out: dated ? checkOut : null,
@@ -76,33 +77,7 @@ export default async function StayPage({ searchParams }: PageProps<"/stay">) {
   return (
     <main className="evp hsp">
       <ArkFonts />
-      <header>
-        <nav aria-label="Main">
-          <Link href="/stay" aria-label="The ARK stays">
-            <Logo tone="dark" height={40} />
-          </Link>
-          <div className="nav-links">
-            <a href="#book">Book</a>
-            <a href="#stays">Stays</a>
-            <a href="#meals">Meals</a>
-            <a href="#experiences">Experiences</a>
-            <a href="#travel">Travel</a>
-            <a href="#info">Info</a>
-          </div>
-          <div className="nav-right">
-            {staff ? (
-              <Link href="/hospitality" className="btn btn-primary sm">Staff view</Link>
-            ) : memberId ? (
-              <Link href="/portal" className="btn btn-primary sm">Sign in</Link>
-            ) : (
-              <>
-                <Link className="nav-login" href="/portal/login?next=/stay">Sign in</Link>
-                <a className="btn btn-primary sm" href="#book">Book a stay</a>
-              </>
-            )}
-          </div>
-        </nav>
-      </header>
+      <SiteNavBar here="/stay" />
 
       <section id="book" className="hero dark">
         <Image src="/stay-hero.webp" alt="" fill priority sizes="100vw" className="bg" />

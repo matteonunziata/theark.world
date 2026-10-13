@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArkFonts } from "@/components/ark-fonts";
-import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { courtMoney, levelName, levelRange, sportName } from "@/lib/courts";
@@ -10,6 +9,7 @@ import { siteUrl } from "@/lib/email";
 import { stripeReady } from "@/lib/stripe";
 import { BookingActions } from "./booking-actions";
 import "../../courts.css";
+import { SiteNavBar } from "../../../site/site-nav";
 
 export const metadata: Metadata = { title: { absolute: "Your court booking — The ARK" }, robots: { index: false } };
 
@@ -61,14 +61,7 @@ export default async function CourtBookingPage({ params }: PageProps<"/courts/b/
   const today = todayIn(timezone);
 
   const head = (
-    <header className="crts-nav">
-      <Link href="/courts" aria-label="The ARK courts">
-        <Logo tone="dark" height={32} />
-      </Link>
-      <nav>
-        <Link href="/courts" className="btn sm">Book another</Link>
-      </nav>
-    </header>
+    <SiteNavBar here="/courts" />
   );
 
   if (!d || !d.you) {
