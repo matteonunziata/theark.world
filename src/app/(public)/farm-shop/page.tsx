@@ -84,11 +84,11 @@ export default async function FarmShopPage({ searchParams }: PageProps<"/farm-sh
               <p className="eyebrow">Shop</p>
               <h2>What’s in the shop</h2>
             </div>
-            <p className="muted">
-              {memberId && percent > 0
-                ? `Signed in as ${me?.name ?? "a member"}. Your member price is ${percent}% off, applied at checkout.`
-                : "Prices in colones. Add what you’d like and check out as a guest."}
-            </p>
+            {memberId && percent > 0 && (
+              <p className="muted">
+                Signed in as {me?.name ?? "a member"}. Your member price is {percent}% off, applied at checkout.
+              </p>
+            )}
           </div>
           <FarmShop
             groups={[...groups.values()]}
