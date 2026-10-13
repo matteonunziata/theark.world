@@ -21,7 +21,7 @@ import { fmtMoney } from "@/lib/shop";
 import { nextStep, stepDue } from "@/lib/sequences";
 import { type Activity, ActivityPanel } from "./activity-panel";
 import { StewardshipPanel } from "./stewardship-panel";
-import { addNote, enroll, replacePass, sendWelcome, setStage, updateEnrollment } from "../../actions";
+import { addNote, enroll, replacePass, saveStewardshipFields, sendWelcome, setStage, updateEnrollment } from "../../actions";
 import {
   type Contact,
   ContactDrawer,
@@ -523,6 +523,16 @@ export function ProfileView({
             </div>
           </section>
           <section className="panel">
+            <h2>Stewardship</h2>
+            <StewardshipFields
+              key={`${c.tags.join(",")}|${c.visit_date}|${c.tafo_choice}`}
+              contact={c}
+              canEdit={canEdit}
+              pending={pending}
+              onSave={(v) => run(() => saveStewardshipFields(c.id, v))}
+            />
+          </section>
+          <section className="panel">
             <h2>Pipelines</h2>
             <div className="stage-sel">
               {Object.entries(PIPELINES).map(([k, p]) => (
@@ -567,5 +577,59 @@ export function ProfileView({
         />
       )}
     </>
+  );
+}
+
+/** Tags (brochure, webinar), visit date and TAFO choice for the stewardship pipelines. */
+function StewardshipFields({
+  contact,
+  canEdit,
+  pending,
+  onSave,
+}: {
+  contact: Contact;
+  canEdit: boolean;
+  pending: boolean;
+  onSave: (v: { tags: string; visit_date: string; tafo_choice: string }) => void;
+}) {
+  const [tags, setTags] = useState(contact.tags.join(", "));
+  const [visit, setVisit] = useState(contact.visit_date ?? "");
+  const [tafo, setTafo] = useState(contact.tafo_choice ?? "");
+  return (
+    <div className="stage-sel">
+      <label htmlFor="sf-tags">Tags</label>
+      <input
+        id="sf-tags"
+        value={tags}
+        placeholder="brochure, webinar"
+        disabled={!canEdit}
+        onChange={(e) => setTags(e.target.value)}
+      />
+      <label htmlFor="sf-visit">Visit date</label>
+      <input
+        id="sf-visit"
+        type="date"
+        value={visit}
+        disabled={!canEdit}
+        onChange={(e) => setVisit(e.target.value)}
+      />
+      <label htmlFor="sf-tafo">TAFO choice</label>
+      <input
+        id="sf-tafo"
+        value={tafo}
+        disabled={!canEdit}
+        onChange={(e) => setTafo(e.target.value)}
+      />
+      {canEdit && (
+        <button
+          type="button"
+          className="btn"
+          disabled={pending}
+          onClick={() => onSave({ tags, visit_date: visit, tafo_choice: tafo })}
+        >
+          Save
+        </button>
+      )}
+    </div>
   );
 }
