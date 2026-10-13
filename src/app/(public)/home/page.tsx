@@ -81,7 +81,8 @@ export default async function HomePage() {
         eyebrow="Santa Teresa · Nicoya Peninsula · Costa Rica"
         title="More Than A Home - A Whole Life"
         sub="The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system."
-        image={`${IMG}/the-ark-home-1-07a5e3.webp`}
+        image={`${IMG}/hero-poster.jpg`}
+        video={`${IMG}/hero.mp4`}
       >
         <Link className="btn btn-accent" href="/apply-stewardship">Become a steward</Link>
         <a className="btn btn-ghost-light" href={BROCHURE} download>Download brochure</a>

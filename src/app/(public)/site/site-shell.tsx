@@ -135,17 +135,26 @@ export function SiteHero({
   title,
   sub,
   image,
+  video,
   children,
 }: {
   eyebrow?: string;
   title: React.ReactNode;
   sub?: React.ReactNode;
   image?: string;
+  /** Looping background video; `image` is its poster and the fallback. */
+  video?: string;
   children?: React.ReactNode;
 }) {
   return (
-    <section className={`hero dark${image ? " has-img" : ""}`}>
-      {image && <Image src={image} alt="" fill priority sizes="100vw" className="bg" />}
+    <section
+      className={`hero dark${image ? " has-img" : ""}`}
+      style={video && image ? { background: `center / cover url(${image})` } : undefined}
+    >
+      {image && !video && <Image src={image} alt="" fill priority sizes="100vw" className="bg" />}
+      {video && (
+        <video className="bg" src={video} poster={image} autoPlay muted loop playsInline preload="auto" aria-hidden="true" />
+      )}
       <div className="wrap">
         <div className="hero-copy">
           {eyebrow && <p className="eyebrow">{eyebrow}</p>}
