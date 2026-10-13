@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
+import { getPipelines } from "@/lib/pipelines";
 import { siteUrl } from "@/lib/email";
 import { fmtAmount, stripeReady, TERM_NAME, termPrice } from "@/lib/stripe";
 import { ProfileView } from "./profile-view";
@@ -119,6 +120,7 @@ export default async function ContactPage({
         author: n.author?.name ?? null,
       }))}
       stages={stages.data ?? []}
+      pipelines={await getPipelines(supabase)}
       enrollments={(enrollments.data ?? []).map((e) => ({
         id: e.id,
         sequence_id: e.sequence_id,

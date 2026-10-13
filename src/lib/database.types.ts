@@ -2857,6 +2857,26 @@ export type Database = {
           },
         ]
       }
+      pipelines: {
+        Row: { created_at: string; key: string; name: string; position: number }
+        Insert: { created_at?: string; key: string; name: string; position?: number }
+        Update: { created_at?: string; key?: string; name?: string; position?: number }
+        Relationships: []
+      }
+      pipeline_stages: {
+        Row: { key: string; label: string; pipeline: string; position: number }
+        Insert: { key: string; label: string; pipeline: string; position?: number }
+        Update: { key?: string; label?: string; pipeline?: string; position?: number }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_stages_pipeline_fkey"
+            columns: ["pipeline"]
+            isOneToOne: false
+            referencedRelation: "pipelines"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       payments: {
         Row: {
           charge_id: string | null
@@ -5967,6 +5987,10 @@ export type Database = {
       refund_stripe_payment: {
         Args: { p_amount: number; p_currency: string; p_intent: string; p_refund_id: string }
         Returns: string
+      }
+      save_pipeline: {
+        Args: { p_key: string; p_name: string; p_stages: Json }
+        Returns: number
       }
       save_sequence: {
         Args: {
