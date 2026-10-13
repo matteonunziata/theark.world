@@ -1,0 +1,60 @@
+{
+  "path": "/live-lot-prices",
+  "url": "https://theark.world/live-lot-prices",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "The ARK Live Lot Prices",
+  "sections": 0,
+  "iframes": [],
+  "ctas": [
+    {
+      "text": "USD",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "CRC",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "EUR",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "CAD",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "CHF",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "ILS",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "INQUIRE ABOUT LOT 23",
+      "href": "/apply-stewardship",
+      "type": "A"
+    }
+  ],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/8b74ef5a-ae6b-49c5-a3c3-18eb3e2dc64e.png",
+      "alt": "The ARK Master Plan & Lot Map",
+      "saved": "assets/8b74ef5a-ae6b-49c5-a3c3-18eb3e2dc64e-a0944b.png"
+    }
+  ]
+}

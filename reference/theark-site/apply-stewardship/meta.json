@@ -1,0 +1,61 @@
+{
+  "path": "/apply-stewardship",
+  "url": "https://theark.world/apply-stewardship",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "Stewardship",
+  "sections": 0,
+  "iframes": [],
+  "ctas": [],
+  "forms": [
+    {
+      "heading": "",
+      "fields": [
+        {
+          "tag": "input",
+          "type": "text",
+          "name": null,
+          "label": "Full Name *",
+          "placeholder": "Jane Doe",
+          "required": true
+        },
+        {
+          "tag": "input",
+          "type": "email",
+          "name": null,
+          "label": "Email Address *",
+          "placeholder": "jane@example.com",
+          "required": true
+        },
+        {
+          "tag": "select",
+          "type": "select-one",
+          "name": null,
+          "label": "Phone number country",
+          "placeholder": null,
+          "required": false,
+          "options": [
+            "(country list, 246 options)"
+          ]
+        },
+        {
+          "tag": "input",
+          "type": "tel",
+          "name": null,
+          "label": "Phone (WhatsApp) *",
+          "placeholder": null,
+          "required": false
+        }
+      ],
+      "submit": "NEXT STEP",
+      "submitsTo": []
+    }
+  ],
+  "images": []
+}

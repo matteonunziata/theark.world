@@ -1,0 +1,35 @@
+{
+  "path": "/philosophy",
+  "url": "https://theark.world/philosophy",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "",
+  "sections": 2,
+  "iframes": [],
+  "ctas": [
+    {
+      "text": "BECOME ONE OF THE 100",
+      "href": null,
+      "type": "BUTTON"
+    }
+  ],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/baddd747-8935-40dc-a240-161b5d50ce4d.jpg",
+      "alt": "Marat, founder of The ARK",
+      "saved": "assets/baddd747-8935-40dc-a240-161b5d50ce4d-ffe881.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/3c0f103a-14ac-47bc-962f-8fdc92befa6f.jpg",
+      "alt": "The ARK Master Plan",
+      "saved": "assets/3c0f103a-14ac-47bc-962f-8fdc92befa6f-af7bfe.jpg"
+    }
+  ]
+}

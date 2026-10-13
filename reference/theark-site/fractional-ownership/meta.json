@@ -1,0 +1,117 @@
+{
+  "path": "/fractional-ownership",
+  "url": "https://theark.world/fractional-ownership",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "The Lowest Entry — Into The ARK.",
+  "sections": 9,
+  "iframes": [
+    "https://www.youtube.com/embed/nYjKftjxRfM?start=2139&controls=0&disablekb=1&rel=0&modestbranding=1&showinfo=0&fs=0"
+  ],
+  "ctas": [
+    {
+      "text": "BECOME A STEWARD",
+      "href": "/apply-stewardship",
+      "type": "A"
+    },
+    {
+      "text": "LEARN MORE",
+      "href": "#fractional-video",
+      "type": "A"
+    },
+    {
+      "text": "BECOME A STEWARD →",
+      "href": "/apply-stewardship",
+      "type": "A"
+    },
+    {
+      "text": "$150/night",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "$175/night",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "$200/night",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "$225/night",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "$250/night",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "BECOME A STEWARD",
+      "href": "/apply-stewardship",
+      "type": "A"
+    }
+  ],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/dfadd46d-e7a9-46f2-acf5-b9729da11b83.jpg",
+      "alt": "(background)",
+      "saved": "assets/dfadd46d-e7a9-46f2-acf5-b9729da11b83-b8f2d0.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/3fd2bd40-c28b-4ea7-9c68-989b3572f7c0.jpg",
+      "alt": "Masterplan",
+      "saved": "assets/3fd2bd40-c28b-4ea7-9c68-989b3572f7c0-29de4d.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/61ad194d-172d-4ffe-afb0-63be860ab771.jpg",
+      "alt": "Main facade",
+      "saved": "assets/61ad194d-172d-4ffe-afb0-63be860ab771-de7b85.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/6a9d39ef-00b1-4367-8d3c-86f2b52b0f7d.jpg",
+      "alt": "Private terrace",
+      "saved": "assets/6a9d39ef-00b1-4367-8d3c-86f2b52b0f7d-475726.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/67d18f9f-bf0b-4c16-b65e-ddb25a13defb.jpg",
+      "alt": "Living room",
+      "saved": "assets/67d18f9f-bf0b-4c16-b65e-ddb25a13defb-46e0a9.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/740b2398-2e9d-44cc-88cf-ed0de5c2f197.jpg",
+      "alt": "Kitchen",
+      "saved": "assets/740b2398-2e9d-44cc-88cf-ed0de5c2f197-83b51f.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/6d5c02f1-d18c-4364-9734-6aa6c51a4a9b.jpg",
+      "alt": "Bathroom",
+      "saved": "assets/6d5c02f1-d18c-4364-9734-6aa6c51a4a9b-3fa0d1.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/fd1a3c97-b67a-4fae-9ea0-7d00745f9216.jpg",
+      "alt": "Master bedroom",
+      "saved": "assets/fd1a3c97-b67a-4fae-9ea0-7d00745f9216-517661.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/b3dc24e9-0c4d-433c-a973-dae521ccaf7a.jpg",
+      "alt": "Communal pool",
+      "saved": "assets/b3dc24e9-0c4d-433c-a973-dae521ccaf7a-2f18a8.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/b0c71b02-9ca3-4420-847f-50629396d0a2.jpg",
+      "alt": "Technical Architectural Plans",
+      "saved": "assets/b0c71b02-9ca3-4420-847f-50629396d0a2-835534.jpg"
+    }
+  ]
+}
