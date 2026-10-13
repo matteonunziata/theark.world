@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PressForm } from "../site/forms";
-import { SectionHead, SiteHero, SiteShell } from "../site/site-shell";
+import { SiteHero, SiteShell } from "../site/site-shell";
 
 export const metadata: Metadata = {
   title: { absolute: "Press & media — The ARK, Santa Teresa" },
