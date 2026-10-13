@@ -122,3 +122,35 @@ export async function setMyHospitality(lotId: string, on: boolean): Promise<Acti
   refresh();
   return ok(on ? "Hospitality is on" : "Hospitality is off");
 }
+
+/** Approve or decline a budget the team asked for. */
+export async function decideBudget(budgetId: string, approve: boolean, comment: string | null): Promise<ActionResult> {
+  const supabase = await owner();
+  const { error } = await supabase.rpc("owner_decide_budget", {
+    p_budget: budgetId,
+    p_approve: approve,
+    p_comment: comment?.trim() || null,
+  });
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok(approve ? "Budget approved" : "Budget declined");
+}
+
+export async function addPropertyNote(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const supabase = await owner();
+  const { error } = await supabase.rpc("owner_add_note", {
+    p_lot: field(data, "lot_id") ?? "",
+    p_body: field(data, "body") ?? "",
+  });
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok("Note added");
+}
+
+export async function deletePropertyNote(noteId: string): Promise<ActionResult> {
+  const supabase = await owner();
+  const { error } = await supabase.rpc("owner_delete_note", { p_note: noteId });
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok("Note removed");
+}

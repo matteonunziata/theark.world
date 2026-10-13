@@ -599,3 +599,60 @@ export async function addStewardToLot(_prev: ActionResult, data: FormData): Prom
   if (res.ok) revalidatePath("/estate/stewards");
   return res;
 }
+
+// Steward notes and budgets ---------------------------------------------------------
+
+export async function addTeamNote(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const { supabase, staff } = await staffOrThrow(...ESTATE);
+  const lotId = field(data, "lot_id");
+  const body = field(data, "body");
+  if (!lotId) return fail("Missing property.");
+  if (!body) return fail("Write a note first.");
+  const { error } = await supabase.from("property_notes").insert({
+    lot_id: lotId,
+    author_kind: "team",
+    author_name: staff.name,
+    author_staff_id: staff.id,
+    body,
+  });
+  if (error) return fail(friendly(error));
+  refresh(lotId);
+  return ok("Note added");
+}
+
+export async function deleteTeamNote(lotId: string, id: string): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  const { error } = await supabase.from("property_notes").delete().eq("id", id).eq("lot_id", lotId);
+  if (error) return fail(friendly(error));
+  refresh(lotId);
+  return ok("Note removed");
+}
+
+export async function requestPropertyBudget(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const { supabase, staff } = await staffOrThrow(...ESTATE);
+  const lotId = field(data, "lot_id");
+  const title = field(data, "title");
+  const amount = num(data, "amount");
+  if (!lotId) return fail("Missing property.");
+  if (!title) return fail("Say what the budget is for.");
+  if (!amount || amount <= 0) return fail("Enter the amount in colones.");
+  const { error } = await supabase.from("property_budgets").insert({
+    lot_id: lotId,
+    title,
+    amount,
+    details: field(data, "details"),
+    task_id: field(data, "task_id"),
+    requested_by: staff.id,
+  });
+  if (error) return fail(friendly(error));
+  refresh(lotId);
+  return ok("Sent to the steward for approval");
+}
+
+export async function withdrawPropertyBudget(lotId: string, id: string): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow(...ESTATE);
+  const { error } = await supabase.from("property_budgets").delete().eq("id", id).eq("lot_id", lotId).eq("status", "pending");
+  if (error) return fail(friendly(error));
+  refresh(lotId);
+  return ok("Request withdrawn");
+}

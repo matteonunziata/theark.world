@@ -19,7 +19,7 @@ export default async function LotPage({ params, searchParams }: Props & { search
   const { tab } = await searchParams;
   const { supabase, staff } = await requireStaff("estate");
   const today = todayIn();
-  const [{ data: lot }, { data: household }, { data: logs }, { data: stays }, { data: people }, { data: team }, { data: lots }, { data: links }, { data: money }, { data: services }, { data: pastStays }] =
+  const [{ data: lot }, { data: household }, { data: logs }, { data: stays }, { data: people }, { data: team }, { data: lots }, { data: links }, { data: money }, { data: services }, { data: pastStays }, { data: sNotes }, { data: sBudgets }] =
     await Promise.all([
       supabase.from("lots").select("*").eq("id", id).maybeSingle(),
       supabase.from("lot_household").select("*").eq("lot_id", id).order("created_at"),
@@ -46,6 +46,8 @@ export default async function LotPage({ params, searchParams }: Props & { search
       tab === "schedule"
         ? supabase.from("stays").select("*").eq("lot_id", id).gte("check_out", addDays(today, -62)).neq("status", "cancelled").order("check_in")
         : Promise.resolve({ data: [] }),
+      tab === "steward" ? supabase.from("property_notes").select("*").eq("lot_id", id).order("created_at", { ascending: false }) : Promise.resolve({ data: [] }),
+      tab === "steward" ? supabase.from("property_budgets").select("*").eq("lot_id", id).order("requested_at", { ascending: false }) : Promise.resolve({ data: [] }),
     ]);
   if (!lot) notFound();
   const stewards = (links ?? [])
@@ -56,7 +58,7 @@ export default async function LotPage({ params, searchParams }: Props & { search
       <LotView
         lot={lot}
         stewards={stewards}
-        tab={["financials", "schedule", "maintenance"].includes(tab ?? "") ? tab! : "overview"}
+        tab={["financials", "schedule", "maintenance", "steward"].includes(tab ?? "") ? tab! : "overview"}
         household={household ?? []}
         tasks={logs ?? []}
         team={(team ?? []).map((t) => ({ id: t.id, name: t.name }))}
@@ -66,6 +68,8 @@ export default async function LotPage({ params, searchParams }: Props & { search
         ledger={money ?? []}
         services={services ?? []}
         calendarStays={pastStays ?? []}
+        stewardNotes={sNotes ?? []}
+        stewardBudgets={sBudgets ?? []}
         isAdmin={staff.role === "admin"}
         today={today}
       />

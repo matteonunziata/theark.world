@@ -24,6 +24,7 @@ import { type Stay, StayDrawer } from "../../hospitality/stay-drawer";
 import { addSteward, removeSteward, saveHousehold, saveLot, setHospitality } from "../actions";
 import { LotFields } from "../lot-fields";
 import { LotFinancials } from "./lot-financials";
+import { LotSteward } from "./lot-steward";
 import { LotMaintenance } from "./lot-maintenance";
 import { LotSchedule } from "./lot-schedule";
 
@@ -32,6 +33,7 @@ const TABS = [
   ["financials", "Financials"],
   ["schedule", "Schedule"],
   ["maintenance", "Maintenance log"],
+  ["steward", "Steward"],
 ] as const;
 
 type Lot = Tables<"lots">;
@@ -53,11 +55,15 @@ export function LotView({
   ledger,
   services,
   calendarStays,
+  stewardNotes,
+  stewardBudgets,
   isAdmin,
 }: {
   lot: Lot;
   stewards: { id: string; name: string; email: string | null; phone: string | null }[];
   tab: string;
+  stewardNotes: Tables<"property_notes">[];
+  stewardBudgets: Tables<"property_budgets">[];
   ledger: Tables<"finance_entries">[];
   services: Tables<"property_services">[];
   calendarStays: Stay[];
@@ -134,6 +140,9 @@ export function LotView({
 
       {tab === "maintenance" && (
         <LotMaintenance lotId={lot.id} tasks={tasks} team={team} today={today} />
+      )}
+      {tab === "steward" && (
+        <LotSteward lotId={lot.id} notes={stewardNotes} budgets={stewardBudgets} tasks={tasks} hasSteward={stewards.length > 0} />
       )}
       {tab === "financials" &&
         (isAdmin ? (

@@ -2183,6 +2183,18 @@ export type Database = {
           },
         ]
       }
+      property_notes: {
+        Row: { id: string; lot_id: string; author_kind: string; author_name: string; author_staff_id: string | null; author_contact_id: string | null; body: string; created_at: string }
+        Insert: { id?: string; lot_id: string; author_kind: string; author_name: string; author_staff_id?: string | null; author_contact_id?: string | null; body: string; created_at?: string }
+        Update: { id?: string; lot_id?: string; author_kind?: string; author_name?: string; author_staff_id?: string | null; author_contact_id?: string | null; body?: string; created_at?: string }
+        Relationships: []
+      }
+      property_budgets: {
+        Row: { id: string; lot_id: string; task_id: string | null; title: string; details: string | null; amount: number; status: string; requested_by: string | null; requested_at: string; decided_by: string | null; decided_at: string | null; decision_comment: string | null }
+        Insert: { id?: string; lot_id: string; task_id?: string | null; title: string; details?: string | null; amount: number; status?: string; requested_by?: string | null; requested_at?: string; decided_by?: string | null; decided_at?: string | null; decision_comment?: string | null }
+        Update: { id?: string; lot_id?: string; task_id?: string | null; title?: string; details?: string | null; amount?: number; status?: string; requested_by?: string | null; requested_at?: string; decided_by?: string | null; decided_at?: string | null; decision_comment?: string | null }
+        Relationships: []
+      }
       lot_household: {
         Row: {
           birth_year: number | null
@@ -5260,6 +5272,41 @@ export type Database = {
         Returns: {
           id: string; title: string; category: string; status: string; on_date: string;
           done_by: string | null; cost: number | null; currency: string; details: string | null;
+        }[];
+      };
+      my_property_notes: {
+        Args: { p_lot: string };
+        Returns: { id: string; author_kind: string; author_name: string; body: string; created_at: string; mine: boolean }[];
+      };
+      owner_add_note: { Args: { p_lot: string; p_body: string }; Returns: undefined };
+      owner_delete_note: { Args: { p_note: string }; Returns: undefined };
+      my_property_budgets: {
+        Args: { p_lot: string };
+        Returns: {
+          id: string; title: string; details: string | null; amount: number; status: string; task_title: string | null;
+          requested_at: string; requested_by_name: string | null; decided_at: string | null; decision_comment: string | null;
+        }[];
+      };
+      owner_decide_budget: { Args: { p_budget: string; p_approve: boolean; p_comment: string | null }; Returns: undefined };
+      my_property_work_detail: {
+        Args: { p_lot: string };
+        Returns: {
+          task_id: string; hours: number; labour: number; materials_cost: number; charge: number;
+          materials: Json; photos: Json;
+        }[];
+      };
+      my_property_hospitality: {
+        Args: { p_lot: string };
+        Returns: {
+          id: string; guest_name: string; guests: number | null; check_in: string; check_out: string; status: string;
+          source: string; phase: string; passes: Json;
+        }[];
+      };
+      my_property_invoices: {
+        Args: { p_lot: string };
+        Returns: {
+          id: string; description: string | null; category: string | null; amount: number; status: string;
+          entry_date: string; due_date: string | null; paid_on: string | null;
         }[];
       };
       steward_activate: { Args: { p_contact: string }; Returns: undefined };
