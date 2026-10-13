@@ -1493,6 +1493,74 @@ select pg_temp.act_as(pg_temp.id('marketing'));
 select pg_temp.expect((select count(*) from public.sales) = 0 and (select count(*) from public.sale_payments) = 0, 'marketing cannot read sales');
 reset role;
 
+-- Task management: the on-site flow and the money crew can't see ------------------
+reset role;
+insert into _ids values ('flow_task', gen_random_uuid());
+insert into public.tasks (id, title, division_id, assignee_id)
+values (pg_temp.id('flow_task'), 'Flow task', pg_temp.id('division'),
+  (select id from public.team_members where email = 'crew@theark.world'));
+insert into public.staff_rates (staff_id, pay_rate, bill_rate)
+select id, 2000, 5000 from public.team_members where email = 'crew@theark.world';
+
+select pg_temp.act_as(pg_temp.id('crew'));
+select pg_temp.expect((select count(*) from public.staff_rates) = 0, 'crew cannot read pay or bill rates');
+select pg_temp.expect(public.can_manage_task(pg_temp.id('flow_task')) is false, 'crew does not manage their task');
+select public.task_clock_in(pg_temp.id('flow_task'));
+do $$ begin
+  begin
+    perform public.task_clock_in(pg_temp.id('flow_task'));
+    raise exception 'RLS test failed: clocked in twice';
+  exception when others then
+    if sqlerrm like 'RLS test failed%' then raise; end if;
+  end;
+  begin
+    perform public.task_clock_out(pg_temp.id('flow_task'));
+    raise exception 'RLS test failed: clocked out without photos';
+  exception when others then
+    if sqlerrm like 'RLS test failed%' then raise; end if;
+  end;
+  begin
+    insert into public.task_time (task_id, staff_id, clock_in, clock_out)
+      select pg_temp.id('flow_task'), id, now() - interval '5 hours', now() from public.team_members where email = 'crew@theark.world';
+    raise exception 'RLS test failed: crew wrote time directly';
+  exception when insufficient_privilege then null; end;
+  begin
+    perform public.task_add_photos(pg_temp.id('flow_task'), 'before', array['someone-else/x.jpg']);
+    raise exception 'RLS test failed: photo for another task accepted';
+  exception when others then
+    if sqlerrm like 'RLS test failed%' then raise; end if;
+  end;
+end $$;
+select public.task_add_photos(pg_temp.id('flow_task'), 'before', array[pg_temp.id('flow_task')::text || '/a.jpg']);
+select public.task_add_photos(pg_temp.id('flow_task'), 'after', array[pg_temp.id('flow_task')::text || '/b.jpg']);
+select public.add_task_material(pg_temp.id('flow_task'), 'Glue', 2, 'tubes', 'bought', 3500);
+select pg_temp.expect((select count(*) from public.task_materials) = 1, 'crew adds a material');
+select pg_temp.expect((select count(*) from public.task_material_costs) = 0, 'crew cannot read material prices');
+select pg_temp.expect((select count(*) from public.task_cost_summary(pg_temp.id('flow_task'))) = 0, 'crew gets no cost summary');
+do $$ begin
+  begin
+    insert into public.task_budget_requests (task_id, amount, reason, requested_by)
+      select pg_temp.id('flow_task'), 100, 'x', id from public.team_members where email = 'crew@theark.world';
+    raise exception 'RLS test failed: crew requested a budget';
+  exception when insufficient_privilege then null; end;
+end $$;
+select public.task_clock_out(pg_temp.id('flow_task'), false);
+select pg_temp.expect((select count(*) from public.task_time where clock_out is not null and minutes is not null) = 1, 'clock out saves the minutes');
+
+select pg_temp.act_as(pg_temp.id('lead'));
+select pg_temp.expect(public.can_manage_task(pg_temp.id('flow_task')), 'the division lead manages the task');
+select pg_temp.expect((select count(*) from public.task_material_costs) = 1, 'lead reads material prices');
+select pg_temp.expect((select count(*) from public.task_cost_summary(pg_temp.id('flow_task'))) = 1, 'lead gets the cost summary');
+insert into public.task_budget_requests (task_id, amount, reason, requested_by)
+  select pg_temp.id('flow_task'), 50000, 'Paint', id from public.team_members where email = 'lead@theark.world';
+select pg_temp.expect((select count(*) from public.task_budget_requests) = 1, 'lead requests a budget');
+select pg_temp.expect(
+  (select count(*) from public.staff_rates) = 1, 'lead reads rates for their division only');
+
+select pg_temp.act_as(pg_temp.id('sales'));
+select pg_temp.expect((select count(*) from public.task_comments) = 0, 'sales sees no comments on tasks they cannot see');
+reset role;
+
 select 'All RLS tests passed' as result;
 
 rollback;

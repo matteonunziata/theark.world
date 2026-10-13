@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
 import { Avatar } from "@/components/avatar";
 import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
@@ -24,8 +25,7 @@ type Task = Tables<"tasks">;
 type LotRef = { id: string; code: string; name: string | null };
 type Person = { id: string; name: string; status: string };
 type Division = { id: string; name: string; color: string };
-
-const LOCATIONS = ["The Shala", "Spa deck", "Cowork lounge", "Courts", "Gym", "The House", "Farm"];
+type Amenity = { id: string; name: string };
 
 export function TasksView({
   view,
@@ -36,6 +36,8 @@ export function TasksView({
   team,
   divisions,
   lots,
+  amenities,
+  canSeeCost,
 }: {
   view: "board" | "list";
   today: string;
@@ -45,6 +47,8 @@ export function TasksView({
   team: Person[];
   divisions: Division[];
   lots: LotRef[];
+  amenities: Amenity[];
+  canSeeCost: boolean;
 }) {
   const [f, setF] = useState({ asg: initialAssignee, div: "", pri: "", kind: "", status: "open" });
   const [showDone, setShowDone] = useState(false);
@@ -276,6 +280,8 @@ export function TasksView({
         team={team}
         divisions={divisions}
         lots={lots}
+        amenities={amenities}
+        canSeeCost={canSeeCost}
         onClose={drawer.close}
       />
     </>
@@ -288,6 +294,8 @@ function TaskDrawer({
   team,
   divisions,
   lots,
+  amenities,
+  canSeeCost,
   onClose,
 }: {
   open: boolean;
@@ -295,10 +303,13 @@ function TaskDrawer({
   team: Person[];
   divisions: Division[];
   lots: LotRef[];
+  amenities: Amenity[];
+  canSeeCost: boolean;
   onClose: () => void;
 }) {
   const [status, setStatus] = useState(t?.status ?? "backlog");
   const [kind, setKind] = useState(t?.kind ?? "task");
+  const [where, setWhere] = useState<"none" | "amenity" | "lot">(t?.lot_id ? "lot" : t?.amenity_id ? "amenity" : "none");
   const [lotId, setLotId] = useState(t?.lot_id ?? "");
   return (
     <Drawer
@@ -320,6 +331,11 @@ function TaskDrawer({
       }
     >
       {t && <input type="hidden" name="id" value={t.id} />}
+      {t && (
+        <p className="note" style={{ margin: "0 0 14px" }}>
+          <Link href={`/operations/tasks/${t.id}`}>Open the full task page →</Link>
+        </p>
+      )}
       <input type="hidden" name="status" value={status} />
       <div className="fld">
         <label htmlFor="t-title">What needs doing</label>
@@ -371,29 +387,58 @@ function TaskDrawer({
       </div>
       <div className="grid2">
         <div className="fld">
-          <label htmlFor="t-due">Due</label>
-          <input id="t-due" name="due_date" type="date" defaultValue={t?.due_date ?? ""} />
+          <label htmlFor="t-due">Date</label>
+          <input id="t-due" name="due_date" type="date" defaultValue={t?.due_date ?? ""} required={where === "lot"} />
         </div>
         <div className="fld">
-          <label htmlFor="t-loc">Location</label>
-          <input id="t-loc" name="location" list="task-locs" defaultValue={t?.location ?? ""} placeholder="Where on-site" />
-          <datalist id="task-locs">
-            {LOCATIONS.map((l) => (
-              <option key={l} value={l} />
-            ))}
-          </datalist>
+          <label htmlFor="t-start">Start time</label>
+          <input id="t-start" name="start_time" type="time" defaultValue={t?.start_time?.slice(0, 5) ?? ""} />
         </div>
       </div>
-      <div className="fld">
-        <label htmlFor="t-lot">Property</label>
-        <select id="t-lot" name="lot_id" value={lotId} onChange={(e) => setLotId(e.target.value)}>
-          <option value="">Not tied to a property</option>
-          {lots.map((l) => (
-            <option key={l.id} value={l.id}>{l.name ? `${l.name} (Lot ${l.code})` : `Lot ${l.code}`}</option>
-          ))}
-        </select>
+      <div className="grid2">
+        <div className="fld">
+          <label htmlFor="t-hours">Planned hours</label>
+          <input id="t-hours" name="planned_hours" type="number" min="0.25" step="0.25" defaultValue={t?.planned_hours ?? ""} placeholder="e.g. 2" />
+        </div>
+        <div className="fld">
+          <label htmlFor="t-where">Where</label>
+          <select id="t-where" name="where" value={where} onChange={(e) => setWhere(e.target.value as typeof where)}>
+            <option value="none">Somewhere else</option>
+            <option value="amenity">An amenity</option>
+            <option value="lot">A lot or house</option>
+          </select>
+        </div>
       </div>
-      {lotId && (
+      {where === "none" && (
+        <div className="fld">
+          <label htmlFor="t-loc">Location note</label>
+          <input id="t-loc" name="location" defaultValue={t?.location ?? ""} placeholder="Where on-site" />
+        </div>
+      )}
+      {where === "amenity" && (
+        <div className="fld">
+          <label htmlFor="t-amen">Amenity</label>
+          <select id="t-amen" name="amenity_id" defaultValue={t?.amenity_id ?? ""} required>
+            <option value="" disabled>Choose an amenity</option>
+            {amenities.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+      {where === "lot" && (
+        <div className="fld">
+          <label htmlFor="t-lot">Lot or house</label>
+          <select id="t-lot" name="lot_id" value={lotId} onChange={(e) => setLotId(e.target.value)} required>
+            <option value="" disabled>Choose a lot or house</option>
+            {lots.map((l) => (
+              <option key={l.id} value={l.id}>{l.name ? `${l.name} (Lot ${l.code})` : `Lot ${l.code}`}</option>
+            ))}
+          </select>
+          <span className="hint">Goes into that property’s maintenance log and calendar.</span>
+        </div>
+      )}
+      {where === "lot" && lotId && (
         <>
           <div className="grid2">
             <div className="fld">
@@ -404,10 +449,12 @@ function TaskDrawer({
                 ))}
               </select>
             </div>
-            <div className="fld">
-              <label htmlFor="t-cost">Cost (₡)</label>
-              <input id="t-cost" name="cost" type="number" min={0} step="any" defaultValue={t?.cost ?? ""} placeholder="Optional" />
-            </div>
+            {canSeeCost && (
+              <div className="fld">
+                <label htmlFor="t-cost">Cost (₡)</label>
+                <input id="t-cost" name="cost" type="number" min={0} step="any" defaultValue={t?.cost ?? ""} placeholder="Optional" />
+              </div>
+            )}
           </div>
           <div className="grid2">
             <div className="fld">

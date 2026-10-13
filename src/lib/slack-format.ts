@@ -239,6 +239,28 @@ export function taskMessage(
   );
 }
 
+export function taskPingMessage(
+  t: { id: string; title: string; by: string; leads: string[]; note?: string | null },
+  origin: string,
+) {
+  return message(
+    `*${esc(t.by)} needs ${t.leads.length ? esc(t.leads.join(", ")) : "a lead"} on a task:* ${esc(t.title)}`,
+    [quote(t.note)],
+    link(`${origin}/operations/tasks/${t.id}`, "Open the task"),
+  );
+}
+
+export function budgetRequestMessage(
+  t: { id: string; title: string; by: string; amount: number; reason: string },
+  origin: string,
+) {
+  return message(
+    `*Budget request from ${esc(t.by)}:* ${esc(t.title)}`,
+    [`₡${Math.round(t.amount).toLocaleString("en-US")}`, quote(t.reason)],
+    link(`${origin}/operations/tasks/${t.id}`, "Review the request"),
+  );
+}
+
 // The morning digest ------------------------------------------------------------
 
 export type Digest = {

@@ -9,14 +9,17 @@ import { saveTeamMember } from "../actions";
 
 type Member = Tables<"team_members">;
 type Division = Tables<"divisions">;
+type Rate = { staff_id: string; pay_rate: number | null; bill_rate: number | null };
 
 export function TeamView({
   team,
   divisions,
+  rates,
   canEdit,
 }: {
   team: Member[];
   divisions: Division[];
+  rates: Rate[];
   canEdit: boolean;
 }) {
   const [q, setQ] = useState("");
@@ -154,6 +157,7 @@ export function TeamView({
         open={drawer.open}
         member={drawer.item}
         divisions={divisions}
+        rate={rates.find((r) => r.staff_id === drawer.item?.id)}
         canEdit={canEdit}
         onClose={drawer.close}
       />
@@ -165,12 +169,14 @@ function MemberDrawer({
   open,
   member,
   divisions,
+  rate,
   canEdit,
   onClose,
 }: {
   open: boolean;
   member: Member | null;
   divisions: Division[];
+  rate?: Rate;
   canEdit: boolean;
   onClose: () => void;
 }) {
@@ -296,6 +302,18 @@ function MemberDrawer({
             </select>
           </div>
         </div>
+        {canEdit && (
+          <div className="grid2">
+            <div className="fld">
+              <label htmlFor="m-pay">Pay rate (₡ an hour)</label>
+              <input id="m-pay" name="pay_rate" type="number" min={0} step="any" defaultValue={rate?.pay_rate ?? ""} placeholder="Hidden from employees" />
+            </div>
+            <div className="fld">
+              <label htmlFor="m-bill">Bill rate (₡ an hour)</label>
+              <input id="m-bill" name="bill_rate" type="number" min={0} step="any" defaultValue={rate?.bill_rate ?? ""} placeholder="Hidden from employees" />
+            </div>
+          </div>
+        )}
         {m && (
           <p className="note" style={{ margin: 0 }}>
             {m.user_id ? "Has signed in to ARK OS." : "Hasn’t signed in yet."}

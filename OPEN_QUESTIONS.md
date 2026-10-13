@@ -172,3 +172,11 @@
 - **Photo on passes bought online**: only passes issued by staff require a photo today. Should the portal or the pass page ask buyers for one too?
 
 - **Class cancellation cut-off.** Members can cancel a class or event booking any time before it starts, with no refund rule and no notice to staff. Should there be a cut-off (say 2 or 24 hours before), a refund rule for paid bookings, or a Slack note to the facilitator?
+
+## Task management
+- **Do approved budget requests need to land somewhere?** Today they are approved or declined on the task. Should approval create a line on a Finance project budget or a payment request?
+- **Pay and bill rate per person or per task?** Built per person (hourly, colones). If bill rate should depend on the job or the owner, say how.
+- **Who corrects a mistaken time entry or photo?** Only the database can today. Add a lead screen to edit hours and remove photos?
+- **Receipts for bought materials.** Only name, quantity and amount are recorded. Photo of the receipt?
+- **Notify my lead reaches Slack and the task thread only.** Should the lead also see it on their dashboard?
+- **Old `tasks.cost` is hidden by the app, not the database.** Move it into a leads-only table so the database enforces it too?
