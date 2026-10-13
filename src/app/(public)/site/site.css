@@ -4,18 +4,18 @@
 /* The bar alone, on pages that have their own frame */
 .evp.sx.site-nav { min-height: 0; overflow: visible; background: var(--ground); position: relative; z-index: 40; }
 .evp.sx.site-nav .btn.btn-primary { background: var(--primary); color: var(--ground); border-color: transparent; }
-.evp.sx.site-nav .btn.btn-primary:hover { background: #24402F; color: var(--ground); }
+.evp.sx.site-nav .btn.btn-primary:hover { background: #414B43; color: var(--ground); }
 
 .sx {
   .nav-links a[aria-current="page"] { color: var(--ink); }
   .nav-group { position: relative; }
   .nav-trigger { display: inline-flex; align-items: center; gap: 6px; padding: 12px 14px; border: 0; background: none; cursor: pointer; font: inherit; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--primary); }
   .nav-trigger[aria-current="page"] { color: var(--ink); }
-  .nav-group.open .nav-trigger { background: #C4A18B; color: var(--ground); }
-  .nav-panel { position: absolute; top: 100%; left: 0; z-index: 30; min-width: 280px; padding: 12px 22px 14px; background: #F8F6F1; border: 2px solid #8A6F57; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
-  .nav-panel a { display: block; padding: 11px 0; font-size: 17px; text-transform: none; letter-spacing: 0; color: #6B6458; }
+  .nav-group.open .nav-trigger { background: #B39F86; color: var(--ground); }
+  .nav-panel { position: absolute; top: 100%; left: 0; z-index: 30; min-width: 280px; padding: 12px 22px 14px; background: #F6F1E9; border: 2px solid #67663B; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  .nav-panel a { display: block; padding: 11px 0; font-size: 17px; text-transform: none; letter-spacing: 0; color: #414B43; }
   .nav-panel a:hover { color: var(--primary); }
-  .nav-panel p { margin: 10px 0 0; padding-top: 14px; border-top: 1px solid #C4A18B; font-size: 14px; color: #8A6F57; }
+  .nav-panel p { margin: 10px 0 0; padding-top: 14px; border-top: 1px solid #B39F86; font-size: 14px; color: #67663B; }
   @media (max-width: 720px) {
     .nav-links { gap: 0; }
     .nav-trigger { padding: 12px 8px; }
@@ -32,8 +32,8 @@
   .hero.has-img::after {
     content: ""; position: absolute; inset: 0; z-index: -1;
     background:
-      linear-gradient(to right, rgba(24, 44, 33, 0.6), transparent 70%),
-      linear-gradient(to top, rgba(24, 44, 33, 0.8), rgba(24, 44, 33, 0.45) 55%, rgba(24, 44, 33, 0.25));
+      linear-gradient(to right, rgba(65,75,67, 0.6), transparent 70%),
+      linear-gradient(to top, rgba(65,75,67, 0.8), rgba(65,75,67, 0.45) 55%, rgba(65,75,67, 0.25));
   }
   .hero-copy > * { text-shadow: 0 1px 14px rgba(0, 0, 0, 0.35); }
   .hero-copy .btn { text-shadow: none; }
@@ -61,7 +61,7 @@
   .card h3 { font-size: 24px; line-height: 1.3; }
   .card p { color: var(--muted); font-size: 16px; }
   .card .meta { font-size: 15px; color: var(--muted-2); }
-  .card.feature { background: var(--primary); color: var(--on-dark); }
+  .card.feature { background: var(--deep); color: var(--on-dark); }
   .card.feature h3 { color: var(--on-dark); }
   .card.feature p { color: var(--on-dark-muted); }
   .card .btn { align-self: flex-start; margin-top: 8px; padding: 12px 20px; }
@@ -174,10 +174,10 @@
 .sx .calc-total strong { font-family: var(--serif); font-weight: 400; font-size: clamp(40px, 5vw, 56px); color: var(--primary); line-height: 1.1; font-variant-numeric: tabular-nums; }
 .sx .checks.two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 32px; }
 .sx .shares { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; width: 100%; }
-.sx .shares div { display: flex; flex-direction: column; gap: 4px; padding: 20px; border: 0.5px solid rgba(231, 238, 233, 0.3); border-radius: var(--radius-box); }
-.sx .shares strong { font-family: var(--serif); font-weight: 400; font-size: 44px; color: var(--accent); line-height: 1.1; }
+.sx .shares div { display: flex; flex-direction: column; gap: 4px; padding: 20px; border: 0.5px solid rgba(236,224,206, 0.3); border-radius: var(--radius-box); }
+.sx .shares strong { font-family: var(--serif); font-weight: 400; font-size: 44px; color: var(--accent-text); line-height: 1.1; }
 .sx .shares span { color: var(--on-dark-muted); font-size: 16px; }
-.sx .members-band .eyebrow { color: var(--accent); }
+.sx .members-band .eyebrow { color: var(--accent-text); }
 
 /* Steps across the page, down on narrow screens (Memberships timeline) */
 .sx .timeline { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0 20px; }

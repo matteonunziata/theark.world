@@ -108,7 +108,7 @@ export default function FractionalPage() {
               <p>Includes 4 weeks per year</p>
             </div>
             <div className="card feature">
-              <span className="eyebrow" style={{ color: "var(--accent)" }}>Full home · 12 shares</span>
+              <span className="eyebrow" style={{ color: "var(--accent-text)" }}>Full home · 12 shares</span>
               <span className="price">$275,000</span>
               <p>52 weeks per year · Entire villa yours</p>
             </div>
