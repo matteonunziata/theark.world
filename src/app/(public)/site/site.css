@@ -184,3 +184,16 @@
 .sx .pcard .foot .btn-row { gap: 8px; }
 .sx .sec.host .wrap { flex-direction: row; flex-wrap: wrap; gap: 56px; align-items: flex-start; }
 .sx .host-form { align-content: start; }
+
+/* Lot map and inventory */
+.sx .explorer { display: flex; flex-direction: column; gap: 32px; }
+.sx .explorer-body { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+.sx .lotmap { position: relative; flex: 0 1 560px; width: 100%; max-width: 560px; border-radius: var(--radius-box); overflow: hidden; background: var(--placeholder); }
+.sx .lotmap img { display: block; width: 100%; height: 100%; }
+.sx .lotside { flex: 1 1 320px; position: sticky; top: 24px; }
+.sx .pin { position: absolute; transform: translate(-50%, -50%); min-width: 24px; height: 24px; padding: 0 4px; border-radius: 999px; border: 1.5px solid var(--primary); background: var(--primary); color: var(--on-dark); font: inherit; font-size: 10px; font-weight: 500; line-height: 1; cursor: default; opacity: 0.55; font-variant-numeric: tabular-nums; }
+.sx .pin.free { background: var(--white); color: var(--primary); opacity: 1; cursor: pointer; }
+.sx .pin.free:hover { transform: translate(-50%, -50%) scale(1.15); z-index: 2; }
+.sx .pin.on { background: var(--accent); border-color: var(--accent); color: var(--ink); transform: translate(-50%, -50%) scale(1.3); z-index: 3; box-shadow: 0 0 0 4px rgba(227, 179, 65, 0.35); }
+.sx .tbl tbody tr[data-lot]:hover td { background: var(--ground); }
+.sx .tbl tbody tr.on:hover td { background: var(--panel); }
