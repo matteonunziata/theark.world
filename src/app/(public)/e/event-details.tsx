@@ -1,9 +1,9 @@
 "use client";
 
-import { fmtDate, timeRange } from "@/lib/dates";
+import { fmtDate } from "@/lib/dates";
 import { kindName, money, priceLabel, whenLabel } from "@/lib/schedule";
 import { BookingPanel } from "./[id]/[[...date]]/booking-panel";
-import { LocationBlock, ReadMore, ShareButton } from "./event-bits";
+import { LocationBlock, ReadMore } from "./event-bits";
 import type { LoadedEvent } from "./load";
 import "./event-page.css";
 
@@ -122,11 +122,6 @@ export function EventDetails({
   );
 
   if (!compact) {
-    const next = ev.sessions.find((x) => !x.cancelled) ?? null;
-    const bookable = !!next && !next.closed && ev.canBook && !ev.registrationClosed;
-    const label = priceLabel(o, tickets);
-    // Meals (breakfast, lunch) have no price card: each date has its own Book button.
-    const meal = o.kind === "class" && tickets.some((t) => t.pay_first);
     return (
       <>
         <div className="evp-head">
@@ -159,29 +154,6 @@ export function EventDetails({
             {(o.location || o.location_address) && <LocationBlock name={o.location} address={o.location_address} />}
           </div>
           <aside className="evp-side">
-            {!meal && (
-            <div className="evp-price">
-              <div>
-                <b>{label}</b>
-                {next && (
-                  <span>
-                    {fmtDate(next.date, { weekday: "short", month: "short", day: "numeric" })}
-                    {o.start_time ? ` • ${timeRange(o)}` : ""}
-                  </span>
-                )}
-              </div>
-              <div className="evp-actions">
-                <ShareButton title={o.title} />
-                {bookable ? (
-                  <a className="btn primary" href="#book">
-                    {o.kind === "event" ? "Get tickets" : "Reserve a place"}
-                  </a>
-                ) : ev.registrationClosed ? (
-                  <span className="btn" aria-disabled="true">Registration closed</span>
-                ) : null}
-              </div>
-            </div>
-            )}
             <div id="book">{booking}</div>
             {tickets.length > 0 && ticketList}
           </aside>
