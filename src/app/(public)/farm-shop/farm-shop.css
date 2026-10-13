@@ -45,7 +45,7 @@
 
 .fs-hero{padding:var(--c-pad) 0;position:relative;overflow:hidden;isolation:isolate}
 .fs-hero::before{content:"";position:absolute;inset:0;z-index:-2;background:url(/farm-shop-hero.jpg) center 55%/cover no-repeat;transform:scale(1.25)}
-.fs-hero::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(18,28,20,.86) 0%,rgba(18,28,20,.66) 55%,rgba(18,28,20,.5) 100%)}
+.fs-hero::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(18,28,20,.7) 0%,rgba(18,28,20,.45) 55%,rgba(18,28,20,.28) 100%)}
 .fs-hero .lede{max-width:56ch;font-size:19px;color:var(--c-on-dark-muted);margin:18px 0 28px}
 
 .fs-sec{padding:var(--c-pad) 0}
@@ -128,3 +128,4 @@
 .fs-foot .brand{display:inline-flex;align-items:center;gap:12px;font-size:15px}
 .fs-foot .links{display:flex;flex-wrap:wrap;gap:24px;font-size:14px;color:var(--c-on-dark-faint)}
 .fs-foot .links a{text-decoration:none}
+.fs-hero h1,.fs-hero .lede,.fs-hero .eyebrow{text-shadow:0 1px 12px rgba(18,28,20,.55)}
