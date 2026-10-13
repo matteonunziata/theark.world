@@ -824,6 +824,9 @@ export type Database = {
           utm_medium: string | null
           utm_source: string | null
           waitlist_at: string | null
+          tags: string[]
+          visit_date: string | null
+          tafo_choice: string | null
         }
         Insert: {
           tilopay_card_token?: string | null
@@ -865,6 +868,9 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           waitlist_at?: string | null
+          tags?: string[]
+          visit_date?: string | null
+          tafo_choice?: string | null
         }
         Update: {
           tilopay_card_token?: string | null
@@ -906,6 +912,9 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           waitlist_at?: string | null
+          tags?: string[]
+          visit_date?: string | null
+          tafo_choice?: string | null
         }
         Relationships: [
           {

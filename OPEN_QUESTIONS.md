@@ -185,3 +185,5 @@
 - **Should day-pass holders appear in the member directory and "who's going"?** They don't now. They get the portal for booking, not the community.
 
 - **Arkadia:** should families see the weekly theme and homework on their private page? Per-student feedback to review (as in the parent-view mockup) isn't built.
+
+- **Stewardship pipelines:** should the old "Real estate" pipeline be retired now (it has no people in it)? Is TAFO a fixed list of options (so it can be a dropdown)? Should Lead, Applying, Call booked and the visit date be set automatically from the site, booking tool and webinar tool?
