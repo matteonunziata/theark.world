@@ -10,8 +10,10 @@ import {
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
 import { fmtDate, todayIn } from "@/lib/dates";
-import { sendPassEmail, siteUrl } from "@/lib/email";
-import { listStripePrices } from "@/lib/stripe";
+import { sendEmail, sendPassEmail, siteUrl } from "@/lib/email";
+import { listStripePrices, termPrice } from "@/lib/stripe";
+import { ratePrice } from "@/lib/crm";
+import { chargeSavedCard, tilopayReady } from "@/lib/tilopay";
 
 const PERIODS = ["day", "week", "month", "quarter", "half", "year", "once"];
 
@@ -188,6 +190,42 @@ export async function reviewApplication(id: string, status: string): Promise<Act
 }
 
 /** Give an existing contact (or team member) a tier from the Members page. */
+type Quote = { amount: number; currency: string; name: string };
+
+/** What this tier costs this person: their rate, less their discount. Passes cost the tier's price. */
+async function priceFor(
+  supabase: Awaited<ReturnType<typeof staffOrThrow>>["supabase"],
+  contactId: string | null,
+  tierKey: string,
+): Promise<Quote | null> {
+  const { data: t } = await supabase
+    .from("membership_tiers")
+    .select("name, price, price_ff, currency, period")
+    .eq("key", tierKey)
+    .maybeSingle();
+  if (!t) return null;
+  const { data: c } = contactId
+    ? await supabase.from("contacts").select("rate, discount:discounts(percent, active)").eq("id", contactId).maybeSingle()
+    : { data: null };
+  const percent = c?.discount?.active ? Number(c.discount.percent) : 0;
+  const tier = { ...t, price: t.price === null ? null : Number(t.price), price_ff: t.price_ff === null ? null : Number(t.price_ff) };
+  const amount =
+    t.period === "day" || t.period === "week"
+      ? Number(ratePrice(tier, c?.rate) ?? 0)
+      : (termPrice(tier, c?.rate, percent) ?? Number(ratePrice(tier, c?.rate) ?? 0));
+  return amount > 0 ? { amount, currency: t.currency, name: t.name } : null;
+}
+
+/** The price shown in the drawer once a person and a tier are chosen. */
+export async function quoteTier(contactId: string | null, tierKey: string): Promise<Quote | null> {
+  const { supabase } = await staffOrThrow("admin", "lead", "sales", "community_manager");
+  if (!tierKey) return null;
+  return priceFor(supabase, contactId, tierKey);
+}
+
+const PAY = ["none", "link", "tilopay_account", "bac_card", "sinpe", "cash"] as const;
+type Pay = (typeof PAY)[number];
+
 export async function addMember(
   _prev: ActionResult,
   data: FormData,
@@ -199,9 +237,12 @@ export async function addMember(
   const starts = field(data, "starts");
   const ends = field(data, "ends");
   const photo = field(data, "photo_path");
+  const pay = (field(data, "pay") ?? "none") as Pay;
+  const reference = field(data, "reference");
+  let email = field(data, "email")?.toLowerCase() ?? null;
+  if (!PAY.includes(pay)) return fail("Choose how they pay.");
   if (isNew) {
     if (!field(data, "first_name")) return fail("Enter a first name.");
-    const email = field(data, "email");
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("Enter a valid email.");
   } else if (!contact) {
     return fail("Search for a person first.");
@@ -213,12 +254,25 @@ export async function addMember(
     const { data: c } = await supabase.from("contacts").select("photo_path").eq("id", contact!).maybeSingle();
     if (!c?.photo_path) return fail("Add a photo of the person.");
   }
+
+  // Check the payment before anyone is created or charged.
+  const quote = pay === "none" ? null : await priceFor(supabase, isNew ? null : contact, tier);
+  if (pay !== "none" && !quote) return fail("This tier has no price set. Choose “No charge” or set the price in Tiers & pricing.");
+  if ((pay === "bac_card" || pay === "sinpe") && !reference) {
+    return fail(pay === "sinpe" ? "Enter the SINPE reference number." : "Enter the authorization code from the receipt.");
+  }
+  if (pay === "tilopay_account") {
+    if (isNew) return fail("A new person has no saved card. Choose another way to pay.");
+    if (!tilopayReady()) return fail("Pay with account isn’t set up yet.");
+  }
+  if (pay === "link" && isNew && !email) return fail("Enter their email to send the payment link.");
+
   if (isNew) {
     const { data: id, error } = await supabase.rpc("add_member_contact", {
       p_first: field(data, "first_name")!,
       p_last: field(data, "last_name"),
       p_phone: field(data, "phone"),
-      p_email: field(data, "email"),
+      p_email: email,
     });
     if (error || !id) return fail(friendly(error));
     contact = id;
@@ -227,16 +281,77 @@ export async function addMember(
     const { error } = await supabase.rpc("set_contact_photo", { p_contact: contact!, p_path: photo });
     if (error) return fail(friendly(error));
   }
+
   const future = !!starts && starts > todayIn();
-  const { error } = await supabase.rpc("set_membership", {
+  const status = future ? "upcoming" : "active";
+  const done = (what: string) => {
+    revalidatePath("/memberships", "layout");
+    revalidatePath("/crm", "layout");
+    return ok(what);
+  };
+
+  if (pay === "link") {
+    // The membership starts when the payment comes in.
+    const { data: c } = await supabase.from("contacts").select("name, email, pay_token").eq("id", contact!).maybeSingle();
+    email = c?.email ?? null;
+    if (!email || !c) return fail("This person has no email. Add one in the CRM, then send the link.");
+    const origin = await siteUrl();
+    const url = `${origin}/pay/join/${c.pay_token}?tier=${encodeURIComponent(tier)}`;
+    const amount = `${quote!.currency === "USD" ? "$" : "₡"}${quote!.amount.toLocaleString("en-US")}`;
+    const first = c.name.trim().split(/\s+/)[0];
+    const sent = await sendEmail({
+      to: email,
+      subject: `Pay for your ${quote!.name} at The ARK`,
+      parts: {
+        eyebrow: "Payment link",
+        heading: quote!.name,
+        body: `<p style="margin:0 0 16px">Hi ${first.replace(/[<>&"]/g, "")}, here is your link to pay ${amount} for your ${quote!.name}. It starts as soon as the payment goes through.</p>`,
+        cta: { label: "Pay now", href: url },
+        footnote: "You’ll pay on Stripe. If you didn’t expect this email, you can ignore it.",
+      },
+      text: `Pay ${amount} for your ${quote!.name} at The ARK: ${url}`,
+    });
+    if (!sent) return fail(`Email isn’t set up, or it couldn’t be sent. Their payment link is ${url}`);
+    return done(`Payment link sent to ${email}`);
+  }
+
+  if (pay === "none") {
+    const { error } = await supabase.rpc("set_membership", {
+      p_contact: contact!,
+      p_tier: tier,
+      p_status: status,
+      p_starts: starts,
+      p_ends: ends,
+    });
+    if (error) return fail(friendly(error));
+    return done(isNew ? "Person and membership added" : "Member added");
+  }
+
+  let ref = reference;
+  if (pay === "tilopay_account") {
+    const { data: token } = await supabase.rpc("checkout_card_token", { cid: contact! });
+    if (!token) return fail("This person has no saved card.");
+    const charge = await chargeSavedCard(token, quote!.amount, crypto.randomUUID());
+    if (!charge.ok) return fail(charge.error);
+    ref = charge.transactionId;
+  }
+  const { error } = await supabase.rpc("issue_paid_membership", {
     p_contact: contact!,
     p_tier: tier,
-    p_status: future ? "upcoming" : "active",
+    p_status: status,
     p_starts: starts,
     p_ends: ends,
+    p_method: pay === "sinpe" ? "sinpe" : pay === "cash" ? "cash" : "card",
+    p_reference: ref,
+    p_amount: quote!.amount,
+    p_currency: quote!.currency,
   });
-  if (error) return fail(friendly(error));
-  revalidatePath("/memberships", "layout");
-  revalidatePath("/crm", "layout");
-  return ok(isNew ? "Person and membership added" : "Member added");
+  if (error) {
+    if (pay === "tilopay_account") {
+      console.error("Memberships: Tilopay charged but membership failed", ref, error);
+      return fail(`The card was charged (Tilopay ${ref}) but the membership couldn’t be saved. Don’t charge again; tell an admin.`);
+    }
+    return fail(friendly(error));
+  }
+  return done("Paid and added");
 }

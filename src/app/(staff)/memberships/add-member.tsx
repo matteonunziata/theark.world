@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import { Drawer } from "@/components/drawer";
 import { tierName } from "@/lib/crm";
 import { createClient } from "@/lib/supabase/client";
-import { addMember } from "./actions";
+import { addMember, quoteTier } from "./actions";
 
 type Found = { id: string; name: string; email: string | null; tier: string | null; membership_status: string; photo_path: string | null };
 type Tier = { key: string; name: string };
 
 /** "Add new member": find an existing contact (the team included) or create one, add their photo and give them a tier. */
-export function AddMember({ tiers }: { tiers: Tier[] }) {
+export type PayOptions = { sinpe: string | null; tilopay: boolean; stripe: boolean };
+
+export function AddMember({ tiers, pay }: { tiers: Tier[]; pay: PayOptions }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -30,13 +32,13 @@ export function AddMember({ tiers }: { tiers: Tier[] }) {
           </>
         }
       >
-        <Body tiers={tiers} />
+        <Body tiers={tiers} pay={pay} />
       </Drawer>
     </>
   );
 }
 
-function Body({ tiers }: { tiers: Tier[] }) {
+function Body({ tiers, pay }: { tiers: Tier[]; pay: PayOptions }) {
   const [q, setQ] = useState("");
   const [matches, setMatches] = useState<Found[]>([]);
   const [picked, setPicked] = useState<Found | null>(null);
@@ -57,6 +59,28 @@ function Body({ tiers }: { tiers: Tier[] }) {
     setPhoto({ path, preview: URL.createObjectURL(file) });
     setPhotoState("idle");
   }
+  const [tier, setTier] = useState("");
+  const [method, setMethod] = useState("none");
+  const [quote, setQuote] = useState<{ amount: number; currency: string; name: string } | null>(null);
+  const contactId = mode === "existing" ? (picked?.id ?? null) : null;
+  useEffect(() => {
+    let live = true;
+    if (!tier) return;
+    quoteTier(contactId, tier).then((r) => live && setQuote(r));
+    return () => {
+      live = false;
+    };
+  }, [tier, contactId]);
+  const shown = tier ? quote : null;
+  const money = (n: number, c: string) => `${c === "USD" ? "$" : "₡"}${n.toLocaleString("en-US")}`;
+  const methods: [string, string][] = [
+    ["none", "No charge"],
+    ...(pay.stripe ? ([["link", "Email a payment link"]] as [string, string][]) : []),
+    ...(pay.tilopay && mode === "existing" ? ([["tilopay_account", "Pay with account"]] as [string, string][]) : []),
+    ["bac_card", "Credit card (BAC)"],
+    ["sinpe", "SINPE"],
+    ["cash", "Cash"],
+  ];
   const needsPhoto = mode === "new" || (picked && !picked.photo_path);
 
   useEffect(() => {
@@ -183,7 +207,7 @@ function Body({ tiers }: { tiers: Tier[] }) {
       )}
       <div className="fld">
         <label htmlFor="am-tier">Tier</label>
-        <select id="am-tier" name="tier" required defaultValue="">
+        <select id="am-tier" name="tier" required value={tier} onChange={(e) => setTier(e.target.value)}>
           <option value="" disabled>Choose a tier</option>
           {tiers.map((t) => (
             <option key={t.key} value={t.key}>{t.name}</option>
@@ -201,6 +225,37 @@ function Body({ tiers }: { tiers: Tier[] }) {
           <input id="am-to" name="ends" type="date" />
           <span className="hint">Leave empty for no end.</span>
         </div>
+      </div>
+      <div className="fld">
+        <label>Payment</label>
+        <input type="hidden" name="pay" value={method} />
+        <div className="co-methods">
+          {methods.map(([m, label]) => (
+            <button key={m} type="button" className={method === m ? "on" : ""} onClick={() => setMethod(m)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {shown && method !== "none" && (
+          <div className="co-big">{money(shown.amount, shown.currency)}</div>
+        )}
+        {method === "link" && (
+          <span className="hint">They get an email with a Stripe link. The membership starts when they pay.</span>
+        )}
+        {method === "tilopay_account" && <span className="hint">Charges their saved card.</span>}
+        {method === "bac_card" && (
+          <>
+            <span className="hint">Type the amount into the BAC reader, then enter the authorization code.</span>
+            <input name="reference" placeholder="Authorization code" autoComplete="off" />
+          </>
+        )}
+        {method === "sinpe" && (
+          <>
+            <span className="hint">{pay.sinpe ? `SINPE Móvil to ${pay.sinpe}` : "No SINPE number is set in Settings → Organization."}</span>
+            <input name="reference" inputMode="numeric" placeholder="SINPE reference number" autoComplete="off" />
+          </>
+        )}
+        {method === "cash" && <span className="hint">Take the cash, then add the member.</span>}
       </div>
     </>
   );

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { requireStaff } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
+import { stripeReady } from "@/lib/stripe";
+import { tilopayReady } from "@/lib/tilopay";
 import { MembersView } from "./members-view";
 
 export const metadata: Metadata = { title: "Memberships" };
@@ -10,7 +12,7 @@ const isPass = (period: string | undefined) => period === "day" || period === "w
 export default async function MembershipsPage() {
   const { supabase } = await requireStaff("memberships");
   const today = todayIn();
-  const [{ data: rows }, { data: tiers }, { data: org }] = await Promise.all([
+  const [{ data: rows }, { data: tiers }, { data: org }, { data: sinpe }] = await Promise.all([
     supabase
       .from("memberships")
       .select("id, tier, status, starts_on, ends_on, activate_by, contact:contacts(id, name, location, interests)")
@@ -18,6 +20,7 @@ export default async function MembershipsPage() {
       .or(`ends_on.is.null,ends_on.gte.${today}`),
     supabase.from("membership_tiers").select("key, name, spots, period").eq("active", true).order("position"),
     supabase.from("org_settings").select("member_cap").single(),
+    supabase.from("org_settings").select("sinpe_number").eq("id", true).maybeSingle(),
   ]);
   const period = (key: string) => tiers?.find((t) => t.key === key)?.period;
   // One card per person: whoever holds a membership that covers today (or
@@ -66,7 +69,11 @@ export default async function MembershipsPage() {
           </span>
         </div>
       </div>
-      <MembersView members={members} tiers={(tiers ?? []).map((t) => ({ key: t.key, name: t.name }))} />
+      <MembersView
+        members={members}
+        tiers={(tiers ?? []).map((t) => ({ key: t.key, name: t.name }))}
+        pay={{ sinpe: sinpe?.sinpe_number ?? null, tilopay: tilopayReady(), stripe: stripeReady() }}
+      />
     </>
   );
 }
