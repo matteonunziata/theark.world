@@ -8,14 +8,14 @@
   /* Quick facts and the three ways in, on the forest ground under the hero */
   .hm-in { padding-top: 0; }
   .hm-in .wrap { display: flex; flex-direction: column; gap: 48px; }
-  .hm-facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: rgba(231, 238, 233, 0.22); border-block: 1px solid rgba(231, 238, 233, 0.22); }
-  .hm-facts p { background: var(--primary); padding: 24px 20px; font-family: var(--serif); font-size: clamp(19px, 1.9vw, 24px); line-height: 1.3; color: var(--on-dark); }
+  .hm-facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: rgba(236,224,206, 0.22); border-block: 1px solid rgba(236,224,206, 0.22); }
+  .hm-facts p { background: var(--deep); padding: 24px 20px; font-family: var(--serif); font-size: clamp(19px, 1.9vw, 24px); line-height: 1.3; color: var(--on-dark); }
   .hm-facts p:first-child { padding-left: 0; }
   .hm-label { font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--on-dark-faint); }
   .hm-ways { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
-  .hm-way { display: flex; flex-direction: column; gap: 8px; padding: 28px; border: 1px solid rgba(231, 238, 233, 0.22); border-radius: var(--radius-box); background: rgba(231, 238, 233, 0.06); text-decoration: none; color: var(--on-dark); transition: background 0.2s, border-color 0.2s; }
-  .hm-way:hover { background: rgba(231, 238, 233, 0.12); border-color: rgba(231, 238, 233, 0.4); color: var(--on-dark); }
-  .hm-way .kicker { font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+  .hm-way { display: flex; flex-direction: column; gap: 8px; padding: 28px; border: 1px solid rgba(236,224,206, 0.22); border-radius: var(--radius-box); background: rgba(236,224,206, 0.06); text-decoration: none; color: var(--on-dark); transition: background 0.2s, border-color 0.2s; }
+  .hm-way:hover { background: rgba(236,224,206, 0.12); border-color: rgba(236,224,206, 0.4); color: var(--on-dark); }
+  .hm-way .kicker { font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-text); }
   .hm-way h3 { font-size: 30px; line-height: 1.15; }
   .hm-way p { font-size: 16px; line-height: 1.6; color: var(--on-dark-muted); }
   .hm-way .go { margin-top: auto; padding-top: 10px; font-weight: 500; font-size: 16px; }
@@ -48,18 +48,18 @@
   .hm-points span { color: var(--muted); }
   .hm-links { display: flex; flex-wrap: wrap; gap: 4px 24px; }
   .hm-link { display: inline-block; padding: 10px 0; font-weight: 500; color: var(--primary); text-decoration: underline; text-underline-offset: 4px; }
-  .hm-link:hover { color: #24402F; }
+  .hm-link:hover { color: #414B43; }
 
   /* The land: forest band with figures */
   .hm-story .wrap { gap: 56px; }
-  .hm-story .eyebrow { color: var(--accent); }
+  .hm-story .eyebrow { color: var(--accent-text); }
   .hm-story-head { display: flex; flex-wrap: wrap; gap: 32px 72px; }
   .hm-story-head > div:first-child { flex: 1 1 420px; display: flex; flex-direction: column; gap: 14px; }
   .hm-head h2 { display: block; }
   .hm-story-head h2 em, .hm-head h2 em, .hm-cta h2 em, .hm-visit h2 em { font-style: italic; }
   .hm-story-head .text { flex: 1 1 480px; display: flex; flex-direction: column; gap: 18px; color: var(--on-dark-muted); }
-  .hm-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; background: rgba(231, 238, 233, 0.22); border-block: 1px solid rgba(231, 238, 233, 0.22); }
-  .hm-stats div { background: var(--primary); padding: 32px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .hm-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; background: rgba(236,224,206, 0.22); border-block: 1px solid rgba(236,224,206, 0.22); }
+  .hm-stats div { background: var(--deep); padding: 32px 24px; display: flex; flex-direction: column; gap: 10px; }
   .hm-stats div:first-child { padding-left: 0; }
   .hm-stats b { font-family: var(--serif); font-weight: 400; font-size: clamp(44px, 5vw, 64px); line-height: 1; color: var(--on-dark); font-variant-numeric: tabular-nums; }
   .hm-stats span { font-size: 15px; line-height: 1.5; color: var(--on-dark-muted); }
@@ -81,11 +81,11 @@
   .hm-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; align-items: stretch; }
   .hm-plans .card { padding: 32px; gap: 18px; border-radius: 18px; }
   .hm-plans .kicker { font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-2); }
-  .hm-plans .card.feature .kicker { color: var(--accent); }
+  .hm-plans .card.feature .kicker { color: var(--accent-text); }
   .hm-plans .from { font-size: 15px; color: var(--muted-2); margin-right: 8px; }
   .hm-plans .card.feature .from { color: var(--on-dark-muted); }
   .hm-plans .checks { flex-grow: 1; padding-top: 18px; border-top: 0.5px solid var(--hairline); }
-  .hm-plans .card.feature .checks { border-top-color: rgba(231, 238, 233, 0.22); }
+  .hm-plans .card.feature .checks { border-top-color: rgba(236,224,206, 0.22); }
   .hm-plans .card.feature .checks li::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23E3B341' stroke-width='2'%3E%3Cpath d='M3 8.5l3 3 7-7'/%3E%3C/svg%3E"); }
   .hm-plans .checks small { display: block; color: var(--muted-2); font-size: 15px; line-height: 1.5; }
   .hm-plans .btn { align-self: stretch; margin-top: 0; }
@@ -110,12 +110,12 @@
 
   /* Closing call: forest band, the quote, and the brochure card */
   .hm-cta .wrap { flex-direction: row; flex-wrap: wrap; gap: 56px 80px; align-items: flex-start; }
-  .hm-cta .eyebrow { color: var(--accent); }
+  .hm-cta .eyebrow { color: var(--accent-text); }
   .hm-cta .lead { flex: 1 1 520px; display: flex; flex-direction: column; gap: 26px; align-items: flex-start; }
   .hm-cta h2 { font-size: clamp(44px, 6vw, 76px); line-height: 1.04; }
   .hm-cta .lead > p:not(.eyebrow):not(.note) { font-size: 20px; line-height: 1.6; max-width: 540px; color: var(--on-dark-muted); }
   .hm-cta .note { font-size: 15px; color: var(--on-dark-faint); }
-  .hm-cta blockquote { margin: 24px 0 0; padding-top: 28px; border-top: 1px solid rgba(231, 238, 233, 0.22); }
+  .hm-cta blockquote { margin: 24px 0 0; padding-top: 28px; border-top: 1px solid rgba(236,224,206, 0.22); }
   .hm-cta blockquote p { font-family: var(--serif); font-style: italic; font-size: 22px; line-height: 1.45; color: var(--on-dark); margin-bottom: 12px; }
   .hm-cta blockquote footer { padding: 0; font-size: 15px; color: var(--on-dark-muted); }
   .hm-brochure { flex: 1 1 380px; max-width: 480px; background: var(--ground); color: var(--ink); border-radius: 20px; padding: 36px; display: flex; flex-direction: column; gap: 18px; }

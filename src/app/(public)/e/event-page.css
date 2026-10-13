@@ -1,5 +1,5 @@
 /* Event page: price card, About, location, and the booking form's steppers. */
-.linkish { background: none; border: 0; padding: 0; font: inherit; color: var(--primary, #2f5d3f); text-decoration: underline; cursor: pointer; }
+.linkish { background: none; border: 0; padding: 0; font: inherit; color: var(--primary, #414b43); text-decoration: underline; cursor: pointer; }
 .stepper { display: inline-flex; align-items: center; gap: 4px; flex: none; }
 .stepper button { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 18px; line-height: 1; cursor: pointer; }
 .stepper button:disabled { opacity: 0.4; cursor: default; }
