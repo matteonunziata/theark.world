@@ -92,7 +92,7 @@
   .quote figcaption { font-size: 15px; color: var(--muted-2); margin-top: auto; }
 
   /* Large letters (the Courts levels row) */
-  .letters { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .letters { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
   .letter { background: var(--white); border: 0.5px solid var(--hairline); border-radius: var(--radius-box); padding: 26px 28px; display: flex; gap: 20px; align-items: flex-start; }
   .letter .n { font-family: var(--serif); font-size: 42px; line-height: 1; color: var(--primary); min-width: 52px; }
   .letter div { display: flex; flex-direction: column; line-height: 1.5; }
@@ -131,3 +131,6 @@
 }
 .sx .embed.tall { aspect-ratio: auto; height: 720px; background: var(--white); }
 .sx .host .wrap > .host-form:only-child { flex: 1 1 100%; max-width: 860px; margin: 0 auto; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.sx .split-media.portrait-media { flex: 0 1 380px; height: auto; }
+.sx .split-media.portrait-media img { height: auto; }
+.sx .split .wrap > .split-copy:only-child { flex-basis: 760px; max-width: 760px; }

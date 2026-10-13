@@ -5452,6 +5452,13 @@ export type Database = {
           paid: boolean; open_match: boolean;
         }[];
       };
+      public_lots: {
+        Args: never;
+        Returns: {
+          code: string; name: string | null; kind: string; status: string; size_m2: number | null;
+          price: number | null; currency: string; features: string | null; estate_code: string | null;
+        }[];
+      };
       public_courts: {
         Args: never;
         Returns: {
