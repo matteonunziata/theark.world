@@ -589,9 +589,16 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Tracked as fields, not stages:** `contacts.tags` (brochure download, webinar registration; free text, lower-cased), `contacts.visit_date`, `contacts.tafo_choice` (free text). Edited in the profile's Stewardship panel; board cards show the visit date and TAFO choice.
 - Stages are moved by hand (drag or profile) for now. Nothing yet sets them from the website, calendar or KYC provider.
 
+<<<<<<< HEAD
 ## Saved card on the membership account (2026-10-13)
 
 - **Members save a card in Portal → Me → Payment method** (user request). "Save a card" opens Stripe Checkout in setup mode (hosted by Stripe, nothing charged), so card details never touch ARK OS. Replace and Remove sit next to the card once one is saved. The panel shows only while Stripe is on.
 - **What we keep:** `contacts.stripe_customer_id`, `card_payment_method_id`, brand, last four and expiry. One card per person. A Stripe customer is made the first time and reused. Replacing or removing detaches the old card at Stripe too.
 - **Saved once, from whichever arrives first:** the return to `/portal/me?card_session=…` or the `checkout.session.completed` webhook (setup sessions are now handled there). Members read their own card through `my_card()`; writes use the service role.
 - **Not wired to charging yet.** Nothing bills this card. It is separate from `tilopay_card_token`, which Checkout's "Pay with account" still uses. See OPEN_QUESTIONS.
+=======
+## Checkout sends stock to Shopify (2026-10-13)
+
+- **Bug:** Checkout sales never reached Shopify (`checkout_sale()` didn't set `shopify_pending`), so the next sync mirrored Shopify's higher count back and showed "Adjustment" rows that put the sold units back. Now `checkout_sale()` flags its movements and the Checkout action pushes them right after the sale (best effort, `after()`); a failed push stays pending for the next sync.
+- **Repair:** the five units wrongly put back at 17:14 on 13 Oct got a -1 correction each (reference "Correction: Checkout sale not sent to Shopify"), and the 17:18 Digestive Iced Tea sale was flagged to send. Checkout sales before the 12 Oct stock reset were already wiped by that reset.
+>>>>>>> origin/main
