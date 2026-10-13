@@ -544,3 +544,9 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Request budget:** shown to admins and the division lead; opens a modal (amount in colones and what it's for) and saves a `task_budget_requests` row plus a Slack post under the Tasks setting. An admin approves or declines on the task page. It is not yet tied to Finance budgets or payments.
 - **Notify my lead:** everyone else gets this instead. It adds a flagged note to the task's comments and posts to Slack naming the division's leads.
 - **Employees entering what they bought:** they type what they paid for bought materials but don't see prices afterwards.
+
+## Booking a stay searches the CRM first (2026-10-12)
+
+- **Guest name is a contact search.** In the stay drawer, typing a guest name searches contacts by name, email or phone; picking one fills the name, email and phone and links the stay to that contact (`stays.contact_id`), so the stay shows on their profile. Search results follow the same CRM visibility rules as the rest of the app.
+- **No match, add them.** When nothing matches, a checkbox (on by default) offers to add the guest to the CRM when the stay is saved (source "Stay booking"). A matching email links the existing contact instead of making a duplicate. Admins and sales can add contacts; for other roles the stay still books and the message says the contact wasn't added.
+

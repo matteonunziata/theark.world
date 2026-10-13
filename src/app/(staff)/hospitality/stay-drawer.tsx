@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConfirmButton, Drawer } from "@/components/drawer";
 import type { Tables } from "@/lib/database.types";
 import { lotTitle, nights, STAY_KINDS, STAY_SOURCES, STAY_STATUS } from "@/lib/estate";
 import { money } from "@/lib/schedule";
+import { createClient } from "@/lib/supabase/client";
 import { saveStay } from "../estate/actions";
 
 export type Stay = Tables<"stays">;
@@ -34,6 +35,10 @@ export function StayDrawer({
   const home = homes.find((h) => h.id === lotId);
   const n = checkIn && checkOut && checkOut > checkIn ? nights(checkIn, checkOut) : 0;
   const guest = kind === "guest";
+  const [name, setName] = useState(stay?.guest_name ?? "");
+  const [email, setEmail] = useState(stay?.email ?? "");
+  const [phone, setPhone] = useState(stay?.phone ?? "");
+  const [contactId, setContactId] = useState(stay?.contact_id ?? "");
 
   return (
     <Drawer
@@ -51,6 +56,7 @@ export function StayDrawer({
       }
     >
       {stay && <input type="hidden" name="id" value={stay.id} />}
+      <input type="hidden" name="contact_id" value={guest ? contactId : ""} />
       {stay?.source === "guesty" && (
         <p className="note" style={{ marginTop: 0 }}>
           Booked on {stay.channel ?? "Guesty"} through Guesty{stay.external_ref ? ` (${stay.external_ref})` : ""}. Dates,
@@ -104,13 +110,27 @@ export function StayDrawer({
       <div className="grid2">
         <div className="fld">
           <label htmlFor="st-name">{guest ? "Guest name" : "Label"}</label>
-          <input
-            id="st-name"
-            name="guest_name"
-            required={guest}
-            defaultValue={stay?.guest_name ?? ""}
-            placeholder={guest ? "" : kind === "owner" ? "Owner" : "e.g. Repairs"}
-          />
+          {guest ? (
+            <GuestName
+              name={name}
+              linked={!!contactId}
+              setName={setName}
+              onPick={(c) => {
+                setName(c.name);
+                setContactId(c.id);
+                if (c.email) setEmail(c.email);
+                if (c.phone) setPhone(c.phone);
+              }}
+              onUnlink={() => setContactId("")}
+            />
+          ) : (
+            <input
+              id="st-name"
+              name="guest_name"
+              defaultValue={stay?.guest_name ?? ""}
+              placeholder={kind === "owner" ? "Owner" : "e.g. Repairs"}
+            />
+          )}
         </div>
         <div className="fld">
           <label htmlFor="st-status">Status</label>
@@ -126,11 +146,11 @@ export function StayDrawer({
           <div className="grid2">
             <div className="fld">
               <label htmlFor="st-email">Email</label>
-              <input id="st-email" name="email" type="email" defaultValue={stay?.email ?? ""} />
+              <input id="st-email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="fld">
               <label htmlFor="st-phone">Phone or WhatsApp</label>
-              <input id="st-phone" name="phone" type="tel" defaultValue={stay?.phone ?? ""} />
+              <input id="st-phone" name="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
           </div>
           <div className="grid2">
@@ -174,5 +194,93 @@ export function StayDrawer({
         <textarea id="st-notes" name="notes" rows={3} defaultValue={stay?.notes ?? ""} placeholder={guest ? "Arrival time, requests, transfers" : ""} />
       </div>
     </Drawer>
+  );
+}
+
+type Found = { id: string; name: string; email: string | null; phone: string | null };
+
+/** Guest name that searches ARK OS contacts first; if no one matches, offer to add them. */
+function GuestName({
+  name,
+  linked,
+  setName,
+  onPick,
+  onUnlink,
+}: {
+  name: string;
+  linked: boolean;
+  setName: (v: string) => void;
+  onPick: (c: Found) => void;
+  onUnlink: () => void;
+}) {
+  const [matches, setMatches] = useState<Found[]>([]);
+  const [searched, setSearched] = useState("");
+  const [shut, setShut] = useState(false);
+  const term = name.replace(/[%,()*\\]/g, " ").trim();
+
+  useEffect(() => {
+    if (linked || term.length < 2) return;
+    let live = true;
+    const t = setTimeout(async () => {
+      const { data } = await createClient()
+        .from("contacts")
+        .select("id, name, email, phone")
+        .or(`name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`)
+        .order("name")
+        .limit(8);
+      if (!live) return;
+      setMatches((data as Found[] | null) ?? []);
+      setSearched(term);
+    }, 250);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [term, linked]);
+
+  const ready = !linked && term.length >= 2 && searched === term;
+  const list = ready && !shut ? matches : [];
+  return (
+    <>
+      <input
+        id="st-name"
+        name="guest_name"
+        required
+        autoComplete="off"
+        value={name}
+        placeholder="Search contacts or type a new name"
+        onChange={(e) => {
+          setName(e.target.value);
+          setShut(false);
+          if (linked) onUnlink();
+        }}
+      />
+      {linked && <span className="hint">Linked to a contact in the CRM. Typing a different name unlinks it.</span>}
+      {list.length > 0 && (
+        <div className="pick-list" role="listbox" aria-label="Matching contacts">
+          {list.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              role="option"
+              aria-selected={false}
+              onClick={() => {
+                onPick(m);
+                setShut(true);
+              }}
+            >
+              <b>{m.name}</b>
+              <span className="muted">{m.email || m.phone || "No email"}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {ready && !matches.length && (
+        <label className="check" style={{ marginTop: 8 }}>
+          <input type="checkbox" name="add_contact" defaultChecked />
+          Not in ARK OS yet. Add {term} to the CRM
+        </label>
+      )}
+    </>
   );
 }
