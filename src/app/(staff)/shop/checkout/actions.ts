@@ -7,6 +7,7 @@ import { staffOrThrow } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pushContact } from "@/lib/ghl";
+import { pushPendingStock } from "@/lib/shopify";
 import { chargeSavedCard, tilopayReady } from "@/lib/tilopay";
 
 export type Customer = {
@@ -128,6 +129,12 @@ export async function completeSale(input: {
     }
     return { ok: false, error: friendly(error) };
   }
+  // Send the sold units to Shopify so its count matches; if it fails they stay
+  // pending and go with the next sync.
+  after(async () => {
+    const admin = createAdminClient();
+    if (admin) await pushPendingStock(admin).catch(() => {});
+  });
   revalidatePath("/shop", "layout");
   revalidatePath("/crm", "layout");
   const r = data as {
