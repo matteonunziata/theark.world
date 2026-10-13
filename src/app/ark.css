@@ -389,7 +389,7 @@ a.btn{text-decoration:none;color:inherit}
 .enroll select{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 11px}
 /* pipelines */
 .pipe-pick{display:flex;gap:6px;margin-bottom:16px}
-.pipe .board{grid-template-columns:repeat(6,minmax(0,1fr))}
+.pipe .board{grid-template-columns:repeat(var(--cols,6),minmax(0,1fr))}
 .pipe .task{cursor:grab}
 .pipe .task .who-sm{color:var(--muted);font-size:12.5px;display:block}
 /* sequences */

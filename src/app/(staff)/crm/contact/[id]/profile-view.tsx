@@ -8,7 +8,7 @@ import { useToast } from "@/components/toast";
 import type { ActionResult } from "@/lib/action-result";
 import {
   mstatusName,
-  PIPELINES,
+  type Pipeline,
   ptypeName,
   tierClass,
   tierColor,
@@ -67,6 +67,7 @@ export function ProfileView({
   pay,
   notes,
   stages,
+  pipelines,
   enrollments,
   sequences,
   owners,
@@ -88,6 +89,7 @@ export function ProfileView({
   pay: { url: string; label: string } | null;
   notes: Note[];
   stages: { pipeline: string; stage: string }[];
+  pipelines: Pipeline[];
   enrollments: Enrollment[];
   sequences: Sequence[];
   owners: Owner[];
@@ -535,14 +537,14 @@ export function ProfileView({
           <section className="panel">
             <h2>Pipelines</h2>
             <div className="stage-sel">
-              {Object.entries(PIPELINES).map(([k, p]) => (
-                <span key={k} style={{ display: "contents" }}>
-                  <label htmlFor={`st-${k}`}>{p.name}</label>
+              {pipelines.map((p) => (
+                <span key={p.key} style={{ display: "contents" }}>
+                  <label htmlFor={`st-${p.key}`}>{p.name}</label>
                   <select
-                    id={`st-${k}`}
-                    value={stageOf(k)}
+                    id={`st-${p.key}`}
+                    value={stageOf(p.key)}
                     disabled={!canEdit || pending}
-                    onChange={(e) => run(() => setStage(c.id, k, e.target.value || null))}
+                    onChange={(e) => run(() => setStage(c.id, p.key, e.target.value || null))}
                   >
                     <option value="">Not in pipeline</option>
                     {p.stages.map(([sk, sl]) => (
