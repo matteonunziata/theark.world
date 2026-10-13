@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { fulfillCheckout, stripe } from "@/lib/stripe";
+import { fulfillCheckout, recordSavedCard, stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Stripe → ARK OS. In the Stripe dashboard (Developers → Webhooks), point an
@@ -29,7 +29,8 @@ export async function POST(request: Request) {
       case "checkout.session.completed":
       case "checkout.session.async_payment_succeeded": {
         const cs = event.data.object;
-        if (cs.metadata?.kind && cs.payment_status !== "unpaid") await fulfillCheckout(cs.id);
+        if (cs.mode === "setup") await recordSavedCard(cs.id);
+        else if (cs.metadata?.kind && cs.payment_status !== "unpaid") await fulfillCheckout(cs.id);
         break;
       }
       case "refund.created": {
