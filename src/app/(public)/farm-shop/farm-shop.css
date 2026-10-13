@@ -43,7 +43,9 @@
 .fs-nav .login{font-size:14px;text-decoration:none;padding:12px 6px}
 @media (max-width:820px){.fs-nav .links{display:none}}
 
-.fs-hero{padding:var(--c-pad) 0}
+.fs-hero{padding:var(--c-pad) 0;position:relative;overflow:hidden;isolation:isolate}
+.fs-hero::before{content:"";position:absolute;inset:0;z-index:-2;background:url(/farm-shop-hero.jpg) center 55%/cover no-repeat;transform:scale(1.25)}
+.fs-hero::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(18,28,20,.86) 0%,rgba(18,28,20,.66) 55%,rgba(18,28,20,.5) 100%)}
 .fs-hero .lede{max-width:56ch;font-size:19px;color:var(--c-on-dark-muted);margin:18px 0 28px}
 
 .fs-sec{padding:var(--c-pad) 0}

@@ -114,9 +114,6 @@ export function FarmShop({
       {justPaid && <p className="fs-ok" role="status">Thank you. Your order is paid. Pick it up at The ARK.</p>}
       <div className="fs-bar">
         <input className="fs-search" type="search" placeholder="Search the shop" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search the shop" />
-        <button type="button" className="btn sm" onClick={() => setOpen(true)} aria-label={`Basket, ${count} items`}>
-          Basket{count ? ` (${count})` : ""}
-        </button>
       </div>
       <div className="fs-pills" role="group" aria-label="Category">
         <button type="button" className="fs-pill" aria-current={!cat ? "page" : undefined} onClick={() => setCat("")}>Everything</button>
