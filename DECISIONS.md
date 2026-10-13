@@ -545,7 +545,6 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Notify my lead:** everyone else gets this instead. It adds a flagged note to the task's comments and posts to Slack naming the division's leads.
 - **Employees entering what they bought:** they type what they paid for bought materials but don't see prices afterwards.
 
-<<<<<<< HEAD
 ## Steward property page tabs (2026-10-12)
 - **`/steward` property page has seven tabs:** Overview, Schedule, Maintenance, Budgets, Hospitality, Billing, Notes. Overview adds key numbers (steward, status, open work, budgets to approve, charged for work, next guests); the old Maintenance and Hospitality panels moved to their own tabs. Every read goes through a `my_property_*` function that checks `owns_lot()`, so only an active steward of that property sees it.
 - **Maintenance:** the log shows hours, materials (names and quantities, never what the crew paid) and before/after photos. Photos load through signed URLs; a storage policy lets a steward see photos of tasks on their own property marked owner-visible.
@@ -553,10 +552,9 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Budgets are a new thing:** `property_budgets` is a request from the team (Estate → lot → Steward tab) that the steward approves or declines, with an optional comment and an optional linked task. It is separate from the internal `task_budget_requests` (lead asks admin) and from Finance budgets. An answer is final; the team can withdraw a request only while it is pending. Nothing is paid or posted to Finance by approving.
 - **Notes:** `property_notes` is one shared thread per property; the steward and estate staff both write, each can remove their own (admins any). The steward's hospitality-listing notes (`lots.listing_notes`) stay on the Hospitality tab as before.
 - **Hospitality passes:** a stay's passes are the day or week passes held by the guest's contact whose start date falls within the stay. Stays without a linked contact show none.
-=======
+
 ## Booking a stay searches the CRM first (2026-10-12)
 
 - **Guest name is a contact search.** In the stay drawer, typing a guest name searches contacts by name, email or phone; picking one fills the name, email and phone and links the stay to that contact (`stays.contact_id`), so the stay shows on their profile. Search results follow the same CRM visibility rules as the rest of the app.
 - **No match, add them.** When nothing matches, a checkbox (on by default) offers to add the guest to the CRM when the stay is saved (source "Stay booking"). A matching email links the existing contact instead of making a duplicate. Admins and sales can add contacts; for other roles the stay still books and the message says the contact wasn't added.
 
->>>>>>> origin/main
