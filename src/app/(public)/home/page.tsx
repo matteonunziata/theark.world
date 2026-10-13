@@ -1,9 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { loadPublicLots, titledLotsLeft } from "@/lib/public-lots";
-import { Finite } from "../site/finite";
+import { BrochureForm } from "../site/forms";
 import { BROCHURE, Faq, SectionHead, SiteHero, SiteShell } from "../site/site-shell";
 import { HOME_FAQ } from "./home-faq";
+import "./home.css";
 
 export const metadata: Metadata = {
   title: { absolute: "The ARK — A regenerative village in Santa Teresa, Costa Rica" },
@@ -12,6 +13,8 @@ export const metadata: Metadata = {
 };
 
 const IMG = "/site/home";
+
+const FACTS = ["Full-service living", "Onsite education for kids", "Regenerative organic farm", "5 min to the beach"] as const;
 
 const DAILY = [
   ["Movement classes", "movement-classes-42e4cb"],
@@ -25,31 +28,53 @@ const DAILY = [
 
 const HOMES_NOW = ["the-ark-home-1-07a5e3", "the-ark-home-2-5fbc3f", "the-ark-home-3-f3f94f", "the-ark-home-4-7cb3e6", "the-ark-home-5-dab6fa"] as const;
 
-const FARM_PHOTOS = [
-  ["ark-farm-shop-shelves-stocked-wi-5292f4", "ARK Farm Shop shelves stocked with farm-made jars"],
-  ["the-ark-super-greens-jar-with-fr-f531cd", "The ARK Super Greens jar with fresh spinach and moringa"],
-  ["freshly-harvested-cucumbers-from-7bb095", "Freshly harvested cucumbers from the ARK Farm"],
-  ["fresh-spinach-from-the-ark-farm-f5fac5", "Fresh spinach from the ARK Farm"],
-  ["fresh-farm-eggs-turmeric-and-her-635803", "Fresh farm eggs, turmeric, and herbs from the ARK Farm"],
-  ["free-range-chicken-at-the-ark-fa-5f9e5d", "Free-range chicken at The ARK Farm"],
-] as const;
-
-const FARM_POINTS = [
-  ["Regenerative agriculture", "Restoring soil health and increasing local biodiversity through sustainable practices."],
-  ["Farm shop", "Fresh, organic produce delivered directly to the community kitchen and residents."],
-  ["Hands-on education", "Workshops and learning opportunities for both children and adults."],
-] as const;
-
-const ARKADIA_POINTS = [
-  ["Curiosity-led learning", "Child-directed exploration guided by natural rhythms and real-world experience."],
-  ["Fluid indoor/outdoor environments", "No walls between the classroom and the living world around it."],
-  ["A community of children, not a classroom", "Multi-age learning with meaningful relationships at the centre."],
-] as const;
-
-const HOUSE_POINTS = [
-  ["Deep work spaces", "Quiet areas designed for focus and uninterrupted productivity."],
-  ["Collaborative lounges", "Open environments for connection, brainstorming, and shared creation."],
-  ["Flexible memberships", "Passes ranging from day access to annual dedicated memberships."],
+const VILLAGE = [
+  {
+    n: "01 · The Farm",
+    title: "Food grown steps from your kitchen",
+    text: "Autonomy in practice: our own food, our own energy. Guided by permaculture, agroforestry and regenerative agriculture, the farm restores depleted soil, grows biodiversity and feeds the community.",
+    img: "ark-farm-shop-shelves-stocked-wi-5292f4",
+    alt: "ARK Farm Shop shelves stocked with farm-made jars",
+    points: [
+      ["Regenerative agriculture", "healthier soil, more life."],
+      ["Farm shop", "fresh organic produce for residents and the community kitchen."],
+      ["Hands-on education", "workshops for children and adults."],
+    ],
+    links: [["Visit the farm shop →", "/farm-shop"]],
+  },
+  {
+    n: "02 · For families",
+    title: "Arkadia, a centre for conscious learning",
+    text: "Where life and learning align. Children learn through exploration, real-world experience and meaningful relationships, moving freely between indoor and outdoor spaces.",
+    img: "children-doing-art-at-arkadia-b1b3e7",
+    alt: "Children doing art at Arkadia",
+    points: [
+      ["Curiosity-led learning", "guided by natural rhythms."],
+      ["No walls", "between the classroom and the living world."],
+      ["A community of children", "multi-age, with relationships at the centre."],
+    ],
+    links: [
+      ["Learn about Arkadia →", "/arkadia"],
+      ["Apply →", "https://arkadia.education/"],
+    ],
+    flip: true,
+  },
+  {
+    n: "03 · For creators & visionaries",
+    title: "The ARK House: work, nestled in nature",
+    text: "A sanctuary for creators, entrepreneurs and visionaries, with space for deep work, collaborative gatherings and quiet contemplation.",
+    img: "the-ark-house-inspiration-0bb0e1",
+    alt: "The ARK House",
+    points: [
+      ["Deep work spaces", "quiet, focused, uninterrupted."],
+      ["Collaborative lounges", "for connection and shared creation."],
+      ["Flexible memberships", "from a day pass to an annual dedicated desk."],
+    ],
+    links: [
+      ["Explore the ARK House →", "/ark-house"],
+      ["Membership →", "/ark-membership"],
+    ],
+  },
 ] as const;
 
 const PARTNERS = [
@@ -62,6 +87,15 @@ const COUNTRIES =
   "Argentina · Austria · Australia · Belgium · Brazil · Canada · Chile · Colombia · Costa Rica · Czech Republic · France · Germany · India · Israel · Kazakhstan · Lichtenstein · The Netherlands · USA · Switzerland";
 
 const k = (n: number) => (n >= 100000 ? `$${Math.round(n / 1000)}k` : `$${(n / 1000).toFixed(1)}k`);
+
+/** Internal paths go through next/link; full URLs open as plain links. */
+function A({ href, className, children }: { href: string; className?: string; children: React.ReactNode }) {
+  return href.startsWith("http") ? (
+    <a className={className} href={href} target="_blank" rel="noreferrer">{children}</a>
+  ) : (
+    <Link className={className} href={href}>{children}</Link>
+  );
+}
 
 export default async function HomePage() {
   const lots = await loadPublicLots();
@@ -76,247 +110,140 @@ export default async function HomePage() {
   const sharesFrom = cheapest((l) => l.kind === "fractional", 24900);
 
   return (
-    <SiteShell here="/home">
+    <SiteShell here="/home" brochure={false}>
       <SiteHero
+        className="hm-hero"
         eyebrow="Santa Teresa · Nicoya Peninsula · Costa Rica"
-        title="More Than A Home - A Whole Life"
+        title={
+          <>
+            More than a home.
+            <br />
+            <em>A whole life.</em>
+          </>
+        }
         sub="The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system."
         image={`${IMG}/hero-poster.jpg`}
         video={`${IMG}/hero.mp4`}
       >
         <Link className="btn btn-accent" href="/apply-stewardship">Become a steward</Link>
         <a className="btn btn-ghost-light" href={BROCHURE} download>Download brochure</a>
-        <Link className="btn btn-ghost-light" href="/ark-membership">Join as a member</Link>
-        <Link className="btn btn-ghost-light" href="/stay">Stay at The ARK</Link>
       </SiteHero>
 
-      <section className="sec">
+      <section className="sec dark hm-in">
         <div className="wrap">
-          <p className="hero-tag" style={{ color: "var(--eyebrow)" }}>Limited opportunity - only {left} titled lots left</p>
-          <div className="cards four">
-            {["Full-service living", "Onsite education for kids", "Regenerative organic farm", "5 min to the beach"].map((t) => (
-              <div key={t} className="card"><h3 style={{ fontSize: 20 }}>{t}</h3></div>
+          <div className="hm-facts">
+            {FACTS.map((t) => (
+              <p key={t}>{t}</p>
             ))}
+          </div>
+          <div>
+            <p className="hm-label" style={{ marginBottom: 20 }}>Three ways in</p>
+            <div className="hm-ways">
+              <Link className="hm-way" href="/apply-stewardship">
+                <span className="kicker">Live here</span>
+                <h3>Become a steward</h3>
+                <p>Own a home, a titled lot, or a fractional share. Only {left} titled lots left.</p>
+                <span className="go">Explore ownership →</span>
+              </Link>
+              <Link className="hm-way" href="/ark-membership">
+                <span className="kicker">Belong here</span>
+                <h3>Join as a member</h3>
+                <p>Cowork, train, eat and gather, without owning land.</p>
+                <span className="go">See membership →</span>
+              </Link>
+              <Link className="hm-way" href="/stay">
+                <span className="kicker">Try it first</span>
+                <h3>Stay at The ARK</h3>
+                <p>Book a guest stay or come to an event. Most residents visited first.</p>
+                <span className="go">Plan a visit →</span>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="sec panel">
+      <section className="sec" id="life">
         <div className="wrap">
-          <SectionHead eyebrow="Daily life at The ARK" title="Ordinary Days — Made Extraordinary">
-            Life at The ARK is rich and full by design. Every day brings movement, connection, creativity, and nourishment
-            — not as scheduled activities but as the natural rhythm of a community that has built its life this way on
-            purpose.
-          </SectionHead>
-          <div className="pcards four daily">
+          <div className="hm-head">
+            <SectionHead eyebrow="Daily life at The ARK" title={<>Ordinary days, <em>made extraordinary.</em></>}>
+              Movement, connection, creativity and nourishment. Not scheduled activities, but the natural rhythm of a
+              community that has built its life this way on purpose.
+            </SectionHead>
+          </div>
+          <div className="hm-daily">
             {DAILY.map(([name, img]) => (
-              <article key={name} className="pcard">
+              <figure key={name}>
                 <div className="ph">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={`${IMG}/${img}.webp`} alt={name} loading="lazy" />
                 </div>
-                <h3>{name}</h3>
-              </article>
+                <figcaption>{name}</figcaption>
+              </figure>
             ))}
           </div>
-          <p className="note">If you found your way here, you belong - stewards from all over the world</p>
-          <p className="note">{COUNTRIES}</p>
-          <div className="btn-row">
+          <div className="hm-belong">
+            <h3>If you found your way here, you belong.</h3>
+            <p>Stewards from {COUNTRIES}</p>
+          </div>
+          <div className="hm-actions">
             <Link className="btn btn-primary" href="/whats-on">View upcoming events</Link>
             <Link className="btn btn-ghost" href="/stay">Plan a visit</Link>
           </div>
         </div>
       </section>
 
-      <section className="sec">
+      <section className="sec panel hm-village" id="village">
         <div className="wrap">
-          <SectionHead eyebrow="Stewardship" title="Ways to be a steward of The ARK">
-            Whether you want to build your vision from the ground up, move into a finished home, or be a part-time steward —
-            there is a path into The ARK.
-          </SectionHead>
-          <div className="cards">
-            <div className="card">
-              <h3>Homes For Re-Sale</h3>
-              <span className="price">from {k(homesFrom)}</span>
-              <p>⌂ Move-in-ready villas with full community membership. Enjoy access to all shared spaces and the daily rhythm of life at The ARK.</p>
-              <ul className="checks">
-                <li>Casa Lilith — 232 m² · 3 bed · 2 bath · Pool · Solar</li>
-                <li>Casa Trinidad — 500 m² · 5 bed · 5 bath · Ocean &amp; jungle views</li>
-                <li>Tanit Estate — 700 m² · 7 bed · 6 bath · Pacific Ocean views</li>
-              </ul>
-              <Link className="btn btn-primary" href="/homes-for-sale">View all homes</Link>
-            </div>
-            <div className="card">
-              <h3>Titled Lots</h3>
-              <span className="price">from {k(lotsFrom)}</span>
-              <p>⚑ Only {left} lots remaining in stage 3 — price increases next stage</p>
-              <ul className="checks">
-                <li>Full freehold title in your name</li>
-                <li>Build your home to your design</li>
-                <li>Profit share rights</li>
-                <li>Discount on membership &amp; amenities</li>
-                <li>Rental managed by The ARK</li>
-              </ul>
-              <Link className="btn btn-primary" href="/titled-lot-ownership">Explore available lots</Link>
-            </div>
-            <div className="card">
-              <h3>Fractional Ownership</h3>
-              <span className="price">from {k(sharesFrom)}</span>
-              <p>✦ Ideal for singles and part-time residency.</p>
-              <ul className="checks">
-                <li>4 weeks on property per year</li>
-                <li>Fully furnished 2-bedroom Casita</li>
-                <li>1 share = 4 weeks per year at The ARK</li>
-                <li>Purchase of 12 shares = 1 full home</li>
-                <li>Profit sharing rights</li>
-                <li>Shares resellable</li>
-                <li>Rental managed by The ARK</li>
-              </ul>
-              <Link className="btn btn-primary" href="/fractional-ownership">Learn about FO</Link>
-            </div>
+          <div className="hm-head">
+            <SectionHead eyebrow="The village" title={<>Everything a good life needs, <em>within walking distance.</em></>} />
           </div>
-          <div className="gallery">
-            {HOMES_NOW.map((h, i) => (
-              <div key={h} className="g">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`${IMG}/${h}.webp`} alt={`The ARK Home ${i + 1}`} loading="lazy" />
-              </div>
-            ))}
-          </div>
-          <p className="note">* ARK resident home currently under construction</p>
-          <div className="quotes">
-            <figure className="quote">
-              <span className="stars" aria-label="Five stars">★★★★★</span>
-              <blockquote>
-                &ldquo;Moving to The ARK feels like I found heaven on earth, I believe the demand for this life will far exceed
-                the 100 families who can ever have it&rdquo;
-              </blockquote>
-              <figcaption>Sachin — USA · Entrepreneur · Full-time resident</figcaption>
-            </figure>
-          </div>
-          <div className="btn-row">
-            <Link className="btn btn-primary" href="/apply-stewardship">Become a steward</Link>
-          </div>
+          {VILLAGE.map((v) => (
+            <article key={v.n} className={`hm-article${"flip" in v ? " flip" : ""}`}>
+              {"flip" in v ? (
+                <>
+                  <Copy v={v} />
+                  <Media v={v} />
+                </>
+              ) : (
+                <>
+                  <Media v={v} />
+                  <Copy v={v} />
+                </>
+              )}
+            </article>
+          ))}
         </div>
       </section>
 
-      <section className="sec panel">
+      <section className="sec dark hm-story" id="story">
         <div className="wrap">
-          <SectionHead eyebrow="The farm" title="Food grown steps from your kitchen">
-            The ARK Farm is autonomy in practice. Our own food. Our own energy. It operates on the belief that nature has the
-            power to regenerate itself when given the right care. Guided by principles of permaculture, agroforestry, and
-            regenerative agriculture, we aim to restore depleted soil, increase biodiversity, and cultivate food that sustains
-            both people and the planet.
-          </SectionHead>
-          <div className="cards">
-            {FARM_POINTS.map(([t, d]) => (
-              <div key={t} className="card">
-                <h3>{t}</h3>
-                <p>{d}</p>
-              </div>
-            ))}
-          </div>
-          <div className="gallery">
-            {FARM_PHOTOS.map(([img, alt]) => (
-              <div key={img} className="g">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`${IMG}/${img}.webp`} alt={alt} loading="lazy" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="sec split">
-        <div className="wrap">
-          <div className="split-copy">
-            <p className="eyebrow">For families</p>
-            <h2>Arkadia school Center for Conscious Learning</h2>
-            <p>Where life and learning align — families become part of a thriving environment and education reflects the life they&apos;ve chosen.</p>
-            <p>
-              Arkadia replaces traditional schooling with a more natural approach. Children learn through exploration,
-              real-world experiences, and meaningful relationships — moving freely between indoor and outdoor environments.
-            </p>
-            <div className="btn-row">
-              <Link className="btn btn-primary" href="/arkadia">Learn more</Link>
-              <a className="btn btn-ghost" href="https://arkadia.education/" target="_blank" rel="noreferrer">Arkadia application</a>
+          <div className="hm-story-head">
+            <div>
+              <p className="eyebrow">The land</p>
+              <h2>From overgrazed pasture <em>to living ecosystem.</em></h2>
+            </div>
+            <div className="text">
+              <p>
+                For decades this land was grazed by cattle until it was depleted, left with barely 15 plant species.
+                Marat discovered it by chance in 2021, over breakfast in Santa Teresa, and saw what it could become. By
+                2022 The ARK was born.
+              </p>
+              <p>
+                The early years were hard: no sales, no outside funding, just conviction. The team built the permaculture
+                farm from scratch, and that period became the foundation.
+              </p>
+              <p>
+                One decision defines us more than any other. Joaquín Sánchez&apos;s family, stewards of this land since
+                1966, were offered 25% of all proceeds from The ARK&apos;s businesses. Not as a transaction, but in
+                recognition of a history worth honouring.
+              </p>
             </div>
           </div>
-          <div className="split-media portrait-media">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`${IMG}/children-doing-art-at-arkadia-b1b3e7.webp`} alt="Children doing art at Arkadia" loading="lazy" />
-          </div>
-        </div>
-        <div className="wrap" style={{ marginTop: 40 }}>
-          <div className="cards" style={{ width: "100%" }}>
-            {ARKADIA_POINTS.map(([t, d]) => (
-              <div key={t} className="card">
-                <h3>{t}</h3>
-                <p>{d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="sec split flip panel">
-        <div className="wrap">
-          <div className="split-copy">
-            <p className="eyebrow">For creators &amp; visionaries</p>
-            <h2>The ARK House (Coworking Space)</h2>
-            <p>
-              A sanctuary for creators, entrepreneurs, and visionaries to come together in an environment that nurtures both
-              productivity and well-being. Nestled within nature, it offers spaces for deep work, collaborative gatherings,
-              and quiet contemplation.
-            </p>
-            <div className="btn-row">
-              <Link className="btn btn-primary" href="/ark-house">Learn more</Link>
-              <Link className="btn btn-ghost" href="/ark-membership">The ARK membership</Link>
-            </div>
-          </div>
-          <div className="split-media">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`${IMG}/the-ark-house-inspiration-0bb0e1.webp`} alt="The ARK House Inspiration" loading="lazy" />
-          </div>
-        </div>
-        <div className="wrap" style={{ marginTop: 40 }}>
-          <div className="cards" style={{ width: "100%" }}>
-            {HOUSE_POINTS.map(([t, d]) => (
-              <div key={t} className="card">
-                <h3>{t}</h3>
-                <p>{d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="sec">
-        <div className="wrap">
-          <SectionHead eyebrow="The land" title="From overgrazed pasture to living ecosystem" />
-          <div className="split-copy" style={{ maxWidth: 760 }}>
-            <p>
-              This land has a story. For decades it was used for cattle grazing — until it was depleted, left with barely 15
-              plant species and little productive soil remaining.
-            </p>
-            <p>
-              Marat discovered it by chance in 2021, over breakfast in Santa Teresa. He saw past what it was to what it could
-              become. By 2022 The ARK was born.
-            </p>
-            <p>
-              The early years were hard. No sales, no outside funding — just conviction. That period became the foundation.
-              The team built the permaculture farm from scratch. Today the land supports over 400 plant species and a growing
-              community.
-            </p>
-            <p>
-              One decision defines what The ARK stands for more than any other: Joaquín Sánchez&apos;s family — stewards of
-              this land since 1966 — were offered 25% of all proceeds from The ARK&apos;s businesses. Not as a transaction. As a
-              recognition that this land has a history worth honoring.
-            </p>
-            <p>
-              87 residential lots, each a minimum of 5,000m². Fewer lots by design, so more land stays wild, restored, and
-              regenerating.
-            </p>
+          <div className="hm-stats">
+            <div><b>15 → 400+</b><span>plant species, then and now</span></div>
+            <div><b>87</b><span>residential lots, min. 5,000 m². Fewer by design, so more land stays wild.</span></div>
+            <div><b>25%</b><span>of business proceeds to the land&apos;s original stewards</span></div>
+            <div><b>100</b><span>families will ever call The ARK home</span></div>
           </div>
           <div className="gallery">
             {(
@@ -331,30 +258,180 @@ export default async function HomePage() {
               </div>
             ))}
           </div>
-          <h3>Supporting our local community</h3>
-          <p className="lede">
-            The ARK is committed to working with and supporting local organizations dedicated to conservation, community
-            development, and preserving the natural heritage of the Nicoya Peninsula.
-          </p>
-          <div className="partners">
-            {PARTNERS.map(([img, name]) => (
-              <div key={img} className="partner">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`${IMG}/${img}.webp`} alt={name} loading="lazy" />
-              </div>
-            ))}
+          <div className="hm-community">
+            <p>
+              We work alongside local organisations dedicated to conservation, community development and the natural
+              heritage of the Nicoya Peninsula.
+            </p>
+            <div className="logos">
+              {PARTNERS.map(([img, name]) => (
+                <div key={img} className="partner">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`${IMG}/${img}.webp`} alt={name} loading="lazy" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="sec panel">
+      <section className="sec hm-quote">
+        <blockquote>
+          <p>
+            &ldquo;Moving to The ARK feels like I found heaven on earth. I believe the demand for this life will far
+            exceed the 100 families who can ever have it.&rdquo;
+          </p>
+          <footer>Sachin — USA · Entrepreneur · Full-time resident</footer>
+        </blockquote>
+      </section>
+
+      <section className="sec" id="own">
         <div className="wrap">
-          <SectionHead eyebrow="Before you ask" title="The questions everyone asks first" />
+          <div className="hm-head">
+            <SectionHead eyebrow="Stewardship" title={<>Find your path <em>into The ARK.</em></>}>
+              Build from the ground up, move into a finished home, or join part-time. Every path includes full community
+              membership.
+            </SectionHead>
+          </div>
+          <div className="hm-plans">
+            <div className="card">
+              <span className="kicker">Part-time</span>
+              <h3>Fractional Ownership</h3>
+              <p><span className="from">from</span><span className="price">{k(sharesFrom)}</span></p>
+              <p>Ideal for singles and part-time residency.</p>
+              <ul className="checks">
+                <li>1 share = 4 weeks per year at The ARK</li>
+                <li>Fully furnished 2-bedroom casita</li>
+                <li>12 shares = 1 full home</li>
+                <li>Profit-sharing rights</li>
+                <li>Shares resellable · rental managed by The ARK</li>
+              </ul>
+              <Link className="btn btn-ghost" href="/fractional-ownership">Learn about fractional</Link>
+            </div>
+            <div className="card feature">
+              <span className="kicker">Build your vision · {left} left</span>
+              <h3>Titled Lots</h3>
+              <p><span className="from">from</span><span className="price">{k(lotsFrom)}</span></p>
+              <p>Stage 3 pricing. Price increases next stage.</p>
+              <ul className="checks">
+                <li>Full freehold title in your name</li>
+                <li>Build your home to your design</li>
+                <li>Profit share rights</li>
+                <li>Discount on membership &amp; amenities</li>
+                <li>Rental managed by The ARK</li>
+              </ul>
+              <Link className="btn btn-accent" href="/titled-lot-ownership">Explore available lots</Link>
+            </div>
+            <div className="card">
+              <span className="kicker">Move-in ready</span>
+              <h3>Homes For Re-Sale</h3>
+              <p><span className="from">from</span><span className="price">{k(homesFrom)}</span></p>
+              <p>Finished villas with full community membership.</p>
+              <ul className="checks">
+                <li><span><strong>Casa Lilith</strong><small>232 m² · 3 bed · 2 bath · Pool · Solar</small></span></li>
+                <li><span><strong>Casa Trinidad</strong><small>500 m² · 5 bed · 5 bath · Ocean &amp; jungle views</small></span></li>
+                <li><span><strong>Tanit Estate</strong><small>700 m² · 7 bed · 6 bath · Pacific Ocean views</small></span></li>
+              </ul>
+              <Link className="btn btn-ghost" href="/homes-for-sale">View all homes</Link>
+            </div>
+          </div>
+          <div className="hm-homes">
+            {HOMES_NOW.map((h, i) => (
+              <div key={h} className="g">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`${IMG}/${h}.webp`} alt={`The ARK Home ${i + 1}`} loading="lazy" />
+              </div>
+            ))}
+          </div>
+          <p className="note">* ARK resident home currently under construction</p>
+        </div>
+      </section>
+
+      <section className="sec hm-visit" id="visit">
+        <div className="box">
+          <div>
+            <p className="eyebrow">Come see for yourself</p>
+            <h2>Visit before you decide.</h2>
+            <p>Book a guest stay, come to an event, or join a founder webinar. Many of our residents visited once, and stayed.</p>
+          </div>
+          <div className="btn-row">
+            <Link className="btn btn-primary" href="/stay">Plan a visit</Link>
+            <Link className="btn btn-ghost" href="/whats-on">Upcoming events</Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="sec hm-faq" id="faq">
+        <div className="wrap">
+          <div className="head">
+            <p className="eyebrow">Before you ask</p>
+            <h2>The questions everyone asks first.</h2>
+            <Link className="hm-link" href="/faq">See all FAQs →</Link>
+          </div>
           <Faq items={HOME_FAQ} name="home" />
         </div>
       </section>
 
-      <Finite review />
+      <section className="sec dark hm-cta">
+        <div className="wrap">
+          <div className="lead">
+            <p className="eyebrow">Stage 3 · {left} lots remaining</p>
+            <h2>Finite opportunity. <em>Infinite happiness.</em></h2>
+            <p>Only 100 families will ever call The ARK home. Will yours be one of them?</p>
+            <Link className="btn btn-accent" href="/apply-stewardship">Become one of the 100</Link>
+            <p className="note">Prices increase with the next stage</p>
+            <blockquote>
+              <p>
+                &ldquo;We spent six months researching eco-communities across three continents. The ARK was the only one
+                where the founder answered the phone and the residents vouched without prompting.&rdquo;
+              </p>
+              <footer>Sophie &amp; Kai — Netherlands · Family · 2 children</footer>
+            </blockquote>
+          </div>
+          <div className="hm-brochure">
+            <div className="plan">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/site/shared/master-plan.webp" alt="The ARK Master Plan" loading="lazy" />
+            </div>
+            <h3>Get the stewardship brochure</h3>
+            <p>The vision, the land, the master plan, and every way to be part of The ARK.</p>
+            <BrochureForm href={BROCHURE} />
+          </div>
+        </div>
+      </section>
     </SiteShell>
+  );
+}
+
+type Item = (typeof VILLAGE)[number];
+
+function Media({ v }: { v: Item }) {
+  return (
+    <div className="media">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`${IMG}/${v.img}.webp`} alt={v.alt} loading="lazy" />
+    </div>
+  );
+}
+
+function Copy({ v }: { v: Item }) {
+  return (
+    <div className="copy">
+      <p className="eyebrow">{v.n}</p>
+      <h3>{v.title}</h3>
+      <p>{v.text}</p>
+      <ul className="hm-points">
+        {v.points.map(([b, t]) => (
+          <li key={b}>
+            <strong>{b}</strong> <span>— {t}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="hm-links">
+        {v.links.map(([label, href]) => (
+          <A key={label} className="hm-link" href={href}>{label}</A>
+        ))}
+      </div>
+    </div>
   );
 }
