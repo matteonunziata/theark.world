@@ -170,3 +170,5 @@
 
 - **Discounted rate for non-active stewards**: needs a pricing rule before it can be built. Price is based on when they bought their land; what are the date bands and the rate for each?
 - **Photo on passes bought online**: only passes issued by staff require a photo today. Should the portal or the pass page ask buyers for one too?
+
+- **Class cancellation cut-off.** Members can cancel a class or event booking any time before it starts, with no refund rule and no notice to staff. Should there be a cut-off (say 2 or 24 hours before), a refund rule for paid bookings, or a Slack note to the facilitator?

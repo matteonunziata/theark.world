@@ -5089,6 +5089,7 @@ export type Database = {
         Returns: string;
       };
       cancel_court_booking: { Args: { p_id: string }; Returns: undefined };
+      cancel_my_registration: { Args: { p_id: string }; Returns: undefined };
       court_class_at: {
         Args: { p_court: string; p_date: string; p_end: string; p_start: string };
         Returns: string;
