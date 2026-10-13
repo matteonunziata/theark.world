@@ -129,3 +129,5 @@
   .center { display: flex; justify-content: center; }
   .note { font-size: 16px; color: var(--muted-2); }
 }
+.sx .embed.tall { aspect-ratio: auto; height: 720px; background: var(--white); }
+.sx .host .wrap > .host-form:only-child { flex: 1 1 100%; max-width: 860px; margin: 0 auto; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
