@@ -1,0 +1,100 @@
+{
+  "path": "/tenet-records",
+  "url": "https://theark.world/tenet-records",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "TENET Records",
+  "sections": 5,
+  "iframes": [],
+  "ctas": [
+    {
+      "text": "BOOK A SESSION",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "BOOK A SESSION",
+      "href": null,
+      "type": "BUTTON"
+    }
+  ],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://tenetrecords.com/assets/studio-aerial-BoSbIanH.jpg",
+      "alt": "TENET Records",
+      "saved": "assets/studio-aerial-BoSbIanH-19a4f9.jpg"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/studio-hero-p3j0fzru.png",
+      "alt": "Studio Render",
+      "saved": "assets/studio-hero-p3j0fzru-8173e7.png"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/russell-BNIBUaBu.png",
+      "alt": "Russell Elevado",
+      "saved": "assets/russell-BNIBUaBu-1aaff6.png"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/jeff-Dc6UI7Vw.png",
+      "alt": "Jeff Claeys",
+      "saved": "assets/jeff-Dc6UI7Vw-c40312.png"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/studio-liveroom-UwN8524b.jpg",
+      "alt": "Live Room",
+      "saved": "assets/studio-liveroom-UwN8524b-4d704a.jpg"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/studio-control-DEHOF7mQ.jpg",
+      "alt": "Control Room",
+      "saved": "assets/studio-control-DEHOF7mQ-16852f.jpg"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/studio-iso-Dyq_UZ5k.jpg",
+      "alt": "ISO Booth",
+      "saved": "assets/studio-iso-Dyq_UZ5k-0e4468.jpg"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/studio-aerial-BoSbIanH.jpg",
+      "alt": "Aerial",
+      "saved": "assets/studio-aerial-BoSbIanH-19a4f9.jpg"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/project-voodoo-W2_mBeOh.jpg",
+      "alt": "Voodoo",
+      "saved": "assets/project-voodoo-W2_mBeOh-709ddd.jpg"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/project-fearless-movement-CXgbG0Xu.webp",
+      "alt": "Fearless Movement",
+      "saved": "assets/project-fearless-movement-CXgbG0Xu-b3cf2b.webp"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/project-mamas-gun-BS03WGf6.jpg",
+      "alt": "Mama's Gun",
+      "saved": "assets/project-mamas-gun-BS03WGf6-6a4e1c.jpg"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/project-placeholder-4-D-y6jZTo.jpg",
+      "alt": "Live at Montreux",
+      "saved": "assets/project-placeholder-4-D-y6jZTo-64ab7f.jpg"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/project-songs-in-a-minor-BLUuneed.jpg",
+      "alt": "Songs in A Minor",
+      "saved": "assets/project-songs-in-a-minor-BLUuneed-f4c2c7.jpg"
+    },
+    {
+      "src": "https://tenetrecords.com/assets/project-hard-groove-DJA09y2a.jpg",
+      "alt": "Hard Groove",
+      "saved": "assets/project-hard-groove-DJA09y2a-d4cf69.jpg"
+    }
+  ]
+}

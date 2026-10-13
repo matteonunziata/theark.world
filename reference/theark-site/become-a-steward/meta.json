@@ -1,0 +1,31 @@
+{
+  "path": "/become-a-steward",
+  "url": "https://theark.world/become-a-steward",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "Welcome to The ARK",
+  "sections": 0,
+  "iframes": [
+    "https://assets.cdn.filesafe.space/tu4rg77xCkfJdyFC3kVi/media/6a6d4776497cd89d24a47888.pdf#toolbar=1&navpanes=0"
+  ],
+  "ctas": [
+    {
+      "text": "Download Brochure (PDF)",
+      "href": "https://assets.cdn.filesafe.space/tu4rg77xCkfJdyFC3kVi/media/6a6d4776497cd89d24a47888.pdf",
+      "type": "A"
+    },
+    {
+      "text": "Open in new tab →",
+      "href": "https://assets.cdn.filesafe.space/tu4rg77xCkfJdyFC3kVi/media/6a6d4776497cd89d24a47888.pdf",
+      "type": "A"
+    }
+  ],
+  "forms": [],
+  "images": []
+}

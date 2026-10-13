@@ -1,0 +1,75 @@
+{
+  "path": "/homes-for-sale/2",
+  "url": "https://theark.world/homes-for-sale/2",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "Casa Trinidad",
+  "sections": 3,
+  "iframes": [],
+  "ctas": [
+    {
+      "text": "BACK TO LISTINGS",
+      "href": "/homes-for-sale",
+      "type": "A"
+    },
+    {
+      "text": "I'M INTERESTED",
+      "href": "/apply-stewardship",
+      "type": "A"
+    },
+    {
+      "text": "BECOME ONE OF THE 100",
+      "href": null,
+      "type": "BUTTON"
+    }
+  ],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://images.squarespace-cdn.com/content/v1/6244f8003484ae57c87c285d/d1a004d3-af63-4945-b711-dfb43f65211a/V+-+1+%281%29.jpeg",
+      "alt": "(background)",
+      "saved": "assets/V_-_1__281_29-ea481c.jpeg"
+    },
+    {
+      "src": "https://images.squarespace-cdn.com/content/v1/6244f8003484ae57c87c285d/d1a004d3-af63-4945-b711-dfb43f65211a/V+-+1+%281%29.jpeg",
+      "alt": "Casa Trinidad - View 1",
+      "saved": "assets/V_-_1__281_29-ea481c.jpeg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/d25a9199-e883-464d-b9ad-4c3e89bb8ae1.jpg",
+      "alt": "Casa Trinidad - View 2",
+      "saved": "assets/d25a9199-e883-464d-b9ad-4c3e89bb8ae1-53d392.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/75615ef6-1a74-4d44-82b8-ee26ecb8d0e4.jpg",
+      "alt": "Casa Trinidad - View 3",
+      "saved": "assets/75615ef6-1a74-4d44-82b8-ee26ecb8d0e4-83d1cb.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/fc26d3f9-f29e-4bb0-b911-cbb17cad8f15.jpg",
+      "alt": "Casa Trinidad - View 4",
+      "saved": "assets/fc26d3f9-f29e-4bb0-b911-cbb17cad8f15-14339c.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/dade2991-4b04-4cf7-9793-80f25213c1d6.jpg",
+      "alt": "Casa Trinidad - View 5",
+      "saved": "assets/dade2991-4b04-4cf7-9793-80f25213c1d6-14372e.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/11451222-a94d-4917-b01d-ffbc9966555d.jpg",
+      "alt": "Casa Trinidad - View 6",
+      "saved": "assets/11451222-a94d-4917-b01d-ffbc9966555d-4b31ac.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/3c0f103a-14ac-47bc-962f-8fdc92befa6f.jpg",
+      "alt": "The ARK Master Plan",
+      "saved": "assets/3c0f103a-14ac-47bc-962f-8fdc92befa6f-af7bfe.jpg"
+    }
+  ]
+}

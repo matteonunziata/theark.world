@@ -1,0 +1,42 @@
+{
+  "path": "/founder-bio",
+  "url": "https://theark.world/founder-bio",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "Founder",
+  "sections": 3,
+  "iframes": [
+    "https://www.youtube.com/embed/TuGb9duW168",
+    "https://www.youtube.com/embed/FejcVGKSNlQ",
+    "https://www.youtube.com/embed/6XTUxVfTomQ",
+    "https://www.youtube.com/embed/NbLjTySxnhE",
+    "https://www.youtube.com/embed/CXXnkbsksnE",
+    "https://www.youtube.com/embed/ePNbU7DKlRs"
+  ],
+  "ctas": [
+    {
+      "text": "@marat.omarov.unofficial",
+      "href": "https://instagram.com/marat.omarov.unofficial",
+      "type": "A"
+    }
+  ],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/assets/450ca2ec-2d46-4558-b6a8-61a6aa3e7cb5.jpg",
+      "alt": "(background)",
+      "saved": "assets/450ca2ec-2d46-4558-b6a8-61a6aa3e7cb5-d00246.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/6e9cf9ac-7d26-4e3c-9d4a-cceed33ce4c6.jpg",
+      "alt": "Marat Omarov",
+      "saved": "assets/6e9cf9ac-7d26-4e3c-9d4a-cceed33ce4c6-3af38f.jpg"
+    }
+  ]
+}

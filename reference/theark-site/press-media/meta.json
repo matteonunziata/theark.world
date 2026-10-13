@@ -1,0 +1,74 @@
+{
+  "path": "/press-media",
+  "url": "https://theark.world/press-media",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "Press & Media",
+  "sections": 3,
+  "iframes": [
+    "https://elink.io/embed/9640c1f?initialWidth=1152&childId=elink-0-2204a&parentTitle=The%20ARK%20-%20Regenerative%20Village%20in%20Santa%20Teresa%2C%20Costa%20Rica&parentUrl=https%3A%2F%2Ftheark.world%2Fpress-media"
+  ],
+  "ctas": [],
+  "forms": [
+    {
+      "heading": "The ARK is a story worth telling.",
+      "fields": [
+        {
+          "tag": "input",
+          "type": "text",
+          "name": null,
+          "label": "",
+          "placeholder": "Your full name",
+          "required": true
+        },
+        {
+          "tag": "input",
+          "type": "text",
+          "name": null,
+          "label": "",
+          "placeholder": "Your company or publication",
+          "required": false
+        },
+        {
+          "tag": "input",
+          "type": "email",
+          "name": null,
+          "label": "",
+          "placeholder": "your@email.com",
+          "required": true
+        },
+        {
+          "tag": "input",
+          "type": "tel",
+          "name": null,
+          "label": "",
+          "placeholder": "+1 000 000 0000",
+          "required": false
+        },
+        {
+          "tag": "textarea",
+          "type": "textarea",
+          "name": null,
+          "label": "",
+          "placeholder": "Who do you reach and what topics do you cover?",
+          "required": false
+        }
+      ],
+      "submit": "SEND INQUIRY",
+      "submitsTo": [
+        {
+          "method": "POST",
+          "url": "https://services.leadconnectorhq.com/hooks/tu4rg77xCkfJdyFC3kVi/webhook-trigger/c1b77e13-4428-492b-b7e6-f3e9d5e4ad23",
+          "body": "{\"first_name\":\"Test\",\"last_name\":\"\",\"email\":\"test@example.com\",\"companyName\":\"Test\",\"contact.whatsapp_number\":\"+15555550100\",\"contact.audience_description\":\"Test\",\"tags\":[\"press inquiry\"]}"
+        }
+      ]
+    }
+  ],
+  "images": []
+}

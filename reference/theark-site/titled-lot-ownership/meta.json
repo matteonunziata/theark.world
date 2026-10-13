@@ -1,0 +1,105 @@
+{
+  "path": "/titled-lot-ownership",
+  "url": "https://theark.world/titled-lot-ownership",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "You Dream It We Build It",
+  "sections": 7,
+  "iframes": [],
+  "ctas": [
+    {
+      "text": "BECOME A STEWARD",
+      "href": "/apply-stewardship",
+      "type": "A"
+    },
+    {
+      "text": "LOT PRICES",
+      "href": "/live-lot-prices",
+      "type": "A"
+    },
+    {
+      "text": "BECOME A STEWARD",
+      "href": "/apply-stewardship",
+      "type": "A"
+    },
+    {
+      "text": "LOT PRICES",
+      "href": "/live-lot-prices",
+      "type": "A"
+    },
+    {
+      "text": "$200/night",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "$300/night",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "$400/night",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "$500/night",
+      "href": null,
+      "type": "BUTTON"
+    },
+    {
+      "text": "BECOME A STEWARD",
+      "href": "/apply-stewardship",
+      "type": "A"
+    },
+    {
+      "text": "LOT PRICES",
+      "href": "/live-lot-prices",
+      "type": "A"
+    }
+  ],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/0015b5f0-8c8d-4ad0-b065-71af5fc741df.jpg",
+      "alt": "(background)",
+      "saved": "assets/0015b5f0-8c8d-4ad0-b065-71af5fc741df-d47dfc.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/dfbbb32e-882f-4931-afb8-85894cd48515.jpg",
+      "alt": "Casa La Sierra",
+      "saved": "assets/dfbbb32e-882f-4931-afb8-85894cd48515-f4ef1f.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/68399738-4851-4a58-b15f-283a791d7c7d.jpg",
+      "alt": "Single-storey retreat",
+      "saved": "assets/68399738-4851-4a58-b15f-283a791d7c7d-40b93b.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/6d019c96-a717-49de-a4c3-f6f94aa20473.jpg",
+      "alt": "Tanit Estate",
+      "saved": "assets/6d019c96-a717-49de-a4c3-f6f94aa20473-622de4.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/a6201f6d-25fc-473b-9692-a43fe1c0434a.jpg",
+      "alt": "Two-storey family home",
+      "saved": "assets/a6201f6d-25fc-473b-9692-a43fe1c0434a-f0a964.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/c489738c-3804-431c-b84e-ccc429b3f487.jpg",
+      "alt": "Ocean Vista Villa",
+      "saved": "assets/c489738c-3804-431c-b84e-ccc429b3f487-a5934f.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/c02bdf0f-3a18-47e1-aa29-ec30784715c9.jpg",
+      "alt": "Master Plan Map",
+      "saved": "assets/c02bdf0f-3a18-47e1-aa29-ec30784715c9-cfc323.jpg"
+    }
+  ]
+}

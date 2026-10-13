@@ -1,0 +1,75 @@
+{
+  "path": "/arkadia",
+  "url": "https://theark.world/arkadia",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "Space for conscious learning",
+  "sections": 4,
+  "iframes": [],
+  "ctas": [
+    {
+      "text": "APPLY",
+      "href": "https://arkadia.education/",
+      "type": "A"
+    },
+    {
+      "text": "JOIN WHATSAPP GROUP",
+      "href": "https://chat.whatsapp.com/FxEKA4we7GkEQ3RKr1W6En",
+      "type": "A"
+    },
+    {
+      "text": "APPLY NOW",
+      "href": "https://arkadia.education/",
+      "type": "A"
+    },
+    {
+      "text": "JOIN WHATSAPP GROUP",
+      "href": "https://chat.whatsapp.com/FxEKA4we7GkEQ3RKr1W6En",
+      "type": "A"
+    },
+    {
+      "text": "BECOME ONE OF THE 100",
+      "href": null,
+      "type": "BUTTON"
+    }
+  ],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/0c0bd297-82d1-4e76-bc92-938f79f7a1c6.jpg",
+      "alt": "(background)",
+      "saved": "assets/0c0bd297-82d1-4e76-bc92-938f79f7a1c6-85de58.jpg"
+    },
+    {
+      "src": "https://arkadia.education/images/pillar-1.webp",
+      "alt": "Self-Directed Learning",
+      "saved": "assets/pillar-1-09774e.webp"
+    },
+    {
+      "src": "https://arkadia.education/images/pillar-2.webp",
+      "alt": "Real-World Learning & Projects",
+      "saved": "assets/pillar-2-064686.webp"
+    },
+    {
+      "src": "https://arkadia.education/images/pillar-3.webp",
+      "alt": "Holistic Development",
+      "saved": "assets/pillar-3-094121.webp"
+    },
+    {
+      "src": "https://arkadia.education/images/pillar-4.webp",
+      "alt": "Guided by nature",
+      "saved": "assets/pillar-4-8fe85f.webp"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/3c0f103a-14ac-47bc-962f-8fdc92befa6f.jpg",
+      "alt": "The ARK Master Plan",
+      "saved": "assets/3c0f103a-14ac-47bc-962f-8fdc92befa6f-af7bfe.jpg"
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "path": "/contribute",
+  "url": "https://theark.world/contribute",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "Contribute to The ARK",
+  "sections": 0,
+  "iframes": [],
+  "ctas": [],
+  "forms": [
+    {
+      "heading": "",
+      "fields": [
+        {
+          "tag": "input",
+          "type": "text",
+          "name": "name",
+          "label": "Full Name *",
+          "placeholder": null,
+          "required": true
+        },
+        {
+          "tag": "input",
+          "type": "email",
+          "name": "email",
+          "label": "Email Address *",
+          "placeholder": null,
+          "required": true
+        },
+        {
+          "tag": "select",
+          "type": "select-one",
+          "name": null,
+          "label": "Phone number country",
+          "placeholder": null,
+          "required": false,
+          "options": [
+            "(country list, 246 options)"
+          ]
+        },
+        {
+          "tag": "input",
+          "type": "tel",
+          "name": null,
+          "label": "WhatsApp (Phone Number) *",
+          "placeholder": null,
+          "required": false
+        },
+        {
+          "tag": "input",
+          "type": "radio",
+          "name": null,
+          "label": "",
+          "placeholder": null,
+          "required": false
+        },
+        {
+          "tag": "input",
+          "type": "radio",
+          "name": null,
+          "label": "",
+          "placeholder": null,
+          "required": false
+        },
+        {
+          "tag": "input",
+          "type": "radio",
+          "name": null,
+          "label": "",
+          "placeholder": null,
+          "required": false
+        },
+        {
+          "tag": "textarea",
+          "type": "textarea",
+          "name": "tell-more",
+          "label": "Tell us more *",
+          "placeholder": "Please share details about your proposed contribution...",
+          "required": true
+        },
+        {
+          "tag": "textarea",
+          "type": "textarea",
+          "name": "inspiration",
+          "label": "What inspires you about contributing to The ARK? *",
+          "placeholder": "Tell us what draws you to our community...",
+          "required": true
+        },
+        {
+          "tag": "input",
+          "type": "url",
+          "name": "instagram",
+          "label": "Instagram",
+          "placeholder": "https://instagram.com/...",
+          "required": false
+        },
+        {
+          "tag": "input",
+          "type": "url",
+          "name": "tiktok",
+          "label": "TikTok",
+          "placeholder": "https://tiktok.com/@...",
+          "required": false
+        },
+        {
+          "tag": "input",
+          "type": "url",
+          "name": "youtube",
+          "label": "YouTube",
+          "placeholder": "https://youtube.com/...",
+          "required": false
+        },
+        {
+          "tag": "input",
+          "type": "url",
+          "name": "website",
+          "label": "Website",
+          "placeholder": "https://yourwebsite.com",
+          "required": false
+        },
+        {
+          "tag": "input",
+          "type": "url",
+          "name": "other-links",
+          "label": "Other Links",
+          "placeholder": "Any other relevant links...",
+          "required": false
+        }
+      ],
+      "submit": "SUBMIT INQUIRY",
+      "submitsTo": []
+    }
+  ],
+  "images": []
+}

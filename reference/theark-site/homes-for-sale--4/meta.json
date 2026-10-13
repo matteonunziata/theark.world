@@ -1,0 +1,75 @@
+{
+  "path": "/homes-for-sale/4",
+  "url": "https://theark.world/homes-for-sale/4",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "Ocean and Mountain View House",
+  "sections": 3,
+  "iframes": [],
+  "ctas": [
+    {
+      "text": "BACK TO LISTINGS",
+      "href": "/homes-for-sale",
+      "type": "A"
+    },
+    {
+      "text": "I'M INTERESTED",
+      "href": "/apply-stewardship",
+      "type": "A"
+    },
+    {
+      "text": "BECOME ONE OF THE 100",
+      "href": null,
+      "type": "BUTTON"
+    }
+  ],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://prd-mls-photos.fastly.propertybase.com/logic_mls/properties/photos/17696487962646773.jpg",
+      "alt": "(background)",
+      "saved": "assets/17696487962646773-75ef22.jpg"
+    },
+    {
+      "src": "https://prd-mls-photos.fastly.propertybase.com/logic_mls/properties/photos/17696487962646773.jpg",
+      "alt": "Ocean and Mountain View House - View 1",
+      "saved": "assets/17696487962646773-75ef22.jpg"
+    },
+    {
+      "src": "https://prd-mls-photos.fastly.propertybase.com/logic_mls/properties/photos/176964880548223.jpg",
+      "alt": "Ocean and Mountain View House - View 2",
+      "saved": "assets/176964880548223-99011b.jpg"
+    },
+    {
+      "src": "https://prd-mls-photos.fastly.propertybase.com/logic_mls/properties/photos/1769648803162828.jpg",
+      "alt": "Ocean and Mountain View House - View 3",
+      "saved": "assets/1769648803162828-99c609.jpg"
+    },
+    {
+      "src": "https://prd-mls-photos.fastly.propertybase.com/logic_mls/properties/photos/17696487916513264.jpg",
+      "alt": "Ocean and Mountain View House - View 4",
+      "saved": "assets/17696487916513264-85c10e.jpg"
+    },
+    {
+      "src": "https://prd-mls-photos.fastly.propertybase.com/logic_mls/properties/photos/17696488007735.jpg",
+      "alt": "Ocean and Mountain View House - View 5",
+      "saved": "assets/17696488007735-0dda86.jpg"
+    },
+    {
+      "src": "https://prd-mls-photos.fastly.propertybase.com/logic_mls/properties/photos/17696490047640316.jpg",
+      "alt": "Ocean and Mountain View House - View 6",
+      "saved": "assets/17696490047640316-ef4c34.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/3c0f103a-14ac-47bc-962f-8fdc92befa6f.jpg",
+      "alt": "The ARK Master Plan",
+      "saved": "assets/3c0f103a-14ac-47bc-962f-8fdc92befa6f-af7bfe.jpg"
+    }
+  ]
+}

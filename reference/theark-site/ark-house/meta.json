@@ -1,0 +1,50 @@
+{
+  "path": "/ark-house",
+  "url": "https://theark.world/ark-house",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "The ARK House",
+  "sections": 3,
+  "iframes": [],
+  "ctas": [
+    {
+      "text": "JOIN THE ARK MEMBERSHIP",
+      "href": null,
+      "type": "BUTTON"
+    }
+  ],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/ff358a5c-75ac-4af7-9a6f-3828dc93007f.png",
+      "alt": "(background)",
+      "saved": "assets/ff358a5c-75ac-4af7-9a6f-3828dc93007f-0bb0e1.png"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/27e39577-ce13-4166-bbb4-d610d711284e.png",
+      "alt": "The ARK House Inspiration 1",
+      "saved": "assets/27e39577-ce13-4166-bbb4-d610d711284e-20843b.png"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/64b1aade-e979-4551-9836-5b40bcd4e595.png",
+      "alt": "The ARK House Inspiration 2",
+      "saved": "assets/64b1aade-e979-4551-9836-5b40bcd4e595-1c2d2f.png"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/bfcd225c-72df-4e05-bfb5-14461125d97c.png",
+      "alt": "The ARK House Inspiration 3",
+      "saved": "assets/bfcd225c-72df-4e05-bfb5-14461125d97c-ec765d.png"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/b43ca986-92f9-4fbd-a9a6-d3699e864441.png",
+      "alt": "The ARK House Inspiration 4",
+      "saved": "assets/b43ca986-92f9-4fbd-a9a6-d3699e864441-84989f.png"
+    }
+  ]
+}

@@ -1,0 +1,260 @@
+{
+  "path": "/blog",
+  "url": "https://theark.world/blog",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "The ARK Blog",
+  "sections": 2,
+  "iframes": [],
+  "ctas": [
+    {
+      "text": "All Articles",
+      "href": "/blog",
+      "type": "A"
+    }
+  ],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/94d5d5da-98c2-4482-8903-05135d321fb5.png",
+      "alt": "The ARK Blog",
+      "saved": "assets/94d5d5da-98c2-4482-8903-05135d321fb5-60f811.png"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/64175115-4281-4b16-877d-547f4daa4e5d.webp",
+      "alt": "New Build Versus Resale Homes in Costa Rica",
+      "saved": "assets/64175115-4281-4b16-877d-547f4daa4e5d-3fa7e8.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/9528fcc4-649d-4d17-97e1-007483dfd7a0.webp",
+      "alt": "A Tropical Village Lifestyle Guide for Living Well",
+      "saved": "assets/9528fcc4-649d-4d17-97e1-007483dfd7a0-fc9c69.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/a1cfdf33-6b4a-414e-b132-d42b79ff1e7c.webp",
+      "alt": "Regenerative Housing Trends for a Whole Life",
+      "saved": "assets/a1cfdf33-6b4a-414e-b132-d42b79ff1e7c-240a39.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/59fe1f11-63a6-4162-a55f-8abeddc73c4b.webp",
+      "alt": "Top Features of Biophilic Home Design That Matter",
+      "saved": "assets/59fe1f11-63a6-4162-a55f-8abeddc73c4b-f2105f.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/f964dbf4-d309-4b4c-9f17-d1ece865f647.webp",
+      "alt": "A Santa Teresa Village Development Example",
+      "saved": "assets/f964dbf4-d309-4b4c-9f17-d1ece865f647-ae5f94.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/fe5cc754-076f-4efb-83f9-f371cfd07570.webp",
+      "alt": "Top Benefits of Village Ownership in Costa Rica",
+      "saved": "assets/fe5cc754-076f-4efb-83f9-f371cfd07570-d36380.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/3b281c1e-ef4a-4916-aa08-5817c1ac6b29.webp",
+      "alt": "How to Evaluate Tropical Home Design Well",
+      "saved": "assets/3b281c1e-ef4a-4916-aa08-5817c1ac6b29-bf22fb.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/7d19c4af-82fc-4b16-b6f0-192158015cfe.webp",
+      "alt": "Wellness Community in Costa Rica, Reimagined",
+      "saved": "assets/7d19c4af-82fc-4b16-b6f0-192158015cfe-69a93e.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/f99596c9-46cb-4dd3-b772-782cc92097d2.webp",
+      "alt": "Why Choose Nature Connected Housing in Costa Rica?",
+      "saved": "assets/f99596c9-46cb-4dd3-b772-782cc92097d2-4982b3.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/c243db76-acdc-4322-95d8-6dc1fd8cee78.webp",
+      "alt": "Can Second Homes Generate Income in Costa Rica?",
+      "saved": "assets/c243db76-acdc-4322-95d8-6dc1fd8cee78-bb5464.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/98890ba1-8d59-4fe6-a1cf-c90ef68f739d.webp",
+      "alt": "Fractional Ownership Versus Full Ownership: Which Fits?",
+      "saved": "assets/98890ba1-8d59-4fe6-a1cf-c90ef68f739d-915850.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/fd98f038-6028-4887-9bb5-e0ecff539690.webp",
+      "alt": "Wellness Real Estate Is a Better Way to Live",
+      "saved": "assets/fd98f038-6028-4887-9bb5-e0ecff539690-741647.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/b178af48-3164-45b4-bf5a-75015e058196.webp",
+      "alt": "Santa Teresa Versus Tamarindo Lifestyle",
+      "saved": "assets/b178af48-3164-45b4-bf5a-75015e058196-89f00d.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/6349c223-1e8f-42fd-bae1-521dc6b06e12.webp",
+      "alt": "Santa Teresa Neighborhood Review: Is It Right?",
+      "saved": "assets/6349c223-1e8f-42fd-bae1-521dc6b06e12-bf2625.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/048a24bf-c31f-4d4b-898d-6aeffecdc260.webp",
+      "alt": "Santa Teresa Property Ownership Guide for Buyers",
+      "saved": "assets/048a24bf-c31f-4d4b-898d-6aeffecdc260-958b90.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/255f56ac-0f9e-467d-9564-c1e47fe4b5f5.webp",
+      "alt": "Property Escrow Guide for Costa Rica Buyers",
+      "saved": "assets/255f56ac-0f9e-467d-9564-c1e47fe4b5f5-a9b05e.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/248ae6b7-19fa-4736-8d7c-1a04c78f3e67.webp",
+      "alt": "How Costa Rica Relocation Works for a Fuller Life",
+      "saved": "assets/248ae6b7-19fa-4736-8d7c-1a04c78f3e67-116321.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/f4ec854e-c327-4fec-8699-b330ade838d0.webp",
+      "alt": "A Costa Rica Homebuilder Review for Buyers",
+      "saved": "assets/f4ec854e-c327-4fec-8699-b330ade838d0-f9540a.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/7794846a-63cf-417d-bb98-859a2f591ed5.webp",
+      "alt": "Best Santa Teresa Luxury Properties, Reimagined",
+      "saved": "assets/7794846a-63cf-417d-bb98-859a2f591ed5-ab951f.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/fa73001a-2647-4a59-8a9e-39b81291f5e9.webp",
+      "alt": "Beachfront Property Is More Than a View",
+      "saved": "assets/fa73001a-2647-4a59-8a9e-39b81291f5e9-2504b0.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/1edf17b3-9906-457f-a956-f9ea28b3c355.webp",
+      "alt": "Freehold Versus Concession in Costa Rica",
+      "saved": "assets/1edf17b3-9906-457f-a956-f9ea28b3c355-74f652.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/5f9ffd4a-d3fb-4bd8-a359-0d5cd686705c.webp",
+      "alt": "How to Assess Coastal Property Risks Wisely",
+      "saved": "assets/5f9ffd4a-d3fb-4bd8-a359-0d5cd686705c-86c565.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/47e27aa9-75fd-40f7-ad6e-7f923fda8d9d.webp",
+      "alt": "How to Finance Overseas Luxury Property Wisely",
+      "saved": "assets/47e27aa9-75fd-40f7-ad6e-7f923fda8d9d-3179ab.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/2b706eac-5b05-4b2b-870d-dc130253e801.webp",
+      "alt": "A Guide to Regenerative Real Estate Living",
+      "saved": "assets/2b706eac-5b05-4b2b-870d-dc130253e801-57e698.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/c3fa4eb0-7353-4198-9382-36252304983c.webp",
+      "alt": "International Property Due Diligence, Clearly",
+      "saved": "assets/c3fa4eb0-7353-4198-9382-36252304983c-8cab1f.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/workflows/03c84e4c-1ff5-4e39-b165-b023944cad89.webp",
+      "alt": "8 of the Best Reasons to Own Abroad Today",
+      "saved": "assets/03c84e4c-1ff5-4e39-b165-b023944cad89-0a1a1a.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/7e396e0a-ba24-43c4-b253-6f42d31d0ed6.webp",
+      "alt": "Santa Teresa Versus Nosara Real Estate",
+      "saved": "assets/7e396e0a-ba24-43c4-b253-6f42d31d0ed6-3577bc.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/f83fd839-c347-48bd-86f4-6f51742a35f1.webp",
+      "alt": "Luxury Destination Home Buying Guide for Costa Rica",
+      "saved": "assets/f83fd839-c347-48bd-86f4-6f51742a35f1-42e12f.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/0d3c3de2-3607-47a3-b679-9343546ec61a.webp",
+      "alt": "Regenerative Villages vs Resort Communities",
+      "saved": "assets/0d3c3de2-3607-47a3-b679-9343546ec61a-a4e4af.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/bf4170dd-0fdd-4fab-9a51-931061c2d840.webp",
+      "alt": "How to Choose a Regenerative Village Residence",
+      "saved": "assets/bf4170dd-0fdd-4fab-9a51-931061c2d840-d7ac34.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/9844248a-eea3-4cb7-afee-300b996967a5.webp",
+      "alt": "Sustainable Luxury Homes Costa Rica Reimagined",
+      "saved": "assets/9844248a-eea3-4cb7-afee-300b996967a5-fb428b.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/bcd2651e-1581-4427-80bd-d8c640a8da69.webp",
+      "alt": "Are Tropical Homes Climate Resilient by Design?",
+      "saved": "assets/bcd2651e-1581-4427-80bd-d8c640a8da69-136f2b.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/9bc3b931-7fb7-4027-88d7-cec42c920a20.webp",
+      "alt": "What a Regenerative Community in Costa Rica Offers",
+      "saved": "assets/9bc3b931-7fb7-4027-88d7-cec42c920a20-614c1a.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/54bfa7e3-ee29-44bb-9b7d-3122166bc072.webp",
+      "alt": "Santa Teresa Costa Rica International Schools",
+      "saved": "assets/54bfa7e3-ee29-44bb-9b7d-3122166bc072-ce1dff.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/913c4148-3ad0-493c-a810-f5e5e2a42f55/e4c581be-6cc3-4683-9613-93a30e492d12.webp",
+      "alt": "Santa Teresa Costa Rica Remote Work, Reimagined",
+      "saved": "assets/e4c581be-6cc3-4683-9613-93a30e492d12-7e9733.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/2aa1f676-76ee-4173-8098-9045cedcfdd4/a0ecb2f5-75d2-43fe-95a9-d6a975e333fe.webp",
+      "alt": "Living in Santa Teresa Costa Rica, Honestly",
+      "saved": "assets/a0ecb2f5-75d2-43fe-95a9-d6a975e333fe-35f717.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/2aa1f676-76ee-4173-8098-9045cedcfdd4/7eeb81bf-f86f-4973-98ec-bb5d9b9c1a40.webp",
+      "alt": "How to Fly to Santa Teresa, Costa Rica Easily",
+      "saved": "assets/7eeb81bf-f86f-4973-98ec-bb5d9b9c1a40-f7d36e.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/2aa1f676-76ee-4173-8098-9045cedcfdd4/40ff79ee-5465-4731-bc17-f710e089fd58.webp",
+      "alt": "Is Santa Teresa, Costa Rica Safe for Living?",
+      "saved": "assets/40ff79ee-5465-4731-bc17-f710e089fd58-fefc70.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/2aa1f676-76ee-4173-8098-9045cedcfdd4/8650ac86-272b-4e91-a613-5174633892ed.webp",
+      "alt": "Costa Rica Investor Residency Through Real Estate",
+      "saved": "assets/8650ac86-272b-4e91-a613-5174633892ed-102e7a.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/2aa1f676-76ee-4173-8098-9045cedcfdd4/ce43d32f-52c2-4c06-b62b-7b9a647b9455.webp",
+      "alt": "Closing Costs When Buying Property in Costa Rica",
+      "saved": "assets/ce43d32f-52c2-4c06-b62b-7b9a647b9455-d8b8a3.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/2aa1f676-76ee-4173-8098-9045cedcfdd4/6c635b46-6d2f-4ce6-b3b2-043cb7936327.webp",
+      "alt": "Can Foreigners Buy Property in Costa Rica?",
+      "saved": "assets/6c635b46-6d2f-4ce6-b3b2-043cb7936327-cfddd3.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/2aa1f676-76ee-4173-8098-9045cedcfdd4/0847c626-18fd-4f80-b18c-c428ef375016.webp",
+      "alt": "Santa Teresa Costa Rica Cost of Living in 2026",
+      "saved": "assets/0847c626-18fd-4f80-b18c-c428ef375016-46c545.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/2aa1f676-76ee-4173-8098-9045cedcfdd4/51cff302-b9b6-47dd-b0a0-10c27a87c357.webp",
+      "alt": "Is a Costa Rica Second Home Right for You?",
+      "saved": "assets/51cff302-b9b6-47dd-b0a0-10c27a87c357-b7a9cd.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/2aa1f676-76ee-4173-8098-9045cedcfdd4/0a923e04-fcb6-4014-aa9e-5721bacf9af3.webp",
+      "alt": "Why Buy Property in Costa Rica for a Whole Life",
+      "saved": "assets/0a923e04-fcb6-4014-aa9e-5721bacf9af3-5ed458.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/2aa1f676-76ee-4173-8098-9045cedcfdd4/7532a94d-9712-4ddd-adb2-b849118aba5d.webp",
+      "alt": "Santa Teresa Costa Rica Real Estate, Reimagined",
+      "saved": "assets/7532a94d-9712-4ddd-adb2-b849118aba5d-d13d6c.webp"
+    },
+    {
+      "src": "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/2aa1f676-76ee-4173-8098-9045cedcfdd4/f041902c-7c31-4bdc-9114-2ad84eb42d16-1785107297408.webp",
+      "alt": "Costa Rica Real Estate for a Life Well Lived",
+      "saved": "assets/f041902c-7c31-4bdc-9114-2ad84eb42d16-178-32c8b5.webp"
+    }
+  ]
+}

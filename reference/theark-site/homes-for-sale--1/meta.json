@@ -1,0 +1,80 @@
+{
+  "path": "/homes-for-sale/1",
+  "url": "https://theark.world/homes-for-sale/1",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "Casa Lilith",
+  "sections": 4,
+  "iframes": [],
+  "ctas": [
+    {
+      "text": "BACK TO LISTINGS",
+      "href": "/homes-for-sale",
+      "type": "A"
+    },
+    {
+      "text": "VIEW HOMES",
+      "href": "/homes-for-sale",
+      "type": "A"
+    },
+    {
+      "text": "VIEW HOMES",
+      "href": "/homes-for-sale",
+      "type": "A"
+    },
+    {
+      "text": "BECOME ONE OF THE 100",
+      "href": null,
+      "type": "BUTTON"
+    }
+  ],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://images.squarespace-cdn.com/content/v1/6244f8003484ae57c87c285d/c89c3b26-b9c3-4ccb-9b42-24bd546eab90/Outdoor+terrace+and+garden+of+Casa+Lilith+with+ocean+view.jpeg",
+      "alt": "(background)",
+      "saved": "assets/Outdoor_terrace_and_garden_of_Casa_Lilit-9b3508.jpeg"
+    },
+    {
+      "src": "https://images.squarespace-cdn.com/content/v1/6244f8003484ae57c87c285d/c89c3b26-b9c3-4ccb-9b42-24bd546eab90/Outdoor+terrace+and+garden+of+Casa+Lilith+with+ocean+view.jpeg",
+      "alt": "Casa Lilith - View 1",
+      "saved": "assets/Outdoor_terrace_and_garden_of_Casa_Lilit-9b3508.jpeg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/120d34b5-d521-4827-a39d-eb3b9b90c1d0.jpg",
+      "alt": "Casa Lilith - View 2",
+      "saved": "assets/120d34b5-d521-4827-a39d-eb3b9b90c1d0-5d6b28.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/5d0e97c1-b796-4c58-8ad2-f8ad4a750ad4.jpg",
+      "alt": "Casa Lilith - View 3",
+      "saved": "assets/5d0e97c1-b796-4c58-8ad2-f8ad4a750ad4-be99d1.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/1b0f7089-606f-44fc-9006-942fd9f5706f.jpg",
+      "alt": "Casa Lilith - View 4",
+      "saved": "assets/1b0f7089-606f-44fc-9006-942fd9f5706f-f387fe.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/f9d6c4bf-fa62-425a-9c34-38563b72016b.jpg",
+      "alt": "Casa Lilith - View 5",
+      "saved": "assets/f9d6c4bf-fa62-425a-9c34-38563b72016b-b27f6c.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/1e3a3000-055b-40d4-b048-7eac0e38252d.jpg",
+      "alt": "Casa Lilith - View 6",
+      "saved": "assets/1e3a3000-055b-40d4-b048-7eac0e38252d-b11e8e.jpg"
+    },
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/attachments/3c0f103a-14ac-47bc-962f-8fdc92befa6f.jpg",
+      "alt": "The ARK Master Plan",
+      "saved": "assets/3c0f103a-14ac-47bc-962f-8fdc92befa6f-af7bfe.jpg"
+    }
+  ]
+}

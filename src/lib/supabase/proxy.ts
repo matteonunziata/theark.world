@@ -42,6 +42,11 @@ export async function updateSession(request: NextRequest, rewriteTo?: string) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // /arkadia is the school's staff area. Anyone who isn't signed in sees the public Arkadia page at the same address.
+  if (!user && request.nextUrl.pathname === "/arkadia") {
+    return NextResponse.rewrite(new URL("/about-arkadia", request.url), { request });
+  }
+
   // Facilitators have their own sign-in page.
   if (!user && request.nextUrl.pathname.startsWith("/classes")) {
     return NextResponse.redirect(new URL("/facilitator", request.url));

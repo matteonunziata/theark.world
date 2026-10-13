@@ -1,0 +1,24 @@
+{
+  "path": "/faq",
+  "url": "https://theark.world/faq",
+  "title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:title": "The ARK - Regenerative Village in Santa Teresa, Costa Rica",
+  "og:description": "The ARK is a prototype for the future of human settlement. A village where people, nature, and enterprise form one regenerative living system.",
+  "og:image": "https://vibe.filesafe.space/1776339959982732737/attachments/6593646e-ec00-4c5b-aaae-23f96f25d7e4.jpg",
+  "og:type": "website",
+  "og:url": "/",
+  "canonical": null,
+  "h1": "Frequently Asked Questions",
+  "sections": 3,
+  "iframes": [],
+  "ctas": [],
+  "forms": [],
+  "images": [
+    {
+      "src": "https://vibe.filesafe.space/1776339959982732737/assets/7f9d936d-13a1-4cf6-b498-039b060e00e6.jpg",
+      "alt": "(background)",
+      "saved": "assets/7f9d936d-13a1-4cf6-b498-039b060e00e6-fde7d9.jpg"
+    }
+  ]
+}

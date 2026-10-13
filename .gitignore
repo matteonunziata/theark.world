@@ -44,3 +44,7 @@ next-env.d.ts
 
 # Supabase CLI scratch
 supabase/.temp/
+
+# Captured from theark.world: screenshots and raw downloads stay local
+reference/theark-site/*/screenshot.png
+reference/theark-site/*/assets/
