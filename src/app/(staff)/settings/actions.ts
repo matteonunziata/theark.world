@@ -69,13 +69,25 @@ export async function saveTeamMember(
     phone: field(data, "phone"),
     start_date: field(data, "start_date"),
   };
-  const { error } = id
-    ? await supabase.from("team_members").update(row).eq("id", id)
-    : await supabase.from("team_members").insert(row);
+  const { data: saved, error } = id
+    ? await supabase.from("team_members").update(row).eq("id", id).select("id").single()
+    : await supabase.from("team_members").insert(row).select("id").single();
   if (error) {
     if (error.code === "23505") return fail("Someone on the team already has that email.");
     return fail(friendly(error));
   }
+  // Hourly rates live in their own table that only admins and the division lead can read.
+  const rate = (k: string) => {
+    const n = Number(field(data, k));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  const { error: rateError } = await supabase.from("staff_rates").upsert({
+    staff_id: saved.id,
+    pay_rate: rate("pay_rate"),
+    bill_rate: rate("bill_rate"),
+    updated_at: new Date().toISOString(),
+  });
+  if (rateError) return fail(friendly(rateError));
   revalidatePath("/settings", "layout");
   return ok(id ? "Changes saved" : `${name} added`);
 }

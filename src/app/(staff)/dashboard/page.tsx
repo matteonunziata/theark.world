@@ -32,7 +32,7 @@ export default async function DashboardPage() {
       // Open to-dos plus anything finished today, so a tick doesn't vanish.
       supabase
         .from("tasks")
-        .select("id, title, priority, due_date, status, location, completed_at")
+        .select("id, title, priority, due_date, status, location, completed_at, start_time")
         .eq("assignee_id", staff.id)
         .or(`status.neq.done,completed_at.gte.${today}`)
         .order("due_date", { ascending: true, nullsFirst: false })
@@ -68,15 +68,19 @@ export default async function DashboardPage() {
         <p>One place to run the community, the club, the land, the farm, and the team.</p>
       </section>
       <TodoList todos={todos ?? []} today={today} />
-      <h2 className="section-title">At a glance</h2>
-      <div className="stats">
-        {stats.map(([v, l]) => (
-          <div className="stat" key={l}>
-            <b>{v}</b>
-            <span>{l}</span>
+      {staff.role !== "crew" && (
+        <>
+          <h2 className="section-title">At a glance</h2>
+          <div className="stats">
+            {stats.map(([v, l]) => (
+              <div className="stat" key={l}>
+                <b>{v}</b>
+                <span>{l}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   );
 }

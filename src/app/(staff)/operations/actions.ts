@@ -30,7 +30,8 @@ function propertyWork(data: FormData) {
   const cost = Number(field(data, "cost"));
   return {
     maint_category: MAINT.includes(cat ?? "") ? cat : "repair",
-    cost: Number.isFinite(cost) && cost > 0 ? cost : null,
+    // Employees never see the cost field, so leave what's saved alone when it isn't sent.
+    ...(data.has("cost") ? { cost: Number.isFinite(cost) && cost > 0 ? cost : null } : {}),
     currency: "CRC",
     done_by: field(data, "done_by"),
     owner_visible: data.get("owner_visible") === "on",
@@ -57,6 +58,17 @@ export async function saveTask(
 
   const title = field(data, "title");
   if (!title) return fail("Enter a title.");
+  // Where: an amenity, or a lot/house (which puts it in that property's log and calendar).
+  const where = field(data, "where") === "lot" ? "lot" : field(data, "where") === "amenity" ? "amenity" : "none";
+  const lotId = where === "lot" ? field(data, "lot_id") : null;
+  const amenityId = where === "amenity" ? field(data, "amenity_id") : null;
+  if (where === "lot" && !lotId) return fail("Choose the lot or house.");
+  if (where === "lot" && !field(data, "due_date")) return fail("Pick a date so it shows on the property’s calendar.");
+  const amenityName = amenityId
+    ? ((await supabase.from("amenities").select("name").eq("id", amenityId).maybeSingle()).data?.name ?? null)
+    : null;
+  const hours = Number(field(data, "planned_hours"));
+  data.set("lot_id", lotId ?? "");
   const row = {
     title,
     description: field(data, "description"),
@@ -65,10 +77,13 @@ export async function saveTask(
     priority: pick(PRIORITIES, field(data, "priority"), "medium"),
     kind: pick(TASK_KINDS, field(data, "kind"), "task"),
     due_date: field(data, "due_date"),
-    location: field(data, "location"),
+    location: amenityName ?? (where === "none" ? field(data, "location") : null),
+    amenity_id: amenityId,
+    planned_hours: hours > 0 ? hours : null,
+    start_time: field(data, "start_time"),
     status: pick(STATUSES, field(data, "status"), "backlog"),
     // Work on a property: shows in that property's maintenance log.
-    lot_id: field(data, "lot_id"),
+    lot_id: lotId,
     ...propertyWork(data),
   };
   const { data: before } = id

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
 import { useToast } from "@/components/toast";
-import { dueClass, dueLabel, priName } from "@/lib/tasks";
+import { dueClass, dueLabel, fmtStart, priName } from "@/lib/tasks";
 import { addTodo, setTaskStatus } from "../operations/actions";
 
 type Todo = {
@@ -13,6 +13,7 @@ type Todo = {
   due_date: string | null;
   status: string;
   location: string | null;
+  start_time?: string | null;
 };
 
 /** The signed-in person's open tasks, as a checklist. */
@@ -75,7 +76,7 @@ export function TodoList({ todos, today }: { todos: Todo[]; today: string }) {
             <li key={t.id} className={t.status === "done" ? "done" : ""}>
               <label>
                 <input type="checkbox" checked={t.status === "done"} onChange={() => check(t)} />
-                <span className="t">{t.title}</span>
+                <Link className="t" href={`/operations/tasks/${t.id}`}>{t.title}</Link>
               </label>
               <span className="meta">
                 {t.priority !== "medium" && t.status !== "done" && (
@@ -87,6 +88,7 @@ export function TodoList({ todos, today }: { todos: Todo[]; today: string }) {
                 {t.due_date && t.status !== "done" && (
                   <span className={`due ${dueClass(t.due_date, t.status, today)}`}>
                     {dueLabel(t.due_date, today)}
+                    {t.start_time ? `, ${fmtStart(t.start_time)}` : ""}
                   </span>
                 )}
               </span>
