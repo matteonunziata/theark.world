@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArkFonts } from "@/components/ark-fonts";
 import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
+import { BrochureForm } from "./forms";
 import "../whats-on/events.css";
 import "./site.css";
 
@@ -16,7 +17,9 @@ const LINKS = [
 ] as const;
 
 /** Nav, page frame and footer shared by the information pages. Same markup and classes as Stay and Events. */
-export async function SiteShell({ children, here }: { children: React.ReactNode; here: string }) {
+export const BROCHURE = "/site/brochure/the-ark-stewardship-brochure.pdf";
+
+export async function SiteShell({ children, here, brochure = true }: { children: React.ReactNode; here: string; brochure?: boolean }) {
   const { memberId, staff } = await getViewer();
   return (
     <main className="evp sx">
@@ -48,6 +51,17 @@ export async function SiteShell({ children, here }: { children: React.ReactNode;
         </nav>
       </header>
       {children}
+      {brochure && (
+        <section className="host sec white">
+          <div className="wrap">
+            <div className="host-copy">
+              <h2>Become a Steward</h2>
+              <p>Download our comprehensive brochure to learn more about the vision, the land, and how you can be part of The ARK.</p>
+            </div>
+            <BrochureForm href={BROCHURE} />
+          </div>
+        </section>
+      )}
       <footer className="dark">
         <div className="wrap">
           <span className="brand">
