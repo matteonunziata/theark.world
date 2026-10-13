@@ -1077,7 +1077,12 @@ export async function pushOrder(sb: Sb, orderId: string) {
     if (o.shopify_order_id) return;
     const i = await getIntegration(sb);
     if (!ready(i)) return fail("Shopify isn’t connected, so this order was not sent. Pick it from the ledger or send it by hand.");
-    const { data: c } = await sb.from("contacts").select("name, email").eq("id", o.contact_id).maybeSingle();
+    const { data: found } = o.contact_id
+      ? await sb.from("contacts").select("name, email").eq("id", o.contact_id).maybeSingle()
+      : { data: null };
+    // A guest on the public shop has no contact, only the name and email typed at checkout.
+    const web = !!o.guest_email;
+    const c = web ? { name: o.guest_name ?? found?.name ?? "", email: o.guest_email } : found;
     const token = await tokenFor(sb, i);
     const [first, ...rest] = (c?.name ?? "").trim().split(/\s+/).filter(Boolean);
     const money = (n: number) => ({ shopMoney: { amount: n.toFixed(2), currencyCode: o.currency } });
@@ -1097,9 +1102,9 @@ export async function pushOrder(sb: Sb, orderId: string) {
           financialStatus: "PAID",
           lineItems: lines.map((l) => ({ variantId: `gid://shopify/ProductVariant/${l.id}`, quantity: l.qty, priceSet: money(l.unit) })),
           transactions: [{ kind: "SALE", status: "SUCCESS", gateway: "Stripe (ARK OS)", amountSet: money(total) }],
-          tags: ["ark-portal", "pickup", ...(o.discount_percent > 0 ? [`member${o.discount_percent}`] : [])],
-          note: `Paid in the ARK member portal. Pick up at The ARK.${o.discount_percent > 0 ? ` Member discount ${o.discount_percent}% already taken off each price.` : ""} ARK OS order ${o.id}.`,
-          sourceName: "ark-portal",
+          tags: [web ? "ark-web" : "ark-portal", "pickup", ...(o.discount_percent > 0 ? [`member${o.discount_percent}`] : [])],
+          note: `Paid in the ${web ? "ARK public farm shop" : "ARK member portal"}. Pick up at The ARK.${o.discount_percent > 0 ? ` Member discount ${o.discount_percent}% already taken off each price.` : ""} ARK OS order ${o.id}.`,
+          sourceName: web ? "ark-web" : "ark-portal",
         },
         options: { inventoryBehaviour: "DECREMENT_IGNORING_POLICY", sendReceipt: false, sendFulfillmentReceipt: false },
       },
