@@ -78,7 +78,7 @@ export default async function PaymentDone({ searchParams }: PageProps<"/pay/done
   // A meal (breakfast, lunch) is paid first: members go straight back to the portal.
   if (r.kind === "ticket" && r.meta.held && (memberId || staff)) redirect("/portal?paid=1");
   // A farm shop order from the portal returns to the shop, which empties the basket.
-  if (r.kind === "shop" && memberId) redirect("/portal/shop?paid=1");
+  if (r.kind === "shop" && memberId && !r.meta.web) redirect("/portal/shop?paid=1");
 
   const paid = `${fmtAmount(r.amount, r.currency)} paid.`;
   const admin = createAdminClient();
@@ -112,7 +112,7 @@ export default async function PaymentDone({ searchParams }: PageProps<"/pay/done
         <p className="muted">
           {paid} Your order is in. Pick it up at The ARK; we’ll have it ready.{emailConfigured() ? " Your receipt is in your inbox." : ""}
         </p>
-        <p><Link className="btn primary" href="/portal/shop?paid=1">Back to the shop</Link></p>
+        <p><Link className="btn primary" href={r.meta.web ? "/farm-shop?paid=1" : "/portal/shop?paid=1"}>Back to the shop</Link></p>
       </>
     ));
   }

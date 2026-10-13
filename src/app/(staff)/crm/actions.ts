@@ -303,6 +303,34 @@ export async function setStage(
   return ok(stage ? "Stage updated" : "Removed from pipeline");
 }
 
+export async function saveStewardshipFields(
+  contactId: string,
+  input: { tags: string; visit_date: string; tafo_choice: string },
+): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("admin", "sales");
+  const tags = [
+    ...new Set(
+      input.tags
+        .split(",")
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ];
+  if (input.visit_date && !/^\d{4}-\d{2}-\d{2}$/.test(input.visit_date))
+    return fail("Enter a valid visit date.");
+  const { error } = await supabase
+    .from("contacts")
+    .update({
+      tags,
+      visit_date: input.visit_date || null,
+      tafo_choice: input.tafo_choice.trim() || null,
+    })
+    .eq("id", contactId);
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok("Saved");
+}
+
 export async function enroll(contactId: string, sequenceId: string) {
   const { supabase } = await staffOrThrow("admin", "sales");
   const { error } = await supabase

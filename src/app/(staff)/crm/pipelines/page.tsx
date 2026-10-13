@@ -9,7 +9,7 @@ export default async function PipelinesPage() {
   const [{ data: contacts }, { data: stages }] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, name, tier, location, source, lot")
+      .select("id, name, tier, location, source, lot, visit_date, tafo_choice")
       .order("name"),
     supabase.from("contact_stages").select("contact_id, pipeline, stage"),
   ]);

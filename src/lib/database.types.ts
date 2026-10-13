@@ -824,6 +824,9 @@ export type Database = {
           utm_medium: string | null
           utm_source: string | null
           waitlist_at: string | null
+          tags: string[]
+          visit_date: string | null
+          tafo_choice: string | null
         }
         Insert: {
           tilopay_card_token?: string | null
@@ -865,6 +868,9 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           waitlist_at?: string | null
+          tags?: string[]
+          visit_date?: string | null
+          tafo_choice?: string | null
         }
         Update: {
           tilopay_card_token?: string | null
@@ -906,6 +912,9 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           waitlist_at?: string | null
+          tags?: string[]
+          visit_date?: string | null
+          tafo_choice?: string | null
         }
         Relationships: [
           {
@@ -3031,10 +3040,12 @@ export type Database = {
       }
       portal_shop_orders: {
         Row: {
-          contact_id: string
+          contact_id: string | null
           created_at: string
           currency: string
           discount_percent: number
+          guest_email: string | null
+          guest_name: string | null
           id: string
           lines: Json
           paid_at: string | null
@@ -3048,10 +3059,12 @@ export type Database = {
           total: number
         }
         Insert: {
-          contact_id: string
+          contact_id?: string | null
           created_at?: string
           currency?: string
           discount_percent?: number
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           lines: Json
           paid_at?: string | null
@@ -3065,10 +3078,12 @@ export type Database = {
           total: number
         }
         Update: {
-          contact_id?: string
+          contact_id?: string | null
           created_at?: string
           currency?: string
           discount_percent?: number
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           lines?: Json
           paid_at?: string | null
@@ -5804,7 +5819,21 @@ export type Database = {
       };
       record_shop_order_paid: {
         Args: { p_order: string; p_session: string; p_intent: string };
-        Returns: { created: boolean; contact_id: string }[];
+        Returns: { created: boolean; contact_id: string | null }[];
+      };
+      public_shop_catalog: {
+        Args: never;
+        Returns: {
+          external_id: string;
+          name: string;
+          product_group: string;
+          variant: string | null;
+          category: string;
+          price: number;
+          image_url: string | null;
+          description: string | null;
+          web_url: string | null;
+        }[];
       };
       shop_catalog: {
         Args: never;

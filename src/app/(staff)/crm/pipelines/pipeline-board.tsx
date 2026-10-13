@@ -13,6 +13,8 @@ type Person = {
   location: string | null;
   source: string | null;
   lot: string | null;
+  visit_date: string | null;
+  tafo_choice: string | null;
 };
 type StageRow = { contact_id: string; pipeline: string; stage: string };
 
@@ -110,9 +112,17 @@ export function PipelineBoard({
                         ? c.tier
                           ? tierName(c.tier)
                           : c.location || c.source || ""
-                        : c.lot
-                          ? `Lot ${c.lot}`
-                          : c.location || ""}
+                        : pipe.startsWith("stewardship")
+                          ? [
+                              c.lot ? `Lot ${c.lot}` : "",
+                              c.visit_date ? `Visit ${c.visit_date}` : "",
+                              c.tafo_choice ? `TAFO ${c.tafo_choice}` : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" · ") || c.location || ""
+                          : c.lot
+                            ? `Lot ${c.lot}`
+                            : c.location || ""}
                     </span>
                   </button>
                 ))}

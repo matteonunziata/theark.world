@@ -47,6 +47,27 @@ export const PIPELINES = {
       ["closed", "Closed"],
     ],
   },
+  stewardship_application: {
+    name: "Stewardship application",
+    stages: [
+      ["lead", "Lead"],
+      ["applying", "Applying"],
+      ["call_booked", "Call booked"],
+      ["visit_planning", "Visit planning"],
+      ["visited", "Visited"],
+      ["lot_chosen", "Lot chosen"],
+    ],
+  },
+  stewardship_purchase: {
+    name: "Stewardship purchase",
+    stages: [
+      ["marat_intro", "Marat intro"],
+      ["marat_review", "Marat review"],
+      ["kyc", "KYC"],
+      ["agreements_out", "Agreements out"],
+      ["due_diligence", "Due diligence"],
+    ],
+  },
 } as const;
 
 export type PipelineKey = keyof typeof PIPELINES;
