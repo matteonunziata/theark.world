@@ -134,3 +134,9 @@
 .sx .split-media.portrait-media { flex: 0 1 380px; height: auto; }
 .sx .split-media.portrait-media img { height: auto; }
 .sx .split .wrap > .split-copy:only-child { flex-basis: 760px; max-width: 760px; }
+.sx .pcard.card .ph { width: 100%; }
+.sx .pcard.card { min-width: 0; flex: initial; }
+.sx .pcard.card .tag { font-size: 12px; }
+.sx .card .eyebrow { font-size: 13px; }
+.sx .cards.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 560px) { .sx .cards.two { grid-template-columns: 1fr; } }
