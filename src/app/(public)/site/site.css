@@ -199,3 +199,8 @@
 .sx .tbl tbody tr.on:hover td { background: var(--panel); }
 .sx .pcards.articles .ph { height: auto; aspect-ratio: 4 / 3; }
 .sx .pcards.articles h3 { font-size: 22px; }
+.sx .pcards.daily .ph { height: auto; aspect-ratio: 4 / 5; }
+.sx .pcards.daily h3 { font-size: 20px; }
+.sx .partners { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
+.sx .partner { background: var(--white); border: 0.5px solid var(--hairline); border-radius: var(--radius-box); padding: 24px 32px; height: 120px; display: flex; align-items: center; justify-content: center; min-width: 220px; }
+.sx .partner img { max-height: 72px; width: auto; max-width: 200px; object-fit: contain; }

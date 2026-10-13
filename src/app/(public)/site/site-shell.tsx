@@ -139,6 +139,19 @@ export function Band({ title, children, actions }: { title: string; children?: R
   );
 }
 
+/** An answer's paragraphs; runs of lines starting with a bullet become one list. */
+function blocks(answer: string): (string | string[])[] {
+  const out: (string | string[])[] = [];
+  for (const para of answer.split(/\n\s*\n/)) {
+    const item = para.startsWith("•") ? para.replace(/^•\s*/, "") : null;
+    const last = out[out.length - 1];
+    if (item !== null && Array.isArray(last)) last.push(item);
+    else if (item !== null) out.push([item]);
+    else out.push(para);
+  }
+  return out;
+}
+
 /** Question and answer pairs, one open at a time (Memberships FAQ). */
 export function Faq({ items, name = "faq" }: { items: readonly (readonly [string, string])[]; name?: string }) {
   return (
@@ -146,7 +159,17 @@ export function Faq({ items, name = "faq" }: { items: readonly (readonly [string
       {items.map(([q, a]) => (
         <details key={q} name={name}>
           <summary>{q}</summary>
-          <p>{a}</p>
+          {blocks(a).map((b, i) =>
+            Array.isArray(b) ? (
+              <ul key={i} className="checks">
+                {b.map((li) => (
+                  <li key={li}>{li}</li>
+                ))}
+              </ul>
+            ) : (
+              <p key={i}>{b}</p>
+            ),
+          )}
         </details>
       ))}
     </div>
