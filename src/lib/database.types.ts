@@ -4024,8 +4024,240 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_rates: {
+        Row: {
+          staff_id: string
+          pay_rate: number | null
+          bill_rate: number | null
+          updated_at: string
+        }
+        Insert: {
+          staff_id: string
+          pay_rate?: number | null
+          bill_rate?: number | null
+          updated_at?: string
+        }
+        Update: {
+          staff_id?: string
+          pay_rate?: number | null
+          bill_rate?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      task_budget_requests: {
+        Row: {
+          id: string
+          task_id: string
+          amount: number
+          reason: string
+          status: string
+          requested_by: string | null
+          requested_at: string
+          reviewed_by: string | null
+          reviewed_at: string | null
+          review_comment: string | null
+        }
+        Insert: {
+          id?: string
+          task_id: string
+          amount: number
+          reason: string
+          status?: string
+          requested_by?: string | null
+          requested_at?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          review_comment?: string | null
+        }
+        Update: {
+          id?: string
+          task_id?: string
+          amount?: number
+          reason?: string
+          status?: string
+          requested_by?: string | null
+          requested_at?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          review_comment?: string | null
+        }
+        Relationships: []
+      }
+      task_comments: {
+        Row: {
+          id: string
+          task_id: string
+          author_id: string | null
+          kind: string
+          body: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          task_id: string
+          author_id?: string | null
+          kind?: string
+          body: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          task_id?: string
+          author_id?: string | null
+          kind?: string
+          body?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      task_material_costs: {
+        Row: {
+          material_id: string
+          amount: number
+        }
+        Insert: {
+          material_id: string
+          amount: number
+        }
+        Update: {
+          material_id?: string
+          amount?: number
+        }
+        Relationships: []
+      }
+      task_materials: {
+        Row: {
+          id: string
+          task_id: string
+          name: string
+          quantity: number
+          unit: string | null
+          source: string
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          task_id: string
+          name: string
+          quantity?: number
+          unit?: string | null
+          source: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          task_id?: string
+          name?: string
+          quantity?: number
+          unit?: string | null
+          source?: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      task_photos: {
+        Row: {
+          id: string
+          task_id: string
+          kind: string
+          path: string
+          uploaded_by: string | null
+          manual: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          task_id: string
+          kind: string
+          path: string
+          uploaded_by?: string | null
+          manual?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          task_id?: string
+          kind?: string
+          path?: string
+          uploaded_by?: string | null
+          manual?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      task_subtasks: {
+        Row: {
+          id: string
+          task_id: string
+          title: string
+          done: boolean
+          position: number
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          task_id: string
+          title: string
+          done?: boolean
+          position?: number
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          task_id?: string
+          title?: string
+          done?: boolean
+          position?: number
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      task_time: {
+        Row: {
+          id: string
+          task_id: string
+          staff_id: string
+          clock_in: string
+          clock_out: string | null
+          minutes: number | null
+          manual: boolean
+          note: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          task_id: string
+          staff_id: string
+          clock_in?: string
+          clock_out?: string | null
+          minutes?: number | null
+          manual?: boolean
+          note?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          task_id?: string
+          staff_id?: string
+          clock_in?: string
+          clock_out?: string | null
+          minutes?: number | null
+          manual?: boolean
+          note?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
+          amenity_id: string | null
           assignee_id: string | null
           completed_at: string | null
           created_at: string
@@ -4043,13 +4275,16 @@ export type Database = {
           currency: string
           done_by: string | null
           owner_visible: boolean
+          planned_hours: number | null
           position: number
           priority: string
+          start_time: string | null
           status: string
           title: string
           updated_at: string
         }
         Insert: {
+          amenity_id?: string | null
           assignee_id?: string | null
           completed_at?: string | null
           created_at?: string
@@ -4067,13 +4302,16 @@ export type Database = {
           currency?: string
           done_by?: string | null
           owner_visible?: boolean
+          planned_hours?: number | null
           position?: number
           priority?: string
+          start_time?: string | null
           status?: string
           title: string
           updated_at?: string
         }
         Update: {
+          amenity_id?: string | null
           assignee_id?: string | null
           completed_at?: string | null
           created_at?: string
@@ -4091,8 +4329,10 @@ export type Database = {
           currency?: string
           done_by?: string | null
           owner_visible?: boolean
+          planned_hours?: number | null
           position?: number
           priority?: string
+          start_time?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -5089,6 +5329,7 @@ export type Database = {
         Returns: string;
       };
       cancel_court_booking: { Args: { p_id: string }; Returns: undefined };
+      cancel_my_registration: { Args: { p_id: string }; Returns: undefined };
       court_class_at: {
         Args: { p_court: string; p_date: string; p_end: string; p_start: string };
         Returns: string;
@@ -5262,6 +5503,23 @@ export type Database = {
         Returns: string;
       };
       set_contact_photo: { Args: { p_contact: string; p_path: string }; Returns: undefined };
+      task_clock_in: { Args: { p_task: string }; Returns: string };
+      task_clock_out: { Args: { p_task: string; p_finish?: boolean }; Returns: undefined };
+      task_add_photos: { Args: { p_task: string; p_kind: string; p_paths: string[] }; Returns: undefined };
+      task_log_time: {
+        Args: { p_task: string; p_minutes: number; p_note: string | null; p_before: string[]; p_after: string[]; p_finish?: boolean };
+        Returns: undefined;
+      };
+      add_task_material: {
+        Args: { p_task: string; p_name: string; p_quantity: number; p_unit: string | null; p_source: string; p_amount?: number | null };
+        Returns: string;
+      };
+      task_cost_summary: {
+        Args: { p_task: string };
+        Returns: { hours: number; labour_cost: number; materials_cost: number; bill_amount: number }[];
+      };
+      can_manage_task: { Args: { t: string }; Returns: boolean };
+      can_see_task: { Args: { t: string }; Returns: boolean };
       has_access_today: { Args: { cid: string }; Returns: boolean };
       is_portal_member: { Args: { cid: string }; Returns: boolean };
       staff_save_registration: {

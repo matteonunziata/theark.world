@@ -12,6 +12,9 @@ export const PERIODS = [
 ] as const;
 export type Period = (typeof PERIODS)[number][0];
 
+/** Analytics count from the day tracking began; earlier sessions are left out. */
+export const ANALYTICS_START = "2026-10-12";
+
 const lastOfMonth = (key: string) => addDays(`${addMonths(key, 1)}-01`, -1);
 
 type Params = Record<string, string | string[] | undefined>;
@@ -25,6 +28,7 @@ export async function loadAnalytics(supabase: SupabaseClient<Database>, { p, d }
   const from = period === "day" ? anchor : period === "week" ? weekStart(anchor) : `${monthKey(anchor)}-01`;
   const to = period === "day" ? anchor : period === "week" ? addDays(from, 6) : lastOfMonth(monthKey(anchor));
   const upTo = to < today ? to : today; // nothing to measure in the future
+  const countFrom = from > ANALYTICS_START ? from : ANALYTICS_START;
   const step = (n: number) =>
     period === "day" ? addDays(anchor, n) : period === "week" ? addDays(anchor, 7 * n) : `${addMonths(monthKey(anchor), n)}-01`;
   const label =
@@ -46,12 +50,12 @@ export async function loadAnalytics(supabase: SupabaseClient<Database>, { p, d }
   // Page through the bookings; a month can pass the 1,000-row default.
   type Reg = { offering_id: string; session_date: string; checked_in_at: string | null; status: string; hold_until: string | null };
   const regs: Reg[] = [];
-  if (from <= upTo) {
+  if (countFrom <= upTo) {
     for (let at = 0; ; at += 1000) {
       const { data } = await supabase
         .from("registrations")
         .select("offering_id, session_date, checked_in_at, status, hold_until")
-        .gte("session_date", from)
+        .gte("session_date", countFrom)
         .lte("session_date", upTo)
         .order("id")
         .range(at, at + 999);
@@ -73,7 +77,7 @@ export async function loadAnalytics(supabase: SupabaseClient<Database>, { p, d }
     checked: number;
     pay: number;
   }[] = [];
-  if (from <= upTo) {
+  if (countFrom <= upTo) {
     const byKey = new Map<string, { booked: number; checked: number }>();
     for (const r of live) {
       const k = `${r.offering_id}|${r.session_date}`;
@@ -82,7 +86,7 @@ export async function loadAnalytics(supabase: SupabaseClient<Database>, { p, d }
       if (r.checked_in_at) c.checked++;
       byKey.set(k, c);
     }
-    for (const s of sessions(classes, cancels ?? [], from, upTo)) {
+    for (const s of sessions(classes, cancels ?? [], countFrom, upTo)) {
       if (!s.cancelled) held.set(s.o.id, (held.get(s.o.id) ?? 0) + 1);
       const c = byKey.get(`${s.o.id}|${s.date}`) ?? { booked: 0, checked: 0 };
       sessionRows.push({

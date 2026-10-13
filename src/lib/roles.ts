@@ -72,7 +72,7 @@ export const MODULES: {
     key: "dashboard",
     name: "Dashboard",
     href: "/dashboard",
-    roles: ["admin", "lead", "sales", "shop", "community_manager"],
+    roles: ["admin", "lead", "sales", "shop", "crew", "community_manager"],
   },
   {
     key: "crm",
