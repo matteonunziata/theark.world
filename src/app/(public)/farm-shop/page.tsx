@@ -77,6 +77,72 @@ export default async function FarmShopPage({ searchParams }: PageProps<"/farm-sh
         </div>
       </section>
 
+      <section className="fs-sec" id="story">
+        <div className="wrap">
+          <div className="fs-prose">
+            <p className="eyebrow">Our Story</p>
+            <h2>From pasture to living soil</h2>
+            <p>
+              For decades, this land was cattle pasture. Years of grazing and heavy hooves packed the earth hard. Rain
+              ran off instead of soaking in, topsoil washed away, and the forest that once covered these hills gave way
+              to a single layer of grass. What was left was quiet, tired ground.
+            </p>
+            <p>We saw it differently. Soil isn’t just dirt. It’s a living system, and given the chance, it heals.</p>
+            <p>
+              So we started there. We broke up the compaction with deep-rooted plants instead of machines. We fed the
+              ground with compost, mulch and fallen biomass. We planted in layers, from ground cover to fruit trees to
+              canopy, the way a tropical forest grows on its own. Slowly, the soil got darker, softer and full of life
+              again.
+            </p>
+            <p>
+              Today the land holds water. Birds, insects and pollinators have come back. Where there was one kind of
+              grass, there are now hundreds of species growing together. And it feeds us. Every harvest that reaches
+              the Farm Shop grew from ground that was once written off.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="fs-sec panel" id="approach">
+        <div className="wrap">
+          <div className="fs-prose">
+            <p className="eyebrow">About Us</p>
+            <h2>Heal the soil, and it will feed you</h2>
+            <p>
+              We believe in healing the soil and meeting our basic needs in a way that works with nature, not against
+              it. The farm is about building a deeper connection with the land, and a living ecosystem that nourishes
+              both people and the wild.
+            </p>
+            <p>
+              Nature knows how to regenerate. Our job is to give it the right care and then get out of the way. Guided
+              by permaculture, agroforestry and regenerative agriculture, we restore depleted soil, bring back
+              biodiversity, and grow food that’s good for the people who eat it and for the planet that grows it.
+            </p>
+            <p>We pair modern regenerative techniques with traditional wisdom:</p>
+          </div>
+          <div className="fs-methods">
+            <div className="fs-method">
+              <h3>Syntropic farming</h3>
+              <p>
+                Planting in layers and in succession, so each crop prepares the ground for the next, the way a forest
+                builds itself.
+              </p>
+            </div>
+            <div className="fs-method">
+              <h3>Permaculture principles</h3>
+              <p>Designing the farm as a whole system where water, plants, animals and people support each other.</p>
+            </div>
+            <div className="fs-method">
+              <h3>Composting &amp; Hugelkultur</h3>
+              <p>Turning fallen wood, leaves and kitchen scraps back into rich, water-holding soil.</p>
+            </div>
+          </div>
+          <p className="fs-prose-end">
+            Everything in the Farm Shop comes out of this cycle: grown here, from living soil, with care.
+          </p>
+        </div>
+      </section>
+
       <section className="fs-sec" id="shop">
         <div className="wrap">
           <div className="fs-sec-h">
