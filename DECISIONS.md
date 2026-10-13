@@ -555,3 +555,8 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Budgets are a new thing:** `property_budgets` is a request from the team (Estate → lot → Steward tab) that the steward approves or declines, with an optional comment and an optional linked task. It is separate from the internal `task_budget_requests` (lead asks admin) and from Finance budgets. An answer is final; the team can withdraw a request only while it is pending. Nothing is paid or posted to Finance by approving.
 - **Notes:** `property_notes` is one shared thread per property; the steward and estate staff both write, each can remove their own (admins any). The steward's hospitality-listing notes (`lots.listing_notes`) stay on the Hospitality tab as before.
 - **Hospitality passes:** a stay's passes are the day or week passes held by the guest's contact whose start date falls within the stay. Stays without a linked contact show none.
+
+## Arkadia teacher view (tabs)
+- **`/arkadia` now has four tabs:** Students (the existing grid), Calendar (this week from the timetable, read-only, with a link to edit it), Curriculum and Homework. The current week's theme shows top right.
+- **Curriculum** is one row per week (`school_curriculum`: week number, Monday, theme, summary, optional day-by-day plan, optional group). "Now" is whichever week starts on this Monday. Homework (`school_homework`) is a title, details, optional group and due date; past due items drop under "Earlier".
+- Both are school staff only and not yet shown to families. Whether parents should see curriculum and homework on their page is open.

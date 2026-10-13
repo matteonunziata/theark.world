@@ -183,3 +183,5 @@
 
 - **Should running memberships without a photo be stopped at the gate too?** Today only an unused pass is (it can't start). 38 of 41 annual members had no photo on 2026-10-12, so turning them away needs a plan (a deadline, or staff taking photos at the door).
 - **Should day-pass holders appear in the member directory and "who's going"?** They don't now. They get the portal for booking, not the community.
+
+- **Arkadia:** should families see the weekly theme and homework on their private page? Per-student feedback to review (as in the parent-view mockup) isn't built.

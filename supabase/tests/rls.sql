@@ -1592,3 +1592,16 @@ reset role;
 select 'All RLS tests passed' as result;
 
 rollback;
+
+-- Arkadia curriculum and homework: school staff only --
+
+select pg_temp.act_as(pg_temp.id('teacher'));
+insert into public.school_curriculum (week_no, starts_on, title) values (1, '2026-10-12', 'Test week');
+insert into public.school_homework (title) values ('Test homework');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('facilitator'));
+select pg_temp.expect(
+  (select count(*) from public.school_curriculum) = 0 and (select count(*) from public.school_homework) = 0,
+  'other staff cannot read curriculum or homework');
+reset role;

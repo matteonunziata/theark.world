@@ -227,3 +227,77 @@ export async function saveScheduleEntry(
   if (error) return fail(friendly(error));
   return done(rows.length > 1 ? `Added on ${rows.length} days` : "Added to the timetable");
 }
+
+export async function saveCurriculumWeek(
+  _prev: ActionResult,
+  data: FormData,
+): Promise<ActionResult> {
+  const { supabase } = await schoolOrThrow();
+  const id = field(data, "id");
+  const done = (m: string) => {
+    revalidatePath("/arkadia");
+    return ok(m);
+  };
+
+  if (data.get("intent") === "delete" && id) {
+    const { error } = await supabase.from("school_curriculum").delete().eq("id", id);
+    if (error) return fail(friendly(error));
+    return done("Week removed");
+  }
+
+  const title = field(data, "title");
+  const weekNo = Number(field(data, "week_no"));
+  const startsOn = field(data, "starts_on");
+  if (!title) return fail("Give the week a theme, like Birds & feathers.");
+  if (!Number.isInteger(weekNo) || weekNo < 1 || weekNo > 60) return fail("Week number should be between 1 and 60.");
+  if (!startsOn) return fail("Choose the Monday the week starts.");
+  const daily = ["Mon", "Tue", "Wed", "Thu", "Fri"]
+    .map((day) => ({ day, plan: field(data, `day_${day}`) ?? "" }))
+    .filter((d) => d.plan);
+  const row = {
+    title,
+    week_no: weekNo,
+    starts_on: startsOn,
+    summary: field(data, "summary"),
+    group_name: field(data, "group_name"),
+    daily,
+  };
+  const { error } = id
+    ? await supabase.from("school_curriculum").update(row).eq("id", id)
+    : await supabase.from("school_curriculum").insert(row);
+  if (error) return fail(friendly(error));
+  return done(id ? "Week saved" : "Week added");
+}
+
+export async function saveHomework(
+  _prev: ActionResult,
+  data: FormData,
+): Promise<ActionResult> {
+  const { supabase } = await schoolOrThrow();
+  const id = field(data, "id");
+  const done = (m: string) => {
+    revalidatePath("/arkadia");
+    return ok(m);
+  };
+
+  if (data.get("intent") === "delete" && id) {
+    const { error } = await supabase.from("school_homework").delete().eq("id", id);
+    if (error) return fail(friendly(error));
+    return done("Homework removed");
+  }
+
+  const title = field(data, "title");
+  if (!title) return fail("Say what the homework is.");
+  const row = {
+    title,
+    details: field(data, "details"),
+    group_name: field(data, "group_name"),
+    due_on: field(data, "due_on"),
+    ...(field(data, "assigned_on") ? { assigned_on: field(data, "assigned_on") as string } : {}),
+  };
+  const { error } = id
+    ? await supabase.from("school_homework").update(row).eq("id", id)
+    : await supabase.from("school_homework").insert(row);
+  if (error) return fail(friendly(error));
+  return done(id ? "Homework saved" : "Homework added");
+}

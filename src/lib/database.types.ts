@@ -3360,6 +3360,69 @@ export type Database = {
         }
         Relationships: []
       }
+      school_curriculum: {
+        Row: {
+          created_at: string
+          daily: Json
+          group_name: string | null
+          id: string
+          starts_on: string
+          summary: string | null
+          title: string
+          week_no: number
+        }
+        Insert: {
+          created_at?: string
+          daily?: Json
+          group_name?: string | null
+          id?: string
+          starts_on: string
+          summary?: string | null
+          title: string
+          week_no: number
+        }
+        Update: {
+          created_at?: string
+          daily?: Json
+          group_name?: string | null
+          id?: string
+          starts_on?: string
+          summary?: string | null
+          title?: string
+          week_no?: number
+        }
+        Relationships: []
+      }
+      school_homework: {
+        Row: {
+          assigned_on: string
+          created_at: string
+          details: string | null
+          due_on: string | null
+          group_name: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          assigned_on?: string
+          created_at?: string
+          details?: string | null
+          due_on?: string | null
+          group_name?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          assigned_on?: string
+          created_at?: string
+          details?: string | null
+          due_on?: string | null
+          group_name?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       school_schedule: {
         Row: {
           created_at: string
