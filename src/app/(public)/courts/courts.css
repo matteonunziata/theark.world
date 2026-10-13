@@ -168,6 +168,9 @@
   .crts-date{width:100%;justify-content:space-between}
   .crts-date .label{min-width:0;flex:1}
   .crts-prices .row{padding:18px 20px}
+  .crts-cal-in{min-width:calc(124px + var(--cols) * 64px)}
+  .crts-cal-row{grid-template-columns:124px 1fr}
+  .crts-cal-name{padding:0 8px 0 14px;font-size:16px}
 }
 
 /* Booking form (a dialog over the page) */

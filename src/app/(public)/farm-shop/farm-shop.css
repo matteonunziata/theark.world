@@ -40,7 +40,7 @@
 .fs-nav .links{display:flex;gap:28px;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
 .fs-nav .links a{text-decoration:none}
 .fs-nav .right{display:flex;align-items:center;gap:16px}
-.fs-nav .login{font-size:14px;text-decoration:none}
+.fs-nav .login{font-size:14px;text-decoration:none;padding:12px 6px}
 @media (max-width:820px){.fs-nav .links{display:none}}
 
 .fs-hero{padding:var(--c-pad) 0}
