@@ -588,3 +588,8 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Lot chosen hands off in the database.** A trigger on `contact_stages` adds the person to Stewardship purchase at Marat intro when they reach Lot chosen. They stay at Lot chosen in the application pipeline as a record, and the trigger never moves anyone already in Purchase.
 - **Tracked as fields, not stages:** `contacts.tags` (brochure download, webinar registration; free text, lower-cased), `contacts.visit_date`, `contacts.tafo_choice` (free text). Edited in the profile's Stewardship panel; board cards show the visit date and TAFO choice.
 - Stages are moved by hand (drag or profile) for now. Nothing yet sets them from the website, calendar or KYC provider.
+
+## Checkout sends stock to Shopify (2026-10-13)
+
+- **Bug:** Checkout sales never reached Shopify (`checkout_sale()` didn't set `shopify_pending`), so the next sync mirrored Shopify's higher count back and showed "Adjustment" rows that put the sold units back. Now `checkout_sale()` flags its movements and the Checkout action pushes them right after the sale (best effort, `after()`); a failed push stays pending for the next sync.
+- **Repair:** the five units wrongly put back at 17:14 on 13 Oct got a -1 correction each (reference "Correction: Checkout sale not sent to Shopify"), and the 17:18 Digestive Iced Tea sale was flagged to send. Checkout sales before the 12 Oct stock reset were already wiped by that reset.
