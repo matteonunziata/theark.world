@@ -13,6 +13,7 @@ const LINKS = [
   ["Membership", "/ark-membership"],
   ["Stay", "/stay"],
   ["Events", "/whats-on"],
+  ["Farm Shop", "/farm-shop"],
   ["FAQ", "/faq"],
 ] as const;
 
@@ -72,6 +73,7 @@ export async function SiteShell({ children, here, brochure = true }: { children:
             <Link href="/courts">Courts</Link>
             <Link href="/stay">Stay</Link>
             <Link href="/whats-on">Events</Link>
+            <Link href="/farm-shop">Farm Shop</Link>
             <Link href="/faq">FAQ</Link>
             <Link href="/press-media">Press</Link>
             <Link href={`/portal/login?next=${here}`}>Sign in</Link>
