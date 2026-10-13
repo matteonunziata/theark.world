@@ -183,6 +183,17 @@ export async function cancelCourt(id: string) {
   return ok("Booking cancelled.");
 }
 
+/** A member cancels their own class or event booking, up to when it starts. */
+export async function cancelBooking(id: string): Promise<ActionResult> {
+  const v = await viewer();
+  if (!v.memberId) return fail("Only members can cancel their bookings here.");
+  const { error } = await v.supabase.rpc("cancel_my_registration", { p_id: id });
+  if (error) return fail(friendly(error));
+  revalidatePath("/portal", "layout");
+  revalidatePath("/events/registrations", "layout");
+  return ok("Booking cancelled.");
+}
+
 export async function setPhoto(path: string | null) {
   const v = await viewer();
   if (!v.memberId) return fail("Only members have a profile photo.");

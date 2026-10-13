@@ -4,10 +4,15 @@ import { tierName, tierPrice } from "@/lib/crm";
 import { addDays, dayLabel, fmtDate, timeRange, todayIn } from "@/lib/dates";
 import { loadPortal } from "@/lib/portal";
 import { fmtAmount, stripeReady, TERM_NAME, termPrice } from "@/lib/stripe";
+import { CancelBooking } from "./cancel-booking";
 import { PhotoField } from "./photo-field";
 import { ProfileForm } from "./profile-form";
 
 export const metadata: Metadata = { title: "Me" };
+
+function nowTime(tz: string) {
+  return new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date());
+}
 
 export default async function Me() {
   const p = await loadPortal();
@@ -17,7 +22,7 @@ export default async function Me() {
     me
       ? p.supabase
           .from("registrations")
-          .select("id, session_date, qr_token, checked_in_at, status, hold_until, offering:offerings(title, start_time, end_time, location)")
+          .select("id, session_date, qr_token, checked_in_at, status, paid, hold_until, offering:offerings(title, start_time, end_time, location)")
           .or(`user_id.eq.${p.user!.id},contact_id.eq.${me.id}`)
           .gte("session_date", today)
           .neq("status", "cancelled")
@@ -138,32 +143,39 @@ export default async function Me() {
                 Nothing booked. <Link href="/portal/schedule" style={{ color: "var(--pv-sea)" }}>See what’s on</Link>.
               </p>
             ) : (
-              regs.map((r) =>
-                r.offering ? (
-                  <Link
+              regs.map((r) => {
+                const o = r.offering;
+                if (!o) return null;
+                const started =
+                  r.session_date === today && !!o.start_time && o.start_time.slice(0, 5) <= nowTime(p.timezone);
+                const canCancel = !r.checked_in_at && !started;
+                return (
+                  <div
                     key={r.id}
-                    href={`/t/${r.qr_token}`}
                     className="pv-post"
-                    style={{ display: "flex", justifyContent: "space-between", gap: 10, textDecoration: "none" }}
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}
                   >
-                    <span>
-                      <b style={{ display: "block" }}>{r.offering.title}</b>
+                    <Link href={`/t/${r.qr_token}`} style={{ flex: 1, minWidth: 180, textDecoration: "none", color: "inherit" }}>
+                      <b style={{ display: "block" }}>{o.title}</b>
                       <span style={{ color: "var(--pv-muted)", fontSize: 14 }}>
-                        {dayLabel(r.session_date, today)}, {timeRange(r.offering)}
+                        {dayLabel(r.session_date, today)}, {timeRange(o)}
                       </span>
+                    </Link>
+                    <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <Link href={`/t/${r.qr_token}`} className="pv-btn ghost sm">
+                        {r.status === "held"
+                          ? r.hold_until && new Date(r.hold_until) <= new Date()
+                            ? "Not paid in time"
+                            : "Awaiting payment"
+                          : r.checked_in_at
+                            ? "Checked in"
+                            : "Ticket"}
+                      </Link>
+                      {canCancel && <CancelBooking id={r.id} title={o.title} paid={r.paid} />}
                     </span>
-                    <span className="pv-btn ghost sm">
-                      {r.status === "held"
-                        ? r.hold_until && new Date(r.hold_until) <= new Date()
-                          ? "Not paid in time"
-                          : "Awaiting payment"
-                        : r.checked_in_at
-                          ? "Checked in"
-                          : "Ticket"}
-                    </span>
-                  </Link>
-                ) : null,
-              )
+                  </div>
+                );
+              })
             )}
           </section>
           <Link className="pv-btn ghost" href="/auth/password?next=/portal/me">
