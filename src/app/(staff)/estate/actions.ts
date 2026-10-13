@@ -237,9 +237,38 @@ export async function saveStay(_prev: ActionResult, data: FormData): Promise<Act
   }
   const rate = num(data, "nightly_rate") ?? (kind === "guest" ? lot.nightly_rate : null);
   const total = num(data, "total") ?? (rate !== null ? Number(rate) * n : null);
+  // The guest is a CRM contact: one picked from the search, or added now.
+  let contactId = kind === "guest" ? field(data, "contact_id") : null;
+  let contactNote = "";
+  if (kind === "guest" && !contactId && data.get("add_contact") === "on") {
+    const phone = field(data, "phone");
+    const known = email
+      ? (await supabase.from("contacts").select("id").eq("email", email).limit(1).maybeSingle()).data
+      : null;
+    if (known) contactId = known.id;
+    else {
+      const { data: created, error: cErr } = await supabase
+        .from("contacts")
+        .insert({
+          name,
+          email,
+          phone,
+          source: "Stay booking",
+          owner_id: staff.role === "admin" ? null : staff.id,
+          created_by: staff.id,
+        })
+        .select("id")
+        .single();
+      if (created) {
+        contactId = created.id;
+        contactNote = ` ${name} added to the CRM.`;
+      } else if (cErr) contactNote = ` Couldn’t add ${name} to the CRM; add them there.`;
+    }
+  }
   const row = {
     lot_id: lotId,
     kind,
+    ...(kind !== "guest" ? { contact_id: null } : contactId ? { contact_id: contactId } : {}),
     status: pick(STAY_STATUS, field(data, "status"), "confirmed"),
     guest_name: name,
     email,
@@ -265,7 +294,7 @@ export async function saveStay(_prev: ActionResult, data: FormData): Promise<Act
   }
   pushSoon();
   refresh(lotId);
-  return ok(id ? "Stay saved" : kind === "guest" ? "Stay booked" : "Dates blocked");
+  return ok(`${id ? "Stay saved." : kind === "guest" ? "Stay booked." : "Dates blocked."}${contactNote}`.trim());
 }
 
 // Hospitality listings -------------------------------------------------------------
