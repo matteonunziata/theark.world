@@ -10,6 +10,7 @@ import { Calculator } from "./calculator";
 import { APPLY_URL, passUrl } from "./plans";
 import { Pricing } from "./pricing";
 import { Schedule } from "./schedule";
+import { SiteNavBar } from "../site/site-nav";
 import "./membership.css";
 
 export const metadata: Metadata = {
@@ -112,27 +113,7 @@ export default async function MembershipPage() {
     <div className="mship">
       <ArkFonts />
 
-      <header className="ms-nav">
-        <Link href="/ark-membership" aria-label="The ARK home">
-          <img src="/brand/ark-lockup-dark.png" alt="The ARK" height={40} />
-        </Link>
-        <div className="ms-nav-links">
-          <a href="#days">The days</a>
-          <a href="#spaces">Spaces</a>
-          <a href="#schedule">Schedule</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#faq">FAQ</a>
-          <Link href="/courts">Courts</Link>
-        </div>
-        <div className="ms-nav-end">
-          <Link href="/portal/login" className="ms-login">
-            Sign in
-          </Link>
-          <Link href={APPLY_URL} className="ms-btn small solid">
-            Apply
-          </Link>
-        </div>
-      </header>
+      <SiteNavBar here="/ark-membership" />
 
       <section className="ms-hero" id="top">
         <div className="ms-hero-in">

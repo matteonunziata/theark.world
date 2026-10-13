@@ -6,6 +6,7 @@ import { getViewer } from "@/lib/auth";
 import { SHOP_URL } from "@/lib/farm-catalog";
 import { stripeReady } from "@/lib/stripe";
 import { FarmShop, type Group } from "./farm-shop";
+import { SiteNavBar } from "../site/site-nav";
 import "./farm-shop.css";
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 
 export default async function FarmShopPage({ searchParams }: PageProps<"/farm-shop">) {
   const { paid } = await searchParams;
-  const { supabase, memberId, staff } = await getViewer();
+  const { supabase, memberId } = await getViewer();
   const [{ data: rows }, { data: pct }, { data: me }] = await Promise.all([
     supabase.rpc("public_shop_catalog"),
     memberId ? supabase.rpc("my_shop_discount") : Promise.resolve({ data: 0 }),
@@ -39,28 +40,7 @@ export default async function FarmShopPage({ searchParams }: PageProps<"/farm-sh
   return (
     <main className="fs">
       <ArkFonts />
-      <header className="fs-nav">
-        <Link href="/farm-shop" aria-label="The ARK Farm shop">
-          <Logo tone="dark" height={36} />
-        </Link>
-        <div className="links">
-          <a href="#shop">Shop</a>
-          <a href="#members">Member prices</a>
-          <a href="#pickup">Pick up</a>
-        </div>
-        <div className="right">
-          {memberId ? (
-            <Link href="/portal/shop" className="btn sm solid">Members portal</Link>
-          ) : staff ? (
-            <Link href="/shop" className="btn sm solid">Staff view</Link>
-          ) : (
-            <>
-              <Link href="/portal/login?next=/farm-shop" className="login">Sign in</Link>
-              <Link href="/ark-membership" className="btn sm solid">Membership</Link>
-            </>
-          )}
-        </div>
-      </header>
+      <SiteNavBar here="/farm-shop" />
 
       <section className="fs-hero dark">
         <div className="wrap">

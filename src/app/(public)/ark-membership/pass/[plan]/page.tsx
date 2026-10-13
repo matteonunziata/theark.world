@@ -7,6 +7,7 @@ import { passStripePrice, stripeReady } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { money, PLANS } from "../../plans";
 import { PassForm } from "../pass-form";
+import { SiteNavBar } from "../../../site/site-nav";
 import "../../membership.css";
 
 export const metadata: Metadata = {
@@ -49,14 +50,7 @@ export default async function PassPage({ params }: PageProps<"/ark-membership/pa
   return (
     <div className="mship">
       <ArkFonts />
-      <header className="ms-nav">
-        <Link href="/ark-membership" aria-label="The ARK">
-          <img src="/brand/ark-lockup-dark.png" alt="The ARK" height={34} />
-        </Link>
-        <nav>
-          <Link href="/ark-membership">Membership</Link>
-        </nav>
-      </header>
+      <SiteNavBar here="/ark-membership" />
       <main className="ms-apply">
         <Link href="/ark-membership" className="ms-back">
           ← Back to ARK membership

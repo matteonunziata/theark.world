@@ -8,6 +8,7 @@ import { addDays, fmtDate, timeRange, todayIn } from "@/lib/dates";
 import { kindName, priceLabel, sessions, whenLabel } from "@/lib/schedule";
 import { HostForm } from "./host-form";
 import { type EventRow, EventsList } from "./events-list";
+import { SiteNavBar } from "../site/site-nav";
 import "./events.css";
 
 export const metadata: Metadata = {
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 const MEMBERSHIP = "/ark-membership";
 
 export default async function EventsPage() {
-  const { supabase, memberId, staff } = await getViewer();
+  const { supabase, memberId } = await getViewer();
   const { data: org } = await supabase.rpc("public_org").maybeSingle();
   const today = todayIn(org?.timezone);
   const to = addDays(today, 365);
@@ -66,30 +67,7 @@ export default async function EventsPage() {
   return (
     <main className="evp">
       <ArkFonts />
-      <header>
-        <nav aria-label="Main">
-          <Link href="/whats-on" aria-label="The ARK events and experiences">
-            <Logo tone="dark" height={40} />
-          </Link>
-          <div className="nav-links">
-            <a href="#upcoming">What’s coming up</a>
-            <a href="#host">Host an event</a>
-            <Link href={MEMBERSHIP}>Membership</Link>
-          </div>
-          <div className="nav-right">
-            {staff ? (
-              <Link href="/events/events" className="btn btn-primary sm">Staff view</Link>
-            ) : memberId ? (
-              <Link href="/portal/schedule" className="btn btn-primary sm">Sign in</Link>
-            ) : (
-              <>
-                <Link className="nav-login" href="/portal/login?next=/whats-on">Sign in</Link>
-                <a className="btn btn-primary sm" href="#upcoming">See what’s on</a>
-              </>
-            )}
-          </div>
-        </nav>
-      </header>
+      <SiteNavBar here="/whats-on" />
 
       <section className="hero dark">
         <div className="wrap">

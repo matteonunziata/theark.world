@@ -1,5 +1,11 @@
 /* Information pages (stewardship, homes, FAQ, press and more). Sits on the Events base (.evp):
    same tokens, buttons, nav, hero, band, form and footer. Only the layouts those pages need are added here. */
+
+/* The bar alone, on pages that have their own frame */
+.evp.sx.site-nav { min-height: 0; overflow: visible; background: var(--ground); position: relative; z-index: 40; }
+.evp.sx.site-nav .btn.btn-primary { background: var(--primary); color: var(--ground); border-color: transparent; }
+.evp.sx.site-nav .btn.btn-primary:hover { background: #24402F; color: var(--ground); }
+
 .sx {
   .nav-links a[aria-current="page"] { color: var(--ink); }
   .nav-group { position: relative; }

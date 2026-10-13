@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArkFonts } from "@/components/ark-fonts";
 import { PLANS } from "../plans";
 import { ApplyForm } from "./apply-form";
+import { SiteNavBar } from "../../site/site-nav";
 import "../membership.css";
 
 export const metadata: Metadata = {
@@ -22,14 +23,7 @@ export default async function ApplyPage({ searchParams }: PageProps<"/ark-member
   return (
     <div className="mship">
       <ArkFonts />
-      <header className="ms-nav">
-        <Link href="/ark-membership" aria-label="The ARK">
-          <img src="/brand/ark-lockup-dark.png" alt="The ARK" height={34} />
-        </Link>
-        <nav>
-          <Link href="/ark-membership">Membership</Link>
-        </nav>
-      </header>
+      <SiteNavBar here="/ark-membership" />
 
       <main className="ms-apply">
         <Link href="/ark-membership" className="ms-back">

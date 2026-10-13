@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
 import { estatePhoto, hourLabel } from "@/lib/estate";
 import { BookingCard, type Listing } from "./booking-card";
+import { SiteNavBar } from "../../site/site-nav";
 
 type Props = PageProps<"/stay/[id]">;
 const UUID = /^[0-9a-f-]{36}$/;
@@ -36,12 +36,10 @@ export default async function StayHome({ params, searchParams }: Props) {
 
   return (
     <main className="stay">
-      <header className="stay-top">
-        <Link href="/stay" aria-label="The ARK stays">
-          <Logo tone="dark" height={30} />
-        </Link>
+      <SiteNavBar here="/stay" />
+      <div className="stay-top">
         <Link href={`/stay${back ? `?${back}` : ""}`} className="stay-back">← All homes</Link>
-      </header>
+      </div>
 
       <h1 className="stay-title">{l.title}</h1>
       <p className="stay-sub">

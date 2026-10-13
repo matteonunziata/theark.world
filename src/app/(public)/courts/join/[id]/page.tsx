@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArkFonts } from "@/components/ark-fonts";
-import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
 import { courtMoney, levelRange, sportName } from "@/lib/courts";
 import { fmtDate, fmtTime, todayIn } from "@/lib/dates";
 import { stripeReady } from "@/lib/stripe";
 import { JoinForm } from "./join-form";
 import "../../courts.css";
+import { SiteNavBar } from "../../../site/site-nav";
 
 export const metadata: Metadata = { title: { absolute: "Join an open match — The ARK" }, robots: { index: false } };
 
@@ -25,14 +25,7 @@ export default async function JoinMatchPage({ params }: PageProps<"/courts/join/
   return (
     <main className="crts">
       <ArkFonts />
-      <header className="crts-nav">
-        <Link href="/courts" aria-label="The ARK courts">
-          <Logo tone="dark" height={32} />
-        </Link>
-        <nav>
-          <Link href="/courts" className="btn sm">All courts</Link>
-        </nav>
-      </header>
+      <SiteNavBar here="/courts" />
       <div className="crts-card">
         {!m ? (
           <>
