@@ -404,7 +404,7 @@ function TaskDrawer({
           <label htmlFor="t-where">Where</label>
           <select id="t-where" name="where" value={where} onChange={(e) => setWhere(e.target.value as typeof where)}>
             <option value="none">Somewhere else</option>
-            <option value="amenity">An amenity</option>
+            <option value="amenity">An area</option>
             <option value="lot">A lot or house</option>
           </select>
         </div>
@@ -417,9 +417,9 @@ function TaskDrawer({
       )}
       {where === "amenity" && (
         <div className="fld">
-          <label htmlFor="t-amen">Amenity</label>
+          <label htmlFor="t-amen">Area</label>
           <select id="t-amen" name="amenity_id" defaultValue={t?.amenity_id ?? ""} required>
-            <option value="" disabled>Choose an amenity</option>
+            <option value="" disabled>Choose an area</option>
             {amenities.map((a) => (
               <option key={a.id} value={a.id}>{a.name}</option>
             ))}
