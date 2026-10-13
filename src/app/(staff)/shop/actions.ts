@@ -8,7 +8,7 @@ import {
   friendly,
   ok,
 } from "@/lib/action-result";
-import { staffOrThrow } from "@/lib/auth";
+import { shopEditorOrThrow } from "@/lib/auth";
 import { fetchCatalog } from "@/lib/farm-catalog";
 import * as shopify from "@/lib/shopify";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -38,7 +38,7 @@ export async function saveProduct(
   _prev: ActionResult,
   data: FormData,
 ): Promise<ActionResult> {
-  const { supabase, staff } = await staffOrThrow("admin", "shop");
+  const { supabase, staff } = await shopEditorOrThrow();
   const id = field(data, "id");
 
   if (data.get("intent") === "delete" && id) {
@@ -139,7 +139,7 @@ export async function recordSale(
   _prev: ActionResult,
   data: FormData,
 ): Promise<ActionResult> {
-  const { supabase, staff } = await staffOrThrow("admin", "shop");
+  const { supabase, staff } = await shopEditorOrThrow();
   const lines = readLines(data);
   if (typeof lines === "string") return fail(lines);
   const method = asMethod(field(data, "method"));
@@ -203,7 +203,7 @@ export async function recordDelivery(
   _prev: ActionResult,
   data: FormData,
 ): Promise<ActionResult> {
-  const { supabase, staff } = await staffOrThrow("admin", "shop");
+  const { supabase, staff } = await shopEditorOrThrow();
   const lines = readLines(data);
   if (typeof lines === "string") return fail(lines);
   const orderId = crypto.randomUUID();
@@ -231,7 +231,7 @@ export async function recordStock(
   contactId?: string | null,
   method?: string | null,
 ): Promise<ActionResult> {
-  const { supabase, staff } = await staffOrThrow("admin", "shop");
+  const { supabase, staff } = await shopEditorOrThrow();
   if (!(qty > 0)) return fail("Enter a quantity.");
   let amount: number | null = null;
   let unit: number | null = null;
@@ -276,7 +276,7 @@ export async function recordStock(
  * match Shopify's. Anything else edited here (name, category, photo, notes)
  * is left alone. */
 export async function syncFromWebsite(): Promise<ActionResult> {
-  const { supabase } = await staffOrThrow("admin", "shop");
+  const { supabase } = await shopEditorOrThrow();
   // With Shopify connected, pull from its Admin API (stock counts, sku, status
   // and all). Writes use the service role, like the nightly sync.
   const admin = createAdminClient();

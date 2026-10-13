@@ -65,6 +65,7 @@ export async function saveTeamMember(
     finance_role: ["sector_manager", "admin"].includes(field(data, "finance_role") ?? "")
       ? field(data, "finance_role")
       : null,
+    can_edit_shop: data.get("can_edit_shop") === "on",
     responsibilities: field(data, "responsibilities"),
     phone: field(data, "phone"),
     start_date: field(data, "start_date"),
