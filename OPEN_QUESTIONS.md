@@ -190,3 +190,5 @@
 - **Public pages and the home route:** `/home` is the new landing page. Should `/` itself show it (and the sign-in redirect move), or stay as it is?
 - **Fractional shares:** the page's "23 shares remaining" figure is static copy. Should it come from the inventory (today the inventory holds one fractional row, lot 45)?
 - **Lot 45 and the live site's lot numbers:** the live site shows lot 80 for sale and lists a few prices that differ from the inventory. Which is right? The pages follow the inventory.
+
+- **Stewardship pipelines:** should the old "Real estate" pipeline be retired now (it has no people in it)? Is TAFO a fixed list of options (so it can be a dropdown)? Should Lead, Applying, Call booked and the visit date be set automatically from the site, booking tool and webinar tool?

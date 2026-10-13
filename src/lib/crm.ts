@@ -23,33 +23,25 @@ export const MSTATUS = [
   ["expired", "Expired"],
 ] as const;
 
-export const PIPELINES = {
-  memberships: {
-    name: "Memberships",
-    stages: [
-      ["waitlist", "Waitlist"],
-      ["invited", "Invited to apply"],
-      ["applied", "Applied"],
-      ["screening", "Screening"],
-      ["approved", "Approved"],
-      ["active", "Paid & active"],
-    ],
-  },
-  estate: {
-    name: "Real estate",
-    stages: [
-      ["lead", "Lead"],
-      ["qualified", "Qualified"],
-      ["visit", "Site visit"],
-      ["offer", "Offer"],
-      ["reserved", "Reserved"],
-      ["contract", "Contract"],
-      ["closed", "Closed"],
-    ],
-  },
-} as const;
+export type Pipeline = {
+  key: string;
+  name: string;
+  stages: [key: string, label: string][];
+};
 
-export type PipelineKey = keyof typeof PIPELINES;
+/** Turn a name into a key: lowercase, underscores, not already taken. */
+export function slugKey(name: string, taken: string[]) {
+  const base =
+    name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "") || "stage";
+  let k = base;
+  for (let n = 2; taken.includes(k); n++) k = `${base}_${n}`;
+  return k;
+}
 
 export const CHANNELS = [
   ["email", "Email"],

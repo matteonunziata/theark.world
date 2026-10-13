@@ -17,10 +17,10 @@ export default async function ShopLayout({ children }: LayoutProps<"/shop">) {
       <Tabs
         label="Farm shop sections"
         items={[
-          { href: "/shop", label: "Overview" },
-          { href: "/shop/checkout", label: "Checkout" },
+          { href: "/shop/checkout", label: "Shop" },
           { href: "/shop/sales", label: "Sales" },
           { href: "/shop/products", label: "Products & stock" },
+          { href: "/shop", label: "Analytics" },
         ]}
       />
       {children}

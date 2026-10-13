@@ -10,7 +10,7 @@ import {
   ok,
 } from "@/lib/action-result";
 import { staffOrThrow } from "@/lib/auth";
-import { CHANNELS, merge, MSTATUS, PIPELINES, PTYPES } from "@/lib/crm";
+import { CHANNELS, merge, MSTATUS, PTYPES, slugKey } from "@/lib/crm";
 import { aiEnabled, draftStep, draftWorkflow } from "@/lib/ai";
 import { sendWorkflowEmail } from "@/lib/email";
 import { IMPORT_MAX, type ImportRow } from "@/lib/csv";
@@ -285,22 +285,101 @@ export async function setStage(
   stage: string | null,
 ) {
   const { supabase } = await staffOrThrow("admin", "sales");
-  const p = PIPELINES[pipeline as keyof typeof PIPELINES];
-  if (!p) return fail("Unknown pipeline.");
   const { error } = stage
-    ? p.stages.some(([k]) => k === stage)
-      ? await supabase
-          .from("contact_stages")
-          .upsert({ contact_id: contactId, pipeline, stage })
-      : { error: { message: "Unknown stage." } }
+    ? await supabase
+        .from("contact_stages")
+        .upsert({ contact_id: contactId, pipeline, stage })
     : await supabase
         .from("contact_stages")
         .delete()
         .eq("contact_id", contactId)
         .eq("pipeline", pipeline);
-  if (error) return fail(friendly(error));
+  if (error) {
+    return fail(
+      error.code === "23503" ? "That pipeline or stage no longer exists." : friendly(error),
+    );
+  }
   refresh();
   return ok(stage ? "Stage updated" : "Removed from pipeline");
+}
+
+type StageInput = { key: string | null; label: string };
+
+/** Create or edit a pipeline: name, stage names, order, added and removed stages. */
+export async function savePipeline(
+  key: string | null,
+  name: string,
+  stages: StageInput[],
+): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("admin");
+  const title = name.trim();
+  if (!title) return fail("Give the pipeline a name.");
+  const clean = stages
+    .map((s) => ({ key: s.key, label: s.label.trim() }))
+    .filter((s) => s.label);
+  if (!clean.length) return fail("A pipeline needs at least one stage.");
+
+  let pipeKey = key;
+  if (!pipeKey) {
+    const { data } = await supabase.from("pipelines").select("key");
+    pipeKey = slugKey(title, (data ?? []).map((p) => p.key));
+  }
+  const taken = clean.flatMap((s) => (s.key ? [s.key] : []));
+  const payload = clean.map((s) => {
+    if (s.key) return s;
+    const k = slugKey(s.label, taken);
+    taken.push(k);
+    return { key: k, label: s.label };
+  });
+  const { data: moved, error } = await supabase.rpc("save_pipeline", {
+    p_key: pipeKey,
+    p_name: title,
+    p_stages: payload,
+  });
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok(
+    moved
+      ? `Pipeline saved. ${moved} ${moved === 1 ? "person was" : "people were"} moved to the first stage.`
+      : "Pipeline saved",
+  );
+}
+
+/** Delete a pipeline. People stay in the CRM; they just leave this pipeline. */
+export async function deletePipeline(key: string): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("admin");
+  const { error } = await supabase.from("pipelines").delete().eq("key", key);
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok("Pipeline deleted");
+}
+
+export async function saveStewardshipFields(
+  contactId: string,
+  input: { tags: string; visit_date: string; tafo_choice: string },
+): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("admin", "sales");
+  const tags = [
+    ...new Set(
+      input.tags
+        .split(",")
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ];
+  if (input.visit_date && !/^\d{4}-\d{2}-\d{2}$/.test(input.visit_date))
+    return fail("Enter a valid visit date.");
+  const { error } = await supabase
+    .from("contacts")
+    .update({
+      tags,
+      visit_date: input.visit_date || null,
+      tafo_choice: input.tafo_choice.trim() || null,
+    })
+    .eq("id", contactId);
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok("Saved");
 }
 
 export async function enroll(contactId: string, sequenceId: string) {

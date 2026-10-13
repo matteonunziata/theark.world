@@ -576,3 +576,15 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Currencies on the lot prices page:** USD prices converted to CRC (the rate in Settings → Organization), EUR, CAD, CHF and ILS (a public rates feed cached for an hour, with fixed fallbacks if it can't be reached).
 - **Still static copy from the live site:** the stage table, the fractional "23 shares remaining" figures and the 70% occupancy income examples. Update them in the page files when they change.
 - **The stewardship application has two steps** (the only ones that could be read from the live form without submitting it). More steps need adding when the full form is known.
+
+## Public Farm shop (2026-10-12)
+- **`/farm-shop` is the portal shop open to everyone** (user request). Same catalog (`public_shop_catalog()`, the online products without stock or cost, readable without sign-in), same basket and Stripe Checkout (kind `shop`), pickup at The ARK. Guests give a name and email at the basket; nothing else, no account. Styled from the public site guide (`.fs-*`), not the portal's.
+- **Members get their discount here too.** A signed-in member sees their price (`my_shop_discount()`, 10% on 1, 3 and 6 months, 20% Annual) and orders as themselves. Guests pay full price; the basket shows what a member would save, with Sign in and Membership links, and a section on the page explains the 10% / 20% tiers.
+- **Guest orders** are `portal_shop_orders` rows with `contact_id` null and `guest_name` / `guest_email`. When Stripe confirms payment, `record_shop_order_paid` links the order to the contact with the same email if there is one (so it shows on their CRM profile); it never creates a contact. Shopify gets the order tagged `ark-web` (members: `ark-portal`) with the typed name and email.
+- **Not built:** a rate limit on starting checkouts, so anyone can leave pending orders (they are never settled without payment). Pay on the public page only opens when Stripe and the service role key are set; otherwise the basket links to thearkfarm.shop.
+
+## Stewardship pipelines (2026-10-12)
+- **Two new CRM pipelines**, alongside Memberships and the older Real estate one: *Stewardship application* (Lead, Applying, Call booked, Visit planning, Visited, Lot chosen) and *Stewardship purchase* (Marat intro, Marat review, KYC, Agreements out, Due diligence). Stage keys are in `contact_stages`' check constraint and `src/lib/crm.ts`.
+- **Lot chosen hands off in the database.** A trigger on `contact_stages` adds the person to Stewardship purchase at Marat intro when they reach Lot chosen. They stay at Lot chosen in the application pipeline as a record, and the trigger never moves anyone already in Purchase.
+- **Tracked as fields, not stages:** `contacts.tags` (brochure download, webinar registration; free text, lower-cased), `contacts.visit_date`, `contacts.tafo_choice` (free text). Edited in the profile's Stewardship panel; board cards show the visit date and TAFO choice.
+- Stages are moved by hand (drag or profile) for now. Nothing yet sets them from the website, calendar or KYC provider.

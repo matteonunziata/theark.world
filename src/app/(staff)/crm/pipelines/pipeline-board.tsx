@@ -3,8 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useOptimistic, useState, useTransition } from "react";
 import { useToast } from "@/components/toast";
-import { PIPELINES, type PipelineKey, tierName } from "@/lib/crm";
+import type { CSSProperties } from "react";
+import { type Pipeline, tierName } from "@/lib/crm";
 import { setStage } from "../actions";
+import { PipelineEditor } from "./pipeline-editor";
 
 type Person = {
   id: string;
@@ -13,19 +15,26 @@ type Person = {
   location: string | null;
   source: string | null;
   lot: string | null;
+  visit_date: string | null;
+  tafo_choice: string | null;
 };
 type StageRow = { contact_id: string; pipeline: string; stage: string };
 
 export function PipelineBoard({
   contacts,
   stages,
+  pipelines,
+  isAdmin,
   canEdit,
 }: {
   contacts: Person[];
   stages: StageRow[];
+  pipelines: Pipeline[];
+  isAdmin: boolean;
   canEdit: boolean;
 }) {
-  const [pipe, setPipe] = useState<PipelineKey>("memberships");
+  const [picked, setPipe] = useState("memberships");
+  const [editing, setEditing] = useState<Pipeline | null | undefined>(undefined);
   const [over, setOver] = useState("");
   const router = useRouter();
   const toast = useToast();
@@ -38,7 +47,8 @@ export function PipelineBoard({
       ),
   );
 
-  const p = PIPELINES[pipe];
+  const p = pipelines.find((x) => x.key === picked) ?? pipelines[0];
+  const pipe = p?.key ?? "";
   const inPipe = rows.filter((s) => s.pipeline === pipe);
   const person = (id: string) => contacts.find((c) => c.id === id);
 
@@ -55,21 +65,34 @@ export function PipelineBoard({
   return (
     <>
       <div className="pipe-pick" role="group" aria-label="Pipeline">
-        {(Object.keys(PIPELINES) as PipelineKey[]).map((k) => (
+        {pipelines.map((x) => (
           <button
-            key={k}
+            key={x.key}
             type="button"
             className="pill"
-            aria-pressed={pipe === k}
-            onClick={() => setPipe(k)}
+            aria-pressed={pipe === x.key}
+            onClick={() => setPipe(x.key)}
           >
-            {PIPELINES[k].name}
+            {x.name}
           </button>
         ))}
+        {isAdmin && (
+          <>
+            {p && (
+              <button type="button" className="btn" onClick={() => setEditing(p)}>
+                Edit pipeline
+              </button>
+            )}
+            <button type="button" className="btn" onClick={() => setEditing(null)}>
+              New pipeline
+            </button>
+          </>
+        )}
       </div>
+      {!p && <p className="note">No pipelines yet.</p>}
       <div className="pipe">
-        <div className="board">
-          {p.stages.map(([sk, sl]) => {
+        <div className="board" style={{ "--cols": p?.stages.length ?? 6 } as CSSProperties}>
+          {p?.stages.map(([sk, sl]) => {
             const list = inPipe
               .filter((s) => s.stage === sk)
               .map((s) => person(s.contact_id))
@@ -110,9 +133,17 @@ export function PipelineBoard({
                         ? c.tier
                           ? tierName(c.tier)
                           : c.location || c.source || ""
-                        : c.lot
-                          ? `Lot ${c.lot}`
-                          : c.location || ""}
+                        : pipe.startsWith("stewardship")
+                          ? [
+                              c.lot ? `Lot ${c.lot}` : "",
+                              c.visit_date ? `Visit ${c.visit_date}` : "",
+                              c.tafo_choice ? `TAFO ${c.tafo_choice}` : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" · ") || c.location || ""
+                          : c.lot
+                            ? `Lot ${c.lot}`
+                            : c.location || ""}
                     </span>
                   </button>
                 ))}
@@ -131,6 +162,17 @@ export function PipelineBoard({
           ? `${inPipe.length} in this pipeline. Drag between stages, or open someone’s profile to change it.`
           : "Nobody in this pipeline yet. Open a person’s profile and set their stage under Pipelines."}
       </p>
+      <PipelineEditor
+        key={editing === undefined ? "closed" : (editing?.key ?? "new")}
+        open={editing !== undefined}
+        pipeline={editing ?? null}
+        counts={inPipe.reduce<Record<string, number>>((m, s) => {
+          m[s.stage] = (m[s.stage] ?? 0) + 1;
+          return m;
+        }, {})}
+        onClose={() => setEditing(undefined)}
+        onDeleted={() => setPipe("")}
+      />
     </>
   );
 }
