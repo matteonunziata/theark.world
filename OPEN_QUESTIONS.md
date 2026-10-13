@@ -192,3 +192,7 @@
 - **Lot 45 and the live site's lot numbers:** the live site shows lot 80 for sale and lists a few prices that differ from the inventory. Which is right? The pages follow the inventory.
 
 - **Stewardship pipelines:** should the old "Real estate" pipeline be retired now (it has no people in it)? Is TAFO a fixed list of options (so it can be a dropdown)? Should Lead, Applying, Call booked and the visit date be set automatically from the site, booking tool and webinar tool?
+
+## Saved card
+- **What should the saved card pay for?** It is stored but nothing charges it. Options: one-tap pay on renewals and bookings in the portal, monthly membership subscriptions (planned), and farm shop "Pay with account" at Checkout (today that reads a Tilopay token, so the two would need joining or one dropped).
+- **Cards only?** Stripe's setup page may offer wallets such as Link; only real cards are kept. Limit the methods in the Stripe dashboard if this matters.

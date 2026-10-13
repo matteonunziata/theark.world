@@ -3,8 +3,9 @@ import Link from "next/link";
 import { tierName, tierPrice } from "@/lib/crm";
 import { addDays, dayLabel, fmtDate, timeRange, todayIn } from "@/lib/dates";
 import { loadPortal } from "@/lib/portal";
-import { fmtAmount, stripeReady, TERM_NAME, termPrice } from "@/lib/stripe";
+import { fmtAmount, recordSavedCard, stripeReady, TERM_NAME, termPrice } from "@/lib/stripe";
 import { CancelBooking } from "./cancel-booking";
+import { CardPanel } from "./card-panel";
 import { PhotoField } from "./photo-field";
 import { ProfileForm } from "./profile-form";
 
@@ -14,11 +15,22 @@ function nowTime(tz: string) {
   return new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date());
 }
 
-export default async function Me() {
+export default async function Me({ searchParams }: PageProps<"/portal/me">) {
+  const sp = await searchParams;
   const p = await loadPortal();
   const { me } = p;
+  // Back from Stripe after saving a card: keep it now, in case the webhook hasn't yet.
+  // Only a session made for this member counts.
+  const cardSession = typeof sp.card_session === "string" ? sp.card_session : "";
+  if (me && cardSession) {
+    const saved = await recordSavedCard(cardSession).catch((e) => {
+      console.error("Couldn’t keep the saved card", cardSession, e);
+      return null;
+    });
+    if (saved && saved !== me.id) console.error("Card session belongs to someone else", cardSession);
+  }
   const today = todayIn(p.timezone);
-  const [{ data: regs }, { data: tier }, { data: rate }] = await Promise.all([
+  const [{ data: regs }, { data: tier }, { data: rate }, { data: card }] = await Promise.all([
     me
       ? p.supabase
           .from("registrations")
@@ -32,6 +44,7 @@ export default async function Me() {
       ? p.supabase.from("membership_tiers").select("*").eq("key", me.tier).maybeSingle()
       : Promise.resolve({ data: null }),
     me ? p.supabase.rpc("my_rate") : Promise.resolve({ data: null }),
+    me ? p.supabase.rpc("my_card").maybeSingle() : Promise.resolve({ data: null }),
   ]);
 
   // Paying ahead online: memberships paid by term, once Stripe is on.
@@ -136,6 +149,7 @@ export default async function Me() {
               </div>
             )}
           </section>
+          {p.memberId && (card || stripeReady()) && <CardPanel card={card ?? null} />}
           <section className="pv-panel">
             <h2>Your bookings</h2>
             {!regs?.length ? (

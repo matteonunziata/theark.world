@@ -15,7 +15,8 @@ import { sendGuestPassEmail, siteUrl } from "@/lib/email";
 import { fmtDate } from "@/lib/dates";
 import { sendGuestPassWhatsApp } from "@/lib/whatsapp";
 import { notifyLater } from "@/lib/slack";
-import { stripeReady } from "@/lib/stripe";
+import { createCardSetup, removeSavedCard, stripeReady } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { guestMessage } from "@/lib/slack-format";
 
 async function viewer() {
@@ -211,4 +212,40 @@ export async function replaceMyPass(): Promise<ActionResult> {
   if (error) return fail(friendly(error));
   revalidatePath("/portal", "layout");
   return ok("You have a new pass code. Save the new one to your photos.");
+}
+
+/** Send the member to Stripe to save a card (or replace the one on file). Charges nothing. */
+export async function startSaveCard(): Promise<ActionResult> {
+  const v = await viewer();
+  if (!v.memberId) return fail("Only members can save a card.");
+  const admin = createAdminClient();
+  if (!stripeReady() || !admin) return fail("Saving a card isn’t open yet.");
+  const { data: c } = await admin
+    .from("contacts")
+    .select("id, name, email, stripe_customer_id")
+    .eq("id", v.memberId)
+    .maybeSingle();
+  if (!c) return fail("We couldn’t find your membership.");
+  let url: string;
+  try {
+    url = await createCardSetup(c);
+  } catch (e) {
+    console.error("Card setup failed", v.memberId, e);
+    return fail("We couldn’t open the card page. Nothing was saved. Try again in a minute.");
+  }
+  redirect(url);
+}
+
+/** Forget the saved card. */
+export async function removeCard(): Promise<ActionResult> {
+  const v = await viewer();
+  if (!v.memberId) return fail("Only members have a saved card.");
+  try {
+    await removeSavedCard(v.memberId);
+  } catch (e) {
+    console.error("Card removal failed", v.memberId, e);
+    return fail("We couldn’t remove the card. Try again in a minute.");
+  }
+  revalidatePath("/portal/me");
+  return ok("Card removed");
 }

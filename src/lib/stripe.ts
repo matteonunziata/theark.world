@@ -131,6 +131,84 @@ export function checkoutParams(i: CheckoutInput) {
   };
 }
 
+/** Start Checkout in setup mode: Stripe collects a card and saves it, charging nothing. */
+export async function createCardSetup(contact: { id: string; name: string; email: string | null; stripe_customer_id: string | null }) {
+  const s = stripe();
+  if (!s) throw new Error("Stripe isn’t set up.");
+  const origin = await siteUrl();
+  let customer = contact.stripe_customer_id;
+  if (!customer) {
+    const c = await s.customers.create({
+      name: contact.name,
+      ...(contact.email ? { email: contact.email } : {}),
+      metadata: { contact_id: contact.id },
+    });
+    customer = c.id;
+    const admin = createAdminClient();
+    await admin?.from("contacts").update({ stripe_customer_id: customer }).eq("id", contact.id);
+  }
+  const session = await s.checkout.sessions.create({
+    mode: "setup",
+    customer,
+    metadata: { kind: "card", contact_id: contact.id },
+    success_url: `${origin}/portal/me?card_session={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/portal/me`,
+  });
+  if (!session.url) throw new Error("Stripe didn’t return a page for the card.");
+  return session.url;
+}
+
+/**
+ * Keep the card from a finished setup session on the contact. Safe to call more
+ * than once (the return page and the webhook both do). Returns the contact it
+ * belongs to, or null when the session isn't a finished card setup.
+ */
+export async function recordSavedCard(sessionId: string): Promise<string | null> {
+  const s = stripe();
+  const admin = createAdminClient();
+  if (!s || !admin) return null;
+  const cs = await s.checkout.sessions.retrieve(sessionId, { expand: ["setup_intent.payment_method"] });
+  const contactId = cs.metadata?.contact_id;
+  if (cs.mode !== "setup" || cs.metadata?.kind !== "card" || cs.status !== "complete" || !contactId) return null;
+  const si = cs.setup_intent;
+  const pm = si && typeof si !== "string" ? si.payment_method : null;
+  if (!pm || typeof pm === "string" || !pm.card) return null;
+  const customer = typeof cs.customer === "string" ? cs.customer : (cs.customer?.id ?? null);
+
+  const { data: before } = await admin.from("contacts").select("card_payment_method_id").eq("id", contactId).maybeSingle();
+  const { error } = await admin
+    .from("contacts")
+    .update({
+      stripe_customer_id: customer,
+      card_payment_method_id: pm.id,
+      card_brand: pm.card.brand,
+      card_last4: pm.card.last4,
+      card_exp_month: pm.card.exp_month,
+      card_exp_year: pm.card.exp_year,
+    })
+    .eq("id", contactId);
+  if (error) throw new Error(`Couldn’t keep the card for ${contactId}: ${error.message}`);
+  if (customer) await s.customers.update(customer, { invoice_settings: { default_payment_method: pm.id } }).catch(() => {});
+  // A replaced card goes away at Stripe too.
+  const old = before?.card_payment_method_id;
+  if (old && old !== pm.id) await s.paymentMethods.detach(old).catch(() => {});
+  return contactId;
+}
+
+/** Forget a member's saved card, here and at Stripe. */
+export async function removeSavedCard(contactId: string) {
+  const s = stripe();
+  const admin = createAdminClient();
+  if (!admin) throw new Error("Stripe isn’t set up.");
+  const { data: c } = await admin.from("contacts").select("card_payment_method_id").eq("id", contactId).maybeSingle();
+  if (c?.card_payment_method_id) await s?.paymentMethods.detach(c.card_payment_method_id).catch(() => {});
+  const { error } = await admin
+    .from("contacts")
+    .update({ card_payment_method_id: null, card_brand: null, card_last4: null, card_exp_month: null, card_exp_year: null })
+    .eq("id", contactId);
+  if (error) throw new Error(error.message);
+}
+
 /** Start a Checkout session and return Stripe's URL for it. */
 export async function createCheckout(i: CheckoutInput) {
   const s = stripe();

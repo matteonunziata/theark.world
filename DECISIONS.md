@@ -588,3 +588,10 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Lot chosen hands off in the database.** A trigger on `contact_stages` adds the person to Stewardship purchase at Marat intro when they reach Lot chosen. They stay at Lot chosen in the application pipeline as a record, and the trigger never moves anyone already in Purchase.
 - **Tracked as fields, not stages:** `contacts.tags` (brochure download, webinar registration; free text, lower-cased), `contacts.visit_date`, `contacts.tafo_choice` (free text). Edited in the profile's Stewardship panel; board cards show the visit date and TAFO choice.
 - Stages are moved by hand (drag or profile) for now. Nothing yet sets them from the website, calendar or KYC provider.
+
+## Saved card on the membership account (2026-10-13)
+
+- **Members save a card in Portal → Me → Payment method** (user request). "Save a card" opens Stripe Checkout in setup mode (hosted by Stripe, nothing charged), so card details never touch ARK OS. Replace and Remove sit next to the card once one is saved. The panel shows only while Stripe is on.
+- **What we keep:** `contacts.stripe_customer_id`, `card_payment_method_id`, brand, last four and expiry. One card per person. A Stripe customer is made the first time and reused. Replacing or removing detaches the old card at Stripe too.
+- **Saved once, from whichever arrives first:** the return to `/portal/me?card_session=…` or the `checkout.session.completed` webhook (setup sessions are now handled there). Members read their own card through `my_card()`; writes use the service role.
+- **Not wired to charging yet.** Nothing bills this card. It is separate from `tilopay_card_token`, which Checkout's "Pay with account" still uses. See OPEN_QUESTIONS.
