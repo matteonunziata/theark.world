@@ -1,5 +1,5 @@
 import type { DayRow } from "@/app/(public)/courts/court-booker";
-import { BOOKING_DAYS, type PublicCourt } from "@/lib/courts";
+import { BOOKING_DAYS, type PriceItem, type PublicCourt } from "@/lib/courts";
 import { addDays, todayIn } from "@/lib/dates";
 import type { PortalData } from "@/lib/portal";
 import { stripeReady } from "@/lib/stripe";
@@ -12,8 +12,9 @@ export async function CourtsSection({ p, date: d }: { p: PortalData; date?: stri
   const today = todayIn(p.timezone);
   const last = addDays(today, BOOKING_DAYS);
   const date = d && ISO.test(d) && d >= today && d <= last ? d : today;
-  const [{ data: courts }, { data: day }, { data: mine }, { data: discount }] = await Promise.all([
+  const [{ data: courts }, { data: prices }, { data: day }, { data: mine }, { data: discount }] = await Promise.all([
     p.supabase.rpc("public_courts"),
+    p.supabase.rpc("public_court_prices"),
     p.supabase.rpc("public_court_day", { p_date: date }),
     p.memberId ? p.supabase.rpc("my_court_bookings") : Promise.resolve({ data: [] }),
     p.supabase.rpc("my_court_discount"),
@@ -28,6 +29,7 @@ export async function CourtsSection({ p, date: d }: { p: PortalData; date?: stri
     <CourtsBooking
       courts={(courts ?? []) as PublicCourt[]}
       day={(day ?? []) as DayRow[]}
+      prices={(prices ?? []) as PriceItem[]}
       mine={mine ?? []}
       date={date}
       today={today}

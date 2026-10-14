@@ -135,18 +135,22 @@ export async function bookCourt(input: {
   date: string;
   start: string;
   minutes: number;
-  openMatch?: boolean;
+  match: "open" | "private";
+  privatePay?: "whole" | "split";
+  spots: 2 | 4;
   level?: number;
-  spots?: number;
   levelMin?: number;
   levelMax?: number;
+  friends?: { name: string; email: string; phone: string }[];
+  equipment?: { key: string; qty: number }[];
 }): Promise<ActionResult & { payUrl?: string }> {
   const v = await viewer();
   if (!v.memberId) return fail("Court booking is for members.");
   const { data: me } = await v.supabase.rpc("my_member_profile").maybeSingle();
   if (!me?.email) return fail("Add your email under Me first.");
+  if (!me.phone) return fail("Add your phone number under Me first, so we can reach you about the booking.");
   const online = stripeReady();
-  const open = !!input.openMatch;
+  const open = input.match === "open";
   const { data, error } = await v.supabase.rpc("hold_court", {
     p: {
       court_id: input.courtId,
@@ -155,14 +159,17 @@ export async function bookCourt(input: {
       minutes: input.minutes,
       name: me.name,
       email: me.email,
-      phone: me.phone ?? "",
+      phone: me.phone,
       pay: online ? "online" : "reception",
       portal: true,
       open_match: open,
+      private_pay: open ? null : (input.privatePay ?? "split"),
+      spots: input.spots,
       level: open ? input.level : null,
-      spots: open ? input.spots : null,
       level_min: open ? input.levelMin : null,
       level_max: open ? input.levelMax : null,
+      friends: open ? [] : (input.friends ?? []),
+      equipment: input.equipment ?? [],
     },
   });
   if (error || !data) return fail(friendly(error));
@@ -171,8 +178,34 @@ export async function bookCourt(input: {
   revalidatePath("/events/courts");
   revalidatePath("/courts", "layout");
   if (h.status === "held") return { ...ok("Taking you to payment…"), payUrl: `/pay/court/${h.player_token}` };
-  if (Number(h.amount) > 0) return ok(open ? "Booked. Share the match from Your bookings." : "Booked. Settle it at reception when you arrive.");
+  if (Number(h.amount) > 0) return ok("Booked. Settle it at reception when you arrive. Share the join link from Your bookings.");
   return ok("Booked.");
+}
+
+/** A member moves their own court booking: up to 3 hours before, twice at most. */
+export async function moveMyCourt(id: string, date: string, start: string, minutes: number) {
+  const v = await viewer();
+  const { data, error } = await v.supabase.rpc("move_my_court_booking", {
+    p_id: id,
+    p_date: date,
+    p_start: start,
+    p_minutes: minutes,
+  });
+  if (error || !data) return { ok: false as const, error: friendly(error) };
+  revalidatePath("/portal/schedule");
+  revalidatePath("/events/courts");
+  revalidatePath("/courts", "layout");
+  const m = data as { date: string; start_time: string; end_time: string; amount: number; credit: number; owed: number; moves_left: number };
+  return {
+    ok: true as const,
+    date: m.date,
+    start: m.start_time.slice(0, 5),
+    end: m.end_time.slice(0, 5),
+    amount: Number(m.amount),
+    credit: Number(m.credit),
+    owed: Number(m.owed),
+    movesLeft: m.moves_left,
+  };
 }
 
 export async function cancelCourt(id: string) {

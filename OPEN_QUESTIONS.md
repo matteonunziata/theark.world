@@ -196,3 +196,11 @@
 ## Saved card
 - **What should the saved card pay for?** It is stored but nothing charges it. Options: one-tap pay on renewals and bookings in the portal, monthly membership subscriptions (planned), and farm shop "Pay with account" at Checkout (today that reads a Tilopay token, so the two would need joining or one dropped).
 - **Cards only?** Stripe's setup page may offer wallets such as Link; only real cards are kept. Limit the methods in the Stripe dashboard if this matters.
+
+## Courts rework (2026-10-14)
+
+- **Member discounts on courts.** The 10% / 20% tier discount still applies to bookings made in the members portal (on top of the new price list). The brief didn't mention it. Keep, or drop it now that prices are fixed?
+- **Cancelling.** Cancelling stays at 24 hours before; moving is 3 hours. Should cancelling also be 3 hours?
+- **Two bookings a day and 14 days ahead** are unchanged for public and member bookings (staff bookings skip the daily limit).
+- **Refunds for shorter moves and cancellations** are still done by hand from Stripe; the credit is only noted on the booking.
+- **"Courts player" tag.** Contacts have no tags column, so new court players get source "Courts". Add real tags?

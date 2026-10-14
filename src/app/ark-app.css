@@ -1231,3 +1231,29 @@ dialog.modal h2{margin:0 0 4px}
 .hw-row .what{display:flex;flex-direction:column;gap:2px}
 .hw-row .what .muted{font-size:13px}
 @media (max-width:640px){.hw-row{grid-template-columns:1fr}}
+
+/* Courts schedule: money state is worked out from the payments, never set by hand */
+.ct-track .paid,.ct-track .owed{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:1px;padding:0 9px;text-align:left;cursor:pointer;line-height:1.2}
+.ct-track .paid{background:color-mix(in srgb,#2f8f57 30%,var(--surface));box-shadow:inset 0 0 0 1.5px #2f8f57}
+.ct-track .owed{background:color-mix(in srgb,#c8402d 24%,var(--surface));box-shadow:inset 0 0 0 1.5px #c8402d}
+.ct-track .paid b,.ct-track .owed b{font-size:12.5px;font-weight:600;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct-track .paid small,.ct-track .owed small{font-size:11px;color:var(--ink);opacity:.75}
+.ct-track .blockc{cursor:pointer;border:0}
+.ct-legend i.paid{background:color-mix(in srgb,#2f8f57 30%,var(--surface));box-shadow:inset 0 0 0 1.5px #2f8f57}
+.ct-legend i.owed{background:color-mix(in srgb,#c8402d 24%,var(--surface));box-shadow:inset 0 0 0 1.5px #c8402d}
+.ct-legend i.class{background:color-mix(in srgb,var(--plum) 22%,var(--surface));box-shadow:inset 0 0 0 1px var(--plum)}
+.ct-track .class{background:color-mix(in srgb,var(--plum) 22%,var(--surface));color:var(--ink);box-shadow:inset 0 0 0 1px var(--plum)}
+.cd-sec{margin:0 0 18px}
+.cd-sec h3{font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.cd-state{display:inline-block;padding:3px 10px;border-radius:999px;font-weight:600;font-size:13px}
+.cd-state.green{background:color-mix(in srgb,#2f8f57 25%,var(--surface));color:var(--ink)}
+.cd-state.red{background:color-mix(in srgb,#c8402d 22%,var(--surface));color:var(--ink)}
+.cd-player{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;display:grid;gap:6px}
+.cd-player header{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.cd-player .meta{font-size:13px;color:var(--muted)}
+.cd-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cd-row .field-in,.cd-row select{min-width:0}
+.cd-owe{font-weight:600}
+.cd-owe.bad{color:var(--danger)}
+.cd-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.cd-table td,.cd-table th{padding:4px 6px;text-align:left;border-top:1px solid var(--line)}

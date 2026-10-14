@@ -1092,6 +1092,49 @@ select pg_temp.act_as(pg_temp.id('shop'));
 select pg_temp.expect((select count(*) from public.court_bookings) = 0, 'shop staff cannot read court bookings');
 reset role;
 
+-- Courts: money, equipment and check-in are staff-only ---------------------------
+
+select pg_temp.act_as(pg_temp.id('member'));
+select pg_temp.expect((select count(*) from public.court_payments) = 0, 'members cannot read court payments');
+select pg_temp.expect((select count(*) from public.court_equipment) = 0, 'members cannot read court equipment');
+select pg_temp.expect((select count(*) from public.court_config) = 0, 'members cannot read the court settings');
+select pg_temp.expect((select count(*) from public.court_prices where kind = 'court') = 3,
+  'members see the price list: three court lengths');
+do $$
+begin
+  perform public.staff_court_day(public.org_today());
+  raise exception 'RLS test failed: a member read the staff court day';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+do $$
+begin
+  perform public.staff_start_court_game(gen_random_uuid(), 'because');
+  raise exception 'RLS test failed: a member started a game';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+reset role;
+
+select pg_temp.act_as(null);
+select pg_temp.expect((select count(*) from public.court_payments) = 0, 'the public cannot read court payments');
+do $$
+begin
+  perform public.staff_take_court_payment(gen_random_uuid(), gen_random_uuid(), 'cash_crc', 1000);
+  raise exception 'RLS test failed: the public took a court payment';
+exception when raise_exception then
+  if sqlerrm like 'RLS test failed%' then raise; end if;
+end $$;
+select pg_temp.expect(
+  not exists (select 1 from jsonb_object_keys(coalesce(public.court_booking_by_token('nope'), '{}'::jsonb)) k),
+  'an unknown booking token reveals nothing');
+reset role;
+
+select pg_temp.act_as(pg_temp.id('facilitator'));
+select pg_temp.expect(jsonb_typeof(public.staff_court_day(public.org_today() + 3)) = 'array',
+  'facilitators read the staff court day');
+reset role;
+
 -- Marketing ----------------------------------------------------------------------
 
 select pg_temp.act_as(pg_temp.id('marketing'));

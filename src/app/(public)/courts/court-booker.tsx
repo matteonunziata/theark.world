@@ -5,20 +5,25 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import {
   addMinutes,
+  CANCEL_HOURS,
   courtMoney,
   courtPrice,
   durationLabel,
   durations,
+  type EquipmentPick,
+  equipmentTotal,
   hhmm,
   HOLD_MINUTES,
   LEVELS,
   levelRange,
   overlapsTime,
+  type PriceItem,
   type PublicCourt,
   slots,
 } from "@/lib/courts";
 import { fmtDate, fmtTime } from "@/lib/dates";
 import { type CourtResult, holdCourt } from "./actions";
+import { EquipmentPicker } from "./equipment-picker";
 
 export type DayRow = {
   court_id: string;
@@ -56,6 +61,7 @@ export function CourtBooker({
   now,
   me,
   online,
+  equipment,
 }: {
   courts: PublicCourt[];
   day: DayRow[];
@@ -64,6 +70,7 @@ export function CourtBooker({
   now: string;
   me: Me | null;
   online: boolean;
+  equipment: PriceItem[];
 }) {
   const [pick, setPick] = useState<Pick | null>(null);
   return (
@@ -77,6 +84,7 @@ export function CourtBooker({
           date={date}
           me={me}
           online={online}
+          equipment={equipment}
           onClose={() => setPick(null)}
         />
       )}
@@ -190,10 +198,13 @@ export function CourtGrid({
         <li><i className="free" />Available</li>
         <li><i className="taken" />Not available</li>
         <li><i className="match" />Open match</li>
+        <li><i className="class" />Class</li>
       </ul>
     </>
   );
 }
+
+type Friend = { name: string; email: string; phone: string };
 
 function BookingForm({
   pick,
@@ -201,6 +212,7 @@ function BookingForm({
   date,
   me,
   online,
+  equipment,
   onClose,
 }: {
   pick: Pick;
@@ -208,38 +220,45 @@ function BookingForm({
   date: string;
   me: Me | null;
   online: boolean;
+  equipment: PriceItem[];
   onClose: () => void;
 }) {
   const router = useRouter();
   const c = pick.court;
-  // A longer booking needs the following slots free too.
+  // A longer booking needs the following half hours free too.
   const canFit = (minutes: number) =>
     !day.some(
       (r) =>
         r.court_id === c.id &&
         overlapsTime({ start: pick.start, end: addMinutes(pick.start, minutes) }, { start: hhmm(r.start_time), end: hhmm(r.end_time) }),
     ) && addMinutes(pick.start, minutes) <= hhmm(c.close_time);
-  const lengths = durations(c).filter(canFit);
-  const [minutes, setMinutes] = useState(lengths[0] ?? c.slot_minutes);
+  const lengths = durations().filter(canFit);
+  const [minutes, setMinutes] = useState(lengths[0] ?? 60);
   const [step, setStep] = useState<"length" | "details">("length");
-  const [openMatch, setOpenMatch] = useState(false);
+  const [match, setMatch] = useState<"open" | "private">("private");
+  const [privatePay, setPrivatePay] = useState<"whole" | "split">("split");
+  const [spots, setSpots] = useState<2 | 4>(4);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [picks, setPicks] = useState<EquipmentPick[]>([]);
   const [level, setLevel] = useState<number>(2.5);
-  const [spots, setSpots] = useState<number>(Math.min(4, c.max_players));
   const [levelMin, setLevelMin] = useState<number>(1.5);
   const [levelMax, setLevelMax] = useState<number>(3.5);
   const pay: "online" | "reception" = online ? "online" : "reception";
   const [result, setResult] = useState<CourtResult | null>(null);
   const [pending, start] = useTransition();
 
-  const priced = (m: number) => courtPrice(c, m);
-  const discounted = priced(minutes);
-  const share = openMatch ? (c.currency === "USD" ? Math.round((discounted / spots) * 100) / 100 : Math.round(discounted / spots)) : discounted;
+  const court = courtPrice(c, minutes);
+  const each = Math.round(court / spots);
+  const hostCourt = match === "private" && privatePay === "whole" ? court : court - each * (spots - 1);
+  const equip = equipmentTotal(equipment, picks);
+  const due = hostCourt + equip;
   const end = addMinutes(pick.start, minutes);
   const pickLevel = (v: number) => {
     setLevel(v);
     setLevelMin(Math.max(0, v - 1));
     setLevelMax(Math.min(7, v + 1));
   };
+  const setFriend = (i: number, patch: Partial<Friend>) => setFriends((f) => f.map((x, j) => (j === i ? { ...x, ...patch } : x)));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -256,18 +275,18 @@ function BookingForm({
             {fmtDate(date, { weekday: "short", month: "short", day: "numeric" })} · {fmtTime(pick.start)}
           </p>
           <div className="lens">
-            {durations(c).map((m) => {
+            {durations().map((m) => {
               const ok = lengths.includes(m);
               return (
                 <button key={m} type="button" disabled={!ok} className={m === minutes ? "on" : ""} onClick={() => setMinutes(m)}>
                   <b>{durationLabel(m)}</b>
-                  <span>{ok ? courtMoney(priced(m), c.currency) : "Not free"}</span>
+                  <span>{ok ? courtMoney(courtPrice(c, m), c.currency) : "Not free"}</span>
                 </button>
               );
             })}
           </div>
           <button type="button" className="btn solid wide" disabled={!lengths.includes(minutes)} onClick={() => setStep("details")}>
-            Continue · {courtMoney(discounted, c.currency)}
+            Continue · {courtMoney(court, c.currency)}
           </button>
           <button type="button" className="btn quiet wide" onClick={onClose}>Close</button>
         </div>
@@ -291,14 +310,15 @@ function BookingForm({
               name: String(fd.get("name") ?? ""),
               email: String(fd.get("email") ?? ""),
               phone: String(fd.get("phone") ?? ""),
-              players: openMatch ? spots : Number(fd.get("players")) || null,
               notes: String(fd.get("notes") ?? ""),
-              openMatch,
-              level: openMatch ? level : null,
-              spots: openMatch ? spots : null,
-              levelMin: openMatch ? levelMin : null,
-              levelMax: openMatch ? levelMax : null,
-              pay,
+              match,
+              privatePay,
+              spots,
+              level: match === "open" ? level : null,
+              levelMin: match === "open" ? levelMin : null,
+              levelMax: match === "open" ? levelMax : null,
+              friends: match === "private" ? friends.filter((f) => f.name || f.email || f.phone) : [],
+              equipment: picks,
               website: String(fd.get("ms_trap_x") ?? ""),
             });
             setResult(r);
@@ -332,26 +352,60 @@ function BookingForm({
         </div>
         <div className="two">
           <div className="fld">
-            <label htmlFor="cb-phone">WhatsApp</label>
-            <input id="cb-phone" name="phone" type="tel" autoComplete="tel" defaultValue={me?.phone ?? ""} />
+            <label htmlFor="cb-phone">Phone (WhatsApp)</label>
+            <input id="cb-phone" name="phone" type="tel" required autoComplete="tel" defaultValue={me?.phone ?? ""} />
           </div>
-          {!openMatch && (
-            <div className="fld">
-              <label htmlFor="cb-players">Players</label>
-              <input id="cb-players" name="players" type="number" min={1} max={8} defaultValue={c.sport === "padel" ? 4 : 2} />
-            </div>
-          )}
+          <div className="fld">
+            <label htmlFor="cb-spots">Players</label>
+            <select id="cb-spots" value={spots} onChange={(e) => setSpots(Number(e.target.value) as 2 | 4)}>
+              <option value={4}>4 · doubles</option>
+              <option value={2}>2 · singles</option>
+            </select>
+          </div>
         </div>
 
-        <label className="toggle">
-          <input type="checkbox" checked={openMatch} onChange={(e) => setOpenMatch(e.target.checked)} />
-          <span>
+        <div className="choice" role="group" aria-label="Kind of match">
+          <button type="button" className={match === "private" ? "on" : ""} onClick={() => setMatch("private")}>
+            <b>Private match</b>
+            <span>Not listed. Friends join with your link.</span>
+          </button>
+          <button type="button" className={match === "open" ? "on" : ""} onClick={() => setMatch("open")}>
             <b>Open match</b>
-            <span>Others join and pay their share.</span>
-          </span>
-        </label>
+            <span>Listed publicly. Others join and pay their share.</span>
+          </button>
+        </div>
 
-        {openMatch && (
+        {match === "private" && (
+          <>
+            <div className="choice" role="group" aria-label="Who pays">
+              <button type="button" className={privatePay === "split" ? "on" : ""} onClick={() => setPrivatePay("split")}>
+                <b>Split it</b>
+                <span>You pay your share ({courtMoney(each, c.currency)}); friends pay theirs.</span>
+              </button>
+              <button type="button" className={privatePay === "whole" ? "on" : ""} onClick={() => setPrivatePay("whole")}>
+                <b>I pay the whole court</b>
+                <span>Friends only add their names.</span>
+              </button>
+            </div>
+            <p className="muted" style={{ fontSize: 13.5, margin: "0 0 8px" }}>
+              Add your friends now, or send them your link after booking. We need each player’s name, phone and email.
+            </p>
+            {friends.map((f, i) => (
+              <div key={i} className="friend">
+                <input aria-label={`Friend ${i + 1} name`} placeholder="Name" value={f.name} onChange={(e) => setFriend(i, { name: e.target.value })} />
+                <input aria-label={`Friend ${i + 1} email`} type="email" placeholder="Email" value={f.email} onChange={(e) => setFriend(i, { email: e.target.value })} />
+                <input aria-label={`Friend ${i + 1} phone`} type="tel" placeholder="Phone" value={f.phone} onChange={(e) => setFriend(i, { phone: e.target.value })} />
+              </div>
+            ))}
+            {friends.length < spots - 1 && (
+              <button type="button" className="btn sm" style={{ marginBottom: 14 }} onClick={() => setFriends((f) => [...f, { name: "", email: "", phone: "" }])}>
+                + Add a friend
+              </button>
+            )}
+          </>
+        )}
+
+        {match === "open" && (
           <>
             <div className="two">
               <div className="fld">
@@ -365,18 +419,6 @@ function BookingForm({
                 </select>
               </div>
               <div className="fld">
-                <label htmlFor="cb-spots">Players in total</label>
-                <select id="cb-spots" value={spots} onChange={(e) => setSpots(Number(e.target.value))}>
-                  {Array.from({ length: c.max_players - 1 }, (_, i) => i + 2).map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="two">
-              <div className="fld">
                 <label htmlFor="cb-lmin">Level from</label>
                 <select id="cb-lmin" value={levelMin} onChange={(e) => setLevelMin(Number(e.target.value))}>
                   {Array.from({ length: 15 }, (_, i) => i / 2).map((v) => (
@@ -386,35 +428,37 @@ function BookingForm({
                   ))}
                 </select>
               </div>
-              <div className="fld">
-                <label htmlFor="cb-lmax">Level to</label>
-                <select id="cb-lmax" value={levelMax} onChange={(e) => setLevelMax(Number(e.target.value))}>
-                  {Array.from({ length: 15 }, (_, i) => i / 2).map((v) => (
-                    <option key={v} value={v} disabled={v < levelMin}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            </div>
+            <div className="fld">
+              <label htmlFor="cb-lmax">Level to</label>
+              <select id="cb-lmax" value={levelMax} onChange={(e) => setLevelMax(Number(e.target.value))}>
+                {Array.from({ length: 15 }, (_, i) => i / 2).map((v) => (
+                  <option key={v} value={v} disabled={v < levelMin}>
+                    {v}
+                  </option>
+                ))}
+              </select>
             </div>
           </>
         )}
 
+        <EquipmentPicker items={equipment} picks={picks} onChange={setPicks} label="Your equipment (you pay for what you take)" />
+
         <div className="fld">
           <label htmlFor="cb-notes">Notes</label>
-          <textarea id="cb-notes" name="notes" rows={2} placeholder="Rackets, coach…" />
+          <textarea id="cb-notes" name="notes" rows={2} placeholder="Anything we should know" />
         </div>
-
 
         <div className="total">
           <span>
-            {openMatch ? "Your share" : "Total"}
-            {openMatch ? <small> · court {courtMoney(discounted, c.currency)}</small> : null}
+            {hostCourt === court && !equip ? "Total" : "You pay"}
+            <small> · court {courtMoney(court, c.currency)}{equip ? ` + equipment ${courtMoney(equip, c.currency)}` : ""} · VAT included</small>
           </span>
-          <b>{courtMoney(share, c.currency)}</b>
+          <b>{courtMoney(due, c.currency)}</b>
         </div>
         <p className="muted" style={{ fontSize: 13 }}>
-          {pay === "online" && online ? `Pay by card next. Held ${HOLD_MINUTES} min.` : "Pay at reception."} Cancel free up to 24 h before.
+          {pay === "online" && online ? `Pay by card next. Held ${HOLD_MINUTES} min.` : "Pay at reception."} Cancel free up to {CANCEL_HOURS} h before.
+          After booking you get a private link to move or cancel it.
         </p>
         <div className="acts">
           <button type="button" className="btn quiet" onClick={() => setStep("length")}>Back</button>
