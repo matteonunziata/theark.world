@@ -66,7 +66,9 @@ function Body({ tiers, pay }: { tiers: Tier[]; pay: PayOptions }) {
   useEffect(() => {
     let live = true;
     if (!tier) return;
-    quoteTier(contactId, tier).then((r) => live && setQuote(r));
+    quoteTier(contactId, tier)
+      .then((r) => live && setQuote(r))
+      .catch(() => live && setQuote(null));
     return () => {
       live = false;
     };
