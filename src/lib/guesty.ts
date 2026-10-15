@@ -91,9 +91,13 @@ export async function fetchToken(clientId: string, secret: string) {
     }
     if (res.status === 400 || res.status === 401 || res.status === 403) {
       const why = describe(res.status, json);
+      const code =
+        json && typeof json === "object" && typeof (json as { error?: unknown }).error === "string"
+          ? ` (${(json as { error: string }).error})`
+          : "";
       throw new GuestyError(
         res.status,
-        `Guesty didn’t accept the client id and secret.${why.startsWith("Guesty said:") ? ` ${why}` : ""} Copy both again from the Open API application in Guesty, with no spaces around them.`,
+        `Guesty didn’t accept the client id and secret${code}, HTTP ${res.status}.${why.startsWith("Guesty said:") ? ` ${why}` : ""} The client id was ${clientId.length} characters and the secret ${secret.length}. Copy both again from the Open API application in Guesty, with no spaces around them.`,
       );
     }
     throw new GuestyError(res.status, describe(res.status, json));
