@@ -47,6 +47,11 @@ export async function proxy(request: NextRequest) {
   const host = (request.headers.get("host") ?? request.nextUrl.hostname).split(":")[0];
   const path = request.nextUrl.pathname;
 
+  // The staff schedule answers on every host, including the old ones that keep serving the app.
+  if (request.nextUrl.pathname === "/admin-schedule") {
+    return updateSession(request, `/events/calendar${request.nextUrl.search}`);
+  }
+
   if (!RETIRE_OLD_HOSTS && (host in LEGACY_ROOT || host === VERCEL_HOST)) {
     if (path === "/" && LEGACY_ROOT[host]) return NextResponse.redirect(new URL(LEGACY_ROOT[host], request.url));
     if (host === JOIN_HOST && path === "/events") return updateSession(request, "/whats-on");
@@ -65,9 +70,6 @@ export async function proxy(request: NextRequest) {
   }
   if (host === APEX && path === "/") {
     return updateSession(request, undefined, "/home");
-  }
-  if (request.nextUrl.pathname === "/admin-schedule") {
-    return updateSession(request, `/events/calendar${request.nextUrl.search}`);
   }
   return updateSession(request);
 }
