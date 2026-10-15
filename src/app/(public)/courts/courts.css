@@ -231,3 +231,52 @@
 .crts-card .share{margin-top:18px;padding:12px 14px;background:var(--c-cream);border-radius:10px;font-size:14px}
 .crts-card .share code{display:block;word-break:break-all;font-size:12.5px;margin-top:4px;color:var(--c-muted)}
 .crts-card .cal{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+/* Equipment, match choice and the manage-your-booking box */
+.crts .eq{border:1px solid var(--c-line);border-radius:10px;padding:10px 12px;margin:0 0 14px;background:var(--c-cream)}
+.crts .eq legend{font-size:13px;color:var(--c-muted);padding:0 6px}
+.crts .eq-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;font-size:15px}
+.crts .eq-row small{color:var(--c-muted);margin-left:6px}
+.crts .eq-step{display:flex;align-items:center;gap:10px}
+.crts .eq-step button{width:30px;height:30px;border-radius:50%;border:1px solid var(--c-line);background:var(--c-paper);font:inherit;font-size:17px;line-height:1;cursor:pointer;color:var(--c-ink)}
+.crts .eq-step button:disabled{opacity:.35;cursor:default}
+.crts .eq-step b{min-width:16px;text-align:center;font-weight:600}
+.crts .choice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}
+.crts .choice button{font:inherit;text-align:left;padding:10px 12px;border:1px solid var(--c-line);border-radius:10px;background:var(--c-cream);cursor:pointer;color:var(--c-ink)}
+.crts .choice button b{display:block;font-weight:600}
+.crts .choice button span{font-size:13px;color:var(--c-muted)}
+.crts .choice button.on{border-color:var(--c-forest);background:rgba(103,102,59,.1)}
+.crts .friend{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 0 8px}
+.crts .friend input{width:100%}
+.crts .manage-box{border:1.5px solid var(--c-forest);border-radius:12px;padding:14px 16px;margin:18px 0;background:rgba(103,102,59,.08)}
+.crts .manage-box h3{margin:0 0 4px;font-size:16px}
+.crts .manage-box code{display:block;word-break:break-all;font-size:13px;margin:8px 0;padding:8px 10px;background:var(--c-paper);border-radius:8px}
+.crts .manage-form{display:grid;gap:10px;margin-top:10px}
+.crts-legend i.class{background:#d9d3c2;border-color:#bdb59c}
+@media (max-width:560px){.crts .friend{grid-template-columns:1fr}.crts .choice{grid-template-columns:1fr}}
+
+/* Schedule redesign: a cell per half hour, past hatched, rich booking blocks */
+.crts-cal-in{min-width:calc(170px + var(--cols) * 88px)}
+.crts-cal-row{grid-template-columns:170px 1fr}
+.crts-cal-name{flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;font-family:var(--c-sans)}
+.crts-cal-name b{font-weight:600;font-size:16px;color:var(--c-ink)}
+.crts-cal-name small{font-size:12.5px;color:var(--c-muted);font-weight:400}
+.crts-cal-hours{gap:0}
+.crts-cal-hours span{text-align:left;padding-left:8px;border-left:1px solid var(--c-line);font-size:12.5px;font-weight:600;letter-spacing:.05em}
+.crts-cal-hours span.now{color:var(--c-forest)}
+.crts-cal-track{height:72px;margin-right:12px}
+.crts-cal-track .blk{top:4px;bottom:4px;border-width:0 3px;border-radius:12px}
+.crts-cal-track .free{box-shadow:inset 0 0 0 1px var(--c-line);border-radius:12px}
+.crts-cal-track .free:hover,.crts-cal-track .free:focus-visible{background-color:rgba(103,102,59,.08);box-shadow:inset 0 0 0 1.5px var(--c-forest)}
+.crts-cal-track .past{background-color:rgba(220,227,220,.35);background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(65,75,67,.12) 5px 6px);box-shadow:inset 0 0 0 1px var(--c-line)}
+.crts-cal-track .taken,.crts-cal-track .class,.crts-cal-track .match{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:2px;padding:0 12px;text-align:left;font-style:normal;line-height:1.25;white-space:nowrap;overflow:hidden}
+.crts-cal-track .blk b{font-size:13.5px;font-weight:600;text-transform:none;letter-spacing:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.crts-cal-track .blk small{font-size:12px;opacity:.85;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.crts-cal-track .taken{background:var(--c-taken);box-shadow:inset 0 0 0 1px rgba(65,75,67,.25);color:var(--c-deep)}
+.crts-cal-track .match{background:#f4e6c6;box-shadow:inset 0 0 0 1px #c9a24b;color:#6a4f12}
+.crts-cal-track .match:hover{background:#efdcb0}
+.crts-cal-track .class{background:rgba(104,122,106,.22);box-shadow:inset 0 0 0 1px var(--c-leaf);color:var(--c-deep)}
+.crts-legend i.past{background-image:repeating-linear-gradient(135deg,transparent 0 3px,rgba(65,75,67,.2) 3px 4px);background-color:rgba(220,227,220,.35)}
+.crts-legend i.match{background:#f4e6c6;border-color:#c9a24b}
+.crts-legend i.class{background:rgba(104,122,106,.22);border-color:var(--c-leaf)}
+@media (max-width:560px){.crts-cal-in{min-width:calc(130px + var(--cols) * 72px)}.crts-cal-row{grid-template-columns:130px 1fr}.crts-cal-name b{font-size:14.5px}}

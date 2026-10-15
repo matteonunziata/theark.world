@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArkFonts } from "@/components/ark-fonts";
 import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
-import { BOOKING_DAYS, courtMoney, HOLD_MINUTES, LEVELS, levelRange, type PublicCourt, sportName } from "@/lib/courts";
+import { BOOKING_DAYS, courtMoney, durationLabel, HOLD_MINUTES, LEVELS, levelRange, type PriceItem, type PublicCourt, sportName } from "@/lib/courts";
 import { addDays, fmtDate, fmtTime, todayIn } from "@/lib/dates";
 import { stripeReady } from "@/lib/stripe";
 import { CourtBooker, type DayRow, type Me } from "./court-booker";
@@ -22,9 +22,10 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 export default async function CourtsPage({ searchParams }: PageProps<"/courts">) {
   const sp = await searchParams;
   const { supabase, memberId } = await getViewer();
-  const [{ data: org }, { data: courtsData }, { data: matches }, { data: me }] = await Promise.all([
+  const [{ data: org }, { data: courtsData }, { data: priceData }, { data: matches }, { data: me }] = await Promise.all([
     supabase.rpc("public_org").maybeSingle(),
     supabase.rpc("public_courts"),
+    supabase.rpc("public_court_prices"),
     supabase.rpc("public_open_matches"),
     memberId ? supabase.rpc("my_member_profile").maybeSingle() : Promise.resolve({ data: null }),
   ]);
@@ -36,14 +37,14 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
   const now = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: timezone }).format(new Date());
 
   const courts = (courtsData ?? []) as PublicCourt[];
+  const priceList = (priceData ?? []) as PriceItem[];
+  const courtPrices = priceList.filter((p) => p.kind === "court");
   const day = (dayRows ?? []) as DayRow[];
   const q = (d: string) => `/courts${d !== today ? `?date=${d}` : ""}#book`;
   const padel = courts.filter((c) => c.sport === "padel");
   const pickle = courts.filter((c) => c.sport === "pickleball");
-  const priceLine = (list: PublicCourt[]) => {
-    const prices = [...new Set(list.map((c) => courtMoney(c.price, c.currency)))];
-    return prices.length ? `${prices.join(" / ")} / hr` : "";
-  };
+  const priceLine = (list: PublicCourt[]) =>
+    list.length ? courtPrices.map((p) => `${durationLabel(p.minutes ?? 60)} ${courtMoney(p.price, "CRC")}`).join(" · ") : "";
   const member: Me | null = me
     ? { name: me.name ?? "", email: me.email ?? "", phone: me.phone ?? "" }
     : null;
@@ -137,7 +138,7 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
           ) : (
             <>
               <div className="crts-card-cal">
-                <CourtBooker courts={courts} day={day} date={date} today={today} now={now} me={member} online={stripeReady()} />
+                <CourtBooker courts={courts} day={day} date={date} today={today} now={now} me={member} online={stripeReady()} equipment={priceList} />
               </div>
               <p className="crts-hint">
                 Pick a free slot to book it, or a gold one to join an open match. Members save in the{" "}

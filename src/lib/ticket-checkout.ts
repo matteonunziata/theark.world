@@ -20,11 +20,13 @@ export async function ticketCheckout(admin: Admin, token: string): Promise<Ticke
   const { data: r } = await admin
     .from("registrations")
     .select(
-      "id, name, email, paid, status, hold_until, session_date, contact_id, offering:offerings(title, status), ticket:ticket_types(id, name, price, currency, payment_link, pay_first, stripe_price_id), items:registration_items(qty, unit_price, currency, ticket:ticket_types(name))",
+      "id, name, email, paid, status, hold_until, session_date, contact_id, order_id, offering:offerings(title, status), ticket:ticket_types(id, name, price, currency, payment_link, pay_first, stripe_price_id), items:registration_items(qty, unit_price, currency, ticket:ticket_types(name))",
     )
     .eq("qr_token", token)
     .maybeSingle();
   if (!r || !r.ticket || r.offering?.status !== "published") return { ok: false, reason: "gone", link: null };
+  // Booked as part of a cart: one payment covers every booking in it.
+  if (r.order_id) return orderCheckout(admin, r.order_id, `/t/${token}`);
   if (r.paid) return { ok: false, reason: "paid", link: null };
   // A hold that lapsed can't be paid; the ticket page says to book again.
   if (r.status === "held" && r.hold_until && new Date(r.hold_until) <= new Date()) {
@@ -84,6 +86,64 @@ export async function ticketCheckout(admin: Admin, token: string): Promise<Ticke
         description: `${title} (${what}), ${r.session_date}`,
       },
       cancelPath: `/t/${token}`,
+    },
+  };
+}
+
+/**
+ * What to charge for a cart of bookings (several meals, on one or more days) made in one
+ * checkout. One payment settles them all; the prices are the ones each was booked at.
+ */
+export async function orderCheckout(admin: Admin, orderId: string, cancelPath = "/"): Promise<TicketCheckout> {
+  const { data: regs } = await admin
+    .from("registrations")
+    .select(
+      "id, name, email, paid, status, hold_until, session_date, contact_id, offering:offerings(title, status), items:registration_items(qty, unit_price, currency, ticket:ticket_types(name))",
+    )
+    .eq("order_id", orderId)
+    .order("session_date");
+  const rows = regs ?? [];
+  if (rows.length === 0 || rows.some((r) => r.offering?.status !== "published")) return { ok: false, reason: "gone", link: null };
+  if (rows.some((r) => r.paid)) return { ok: false, reason: "paid", link: null };
+  const now = new Date();
+  if (rows.some((r) => r.status === "held" && r.hold_until && new Date(r.hold_until) <= now)) {
+    return { ok: false, reason: "lapsed", link: null };
+  }
+  const items = rows.flatMap((r) => r.items ?? []);
+  if (new Set(items.map((i) => i.currency)).size !== 1) return { ok: false, reason: "outside", link: null };
+  const amount = items.reduce((n, i) => n + Number(i.unit_price) * i.qty, 0);
+  if (!(amount > 0)) return { ok: false, reason: "outside", link: null };
+  const currency = items[0].currency;
+  const what = rows
+    .map((r) => {
+      const day = fmtDate(r.session_date, { weekday: "short", month: "short", day: "numeric" });
+      const n = (r.items ?? []).reduce((a, i) => a + i.qty, 0);
+      return `${n} × ${r.offering?.title ?? "Meal"}, ${day}`;
+    })
+    .join("; ");
+  const first = rows[0];
+  return {
+    ok: true,
+    amount,
+    currency,
+    summary: what,
+    held: rows.some((r) => r.status === "held"),
+    input: {
+      kind: "ticket",
+      title: rows.length === 1 ? what : `${rows.length} bookings at The ARK`,
+      description: what,
+      amount,
+      currency,
+      email: first.email,
+      meta: {
+        order_id: orderId,
+        name: first.name,
+        email: first.email,
+        contact_id: first.contact_id,
+        held: rows.some((r) => r.status === "held") ? "1" : null,
+        description: what,
+      },
+      cancelPath,
     },
   };
 }

@@ -99,11 +99,11 @@ export function EventsView({
               {fmtDate(ws, { month: "short", day: "numeric" })} –{" "}
               {fmtDate(we, { month: "short", day: "numeric", year: "numeric" })}
             </span>
-            <Link className="btn" href={`/events?week=${addDays(ws, -7)}`}>Previous</Link>
-            <Link className="btn" href="/events">This week</Link>
+            <Link className="btn" href={`/admin-schedule?week=${addDays(ws, -7)}`}>Previous</Link>
+            <Link className="btn" href="/admin-schedule">This week</Link>
             <a className="btn" href={`/events/export?from=${ws}&to=${we}&fmt=csv`}>Attendees CSV</a>
             <a className="btn" href={`/events/export?from=${ws}&to=${we}&fmt=pdf`} target="_blank" rel="noopener noreferrer">Attendees PDF</a>
-            <Link className="btn" href={`/events?week=${addDays(ws, 7)}`}>Next</Link>
+            <Link className="btn" href={`/admin-schedule?week=${addDays(ws, 7)}`}>Next</Link>
           </div>
         ) : kinds ? (
           <span className="muted" style={{ fontSize: 13.5 }}>

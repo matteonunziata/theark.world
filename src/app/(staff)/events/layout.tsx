@@ -17,7 +17,7 @@ export default async function EventsLayout({ children }: LayoutProps<"/events">)
       <Tabs
         label="Events sections"
         items={[
-          { href: "/events", label: "Calendar" },
+          { href: "/admin-schedule", label: "Calendar" },
           { href: "/events/classes", label: "Classes" },
           { href: "/events/events", label: "Events" },
           { href: "/events/courts", label: "Courts" },

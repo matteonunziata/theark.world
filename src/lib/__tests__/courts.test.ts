@@ -24,24 +24,23 @@ describe("courts", () => {
   });
 });
 
-import { addMinutes, courtMoney, courtPrice, durationLabel, durations, levelName, levelRange, share } from "@/lib/courts";
+import { addMinutes, courtMoney, durationLabel, durations, levelName, levelRange, lengthsOf, priceFor, share } from "@/lib/courts";
 
 describe("courts online", () => {
-  const padel = { price: 20000, slot_minutes: 60, currency: "CRC" };
+  const list = [
+    { key: "court_60", kind: "court", label: "1 hour", minutes: 60, price: 15000 },
+    { key: "court_90", kind: "court", label: "1½ hours", minutes: 90, price: 23000 },
+    { key: "court_120", kind: "court", label: "2 hours", minutes: 120, price: 30000 },
+  ];
 
-  it("offers one slot up to two hours", () => {
-    expect(durations({ slot_minutes: 60 })).toEqual([60, 90, 120]);
-    expect(durations({ slot_minutes: 30 })).toEqual([30, 60, 90, 120]);
-    expect(durations({ slot_minutes: 90 })).toEqual([90, 120]);
+  it("knows the lengths a court can have", () => {
+    expect(durations()).toEqual([60, 90, 120, 180]);
+    expect(lengthsOf(list)).toEqual([60, 90, 120]);
   });
 
-  it("prices a booking from the price per slot", () => {
-    expect(courtPrice(padel, 60)).toBe(20000);
-    expect(courtPrice(padel, 120)).toBe(40000);
-    expect(courtPrice({ price: 25, slot_minutes: 30, currency: "USD" }, 90)).toBe(75);
-    expect(courtPrice({ price: null, slot_minutes: 60, currency: "CRC" }, 60)).toBe(0);
-    const card = { price: 15000, price_90: 23000, price_120: 30000, slot_minutes: 60, currency: "CRC" };
-    expect([60, 90, 120].map((m) => courtPrice(card, m))).toEqual([15000, 23000, 30000]);
+  it("prices a booking from the price list", () => {
+    expect([60, 90, 120].map((m) => priceFor(list, m))).toEqual([15000, 23000, 30000]);
+    expect(priceFor(list, 180)).toBe(0);
   });
 
   it("splits a court evenly between players", () => {
@@ -56,7 +55,7 @@ describe("courts online", () => {
     expect(courtMoney(0, "CRC")).toBe("Free");
     expect(durationLabel(60)).toBe("1 hour");
     expect(durationLabel(90)).toBe("1½ hours");
-    expect(durationLabel(120)).toBe("2 hours");
+    expect(durationLabel(180)).toBe("3 hours");
     expect(addMinutes("07:00", 90)).toBe("08:30");
   });
 

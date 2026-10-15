@@ -307,6 +307,7 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
         currency,
         contact_id: meta.contact_id ?? null,
         registration_id: meta.registration_id ?? null,
+        order_id: meta.order_id ?? null,
         court_player_id: meta.court_player_id ?? null,
         tier: meta.tier ?? null,
         start_date: meta.start_date ?? null,
@@ -337,6 +338,13 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
     }
   }
   // A held booking (meals) is confirmed by the payment: the ticket goes out now.
+  if (data.created && kind === "ticket" && meta.held && meta.order_id) {
+    try {
+      await emailOrderTickets(admin, meta.order_id);
+    } catch (e) {
+      console.error("After-payment ticket emails failed", cs.id, e);
+    }
+  }
   if (data.created && kind === "ticket" && meta.held && meta.token) {
     try {
       await emailTicketAfterPayment(admin, meta.token, fmtAmount(amount, currency));
@@ -378,6 +386,22 @@ export async function fulfillCheckout(sessionId: string): Promise<Fulfilled> {
     amount,
     currency,
   };
+}
+
+/** A paid cart: every booking in it gets its own ticket, priced at what that booking cost. */
+async function emailOrderTickets(admin: NonNullable<ReturnType<typeof createAdminClient>>, orderId: string) {
+  const { data: regs } = await admin
+    .from("registrations")
+    .select("qr_token, items:registration_items(qty, unit_price, currency)")
+    .eq("order_id", orderId)
+    .order("session_date");
+  for (const r of regs ?? []) {
+    const items = r.items ?? [];
+    const total = items.reduce((n, i) => n + Number(i.unit_price) * i.qty, 0);
+    await emailTicketAfterPayment(admin, r.qr_token, fmtAmount(total, items[0]?.currency ?? "CRC")).catch((e) =>
+      console.error("After-payment ticket email failed", r.qr_token, e),
+    );
+  }
 }
 
 async function emailTicketAfterPayment(

@@ -8,6 +8,7 @@ import type { Tables } from "@/lib/database.types";
 import { dayLabel, timeRange } from "@/lib/dates";
 import { money } from "@/lib/schedule";
 import { type BookingResult, bookSession } from "../../actions";
+import { MealBooking } from "./meal-booking";
 import { PaymentStep } from "./payment-step";
 
 type Ticket = Tables<"ticket_types">;
@@ -77,6 +78,24 @@ export function BookingPanel({
   const [qty, setQty] = useState<Record<string, number>>(quick ? { [quick.id]: 1 } : {});
   const [formError, setFormError] = useState<string | null>(null);
   const setTicketQty = (id: string, n: number) => setQty((q) => ({ ...q, [id]: n }));
+
+  // Breakfast and lunch: a cart, so several meals and several days are paid in one go.
+  if (quick) {
+    return (
+      <MealBooking
+        offering={o}
+        sessions={sessions}
+        counts={counts}
+        ticket={quick}
+        availability={availability}
+        today={today}
+        isMember={isMember}
+        canBook={canBook}
+        loginHref={loginHref}
+        onBooked={onBooked}
+      />
+    );
+  }
 
   if (result?.ok && result.embedded && payStep && !paid) {
     return (
@@ -317,10 +336,7 @@ export function BookingPanel({
               setPaid(null);
               if (r.ok) onBooked?.();
               // Pay inside the page when we can; otherwise held bookings go to Stripe's page.
-              if (r.ok && quick && r.held && r.payUrl) {
-                setLeaving(true);
-                window.location.assign(r.payUrl);
-              } else if (r.ok && r.embedded) setPayStep(true);
+              if (r.ok && r.embedded) setPayStep(true);
               else if (r.ok && r.held && r.payUrl) {
                 setLeaving(true);
                 window.location.assign(r.payUrl);
@@ -352,7 +368,7 @@ export function BookingPanel({
               the payment goes through.
             </p>
           )}
-          {tickets.length > 0 && !quick && (
+          {tickets.length > 0 && (
             <fieldset className="fld" style={{ border: 0, padding: 0 }}>
               <legend style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 6 }}>Tickets</legend>
               {isMember && (
@@ -369,7 +385,7 @@ export function BookingPanel({
               )}
             </fieldset>
           )}
-          {totalLabel && !quick && (
+          {totalLabel && (
             <div className="tk" style={{ borderTop: "1px solid var(--line)", marginTop: 8 }}>
               <div>
                 <b>Total</b>
@@ -439,29 +455,6 @@ export function BookingPanel({
                 disabled={off || pending || leaving}
                 onClick={() => {
                   setResult(null);
-                  if (quick && isMember) {
-                    // Signed in: no form. Book the meal and go straight to payment.
-                    setFormError(null);
-                    start(async () => {
-                      const r = await bookSession({
-                        offeringId: o.id,
-                        date: s.date,
-                        name: "",
-                        email: "",
-                        items: [{ ticketTypeId: quick.id, qty: 1 }],
-                      });
-                      setResult(r);
-                      if (r.ok) onBooked?.();
-                      if (r.ok && r.held && r.payUrl) {
-                        setLeaving(true);
-                        window.location.assign(r.payUrl);
-                      } else if (r.ok && r.embedded) {
-                        setPicked(s.date);
-                        setPayStep(true);
-                      }
-                    });
-                    return;
-                  }
                   setPicked(s.date);
                 }}
               >

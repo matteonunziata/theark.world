@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 
 type Page = {
   booking: { court: string; date: string; start_time: string; end_time: string; status: string; open_match: boolean; spots: number | null; currency: string };
-  you: { id: string; token: string; name: string; email: string | null; amount: number; paid: boolean; status: string; host: boolean } | null;
+  you: { id: string; token: string; name: string; email: string | null; amount: number; due: number; paid: boolean; status: string; host: boolean } | null;
 };
 
 export async function GET(request: Request, ctx: RouteContext<"/pay/court/[token]">) {
@@ -21,7 +21,7 @@ export async function GET(request: Request, ctx: RouteContext<"/pay/court/[token
   const { data } = await supabase.rpc("court_booking_by_token", { p_token: token });
   const d = data as Page | null;
   const you = d?.you;
-  if (!d || !you || you.paid || !(Number(you.amount) > 0)) return Response.redirect(back, 303);
+  if (!d || !you || you.paid || !(Number(you.due) > 0)) return Response.redirect(back, 303);
   if (!["held", "in"].includes(you.status) || !["held", "booked"].includes(d.booking.status)) {
     return Response.redirect(back, 303);
   }
@@ -34,9 +34,9 @@ export async function GET(request: Request, ctx: RouteContext<"/pay/court/[token
       kind: "court",
       title,
       description: d.booking.open_match
-        ? `Your share of an open match (${d.booking.spots ?? 4} players)`
-        : "Court booking at The ARK, Santa Teresa",
-      amount: Number(you.amount),
+        ? `Your share of an open match (${d.booking.spots ?? 4} players), VAT included`
+        : "Court booking at The ARK, Santa Teresa, VAT included",
+      amount: Number(you.due),
       currency: d.booking.currency ?? "CRC",
       email: you.email,
       meta: {

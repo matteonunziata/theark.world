@@ -196,3 +196,19 @@
 ## Saved card
 - **What should the saved card pay for?** It is stored but nothing charges it. Options: one-tap pay on renewals and bookings in the portal, monthly membership subscriptions (planned), and farm shop "Pay with account" at Checkout (today that reads a Tilopay token, so the two would need joining or one dropped).
 - **Cards only?** Stripe's setup page may offer wallets such as Link; only real cards are kept. Limit the methods in the Stripe dashboard if this matters.
+
+## Courts rework (2026-10-14)
+
+- **Member discounts on courts.** The 10% / 20% tier discount still applies to bookings made in the members portal (on top of the new price list). The brief didn't mention it. Keep, or drop it now that prices are fixed?
+- **Cancelling.** Cancelling stays at 24 hours before; moving is 3 hours. Should cancelling also be 3 hours?
+- **Two bookings a day and 14 days ahead** are unchanged for public and member bookings (staff bookings skip the daily limit).
+- **Refunds for shorter moves and cancellations** are still done by hand from Stripe; the credit is only noted on the booking.
+- **"Courts player" tag.** Contacts have no tags column, so new court players get source "Courts". Add real tags?
+
+## Round 24: One address, theark.world
+
+- **Stripe webhook.** The test webhook `ark-os` still points at https://theark-world.vercel.app/api/webhooks/stripe. Change it to https://theark.world/api/webhooks/stripe in Stripe (Developers → Webhooks) after the apex moves. Until then the vercel.app address must keep answering webhooks (see DECISIONS, Round 24).
+- **Pages on the GHL site with no page in ARK OS:** `/webinar`, `/ark-rentals`, `/ark-farm`, `/ark-padel`, `/ark-events`, `/ark-pass`, `/ark-ventures` redirect to the closest page (DECISIONS, Round 24). Do any deserve a real page (webinar, rentals, ventures)?
+- **GHL forms and redirects.** The apply-stewardship, contribute and press forms posted to GHL; the new pages email the team instead (nothing goes to GHL). GHL URL redirects, tracking scripts and the promo bar can't be read from outside; check GHL Sites → Redirects before the cutover.
+- **Google and search.** The old site's pages keep their addresses (same paths), so search results survive. Re-submit the sitemap in Search Console once the apex moves (the app has no `sitemap.xml` yet).
+- **Supabase Auth URLs** still need setting by hand if the connector can't (see the Round 24 notes in chat): Site URL `https://theark.world`, redirect URLs `https://theark.world/**`.

@@ -3,11 +3,11 @@ import Link from "next/link";
 import { ArkFonts } from "@/components/ark-fonts";
 import { getViewer } from "@/lib/auth";
 import { googleCalendarUrl } from "@/lib/calendar";
-import { courtMoney, levelName, levelRange, sportName } from "@/lib/courts";
-import { fmtDate, fmtTime, todayIn } from "@/lib/dates";
+import { BOOKING_DAYS, courtMoney, levelName, levelRange, MOVE_LIMIT, type PriceItem, sportName } from "@/lib/courts";
+import { addDays, fmtDate, fmtTime, todayIn } from "@/lib/dates";
 import { siteUrl } from "@/lib/email";
 import { stripeReady } from "@/lib/stripe";
-import { BookingActions } from "./booking-actions";
+import { AddEquipment, CopyLink, LeaveMatch, ManageBooking } from "./booking-actions";
 import "../../courts.css";
 import { SiteNavBar } from "../../../site/site-nav";
 
@@ -17,18 +17,24 @@ type Page = {
   booking: {
     id: string;
     court: string;
+    court_id: string;
     sport: string;
     date: string;
     start_time: string;
     end_time: string;
     status: string;
+    minutes: number;
+    private_pay: "whole" | "split" | null;
+    share_token: string | null;
+    moves_used: number;
+    movable: boolean;
+    started: boolean;
     open_match: boolean;
     level_min: number | null;
     level_max: number | null;
     spots: number | null;
     amount: number | null;
     currency: string;
-    paid: boolean;
     host: string;
     notes: string | null;
     held_until: string | null;
@@ -40,22 +46,27 @@ type Page = {
     host: boolean;
     status: string;
     amount: number;
+    due: number;
     paid: boolean;
     name: string;
     email: string | null;
     level: number | null;
+    equipment: { label: string; price: number }[];
   } | null;
-  players: { name: string; level: number | null; host: boolean; status: string; paid: boolean }[];
+  players: { name: string; level: number | null; host: boolean; status: string }[];
 };
 
 export default async function CourtBookingPage({ params }: PageProps<"/courts/b/[token]">) {
   const { token } = await params;
   const { supabase } = await getViewer();
-  const [{ data }, { data: org }, origin] = await Promise.all([
+  const [{ data }, { data: org }, { data: priceData }, origin] = await Promise.all([
     supabase.rpc("court_booking_by_token", { p_token: token }),
     supabase.rpc("public_org").maybeSingle(),
+    supabase.rpc("public_court_prices"),
     siteUrl(),
   ]);
+  const priceList = (priceData ?? []) as PriceItem[];
+  const prices = Object.fromEntries(priceList.filter((p) => p.kind === "court").map((p) => [p.minutes as number, Number(p.price)]));
   const d = data as Page | null;
   const timezone = org?.timezone ?? "America/Costa_Rica";
   const today = todayIn(timezone);
@@ -86,7 +97,7 @@ export default async function CourtBookingPage({ params }: PageProps<"/courts/b/
   const when = `${b.date === today ? "Today" : fmtDate(b.date, { weekday: "long", month: "long", day: "numeric" })}, ${fmtTime(b.start_time)}–${fmtTime(b.end_time)}`;
   const started = `${b.date}T${b.start_time}` < `${today}T${new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: timezone }).format(new Date())}`;
   const inCount = players.filter((p) => p.status === "in" || p.status === "held").length;
-  const canPay = stripeReady() && !you.paid && Number(you.amount) > 0 && ["held", "in"].includes(you.status) && ["held", "booked"].includes(b.status);
+  const canPay = stripeReady() && Number(you.due) > 0 && ["held", "in"].includes(you.status) && ["held", "booked"].includes(b.status);
   const heldUntil = b.held_until
     ? new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: timezone }).format(new Date(b.held_until))
     : null;
@@ -96,12 +107,14 @@ export default async function CourtBookingPage({ params }: PageProps<"/courts/b/
   else if (b.status === "expired" || you.status === "expired") state = ["bad", "Hold ran out", "The hold ran out before payment"];
   else if (b.status === "held" || you.status === "held") state = ["soon", "Holding", `Holding your ${you.host ? "court" : "spot"}${heldUntil ? ` until ${heldUntil}` : ""}`];
   else if (b.date < today) state = ["ok", "Played", `Thanks for coming${first ? `, ${first}` : ""}`];
-  else state = ["ok", you.paid || Number(you.amount) === 0 ? "Booked" : "Booked, unpaid", `See you on court${first ? `, ${first}` : ""}`];
+  else state = ["ok", Number(you.due) <= 0 ? "Booked" : "Booked, not paid yet", `See you on court${first ? `, ${first}` : ""}`];
 
-  const joinUrl = `${origin}/courts/join/${b.id}`;
-  const cancellable =
-    (you.host && b.cancellable) ||
-    (!you.host && ["in", "held"].includes(you.status) && b.status === "booked" && !started);
+  const joinUrl = `${origin}/courts/join/${b.share_token ?? b.id}`;
+  const manageUrl = `${origin}/courts/b/${you.token}`;
+  const live = (b.status === "booked" || b.status === "held") && !started && !b.started;
+  const spotsLeft = Math.max(0, (b.spots ?? 0) - players.length);
+  const last = addDays(today, BOOKING_DAYS);
+  const kind = b.open_match ? "Open match" : b.private_pay === "whole" ? "Private match · host pays the whole court" : "Private match · split";
 
   return (
     <main className="crts">
@@ -125,20 +138,26 @@ export default async function CourtBookingPage({ params }: PageProps<"/courts/b/
             </span>
           </div>
           <div>
-            <span>{b.open_match ? "Your share" : "Price"}</span>
+            <span>{b.open_match || b.private_pay === "split" || !you.host ? "Your share" : "Court"}</span>
+            <span>{courtMoney(you.amount, b.currency)} <small>(VAT included)</small></span>
+          </div>
+          {you.equipment.map((e, i) => (
+            <div key={i}>
+              <span>{e.label}</span>
+              <span>{courtMoney(e.price, b.currency)}</span>
+            </div>
+          ))}
+          <div>
+            <span>{Number(you.due) <= 0 ? "Paid" : "Still to pay"}</span>
+            <span>{Number(you.due) <= 0 ? "All settled" : `${courtMoney(you.due, b.currency)}${canPay ? "" : ", settle at reception"}`}</span>
+          </div>
+          <div>
+            <span>Match</span>
             <span>
-              {courtMoney(you.amount, b.currency)}
-              {Number(you.amount) > 0 ? (you.paid ? ", paid" : canPay ? ", not paid yet" : ", settle at reception") : ""}
+              {kind}
+              {b.open_match ? `, level ${levelRange(b.level_min, b.level_max)}` : ""} · {inCount} of {b.spots} players
             </span>
           </div>
-          {b.open_match && (
-            <div>
-              <span>Match</span>
-              <span>
-                Open match, level {levelRange(b.level_min, b.level_max)}, {inCount} of {b.spots} players
-              </span>
-            </div>
-          )}
           {b.notes && you.host && (
             <div>
               <span>Notes</span>
@@ -154,7 +173,7 @@ export default async function CourtBookingPage({ params }: PageProps<"/courts/b/
           <p className="muted">Pay to confirm. If the time runs out, the slot goes back on the page and nothing is charged.</p>
         )}
 
-        {b.open_match && b.status === "booked" && (
+        {b.status === "booked" && (
           <>
             <ul className="crts-players">
               {players.map((p, i) => (
@@ -169,17 +188,24 @@ export default async function CourtBookingPage({ params }: PageProps<"/courts/b/
                   </small>
                 </li>
               ))}
-              {Array.from({ length: Math.max(0, (b.spots ?? 0) - players.length) }, (_, i) => (
+              {Array.from({ length: spotsLeft }, (_, i) => (
                 <li key={`e${i}`} className="empty">
                   <span>Open spot</span>
-                  <small>{courtMoney(b.amount && b.spots ? Number(b.amount) / b.spots : 0, b.currency)}</small>
+                  <small>{b.private_pay === "whole" ? "Add a name" : courtMoney(b.amount && b.spots ? Number(b.amount) / b.spots : 0, b.currency)}</small>
                 </li>
               ))}
             </ul>
-            {players.length < (b.spots ?? 0) && !started && (
+            {spotsLeft > 0 && live && ["in", "held"].includes(you.status) && (
               <div className="share">
-                Share this link so people can join:
+                {you.host
+                  ? b.open_match
+                    ? "Your match is listed on the courts page. You can also send this link to anyone:"
+                    : b.private_pay === "whole"
+                      ? "Send this link to your friends so they can add their names. They have nothing to pay:"
+                      : "Send this link to your friends so they can add their names and pay their share:"
+                  : "Know someone who’d like to play? Share this link so they can join:"}
                 <code>{joinUrl}</code>
+                <CopyLink url={joinUrl} label="Copy join link" />
               </div>
             )}
           </>
@@ -188,12 +214,44 @@ export default async function CourtBookingPage({ params }: PageProps<"/courts/b/
         <div className="acts">
           {canPay && (
             <a className="btn solid" href={`/pay/court/${you.token}`}>
-              Pay {courtMoney(you.amount, b.currency)} now
+              Pay {courtMoney(you.due, b.currency)} now
             </a>
           )}
-          {cancellable && <BookingActions token={you.token} host={you.host} joinUrl={b.open_match ? joinUrl : null} />}
-          {!cancellable && b.open_match && b.status === "booked" && !started && <BookingActions token={you.token} host={you.host} joinUrl={joinUrl} copyOnly />}
+          {!you.host && live && ["in", "held"].includes(you.status) && <LeaveMatch token={you.token} />}
         </div>
+
+        {live && ["in", "held"].includes(you.status) && b.status === "booked" && (
+          <div style={{ marginTop: 16 }}>
+            <AddEquipment token={you.token} items={priceList} />
+          </div>
+        )}
+
+        {you.host && (b.status === "booked" || b.status === "held") && (
+          <div className="manage-box">
+            <h3>Your private link to manage this booking</h3>
+            <p className="muted" style={{ margin: 0, fontSize: 14 }}>
+              Save it. It’s how you move or cancel without logging in. We’ll ask for the phone number you booked with.
+            </p>
+            <code>{manageUrl}</code>
+            <CopyLink url={manageUrl} label="Copy my link" />
+            {live && (
+              <div style={{ marginTop: 14 }}>
+                <ManageBooking
+                  token={you.token}
+                  bookingId={b.id}
+                  courtId={b.court_id}
+                  current={{ date: b.date, start: b.start_time.slice(0, 5), minutes: b.minutes }}
+                  today={today}
+                  last={last}
+                  prices={prices}
+                  movable={b.movable && b.status === "booked"}
+                  movesLeft={MOVE_LIMIT - b.moves_used}
+                  cancellable={b.cancellable}
+                />
+              </div>
+            )}
+          </div>
+        )}
         {(b.status === "booked" || b.status === "held") && !started && (
           <div className="cal">
             <a
@@ -219,7 +277,7 @@ export default async function CourtBookingPage({ params }: PageProps<"/courts/b/
         )}
         <p className="muted" style={{ fontSize: 13, marginTop: 18 }}>
           {you.host
-            ? "Cancel up to 24 hours before the start and anything paid comes back to your card. Later than that, message us."
+            ? "Move up to 3 hours before the start (twice at most). Cancel up to 24 hours before and anything paid comes back to your card. Later than that, message us."
             : "Leave any time while the match isn’t full, otherwise up to 24 hours before. Anything paid comes back to your card."}
         </p>
       </div>

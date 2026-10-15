@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { friendly } from "@/lib/action-result";
 import { getViewer } from "@/lib/auth";
-import { courtMoney } from "@/lib/courts";
+import { courtMoney, type EquipmentPick } from "@/lib/courts";
 import { sendCourtEmail } from "@/lib/email";
 import { notifyLater } from "@/lib/slack";
 import { courtMessage } from "@/lib/slack-format";
@@ -46,20 +46,26 @@ export async function holdCourt(input: {
   minutes: number;
   name: string;
   email: string;
-  phone?: string;
-  players?: number | null;
+  phone: string;
   notes?: string;
-  openMatch: boolean;
+  /** An open match is listed publicly; a private one is joined by link only. */
+  match: "open" | "private";
+  /** Private only: pay the whole court, or split it between the players. */
+  privatePay?: "whole" | "split";
+  /** Doubles (4) or singles (2). */
+  spots: 2 | 4;
   level?: number | null;
-  spots?: number | null;
   levelMin?: number | null;
   levelMax?: number | null;
-  pay?: "online" | "reception";
+  /** Private only: friends the host types in now. */
+  friends?: { name: string; email: string; phone: string }[];
+  equipment?: EquipmentPick[];
   website?: string; // honeypot: real people leave it empty
 }): Promise<CourtResult> {
   if (input.website) return { ok: false, error: "Couldn’t book. Try again." };
   const { supabase } = await getViewer();
   const pay = payMode();
+  const open = input.match === "open";
   const { data, error } = await supabase.rpc("hold_court", {
     p: {
       court_id: input.courtId,
@@ -68,14 +74,16 @@ export async function holdCourt(input: {
       minutes: input.minutes,
       name: input.name,
       email: input.email,
-      phone: input.phone ?? "",
-      players: input.players ?? null,
+      phone: input.phone,
       notes: input.notes ?? "",
-      open_match: input.openMatch,
-      level: input.openMatch ? input.level : null,
-      spots: input.openMatch ? input.spots : null,
-      level_min: input.openMatch ? input.levelMin : null,
-      level_max: input.openMatch ? input.levelMax : null,
+      open_match: open,
+      private_pay: open ? null : (input.privatePay ?? "split"),
+      spots: input.spots,
+      level: open ? input.level : null,
+      level_min: open ? input.levelMin : null,
+      level_max: open ? input.levelMax : null,
+      friends: open ? [] : (input.friends ?? []),
+      equipment: input.equipment ?? [],
       pay,
     },
   });
@@ -101,7 +109,7 @@ export async function holdCourt(input: {
     endTime: "",
     minutes: input.minutes,
     amount: h.amount ? courtMoney(h.amount, h.currency) : null,
-    openMatch: input.openMatch,
+    openMatch: open,
     status: h.status,
   };
   notifyLater("booking", async (origin) => {
@@ -119,14 +127,14 @@ export async function holdCourt(input: {
   };
 }
 
-/** Join an open match as one player. */
+/** Join a match as one player: from the open list (booking id) or a join link (its token). */
 export async function joinMatch(input: {
-  bookingId: string;
+  key: string;
   name: string;
   email: string;
-  phone?: string;
-  level: number;
-  pay?: "online" | "reception";
+  phone: string;
+  level?: number | null;
+  equipment?: EquipmentPick[];
   website?: string;
 }): Promise<CourtResult> {
   if (input.website) return { ok: false, error: "Couldn’t join. Try again." };
@@ -134,11 +142,13 @@ export async function joinMatch(input: {
   const pay = payMode();
   const { data, error } = await supabase.rpc("join_court_match", {
     p: {
-      booking_id: input.bookingId,
+      booking_id: input.key,
+      share_token: input.key,
       name: input.name,
       email: input.email,
-      phone: input.phone ?? "",
-      level: input.level,
+      phone: input.phone,
+      level: input.level ?? null,
+      equipment: input.equipment ?? [],
       pay,
     },
   });
@@ -183,11 +193,59 @@ export async function joinMatch(input: {
   };
 }
 
-/** Cancel a booking (host) or leave a match (player), by the token on their page. */
-export async function cancelCourt(token: string): Promise<{ ok: boolean; error?: string; what?: string }> {
+/** Cancel a booking (host, after confirming the phone on it) or leave a match (player). */
+export async function cancelCourt(token: string, phone?: string): Promise<{ ok: boolean; error?: string; what?: string }> {
   const { supabase } = await getViewer();
-  const { data, error } = await supabase.rpc("cancel_court_by_token", { p_token: token });
+  const { data, error } = await supabase.rpc("cancel_court_by_token", { p_token: token, p_phone: phone ?? null });
   if (error) return { ok: false, error: friendly(error) };
   refresh();
   return { ok: true, what: data ?? "booking" };
+}
+
+/** Start times that are free for a booking being moved. */
+export async function freeStarts(courtId: string, date: string, minutes: number, bookingId: string): Promise<string[]> {
+  const { supabase } = await getViewer();
+  const { data } = await supabase.rpc("court_free_starts", { p_court: courtId, p_date: date, p_minutes: minutes, p_ignore: bookingId });
+  return (data ?? []).map((t) => t.slice(0, 5));
+}
+
+export type MoveResult =
+  | { ok: true; date: string; start: string; end: string; amount: number; credit: number; owed: number; movesLeft: number }
+  | { ok: false; error: string };
+
+type Moved = { date: string; start_time: string; end_time: string; amount: number; credit: number; owed: number; moves_left: number };
+const moved = (m: Moved): MoveResult => ({
+  ok: true,
+  date: m.date,
+  start: m.start_time.slice(0, 5),
+  end: m.end_time.slice(0, 5),
+  amount: Number(m.amount),
+  credit: Number(m.credit),
+  owed: Number(m.owed),
+  movesLeft: m.moves_left,
+});
+
+/** Move a booking with its private link, after confirming the phone number on it. */
+export async function moveCourt(token: string, phone: string, date: string, start: string, minutes: number): Promise<MoveResult> {
+  const { supabase } = await getViewer();
+  const { data, error } = await supabase.rpc("move_court_booking", {
+    p_token: token,
+    p_phone: phone,
+    p_date: date,
+    p_start: start,
+    p_minutes: minutes,
+  });
+  if (error || !data) return { ok: false, error: friendly(error) };
+  refresh();
+  return moved(data as Moved);
+}
+
+/** Add equipment for yourself on your booking page. */
+export async function addCourtEquipment(token: string, items: EquipmentPick[]): Promise<{ ok: boolean; error?: string }> {
+  if (!items.length) return { ok: false, error: "Pick something to add." };
+  const { supabase } = await getViewer();
+  const { error } = await supabase.rpc("add_court_equipment_by_token", { p_token: token, p_items: items });
+  if (error) return { ok: false, error: friendly(error) };
+  refresh();
+  return { ok: true };
 }

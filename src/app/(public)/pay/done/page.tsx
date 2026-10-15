@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { PortalHead } from "@/components/portal-head";
 import { getViewer } from "@/lib/auth";
 import { fmtDate } from "@/lib/dates";
-import { emailConfigured } from "@/lib/email";
+import { CopyLink } from "@/app/(public)/courts/b/[token]/booking-actions";
+import { emailConfigured, siteUrl } from "@/lib/email";
 import { type Fulfilled, fmtAmount, fulfillCheckout, passFromPayment } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -118,11 +119,25 @@ export default async function PaymentDone({ searchParams }: PageProps<"/pay/done
   }
 
   if (r.kind === "court") {
+    // Whoever has paid can share the join link, if the match still has room.
+    const { data: bk } = r.meta.token ? await supabase.rpc("court_booking_by_token", { p_token: r.meta.token }) : { data: null };
+    const info = bk as { booking: { share_token: string | null; spots: number }; players: unknown[] } | null;
+    const joinUrl =
+      info?.booking.share_token && info.players.length < info.booking.spots
+        ? `${await siteUrl()}/courts/join/${info.booking.share_token}`
+        : null;
     return box("Paid", "ok", `See you on court${first ? `, ${first}` : ""}`, (
       <>
         <p className="muted">
           {paid} Your court is booked.{emailConfigured() ? " The details are in your inbox too." : ""}
         </p>
+        {joinUrl && (
+          <div className="share" style={{ margin: "12px 0" }}>
+            <p className="muted" style={{ margin: "0 0 6px" }}>Share this link so others can join your match:</p>
+            <code style={{ display: "block", wordBreak: "break-all", margin: "0 0 8px" }}>{joinUrl}</code>
+            <CopyLink url={joinUrl} label="Copy join link" />
+          </div>
+        )}
         {r.meta.token && <p><Link className="btn primary" href={`/courts/b/${r.meta.token}`}>Open your booking</Link></p>}
       </>
     ));

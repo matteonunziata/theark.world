@@ -1,8 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-/** Refreshes the session; with `rewriteTo`, serves that path under the requested URL. */
-export async function updateSession(request: NextRequest, rewriteTo?: string) {
+/**
+ * Refreshes the session; with `rewriteTo`, serves that path under the requested URL.
+ * With `guestRewriteTo`, only people who aren't signed in get that path; the rest go on to the page itself.
+ */
+export async function updateSession(request: NextRequest, rewriteTo?: string, guestRewriteTo?: string) {
   const next = () =>
     rewriteTo
       ? NextResponse.rewrite(new URL(rewriteTo, request.url), { request })
@@ -41,6 +44,10 @@ export async function updateSession(request: NextRequest, rewriteTo?: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user && guestRewriteTo) {
+    return NextResponse.rewrite(new URL(guestRewriteTo, request.url), { request });
+  }
 
   // /arkadia is the school's staff area. Anyone who isn't signed in sees the public Arkadia page at the same address.
   if (!user && request.nextUrl.pathname === "/arkadia") {
