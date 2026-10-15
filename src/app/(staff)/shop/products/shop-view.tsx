@@ -12,6 +12,12 @@ import { recordStock, saveProduct, syncFromWebsite } from "../actions";
 type Product = Tables<"products">;
 type Move = { id: string; product_id: string; type: string; delta: number; created_at: string };
 
+/** Profit as a share of price, or null when there is no cost or price. */
+function margin(price: number | string, cost: number | string | null) {
+  if (cost === null || !Number(price)) return null;
+  return (Number(price) - Number(cost)) / Number(price);
+}
+
 export function ShopView({
   products,
   moves,
@@ -38,6 +44,10 @@ export function ShopView({
     });
   const low = products.filter((p) => lowState(p));
   const counted = products.filter((p) => p.track_stock);
+  const costed = products.filter((p) => p.cost !== null && Number(p.price) > 0);
+  const avgMargin = costed.length
+    ? costed.reduce((n, p) => n + margin(p.price, p.cost)!, 0) / costed.length
+    : null;
   const value = counted.reduce((n, p) => n + Number(p.stock) * Number(p.price), 0);
   const categories = [
     ...CATEGORIES,
@@ -58,6 +68,7 @@ export function ShopView({
         <div className="stat"><b>{products.filter((p) => p.online).length}</b><span>Available online</span></div>
         <div className="stat"><b>{low.length}</b><span>Low or out of stock</span></div>
         <div className="stat"><b>{fmtMoney(value, currency)}</b><span>Counted stock at retail</span></div>
+        <div className="stat"><b>{avgMargin === null ? "–" : `${Math.round(avgMargin * 100)}%`}</b><span>Average margin ({costed.length} with cost)</span></div>
       </div>
       {low.length > 0 && (
         <div className="alert" role="status">
@@ -119,6 +130,7 @@ export function ShopView({
             <span>Product</span>
             <span className="c-cat">Category</span>
             <span className="c-price">Price</span>
+            <span className="c-cost">Cost · margin</span>
             <span>In stock</span>
             <span />
           </div>
@@ -149,6 +161,19 @@ export function ShopView({
                       <br />
                       <span className="muted" style={{ fontSize: 12.5 }}>
                         members {fmtMoney(p.member_price, currency)}
+                      </span>
+                    </>
+                  )}
+                </span>
+                <span className="c-cost">
+                  {p.cost === null ? (
+                    <span className="muted">No cost</span>
+                  ) : (
+                    <>
+                      {fmtMoney(p.cost, currency)}
+                      <br />
+                      <span className={`margin${(margin(p.price, p.cost) ?? 1) < 0.3 ? " thin" : ""}`}>
+                        {margin(p.price, p.cost) === null ? "" : `${Math.round(margin(p.price, p.cost)! * 100)}% margin`}
                       </span>
                     </>
                   )}
@@ -267,6 +292,15 @@ function ProductDrawer({
             <label htmlFor="p-mprice">Member price</label>
             <input id="p-mprice" name="member_price" type="number" min={0} step="any" defaultValue={p?.member_price ?? ""} placeholder="Same as price" />
           </div>
+        </div>
+        <div className="fld">
+          <label htmlFor="p-cost">Cost</label>
+          <input id="p-cost" name="cost" type="number" min={0} step="any" defaultValue={p?.cost ?? ""} placeholder="What one unit costs us" />
+          {p?.cost != null && margin(p.price, p.cost) !== null && (
+            <span className="muted" style={{ fontSize: 13 }}>
+              Profit {fmtMoney(Number(p.price) - Number(p.cost), "CRC")} per unit · {Math.round(margin(p.price, p.cost)! * 100)}% margin
+            </span>
+          )}
         </div>
         <label className="check" style={{ marginBottom: 12 }}>
           <input type="checkbox" name="track_stock" checked={track} onChange={(e) => setTrack(e.target.checked)} />
