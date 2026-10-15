@@ -21,6 +21,11 @@ const toMin = (t: string) => {
   return h * 60 + (m || 0);
 };
 const pad = (h: number) => String(h).padStart(2, "0");
+/** "Ana Rodriguez" becomes "Ana R." */
+const shortName = (n: string) => {
+  const [first, ...rest] = n.trim().split(/\s+/);
+  return rest.length ? `${first} ${rest[rest.length - 1][0]}.` : first;
+};
 const hourLabel = (h: number) => `${h % 12 || 12} ${h < 12 || h === 24 ? "AM" : "PM"}`;
 
 export function CourtsView({
@@ -65,6 +70,14 @@ export function CourtsView({
     width: `${((toMin(end) - toMin(start)) / span) * 100}%`,
   });
   const sel = bookings.find((b) => b.id === selected) ?? null;
+  /** Half-hour cells still free (not past, not booked, not blocked): shown as "N h free". */
+  const freeCells = (c: Court, mine: SBooking[], blocked: { start: string; end: string }[]) =>
+    slots(c).filter(
+      (sl) =>
+        !past(sl.start) &&
+        !mine.some((x) => overlapsTime(sl, { start: hhmm(x.start_time), end: hhmm(x.end_time) })) &&
+        !blocked.some((x) => overlapsTime(sl, x)),
+    ).length;
   const equipment = prices.filter((p) => p.kind === "equipment" && p.active);
   const real = bookings.filter((b) => b.kind === "booking");
   const owing = real.filter((b) => b.state === "red").length;
@@ -112,6 +125,7 @@ export function CourtsView({
         <div className="ct-card">
           <ul className="ct-legend" style={{ borderTop: 0, borderBottom: "1px solid var(--line)" }}>
             <li><i className="free" />Available</li>
+            <li><i className="pastc" />Past</li>
             <li><i className="match" />Open match (filled spots)</li>
             <li><i className="class" />Class</li>
             <li><i className="paid" />Booked, fully paid</li>
@@ -122,9 +136,15 @@ export function CourtsView({
               <div className="ct-row head">
                 <div className="ct-name" />
                 <div className="ct-hours">
-                  {hours.map((h) => (
-                    <span key={h}>{hourLabel(h)}</span>
-                  ))}
+                  {hours.map((h) => {
+                    const isNow = date === today && toMin(now) >= h * 60 && toMin(now) < (h + 1) * 60;
+                    return (
+                      <span key={h} className={isNow ? "now" : undefined}>
+                        {hourLabel(h)}
+                        {isNow ? " · now" : ""}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
               {open.map((c) => {
@@ -138,16 +158,24 @@ export function CourtsView({
                   <div key={c.id} className="ct-row">
                     <div className="ct-name">
                       {c.name}
-                      <small>{SPORTS.find(([k]) => k === c.sport)?.[1]}</small>
+                      <small>
+                        {SPORTS.find(([k]) => k === c.sport)?.[1]} · {freeCells(c, mine, blocked) / 2} h free
+                      </small>
                     </div>
                     <div className="ct-track">
                       {toMin(o) > from * 60 && <span className="blk off" style={place(`${pad(from)}:00`, o)} />}
                       {toMin(cl) < to * 60 && <span className="blk off" style={place(cl, `${pad(to)}:00`)} />}
                       {blocked.map((x) => (
                         <span key={x.k.id} className="blk class" style={place(x.start, x.end)} title={x.k.title}>
-                          {x.k.title}
+                          <b>{x.k.title}</b>
+                          <small>{x.start}–{x.end}</small>
                         </span>
                       ))}
+                      {slots(c)
+                        .filter((sl) => past(sl.start) && !mine.some((x) => overlapsTime(sl, { start: hhmm(x.start_time), end: hhmm(x.end_time) })))
+                        .map((sl) => (
+                          <span key={`p${sl.start}`} className="blk pastc" style={place(sl.start, sl.end)} />
+                        ))}
                       {mine.map((b) => {
                         const inCount = b.players.filter((p) => p.status === "in" || p.status === "held").length;
                         if (b.kind === "class") {
@@ -160,31 +188,37 @@ export function CourtsView({
                               title={`${b.name} (blocked for a class)`}
                               onClick={() => setSelected(b.id)}
                             >
-                              {b.name}
+                              <b>{b.name}</b>
+                              <small>{hhmm(b.start_time)}–{hhmm(b.end_time)}</small>
                             </button>
                           );
                         }
                         const kindClass = b.open_match ? "match" : b.state === "green" ? "paid" : "owed";
-                        const label = b.open_match
-                          ? `Open match ${inCount}/${b.spots}`
+                        const when = `${hhmm(b.start_time)}–${hhmm(b.end_time)}`;
+                        const others = inCount - 1;
+                        const who = `${shortName(b.name)}${others > 0 && !b.open_match ? ` + ${others}` : ""}`;
+                        const status = b.open_match
+                          ? `${inCount}/${b.spots}${b.owed > 0 ? " · owed" : ""}`
                           : b.status === "held"
                             ? "Paying now"
                             : b.started_at
                               ? "Playing"
                               : b.state === "green"
                                 ? "Paid"
-                                : `${courtMoney(b.owed, b.currency)} owed`;
+                                : "Owes";
                         return (
                           <button
                             key={b.id}
                             type="button"
                             className={`blk ${kindClass} ${b.status === "held" ? "held" : ""}`}
                             style={place(hhmm(b.start_time), hhmm(b.end_time))}
-                            title={`${b.name}, ${hhmm(b.start_time)}–${hhmm(b.end_time)}, ${label}`}
+                            title={`${b.name}, ${when}, ${status}${b.owed > 0 ? `, ${courtMoney(b.owed, b.currency)} owed` : ""}`}
                             onClick={() => setSelected(b.id)}
                           >
-                            <b>{b.name}</b>
-                            <small>{b.open_match && b.owed > 0 ? `${inCount}/${b.spots} · ${courtMoney(b.owed, b.currency)} owed` : label}</small>
+                            <b>{b.open_match ? "Open match" : who}</b>
+                            <small>
+                              {when} · {status}
+                            </small>
                           </button>
                         );
                       })}
