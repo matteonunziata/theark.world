@@ -226,7 +226,21 @@ export async function quoteTier(contactId: string | null, tierKey: string): Prom
 const PAY = ["none", "link", "tilopay_account", "bac_card", "sinpe", "cash"] as const;
 type Pay = (typeof PAY)[number];
 
+/** A throw here would replace the page with "This page couldn't load", so it becomes a message in the drawer. */
 export async function addMember(
+  prev: ActionResult,
+  data: FormData,
+): Promise<ActionResult> {
+  try {
+    return await issueMember(prev, data);
+  } catch (e) {
+    console.error("Memberships: add member failed", e);
+    const known = e instanceof Error && /^You (need|don’t have access)/.test(e.message);
+    return fail(known ? e.message : "Couldn’t add the member. Check Memberships to see whether it went through, then try again.");
+  }
+}
+
+async function issueMember(
   _prev: ActionResult,
   data: FormData,
 ): Promise<ActionResult> {
