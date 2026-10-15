@@ -297,12 +297,10 @@ export function BookingPanel({
             e.preventDefault();
             setFormError(null);
             const fd = new FormData(e.currentTarget);
-            if (mains.length > 0 && !isMember && mainSeats === 0) {
-              setFormError(addons.some((t) => (qty[t.id] ?? 0) > 0) ? "Choose a main ticket first. Add-ons come with one." : "Choose at least one ticket.");
-              return;
-            }
-            if (chosen.length > 0 && mainSeats === 0) {
-              setFormError("Choose a main ticket first. Add-ons come with one.");
+            // Everyone reserves, members included, so the team knows who is coming. An add-on on its
+            // own is allowed; the booking checks it against a ticket this email already holds.
+            if (tickets.length > 0 && chosen.length === 0) {
+              setFormError("Choose at least one ticket.");
               return;
             }
             start(async () => {
@@ -359,7 +357,7 @@ export function BookingPanel({
               <legend style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 6 }}>Tickets</legend>
               {isMember && (
                 <p className="note" style={{ margin: "0 0 8px" }}>
-                  Members are included. Choose tickets only if you’re paying, for example for guests.
+                  Reserve a ticket for yourself, and for any guests, so we know how many are coming.
                 </p>
               )}
               <div className="tkpick">{mains.map(row)}</div>

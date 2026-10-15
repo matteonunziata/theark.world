@@ -5496,6 +5496,21 @@ export type Database = {
       };
       cancel_court_booking: { Args: { p_id: string }; Returns: undefined };
       cancel_my_registration: { Args: { p_id: string }; Returns: undefined };
+      guest_cancel_booking: { Args: { p_token: string }; Returns: undefined };
+      guest_reschedule_booking: {
+        Args: { p_session_date: string; p_token: string };
+        Returns: undefined;
+      };
+      ticket_items_by_token: {
+        Args: { p_token: string };
+        Returns: {
+          currency: string;
+          kind: string;
+          name: string;
+          qty: number;
+          unit_price: number;
+        }[];
+      };
       court_class_at: {
         Args: { p_court: string; p_date: string; p_end: string; p_start: string };
         Returns: string;
