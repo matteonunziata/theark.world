@@ -31,7 +31,7 @@ export const PER_DAY = 2;
 /** Minutes a slot is held while someone pays. Mirrors hold_court(). */
 export const HOLD_MINUTES = 20;
 /** The lengths a court can be booked for, in minutes. The prices live in court_prices. */
-export const LENGTHS = [60, 90, 180] as const;
+export const LENGTHS = [60, 90, 120, 180] as const;
 /** A match is doubles (4) or singles (2). */
 export const MATCH_SIZES = [4, 2] as const;
 /** The refund and cancel window for the person who booked, in hours. */
@@ -90,6 +90,17 @@ export function slots(c: Pick<Court, "open_time" | "close_time" | "slot_minutes"
 
 /** The lengths a booking can have: 1, 1½ or 3 hours. */
 export const durations = (): number[] => [...LENGTHS];
+
+/** The lengths on offer right now: the active court rows of the price list, shortest first. */
+export const lengthsOf = (prices: PriceItem[]) =>
+  prices
+    .filter((p) => p.kind === "court" && p.minutes)
+    .map((p) => p.minutes as number)
+    .sort((a, b) => a - b);
+
+/** What a length costs on the price list (before any member discount). */
+export const priceFor = (prices: PriceItem[], minutes: number) =>
+  Math.round(Number(prices.find((p) => p.kind === "court" && p.minutes === minutes)?.price ?? 0));
 
 /** "1 hour", "1½ hours", "2 hours", "45 min". */
 export const durationLabel = (minutes: number) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { courtMoney, durationLabel, durations, hhmm, MOVE_HOURS, MOVE_LIMIT } from "@/lib/courts";
+import { courtMoney, durationLabel, hhmm, MOVE_HOURS, MOVE_LIMIT } from "@/lib/courts";
 import { fmtTime } from "@/lib/dates";
 import type { MoveResult } from "./actions";
 
@@ -75,7 +75,7 @@ export function MoveForm({
         <div className="fld">
           <label htmlFor="mv-len">Length</label>
           <select id="mv-len" value={minutes} onChange={(e) => setMinutes(Number(e.target.value))}>
-            {durations().map((m) => (
+            {Object.keys(prices).map(Number).sort((a, b) => a - b).map((m) => (
               <option key={m} value={m}>
                 {durationLabel(m)} · {courtMoney(prices[m] ?? 0, "CRC")}
               </option>

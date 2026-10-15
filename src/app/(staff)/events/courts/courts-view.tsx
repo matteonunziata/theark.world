@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Drawer, useDrawer } from "@/components/drawer";
 import type { Tables } from "@/lib/database.types";
 import { addDays, fmtDate } from "@/lib/dates";
-import { classAt, courtMoney, durationLabel, durations, hhmm, LEVELS, overlapsTime, slots, SPORTS } from "@/lib/courts";
+import { classAt, courtMoney, durationLabel, hhmm, LEVELS, overlapsTime, slots, SPORTS } from "@/lib/courts";
 import type { Offering } from "@/lib/schedule";
 import { blockCourt, bookCourtForGuest, savePrices, saveCourt } from "./actions";
 import { BookingDetail } from "./booking-detail";
@@ -357,7 +357,7 @@ function NewBookingDrawer({
         <div className="fld">
           <label htmlFor="cb-len">Length</label>
           <select id="cb-len" name="minutes" value={minutes} onChange={(e) => setMinutes(Number(e.target.value))}>
-            {durations().map((m) => (
+            {prices.map((p) => p.minutes as number).sort((a, b) => a - b).map((m) => (
               <option key={m} value={m} disabled={!fits(m)}>
                 {durationLabel(m)}
                 {price(m) !== undefined ? ` · ${courtMoney(Number(price(m)), "CRC")}` : ""}

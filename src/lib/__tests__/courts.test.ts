@@ -24,19 +24,23 @@ describe("courts", () => {
   });
 });
 
-import { addMinutes, courtMoney, courtPrice, durationLabel, durations, levelName, levelRange, share } from "@/lib/courts";
+import { addMinutes, courtMoney, durationLabel, durations, levelName, levelRange, lengthsOf, priceFor, share } from "@/lib/courts";
 
 describe("courts online", () => {
-  const card = { price: 20000, price_90: 30000, price_180: 40000 };
+  const list = [
+    { key: "court_60", kind: "court", label: "1 hour", minutes: 60, price: 15000 },
+    { key: "court_90", kind: "court", label: "1½ hours", minutes: 90, price: 23000 },
+    { key: "court_120", kind: "court", label: "2 hours", minutes: 120, price: 30000 },
+  ];
 
-  it("offers 1, 1½ and 3 hours only", () => {
-    expect(durations()).toEqual([60, 90, 180]);
+  it("knows the lengths a court can have", () => {
+    expect(durations()).toEqual([60, 90, 120, 180]);
+    expect(lengthsOf(list)).toEqual([60, 90, 120]);
   });
 
   it("prices a booking from the price list", () => {
-    expect([60, 90, 180].map((m) => courtPrice(card, m))).toEqual([20000, 30000, 40000]);
-    expect(courtPrice(card, 120)).toBe(0);
-    expect(courtPrice({ price: null, price_90: null, price_180: null }, 60)).toBe(0);
+    expect([60, 90, 120].map((m) => priceFor(list, m))).toEqual([15000, 23000, 30000]);
+    expect(priceFor(list, 180)).toBe(0);
   });
 
   it("splits a court evenly between players", () => {
