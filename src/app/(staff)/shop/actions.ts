@@ -54,6 +54,7 @@ export async function saveProduct(
   if (price === null || Number(price) < 0) return fail("Enter a price.");
   const stock = Math.max(0, Number(field(data, "stock") ?? 0));
   const memberPrice = field(data, "member_price");
+  const cost = field(data, "cost");
   const category = field(data, "category") ?? "Other";
   const trackStock = data.get("track_stock") === "on";
   const row = {
@@ -62,6 +63,7 @@ export async function saveProduct(
     unit: field(data, "unit"),
     price: Number(price),
     member_price: memberPrice === null ? null : Number(memberPrice),
+    cost: cost === null ? null : Math.max(0, Number(cost)),
     low_at: Math.max(0, Number(field(data, "low_at") ?? 0)),
     description: field(data, "description"),
     track_stock: trackStock,
