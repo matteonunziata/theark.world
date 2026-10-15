@@ -204,3 +204,11 @@
 - **Two bookings a day and 14 days ahead** are unchanged for public and member bookings (staff bookings skip the daily limit).
 - **Refunds for shorter moves and cancellations** are still done by hand from Stripe; the credit is only noted on the booking.
 - **"Courts player" tag.** Contacts have no tags column, so new court players get source "Courts". Add real tags?
+
+## Round 24: One address, theark.world
+
+- **Stripe webhook.** The test webhook `ark-os` still points at https://theark-world.vercel.app/api/webhooks/stripe. Change it to https://theark.world/api/webhooks/stripe in Stripe (Developers → Webhooks) after the apex moves. Until then the vercel.app address must keep answering webhooks (see DECISIONS, Round 24).
+- **Pages on the GHL site with no page in ARK OS:** `/webinar`, `/ark-rentals`, `/ark-farm`, `/ark-padel`, `/ark-events`, `/ark-pass`, `/ark-ventures` redirect to the closest page (DECISIONS, Round 24). Do any deserve a real page (webinar, rentals, ventures)?
+- **GHL forms and redirects.** The apply-stewardship, contribute and press forms posted to GHL; the new pages email the team instead (nothing goes to GHL). GHL URL redirects, tracking scripts and the promo bar can't be read from outside; check GHL Sites → Redirects before the cutover.
+- **Google and search.** The old site's pages keep their addresses (same paths), so search results survive. Re-submit the sitemap in Search Console once the apex moves (the app has no `sitemap.xml` yet).
+- **Supabase Auth URLs** still need setting by hand if the connector can't (see the Round 24 notes in chat): Site URL `https://theark.world`, redirect URLs `https://theark.world/**`.
