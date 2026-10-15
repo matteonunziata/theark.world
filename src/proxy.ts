@@ -79,6 +79,9 @@ export async function proxy(request: NextRequest) {
   if (host === APEX && path === "/") {
     return updateSession(request, undefined, "/home");
   }
+  if (request.nextUrl.pathname === "/admin-schedule") {
+    return updateSession(request, `/events/calendar${request.nextUrl.search}`);
+  }
   return updateSession(request);
 }
 
