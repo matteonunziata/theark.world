@@ -78,6 +78,23 @@ export async function setCancelled(registrationId: string, cancelled: boolean) {
   return ok(cancelled ? "Booking cancelled" : "Booking restored");
 }
 
+/** Move a booking to another date of the same event; the tickets and payment stay as they are. */
+export async function rescheduleBooking(_prev: ActionResult, data: FormData): Promise<ActionResult> {
+  const { supabase } = await staffOrThrow("admin", "lead", "facilitator");
+  const registrationId = field(data, "registration_id");
+  const date = field(data, "session_date");
+  if (!registrationId) return fail("Pick a booking.");
+  if (!date) return fail("Pick a date.");
+  const { error } = await supabase.rpc("staff_reschedule_registration", {
+    p_registration_id: registrationId,
+    p_session_date: date,
+    p_override: data.get("override") === "on",
+  });
+  if (error) return fail(friendly(error));
+  refresh();
+  return ok("Booking moved");
+}
+
 export type PickMember = { id: string; name: string; email: string | null; phone: string | null };
 
 /** Active members a staff member can pick from when adding an attendee by hand. */

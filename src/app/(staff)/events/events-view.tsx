@@ -851,7 +851,7 @@ function OfferingDrawer({
               <>
                 <div className="subhead">Registrations</div>
                 <p style={{ margin: "0 0 8px", fontSize: 13.5 }}>
-                  <Link href={`/events/registrations/${o.id}`}>Registrations, sales and attendees</Link>
+                  <Link href={`/events/event-analytics/${o.id}`}>Registrations, sales and attendees</Link>
                 </p>
               </>
             )}
