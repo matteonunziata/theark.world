@@ -224,7 +224,7 @@ export async function cancelBooking(id: string): Promise<ActionResult> {
   const { error } = await v.supabase.rpc("cancel_my_registration", { p_id: id });
   if (error) return fail(friendly(error));
   revalidatePath("/portal", "layout");
-  revalidatePath("/events/registrations", "layout");
+  revalidatePath("/events/event-analytics", "layout");
   return ok("Booking cancelled.");
 }
 

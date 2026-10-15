@@ -5854,6 +5854,10 @@ export type Database = {
         };
         Returns: { qr_token: string; registration_id: string }[];
       };
+      staff_reschedule_registration: {
+        Args: { p_override?: boolean; p_registration_id: string; p_session_date: string };
+        Returns: undefined;
+      };
       staff_set_registration_cancelled: {
         Args: { p_cancelled: boolean; p_registration_id: string };
         Returns: undefined;
