@@ -32,6 +32,16 @@ const VERCEL_HOST = "theark-world.vercel.app";
 // answering these until the webhooks point at theark.world.
 const VERCEL_HOST_KEEPS = ["/api/webhooks/", "/api/cron/"];
 
+// While theark.world is still reaching some people's old DNS answer (the GHL site), the old
+// addresses keep serving the app, as before the move. Set RETIRE_OLD_HOSTS=1 in Vercel to
+// make them redirect to theark.world.
+const RETIRE_OLD_HOSTS = process.env.RETIRE_OLD_HOSTS === "1";
+const LEGACY_ROOT: Record<string, string> = {
+  "join.theark.world": "/ark-membership",
+  "members.theark.world": "/portal",
+  "courts.theark.world": "/courts",
+};
+
 function moveToApex(request: NextRequest, path: string) {
   const to = new URL(path, `https://${APEX}`);
   to.search = request.nextUrl.search;
@@ -41,6 +51,12 @@ function moveToApex(request: NextRequest, path: string) {
 export async function proxy(request: NextRequest) {
   const host = (request.headers.get("host") ?? request.nextUrl.hostname).split(":")[0];
   const path = request.nextUrl.pathname;
+
+  if (!RETIRE_OLD_HOSTS && (host in LEGACY_ROOT || host === VERCEL_HOST)) {
+    if (path === "/" && LEGACY_ROOT[host]) return NextResponse.redirect(new URL(LEGACY_ROOT[host], request.url));
+    if (host === JOIN_HOST && path === "/events") return updateSession(request, "/whats-on");
+    return updateSession(request);
+  }
 
   if (host === JOIN_HOST) {
     if (path === "/") return moveToApex(request, "/ark-membership");
