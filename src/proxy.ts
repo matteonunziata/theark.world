@@ -10,7 +10,7 @@ const ROOT_BY_HOST: Record<string, string> = {
 };
 
 // On join.theark.world the public events page answers at /events. The staff
-// events area (/events/...) is unchanged; staff reach its overview at /events/classes.
+// schedule answers at /admin-schedule (the calendar) so the two never clash.
 const EVENTS_HOST = "join.theark.world";
 
 export async function proxy(request: NextRequest) {
@@ -20,6 +20,9 @@ export async function proxy(request: NextRequest) {
   }
   if ((request.headers.get("host") ?? "").split(":")[0] === EVENTS_HOST && request.nextUrl.pathname === "/events") {
     return updateSession(request, "/whats-on");
+  }
+  if (request.nextUrl.pathname === "/admin-schedule") {
+    return updateSession(request, `/events/calendar${request.nextUrl.search}`);
   }
   return updateSession(request);
 }

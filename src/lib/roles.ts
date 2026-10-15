@@ -101,7 +101,7 @@ export const MODULES: {
   {
     key: "events",
     name: "Schedule",
-    href: "/events",
+    href: "/admin-schedule",
     roles: ["admin", "lead", "sales", "community_manager"],
   },
   {
