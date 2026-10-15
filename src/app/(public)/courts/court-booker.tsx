@@ -429,17 +429,17 @@ function BookingForm({
 
         {match === "open" && (
           <>
+            <div className="fld">
+              <label htmlFor="cb-level">Your level</label>
+              <select id="cb-level" value={level} onChange={(e) => pickLevel(Number(e.target.value))}>
+                {LEVELS.map(([v, name]) => (
+                  <option key={v} value={v}>
+                    {v} · {name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="two">
-              <div className="fld">
-                <label htmlFor="cb-level">Your level</label>
-                <select id="cb-level" value={level} onChange={(e) => pickLevel(Number(e.target.value))}>
-                  {LEVELS.map(([v, name]) => (
-                    <option key={v} value={v}>
-                      {v} · {name}
-                    </option>
-                  ))}
-                </select>
-              </div>
               <div className="fld">
                 <label htmlFor="cb-lmin">Level from</label>
                 <select id="cb-lmin" value={levelMin} onChange={(e) => setLevelMin(Number(e.target.value))}>
@@ -450,16 +450,16 @@ function BookingForm({
                   ))}
                 </select>
               </div>
-            </div>
-            <div className="fld">
-              <label htmlFor="cb-lmax">Level to</label>
-              <select id="cb-lmax" value={levelMax} onChange={(e) => setLevelMax(Number(e.target.value))}>
-                {Array.from({ length: 15 }, (_, i) => i / 2).map((v) => (
-                  <option key={v} value={v} disabled={v < levelMin}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+              <div className="fld">
+                <label htmlFor="cb-lmax">Level to</label>
+                <select id="cb-lmax" value={levelMax} onChange={(e) => setLevelMax(Number(e.target.value))}>
+                  {Array.from({ length: 15 }, (_, i) => i / 2).map((v) => (
+                    <option key={v} value={v} disabled={v < levelMin}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </>
         )}
