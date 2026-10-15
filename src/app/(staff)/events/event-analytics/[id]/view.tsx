@@ -11,7 +11,7 @@ import { fmtDate } from "@/lib/dates";
 import { money } from "@/lib/schedule";
 import { emailTicket, removeBooking, setPaid } from "../../actions";
 import { LiveRefresh } from "./live";
-import { listMembers, type PickMember, saveRegistration, setCancelled } from "./actions";
+import { listMembers, type PickMember, rescheduleBooking, saveRegistration, setCancelled } from "./actions";
 
 export type Row = {
   id: string;
@@ -61,6 +61,7 @@ export function RegistrationsView({
   tickets,
   rows,
   dates,
+  moveDates,
   date,
   canManage,
   stats,
@@ -69,6 +70,7 @@ export function RegistrationsView({
   tickets: Ticket[];
   rows: Row[];
   dates: string[];
+  moveDates: string[];
   date: string;
   canManage: boolean;
   stats: Stats;
@@ -77,6 +79,7 @@ export function RegistrationsView({
   const toast = useToast();
   const [pending, start] = useTransition();
   const drawer = useDrawer<Row>();
+  const move = useDrawer<Row>();
   const [filter, setFilter] = useState<(typeof FILTERS)[number][0]>("all");
   const [q, setQ] = useState("");
 
@@ -107,6 +110,7 @@ export function RegistrationsView({
     }
   };
 
+  const exportHref = (fmt: "csv" | "pdf") => `/events/event-analytics/${offering.id}/export?fmt=${fmt}${date ? `&d=${date}` : ""}`;
   const spots = offering.capacity ? `${stats.ticketsSold} of ${offering.capacity}` : String(stats.ticketsSold);
 
   return (
@@ -119,6 +123,12 @@ export function RegistrationsView({
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <a className="btn" href={exportHref("csv")}>
+            Export CSV
+          </a>
+          <a className="btn" href={exportHref("pdf")} target="_blank" rel="noopener noreferrer">
+            Print list
+          </a>
           <Link className="btn" href={`/e/${offering.slug ?? offering.id}`} target="_blank">
             Open event page
           </Link>
@@ -272,9 +282,14 @@ export function RegistrationsView({
                         Restore
                       </button>
                     ) : (
-                      <button type="button" className="btn sm" disabled={pending} onClick={() => cancel(r)}>
-                        Cancel
-                      </button>
+                      <>
+                        <button type="button" className="btn sm" disabled={pending} onClick={() => move.openItem(r)}>
+                          Reschedule
+                        </button>
+                        <button type="button" className="btn sm" disabled={pending} onClick={() => cancel(r)}>
+                          Cancel
+                        </button>
+                      </>
                     )}
                   </>
                 )}
@@ -297,7 +312,79 @@ export function RegistrationsView({
         onRun={run}
         onCancel={cancel}
       />
+      <RescheduleDrawer
+        key={move.item?.id ?? "none"}
+        open={move.open}
+        row={move.item}
+        dates={moveDates}
+        offeringId={offering.id}
+        onClose={move.close}
+      />
     </>
+  );
+}
+
+function RescheduleDrawer({
+  open,
+  row,
+  dates,
+  offeringId,
+  onClose,
+}: {
+  open: boolean;
+  row: Row | null;
+  dates: string[];
+  offeringId: string;
+  onClose: () => void;
+}) {
+  const options = dates.filter((d) => d !== row?.sessionDate);
+  return (
+    <Drawer
+      title="Reschedule booking"
+      open={open}
+      onClose={onClose}
+      action={rescheduleBooking}
+      footer={
+        <>
+          <span className="spacer" />
+          <button type="button" className="btn ghost" onClick={onClose}>
+            Close
+          </button>
+          <button type="submit" className="btn primary" disabled={!options.length}>
+            Move booking
+          </button>
+        </>
+      }
+    >
+      {row && (
+        <>
+          <input type="hidden" name="registration_id" value={row.id} />
+          <input type="hidden" name="offering_id" value={offeringId} />
+          <p style={{ marginTop: 0 }}>
+            <b>{row.name}</b> is booked for {fmtDate(row.sessionDate, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}.
+            Their tickets and payment stay as they are.
+          </p>
+          {options.length ? (
+            <div className="fld">
+              <label htmlFor="mv-date">Move to</label>
+              <select id="mv-date" name="session_date" defaultValue={options[0]} required>
+                {options.map((d) => (
+                  <option key={d} value={d}>
+                    {fmtDate(d, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <p className="muted">This event has no other upcoming date.</p>
+          )}
+          <label className="hint" style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12 }}>
+            <input type="checkbox" name="override" />
+            Allow this even if it goes past the capacity or a ticket’s stock
+          </label>
+        </>
+      )}
+    </Drawer>
   );
 }
 

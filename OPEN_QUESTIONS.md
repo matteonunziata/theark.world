@@ -212,3 +212,5 @@
 - **GHL forms and redirects.** The apply-stewardship, contribute and press forms posted to GHL; the new pages email the team instead (nothing goes to GHL). GHL URL redirects, tracking scripts and the promo bar can't be read from outside; check GHL Sites → Redirects before the cutover.
 - **Google and search.** The old site's pages keep their addresses (same paths), so search results survive. Re-submit the sitemap in Search Console once the apex moves (the app has no `sitemap.xml` yet).
 - **Supabase Auth URLs** still need setting by hand if the connector can't (see the Round 24 notes in chat): Site URL `https://theark.world`, redirect URLs `https://theark.world/**`.
+- **Guest rescheduling.** Members can cancel their own class or event booking from the portal, but nobody can move a booking themselves: only staff reschedule (Event analytics). Do guests need to move their own date, and by when? Non-member ticket holders have no way to cancel at all yet.
+- **Experiences and expeditions.** Event analytics only covers kind `event`. Should experiences get the same per-event view?

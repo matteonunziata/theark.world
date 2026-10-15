@@ -19,10 +19,10 @@ export default async function EventsLayout({ children }: LayoutProps<"/events">)
         items={[
           { href: "/admin-schedule", label: "Calendar" },
           { href: "/events/classes", label: "Classes" },
-          { href: "/events/events", label: "Events" },
+          { href: "/events/events", label: "Events", also: ["/events/event-analytics"] },
           { href: "/events/courts", label: "Courts" },
           { href: "/events/experiences", label: "Experiences" },
-          { href: "/events/analytics", label: "Analytics" },
+          { href: "/events/analytics", label: "Class analytics" },
         ]}
       />
       {children}
