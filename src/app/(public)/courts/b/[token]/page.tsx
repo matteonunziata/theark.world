@@ -195,13 +195,15 @@ export default async function CourtBookingPage({ params }: PageProps<"/courts/b/
                 </li>
               ))}
             </ul>
-            {you.host && spotsLeft > 0 && live && (
+            {spotsLeft > 0 && live && ["in", "held"].includes(you.status) && (
               <div className="share">
-                {b.open_match
-                  ? "Your match is listed on the courts page. You can also send this link to anyone:"
-                  : b.private_pay === "whole"
-                    ? "Send this link to your friends so they can add their names. They have nothing to pay:"
-                    : "Send this link to your friends so they can add their names and pay their share:"}
+                {you.host
+                  ? b.open_match
+                    ? "Your match is listed on the courts page. You can also send this link to anyone:"
+                    : b.private_pay === "whole"
+                      ? "Send this link to your friends so they can add their names. They have nothing to pay:"
+                      : "Send this link to your friends so they can add their names and pay their share:"
+                  : "Know someone who’d like to play? Share this link so they can join:"}
                 <code>{joinUrl}</code>
                 <CopyLink url={joinUrl} label="Copy join link" />
               </div>
