@@ -18,6 +18,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_orders: {
+        Row: {
+          created_at: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       budget_events: {
         Row: {
           actor_id: string | null
@@ -2957,6 +2972,7 @@ export type Database = {
       }
       payments: {
         Row: {
+          order_id: string | null
           charge_id: string | null
           fee: number | null
           fee_currency: string | null
@@ -2987,6 +3003,7 @@ export type Database = {
           court_player_id: string | null
         }
         Insert: {
+          order_id?: string | null
           charge_id?: string | null
           fee?: number | null
           fee_currency?: string | null
@@ -3017,6 +3034,7 @@ export type Database = {
           court_player_id?: string | null
         }
         Update: {
+          order_id?: string | null
           charge_id?: string | null
           fee?: number | null
           fee_currency?: string | null
@@ -3344,6 +3362,7 @@ export type Database = {
       }
       registrations: {
         Row: {
+          order_id: string | null
           checked_in_at: string | null
           checked_in_by: string | null
           contact_id: string | null
@@ -3366,6 +3385,7 @@ export type Database = {
           cancelled_at: string | null
         }
         Insert: {
+          order_id?: string | null
           checked_in_at?: string | null
           checked_in_by?: string | null
           contact_id?: string | null
@@ -3388,6 +3408,7 @@ export type Database = {
           cancelled_at?: string | null
         }
         Update: {
+          order_id?: string | null
           checked_in_at?: string | null
           checked_in_by?: string | null
           contact_id?: string | null

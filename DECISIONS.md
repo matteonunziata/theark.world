@@ -615,3 +615,11 @@ Lives inside Finance, replacing the AppSheet test app. Pages: Budgets, Budget de
 - **Class blocks.** Staff block a court for a class from the schedule (`kind = 'class'` booking). It shows as a class publicly and can't be booked.
 - **Existing bookings** (11 rows: 1 booked, 1 cancelled, 9 expired) were left as they are; their 60 and 90 minute lengths and prices stand. The one paid Stripe payment was copied into the ledger.
 - **Emails.** Nothing new relies on email. The existing confirmation email calls stay and do nothing until email is configured.
+
+## Meals: cart and one payment for several days (2026-10-15)
+
+- **Breakfast and lunch use a cart.** Pick a day, choose how many meals, add to cart, repeat for other days or the other meal, then check out once. Same component on the public pages and in the portal's booking window, so both behave the same.
+- **The cart lives in the browser** (`ark-meal-cart` in local storage), shared by `/e/breakfast` and `/e/lunch`. Nothing is reserved until checkout; at checkout each meal and day becomes a held booking (same checks as before, in `book_tickets`) and they are grouped in a `booking_orders` row. If one line fails (sold out, closed), none are kept.
+- **One payment settles the order.** `record_stripe_payment` takes an `order_id`, marks every booking in it paid, and each gets its own pass email. A full refund of the payment frees all of them. The payment row points at the first booking and carries `order_id`.
+- **Holds are 30 minutes**, as before. "Change my cart" on the payment step releases the holds so the cart can be edited.
+- **Unchanged:** other classes and events keep their single-day booking form.

@@ -7,7 +7,7 @@ import { notifyLater } from "@/lib/slack";
 import { bookingMessage } from "@/lib/slack-format";
 import { createEmbeddedCheckout, fmtAmount, fulfillCheckout, stripeEmbeddedReady, stripePublishableKey, stripeReady } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ticketCheckout } from "@/lib/ticket-checkout";
+import { orderCheckout, ticketCheckout } from "@/lib/ticket-checkout";
 import { createClient } from "@/lib/supabase/server";
 import { loadEvent } from "./load";
 
@@ -133,6 +133,113 @@ export async function bookSession(input: {
     embedded: !!payUrl && stripeEmbeddedReady(),
   };
 }
+
+export type CartResult =
+  | {
+      ok: true;
+      orderId: string;
+      /** The first booking's ticket token; paying it pays the whole order. */
+      token: string;
+      bookings: { token: string; title: string; date: string; qty: number }[];
+      price: string | null;
+      payUrl: string | null;
+      embedded: boolean;
+    }
+  | { ok: false; error: string };
+
+/**
+ * Book meals for one or more days in a single checkout. Each offering and day becomes a held
+ * booking (the same checks as bookSession, in book_tickets); together they are one order,
+ * paid once. If any line can't be booked, none are kept.
+ */
+export async function bookMeals(input: {
+  lines: { offeringId: string; date: string; ticketTypeId: string; qty: number }[];
+  name: string;
+  email: string;
+  phone?: string;
+  website?: string;
+}): Promise<CartResult> {
+  if (input.website) return { ok: false, error: "Couldn’t book. Try again." };
+  const lines = input.lines.filter((l) => l.offeringId && l.date && l.ticketTypeId && Number.isInteger(l.qty) && l.qty > 0);
+  if (lines.length === 0) return { ok: false, error: "Your cart is empty." };
+  if (lines.length > 40) return { ok: false, error: "That’s a lot of meals at once. Check out in two goes." };
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "Booking isn’t open yet." };
+  const supabase = await createClient();
+
+  // One booking per offering and day, however many lines the cart had.
+  const groups = new Map<string, { offeringId: string; date: string; items: Map<string, number> }>();
+  for (const l of lines) {
+    const g = groups.get(`${l.offeringId}|${l.date}`) ?? { offeringId: l.offeringId, date: l.date, items: new Map() };
+    g.items.set(l.ticketTypeId, (g.items.get(l.ticketTypeId) ?? 0) + l.qty);
+    groups.set(`${l.offeringId}|${l.date}`, g);
+  }
+
+  const { data: order, error: orderErr } = await admin.from("booking_orders").insert({}).select("id").single();
+  if (orderErr || !order) return { ok: false, error: "Couldn’t start your booking. Try again." };
+
+  const made: { id: string; token: string; offeringId: string; date: string; qty: number }[] = [];
+  const undo = async () => {
+    if (made.length) await admin.from("registrations").delete().in("id", made.map((m) => m.id));
+    await admin.from("booking_orders").delete().eq("id", order.id);
+  };
+  for (const g of groups.values()) {
+    const { data, error } = await supabase
+      .rpc("book_tickets", {
+        p_offering_id: g.offeringId,
+        p_session_date: g.date,
+        p_name: input.name,
+        p_email: input.email,
+        p_phone: input.phone?.trim() || undefined,
+        p_items: [...g.items].map(([ticket_type_id, qty]) => ({ ticket_type_id, qty })),
+      })
+      .single();
+    if (error || !data) {
+      await undo();
+      const day = fmtDay(g.date);
+      return { ok: false, error: `${day}: ${fail(friendly(error)).error ?? "Couldn’t book."}` };
+    }
+    made.push({ id: data.registration_id, token: data.qr_token, offeringId: g.offeringId, date: g.date, qty: [...g.items.values()].reduce((a, b) => a + b, 0) });
+  }
+  const { error: linkErr } = await admin.from("registrations").update({ order_id: order.id }).in("id", made.map((m) => m.id));
+  if (linkErr) {
+    await undo();
+    return { ok: false, error: "Couldn’t put your booking together. Try again." };
+  }
+
+  const t = await orderCheckout(admin, order.id);
+  const { data: offs } = await admin.from("offerings").select("id, title").in("id", [...new Set(made.map((m) => m.offeringId))]);
+  for (const id of new Set(made.map((m) => m.offeringId))) revalidatePath(`/e/${id}`, "layout");
+  const price = t.ok ? fmtAmount(t.amount, t.currency) : null;
+  const payUrl = t.ok && stripeReady() ? `/pay/order/${order.id}` : null;
+  return {
+    ok: true,
+    orderId: order.id,
+    token: made[0].token,
+    bookings: made.map((m) => ({ token: m.token, title: offs?.find((o) => o.id === m.offeringId)?.title ?? "Meal", date: m.date, qty: m.qty })),
+    price,
+    payUrl,
+    embedded: !!payUrl && stripeEmbeddedReady(),
+  };
+}
+
+/** Back out of a checkout that wasn't paid: free the held spots so the cart can be changed. */
+export async function releaseOrder(orderId: string): Promise<{ ok: boolean }> {
+  if (!/^[0-9a-f-]{36}$/i.test(orderId)) return { ok: false };
+  const admin = createAdminClient();
+  if (!admin) return { ok: false };
+  const { error } = await admin
+    .from("registrations")
+    .delete()
+    .eq("order_id", orderId)
+    .eq("status", "held")
+    .eq("paid", false);
+  if (error) return { ok: false };
+  await admin.from("booking_orders").delete().eq("id", orderId);
+  return { ok: true };
+}
+
+const fmtDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 
 export type PaymentStart =
   | { ok: true; clientSecret: string; sessionId: string; publishableKey: string; amount: string; summary: string }
