@@ -39,7 +39,6 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
   const courts = (courtsData ?? []) as PublicCourt[];
   const priceList = (priceData ?? []) as PriceItem[];
   const courtPrices = priceList.filter((p) => p.kind === "court");
-  const equipment = priceList.filter((p) => p.kind === "equipment");
   const day = (dayRows ?? []) as DayRow[];
   const q = (d: string) => `/courts${d !== today ? `?date=${d}` : ""}#book`;
   const padel = courts.filter((c) => c.sport === "padel");
@@ -139,7 +138,7 @@ export default async function CourtsPage({ searchParams }: PageProps<"/courts">)
           ) : (
             <>
               <div className="crts-card-cal">
-                <CourtBooker courts={courts} day={day} date={date} today={today} now={now} me={member} online={stripeReady()} equipment={equipment} />
+                <CourtBooker courts={courts} day={day} date={date} today={today} now={now} me={member} online={stripeReady()} equipment={priceList} />
               </div>
               <p className="crts-hint">
                 Pick a free slot to book it, or a gold one to join an open match. Members save in the{" "}

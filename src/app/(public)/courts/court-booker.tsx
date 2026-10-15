@@ -7,9 +7,9 @@ import {
   addMinutes,
   CANCEL_HOURS,
   courtMoney,
-  courtPrice,
   durationLabel,
-  durations,
+  lengthsOf,
+  priceFor,
   type EquipmentPick,
   equipmentTotal,
   hhmm,
@@ -253,10 +253,10 @@ function BookingForm({
         r.court_id === c.id &&
         overlapsTime({ start: pick.start, end: addMinutes(pick.start, minutes) }, { start: hhmm(r.start_time), end: hhmm(r.end_time) }),
     ) && addMinutes(pick.start, minutes) <= hhmm(c.close_time);
-  const lengths = durations().filter(canFit);
+  const lengths = lengthsOf(equipment).filter(canFit);
   const [minutes, setMinutes] = useState(lengths[0] ?? 60);
   const [step, setStep] = useState<"length" | "details">("length");
-  const [match, setMatch] = useState<"open" | "private">("private");
+  const [match, setMatch] = useState<"open" | "private" | null>(null);
   const [privatePay, setPrivatePay] = useState<"whole" | "split">("split");
   const [spots, setSpots] = useState<2 | 4>(4);
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -268,9 +268,9 @@ function BookingForm({
   const [result, setResult] = useState<CourtResult | null>(null);
   const [pending, start] = useTransition();
 
-  const court = courtPrice(c, minutes);
+  const court = priceFor(equipment, minutes);
   const each = Math.round(court / spots);
-  const hostCourt = match === "private" && privatePay === "whole" ? court : court - each * (spots - 1);
+  const hostCourt = match === null ? court : match === "private" && privatePay === "whole" ? court : court - each * (spots - 1);
   const equip = equipmentTotal(equipment, picks);
   const due = hostCourt + equip;
   const end = addMinutes(pick.start, minutes);
@@ -296,12 +296,12 @@ function BookingForm({
             {fmtDate(date, { weekday: "short", month: "short", day: "numeric" })} · {fmtTime(pick.start)}
           </p>
           <div className="lens">
-            {durations().map((m) => {
+            {lengthsOf(equipment).map((m) => {
               const ok = lengths.includes(m);
               return (
                 <button key={m} type="button" disabled={!ok} className={m === minutes ? "on" : ""} onClick={() => setMinutes(m)}>
                   <b>{durationLabel(m)}</b>
-                  <span>{ok ? courtMoney(courtPrice(c, m), c.currency) : "Not free"}</span>
+                  <span>{ok ? courtMoney(priceFor(equipment, m), c.currency) : "Not free"}</span>
                 </button>
               );
             })}
@@ -321,6 +321,7 @@ function BookingForm({
         className="crts-form"
         onSubmit={(e) => {
           e.preventDefault();
+          if (!match) return;
           const fd = new FormData(e.currentTarget);
           start(async () => {
             const r = await holdCourt({
@@ -386,11 +387,11 @@ function BookingForm({
         </div>
 
         <div className="choice" role="group" aria-label="Kind of match">
-          <button type="button" className={match === "private" ? "on" : ""} onClick={() => setMatch("private")}>
+          <button type="button" aria-pressed={match === "private"} className={match === "private" ? "on" : ""} onClick={() => setMatch("private")}>
             <b>Private match</b>
             <span>Not listed. Friends join with your link.</span>
           </button>
-          <button type="button" className={match === "open" ? "on" : ""} onClick={() => setMatch("open")}>
+          <button type="button" aria-pressed={match === "open"} className={match === "open" ? "on" : ""} onClick={() => setMatch("open")}>
             <b>Open match</b>
             <span>Listed publicly. Others join and pay their share.</span>
           </button>
@@ -428,17 +429,17 @@ function BookingForm({
 
         {match === "open" && (
           <>
+            <div className="fld">
+              <label htmlFor="cb-level">Your level</label>
+              <select id="cb-level" value={level} onChange={(e) => pickLevel(Number(e.target.value))}>
+                {LEVELS.map(([v, name]) => (
+                  <option key={v} value={v}>
+                    {v} · {name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="two">
-              <div className="fld">
-                <label htmlFor="cb-level">Your level</label>
-                <select id="cb-level" value={level} onChange={(e) => pickLevel(Number(e.target.value))}>
-                  {LEVELS.map(([v, name]) => (
-                    <option key={v} value={v}>
-                      {v} · {name}
-                    </option>
-                  ))}
-                </select>
-              </div>
               <div className="fld">
                 <label htmlFor="cb-lmin">Level from</label>
                 <select id="cb-lmin" value={levelMin} onChange={(e) => setLevelMin(Number(e.target.value))}>
@@ -449,16 +450,16 @@ function BookingForm({
                   ))}
                 </select>
               </div>
-            </div>
-            <div className="fld">
-              <label htmlFor="cb-lmax">Level to</label>
-              <select id="cb-lmax" value={levelMax} onChange={(e) => setLevelMax(Number(e.target.value))}>
-                {Array.from({ length: 15 }, (_, i) => i / 2).map((v) => (
-                  <option key={v} value={v} disabled={v < levelMin}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+              <div className="fld">
+                <label htmlFor="cb-lmax">Level to</label>
+                <select id="cb-lmax" value={levelMax} onChange={(e) => setLevelMax(Number(e.target.value))}>
+                  {Array.from({ length: 15 }, (_, i) => i / 2).map((v) => (
+                    <option key={v} value={v} disabled={v < levelMin}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </>
         )}
@@ -472,18 +473,21 @@ function BookingForm({
 
         <div className="total">
           <span>
-            {hostCourt === court && !equip ? "Total" : "You pay"}
+            {match === null ? "Court" : hostCourt === court && !equip ? "Total" : "You pay"}
             <small> · court {courtMoney(court, c.currency)}{equip ? ` + equipment ${courtMoney(equip, c.currency)}` : ""} · VAT included</small>
           </span>
           <b>{courtMoney(due, c.currency)}</b>
         </div>
+        {match === null && (
+          <p className="muted" style={{ fontSize: 13.5 }}>Choose private or open match to continue.</p>
+        )}
         <p className="muted" style={{ fontSize: 13 }}>
           {pay === "online" && online ? `Pay by card next. Held ${HOLD_MINUTES} min.` : "Pay at reception."} Cancel free up to {CANCEL_HOURS} h before.
           After booking you get a private link to move or cancel it.
         </p>
         <div className="acts">
           <button type="button" className="btn quiet" onClick={() => setStep("length")}>Back</button>
-          <button type="submit" className="btn solid" disabled={pending || !lengths.length}>
+          <button type="submit" className="btn solid" disabled={pending || !lengths.length || !match}>
             {pending ? "One moment…" : pay === "online" && online ? "Pay" : "Book"}
           </button>
         </div>

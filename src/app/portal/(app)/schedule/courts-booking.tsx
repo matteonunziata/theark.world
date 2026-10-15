@@ -9,9 +9,9 @@ import {
   addMinutes,
   BOOKING_DAYS,
   courtMoney,
-  courtPrice,
   durationLabel,
-  durations,
+  lengthsOf,
+  priceFor,
   type EquipmentPick,
   equipmentTotal,
   hhmm,
@@ -280,18 +280,18 @@ function BookDialog({
       !day.some((t) => t.court_id === c.id && overlapsTime(win, { start: hhmm(t.start_time), end: hhmm(t.end_time) }))
     );
   };
-  const lengths = durations().filter(fits);
+  const lengths = lengthsOf(equipment).filter(fits);
   const [minutes, setMinutes] = useState(lengths[0] ?? 60);
-  const [match, setMatch] = useState<"open" | "private">("private");
+  const [match, setMatch] = useState<"open" | "private" | "">("");
   const [privatePay, setPrivatePay] = useState<"whole" | "split">("split");
   const [spots, setSpots] = useState<2 | 4>(4);
   const [level, setLevel] = useState(2.5);
   const [picks, setPicks] = useState<EquipmentPick[]>([]);
   const [friends, setFriends] = useState<{ name: string; email: string; phone: string }[]>([]);
-  const price = (m: number) => Math.round(courtPrice(c, m) * (1 - discount / 100));
+  const price = (m: number) => Math.round(priceFor(equipment, m) * (1 - discount / 100));
   const total = price(minutes);
   const each = Math.round(total / spots);
-  const hostCourt = match === "private" && privatePay === "whole" ? total : total - each * (spots - 1);
+  const hostCourt = match === "" ? total : match === "private" && privatePay === "whole" ? total : total - each * (spots - 1);
   const equip = equipmentTotal(equipment, picks);
   const due = hostCourt + equip;
 
@@ -303,7 +303,7 @@ function BookDialog({
           {fmtDate(date, { weekday: "short", month: "short", day: "numeric" })} · {pick.start}
         </p>
         <div className="crt-lens">
-          {durations().map((m) => (
+          {lengthsOf(equipment).map((m) => (
             <button key={m} type="button" disabled={!lengths.includes(m)} className={m === minutes ? "on" : ""} onClick={() => setMinutes(m)}>
               <b>{durationLabel(m)}</b>
               <span>{lengths.includes(m) ? courtMoney(price(m), c.currency) : "Not free"}</span>
@@ -321,6 +321,7 @@ function BookDialog({
           <label>
             Kind of match
             <select className="pv-input" value={match} onChange={(e) => setMatch(e.target.value as "open" | "private")}>
+              <option value="" disabled>Choose…</option>
               <option value="private">Private · friends join by link</option>
               <option value="open">Open · listed for anyone</option>
             </select>
@@ -382,8 +383,9 @@ function BookDialog({
           <button
             type="button"
             className="pv-btn"
-            disabled={busy || !lengths.includes(minutes)}
+            disabled={busy || !lengths.includes(minutes) || !match}
             onClick={() =>
+              match &&
               onBook({
                 minutes,
                 match,
