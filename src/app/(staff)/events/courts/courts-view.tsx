@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ConfirmButton, Drawer, useDrawer } from "@/components/drawer";
+import { Drawer, useDrawer } from "@/components/drawer";
 import type { Tables } from "@/lib/database.types";
 import { addDays, fmtDate } from "@/lib/dates";
-import { classAt, courtMoney, hhmm, levelRange, overlapsTime, slots, SPORTS } from "@/lib/courts";
+import { classAt, courtMoney, durationLabel, durations, hhmm, LEVELS, overlapsTime, slots, SPORTS } from "@/lib/courts";
 import type { Offering } from "@/lib/schedule";
-import { saveCourt, saveCourtBooking } from "./actions";
+import { blockCourt, bookCourtForGuest, savePrices, saveCourt } from "./actions";
+import { BookingDetail } from "./booking-detail";
+import type { SBooking } from "./staff-types";
 
 type Court = Tables<"courts">;
-type Booking = Tables<"court_bookings">;
+type Price = Tables<"court_prices">;
 type Person = { id: string; name: string; email: string | null; phone: string | null };
 type Slot = { court: Court; start: string; end: string };
 
@@ -26,27 +28,34 @@ export function CourtsView({
   bookings,
   classes,
   people,
+  prices,
+  usdRate,
+  vatPercent,
   date,
   today,
   now,
   canManage,
 }: {
   courts: Court[];
-  bookings: Booking[];
+  bookings: SBooking[];
   classes: Offering[];
   people: Person[];
+  prices: Price[];
+  usdRate: number;
+  vatPercent: number;
   date: string;
   today: string;
   now: string;
   canManage: boolean;
 }) {
-  const book = useDrawer<Booking>();
+  const book = useDrawer<null>();
   const manage = useDrawer<Court>();
+  const block = useDrawer<null>();
   const [slot, setSlot] = useState<Slot | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
   const open = courts.filter((c) => c.active);
   const q = (d: string) => `/events/courts?date=${d}`;
   const past = (start: string) => date < today || (date === today && start <= now);
-  const courtOf = (id: string) => courts.find((c) => c.id === id);
   const from = open.length ? Math.floor(Math.min(...open.map((c) => toMin(hhmm(c.open_time)))) / 60) : 0;
   const to = open.length ? Math.ceil(Math.max(...open.map((c) => toMin(hhmm(c.close_time)))) / 60) : 0;
   const hours = Array.from({ length: to - from }, (_, i) => from + i);
@@ -55,6 +64,10 @@ export function CourtsView({
     left: `${((toMin(start) - from * 60) / span) * 100}%`,
     width: `${((toMin(end) - toMin(start)) / span) * 100}%`,
   });
+  const sel = bookings.find((b) => b.id === selected) ?? null;
+  const equipment = prices.filter((p) => p.kind === "equipment" && p.active);
+  const real = bookings.filter((b) => b.kind === "booking");
+  const owing = real.filter((b) => b.state === "red").length;
 
   return (
     <>
@@ -69,9 +82,10 @@ export function CourtsView({
           <span>{fmtDate(date, { weekday: "long", month: "long", day: "numeric" })}</span>
         </span>
         <span className="muted" style={{ fontSize: 13.5 }}>
-          {bookings.length} booking{bookings.length === 1 ? "" : "s"}
+          {real.length} booking{real.length === 1 ? "" : "s"}
+          {owing ? `, ${owing} with money owed` : ""}
         </span>
-        <span style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <span style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
           <input
             type="date"
             className="field-in"
@@ -79,8 +93,11 @@ export function CourtsView({
             value={date}
             onChange={(e) => e.target.value && (window.location.href = q(e.target.value))}
           />
+          {open.length > 0 && (
+            <button type="button" className="btn" onClick={block.openNew}>Block for a class</button>
+          )}
           {canManage && (
-            <button type="button" className="btn" onClick={manage.openNew}>Manage courts</button>
+            <button type="button" className="btn" onClick={manage.openNew}>Courts &amp; prices</button>
           )}
         </span>
       </div>
@@ -88,11 +105,18 @@ export function CourtsView({
       {!open.length ? (
         <div className="empty">
           <h2>No courts yet</h2>
-          <p>Add the padel and pickleball courts, with their opening hours and slot length.</p>
+          <p>Add the padel and pickleball courts, with their opening hours.</p>
           {canManage && <button type="button" className="btn primary" onClick={manage.openNew}>Add a court</button>}
         </div>
       ) : (
         <div className="ct-card">
+          <ul className="ct-legend" style={{ borderTop: 0, borderBottom: "1px solid var(--line)" }}>
+            <li><i className="free" />Available</li>
+            <li><i className="match" />Open match (filled spots)</li>
+            <li><i className="class" />Class</li>
+            <li><i className="paid" />Booked, fully paid</li>
+            <li><i className="owed" />Booked, money owed</li>
+          </ul>
           <div className="ct-scroll" style={{ "--cols": hours.length } as React.CSSProperties}>
             <div className="ct-in">
               <div className="ct-row head">
@@ -125,31 +149,50 @@ export function CourtsView({
                         </span>
                       ))}
                       {mine.map((b) => {
-                        const tags = [
-                          b.status === "held" ? "paying now" : null,
-                          b.open_match ? `open match, level ${levelRange(b.level_min, b.level_max)}` : b.players ? `${b.players} players` : null,
-                          b.amount && Number(b.amount) > 0 ? (b.paid ? "paid" : `${courtMoney(Number(b.amount), b.currency)} unpaid`) : null,
-                          b.source === "portal" ? "portal" : b.source === "web" ? "website" : null,
-                        ].filter(Boolean);
+                        const inCount = b.players.filter((p) => p.status === "in" || p.status === "held").length;
+                        if (b.kind === "class") {
+                          return (
+                            <button
+                              key={b.id}
+                              type="button"
+                              className="blk class blockc"
+                              style={place(hhmm(b.start_time), hhmm(b.end_time))}
+                              title={`${b.name} (blocked for a class)`}
+                              onClick={() => setSelected(b.id)}
+                            >
+                              {b.name}
+                            </button>
+                          );
+                        }
+                        const kindClass = b.open_match ? "match" : b.state === "green" ? "paid" : "owed";
+                        const label = b.open_match
+                          ? `Open match ${inCount}/${b.spots}`
+                          : b.status === "held"
+                            ? "Paying now"
+                            : b.started_at
+                              ? "Playing"
+                              : b.state === "green"
+                                ? "Paid"
+                                : `${courtMoney(b.owed, b.currency)} owed`;
                         return (
                           <button
                             key={b.id}
                             type="button"
-                            className={`blk ${b.open_match ? "match" : "taken"} ${b.status === "held" ? "held" : ""}`}
+                            className={`blk ${kindClass} ${b.status === "held" ? "held" : ""}`}
                             style={place(hhmm(b.start_time), hhmm(b.end_time))}
-                            title={`${b.name}, ${hhmm(b.start_time)}–${hhmm(b.end_time)}${tags.length ? `, ${tags.join(", ")}` : ""}`}
-                            onClick={() => book.openItem(b)}
+                            title={`${b.name}, ${hhmm(b.start_time)}–${hhmm(b.end_time)}, ${label}`}
+                            onClick={() => setSelected(b.id)}
                           >
                             <b>{b.name}</b>
-                            <small>{b.open_match ? "Open match" : b.paid ? "Paid" : b.status === "held" ? "Paying" : "Booked"}</small>
+                            <small>{b.open_match && b.owed > 0 ? `${inCount}/${b.spots} · ${courtMoney(b.owed, b.currency)} owed` : label}</small>
                           </button>
                         );
                       })}
                       {slots(c).map((s) => {
-                        const span = { start: s.start, end: s.end };
+                        const sp = { start: s.start, end: s.end };
                         const taken =
-                          mine.some((x) => overlapsTime(span, { start: hhmm(x.start_time), end: hhmm(x.end_time) })) ||
-                          blocked.some((x) => overlapsTime(span, x));
+                          mine.some((x) => overlapsTime(sp, { start: hhmm(x.start_time), end: hhmm(x.end_time) })) ||
+                          blocked.some((x) => overlapsTime(sp, x));
                         if (taken) return null;
                         const gone = past(s.start);
                         return (
@@ -173,61 +216,64 @@ export function CourtsView({
               })}
             </div>
           </div>
-          <ul className="ct-legend">
-            <li><i className="free" />Available</li>
-            <li><i className="taken" />Booked</li>
-            <li><i className="match" />Open match</li>
-            <li><i className="class" />Class</li>
-          </ul>
         </div>
       )}
       <p className="note">
-        Anyone books and pays on the public page (<Link href="/courts" target="_blank">/courts</Link>), members in the portal
-        with their discount, up to two weeks ahead and two slots a day. A slot being paid for is held for 20 minutes.
-        Classes held at the courts block them.
+        Colors come from the payments, including equipment: green when everything is paid, red while money is owed.
+        Anyone books and pays on the public page (<Link href="/courts" target="_blank">/courts</Link>) and members in
+        the portal. Click a booking to check players in, add equipment, take payment and start the game.
       </p>
 
-      <BookingDrawer
-        key={book.item?.id ?? `new-${slot?.court.id}-${slot?.start}-${book.open}`}
+      <NewBookingDrawer
+        key={`new-${slot?.court.id}-${slot?.start}-${book.open}`}
         open={book.open}
         onClose={book.close}
-        booking={book.item}
         slot={slot}
         date={date}
-        court={book.item ? courtOf(book.item.court_id) : slot?.court}
-        courts={courts.filter((c) => c.active)}
         people={people}
+        prices={prices.filter((p) => p.kind === "court" && p.active)}
+        sameCourtBookings={bookings}
       />
-      {canManage && (
-        <CourtsDrawer open={manage.open} onClose={manage.close} courts={courts} />
+      <BlockDrawer key={`blk-${block.open}`} open={block.open} onClose={block.close} courts={open} date={date} />
+      {sel && (
+        <BookingDetail
+          key={sel.id}
+          booking={sel}
+          court={courts.find((c) => c.id === sel.court_id)}
+          date={date}
+          equipment={equipment}
+          usdRate={usdRate}
+          onClose={() => setSelected(null)}
+        />
       )}
+      {canManage && <CourtsDrawer open={manage.open} onClose={manage.close} courts={courts} prices={prices} usdRate={usdRate} vatPercent={vatPercent} />}
     </>
   );
 }
 
-function BookingDrawer({
+function NewBookingDrawer({
   open,
   onClose,
-  booking: b,
   slot,
   date,
-  court,
-  courts,
   people,
+  prices,
+  sameCourtBookings,
 }: {
   open: boolean;
   onClose: () => void;
-  booking: Booking | null;
   slot: Slot | null;
   date: string;
-  court?: Court;
-  courts: Court[];
   people: Person[];
+  prices: Price[];
+  sameCourtBookings: SBooking[];
 }) {
-  const [name, setName] = useState(b?.name ?? "");
-  const [email, setEmail] = useState(b?.email ?? "");
-  const [phone, setPhone] = useState(b?.phone ?? "");
-  const [contactId, setContactId] = useState(b?.contact_id ?? "");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [contactId, setContactId] = useState("");
+  const [match, setMatch] = useState<"private" | "open">("private");
+  const [minutes, setMinutes] = useState(60);
   const pickName = (v: string) => {
     setName(v);
     const p = people.find((x) => x.name === v);
@@ -237,72 +283,63 @@ function BookingDrawer({
       setPhone(p.phone ?? "");
     } else setContactId("");
   };
-  const [courtId, setCourtId] = useState(b?.court_id ?? "");
-  const [when, setWhen] = useState(b?.date ?? date);
-  const [from, setFrom] = useState(b ? hhmm(b.start_time) : "");
-  const [to, setTo] = useState(b ? hhmm(b.end_time) : "");
-  const start = b ? from : slot?.start;
-  const end = b ? to : slot?.end;
+  const end = slot ? `${pad(Math.floor((toMin(slot.start) + minutes) / 60))}:${pad((toMin(slot.start) + minutes) % 60)}` : "";
+  const fits = (m: number) =>
+    !!slot &&
+    toMin(slot.start) + m <= toMin(hhmm(slot.court.close_time)) &&
+    !sameCourtBookings.some(
+      (b) =>
+        b.court_id === slot.court.id &&
+        overlapsTime({ start: slot.start, end: `${pad(Math.floor((toMin(slot.start) + m) / 60))}:${pad((toMin(slot.start) + m) % 60)}` }, { start: hhmm(b.start_time), end: hhmm(b.end_time) }),
+    );
+  const price = (m: number) => prices.find((p) => p.minutes === m)?.price;
 
   return (
     <Drawer
-      title={b ? "Court booking" : "Book a court"}
+      title="Book a court"
       open={open}
       onClose={onClose}
-      action={saveCourtBooking}
+      action={bookCourtForGuest}
       footer={
         <>
-          {b && <ConfirmButton label="Cancel booking" />}
           <span className="spacer" />
           <button type="button" className="btn ghost" onClick={onClose}>Close</button>
-          <button type="submit" className="btn primary">{b ? "Save" : "Book"}</button>
+          <button type="submit" className="btn primary" disabled={!fits(minutes)}>Book</button>
         </>
       }
     >
-      {!b && (
-        <p className="muted" style={{ marginTop: 0 }}>
-          {court?.name ?? "Court"}, {fmtDate(date, { weekday: "long", month: "long", day: "numeric" })}, {start}–{end}
-        </p>
-      )}
-      {b && <input type="hidden" name="id" value={b.id} />}
-      {b && (
-        <>
-          <div className="grid2">
-            <div className="fld">
-              <label htmlFor="cb-court">Court</label>
-              <select id="cb-court" name="court_id" value={courtId} onChange={(e) => setCourtId(e.target.value)}>
-                {courts.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-                {!courts.some((c) => c.id === b.court_id) && court && <option value={court.id}>{court.name}</option>}
-              </select>
-            </div>
-            <div className="fld">
-              <label htmlFor="cb-date">Date</label>
-              <input id="cb-date" name="date" type="date" required value={when} onChange={(e) => setWhen(e.target.value)} />
-            </div>
-          </div>
-          <div className="grid2">
-            <div className="fld">
-              <label htmlFor="cb-from">Starts</label>
-              <input id="cb-from" name="start_time" type="time" step={900} required value={from} onChange={(e) => setFrom(e.target.value)} />
-            </div>
-            <div className="fld">
-              <label htmlFor="cb-to">Ends</label>
-              <input id="cb-to" name="end_time" type="time" step={900} required value={to} onChange={(e) => setTo(e.target.value)} />
-            </div>
-          </div>
-        </>
-      )}
-      {!b && slot && (
+      <p className="muted" style={{ marginTop: 0 }}>
+        {slot?.court.name ?? "Court"}, {fmtDate(date, { weekday: "long", month: "long", day: "numeric" })}, {slot?.start}–{end}
+      </p>
+      {slot && (
         <>
           <input type="hidden" name="court_id" value={slot.court.id} />
           <input type="hidden" name="date" value={date} />
           <input type="hidden" name="start_time" value={slot.start} />
-          <input type="hidden" name="end_time" value={slot.end} />
         </>
       )}
       <input type="hidden" name="contact_id" value={contactId} />
+      <div className="grid2">
+        <div className="fld">
+          <label htmlFor="cb-len">Length</label>
+          <select id="cb-len" name="minutes" value={minutes} onChange={(e) => setMinutes(Number(e.target.value))}>
+            {durations().map((m) => (
+              <option key={m} value={m} disabled={!fits(m)}>
+                {durationLabel(m)}
+                {price(m) !== undefined ? ` · ${courtMoney(Number(price(m)), "CRC")}` : ""}
+                {fits(m) ? "" : " (not free)"}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="fld">
+          <label htmlFor="cb-spots">Players</label>
+          <select id="cb-spots" name="spots" defaultValue="4">
+            <option value="4">4 · doubles</option>
+            <option value="2">2 · singles</option>
+          </select>
+        </div>
+      </div>
       <div className="fld">
         <label htmlFor="cb-name">Who is it for</label>
         <input
@@ -334,51 +371,130 @@ function BookingDrawer({
           <input id="cb-phone" name="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
       </div>
-      <div className="grid2">
+      <span className="hint">Every player needs a name, phone and email before the game can start. You can fill them in at check-in.</span>
+      <div className="grid2" style={{ marginTop: 12 }}>
         <div className="fld">
-          <label htmlFor="cb-players">Players</label>
-          <input id="cb-players" name="players" type="number" min={1} max={8} defaultValue={b?.players ?? ""} />
+          <label htmlFor="cb-match">Kind of match</label>
+          <select id="cb-match" name="match" value={match} onChange={(e) => setMatch(e.target.value as "private" | "open")}>
+            <option value="private">Private</option>
+            <option value="open">Open match (listed publicly)</option>
+          </select>
         </div>
-        {b && (
+        {match === "private" ? (
           <div className="fld">
-            <label htmlFor="cb-paid">Payment</label>
-            <label className="check" style={{ minHeight: 42 }}>
-              <input id="cb-paid" type="checkbox" name="paid" defaultChecked={b.paid} />
-              Paid{b.amount && Number(b.amount) > 0 ? ` (${courtMoney(Number(b.amount), b.currency)})` : ""}
-            </label>
-            <span className="hint">
-              {b.status === "held"
-                ? "Being paid on Stripe right now."
-                : b.open_match
-                  ? `Open match, level ${levelRange(b.level_min, b.level_max)}, ${b.spots} players; each pays their share online.`
-                  : b.paid
-                    ? "Paid online or at reception."
-                    : "Tick when settled at reception."}
-            </span>
+            <label htmlFor="cb-pay">Who pays</label>
+            <select id="cb-pay" name="private_pay" defaultValue="split">
+              <option value="split">Split between players</option>
+              <option value="whole">Booker pays the whole court</option>
+            </select>
+          </div>
+        ) : (
+          <div className="fld">
+            <label htmlFor="cb-level">Level</label>
+            <select id="cb-level" name="level" defaultValue="2.5">
+              {LEVELS.map(([v, n]) => (
+                <option key={v} value={v}>{v} · {n}</option>
+              ))}
+            </select>
           </div>
         )}
       </div>
       <div className="fld">
         <label htmlFor="cb-notes">Notes</label>
-        <textarea id="cb-notes" name="notes" rows={3} defaultValue={b?.notes ?? ""} placeholder="Rackets, balls, a coach" />
+        <textarea id="cb-notes" name="notes" rows={2} />
       </div>
     </Drawer>
   );
 }
 
-function CourtsDrawer({ open, onClose, courts }: { open: boolean; onClose: () => void; courts: Court[] }) {
-  const [editing, setEditing] = useState<Court | "new" | null>(null);
-  const c = editing && editing !== "new" ? editing : null;
+function BlockDrawer({
+  open,
+  onClose,
+  courts,
+  date,
+}: {
+  open: boolean;
+  onClose: () => void;
+  courts: Court[];
+  date: string;
+}) {
   return (
     <Drawer
-      title={editing ? (c ? `Edit ${c.name}` : "Add a court") : "Courts"}
+      title="Block a court for a class"
+      open={open}
+      onClose={onClose}
+      action={blockCourt}
+      footer={
+        <>
+          <span className="spacer" />
+          <button type="button" className="btn ghost" onClick={onClose}>Close</button>
+          <button type="submit" className="btn primary">Block</button>
+        </>
+      }
+    >
+      <p className="muted" style={{ marginTop: 0 }}>
+        The court can’t be booked by the public during this time. Click the blocked area on the schedule to release it.
+      </p>
+      <div className="grid2">
+        <div className="fld">
+          <label htmlFor="bk-court">Court</label>
+          <select id="bk-court" name="court_id">
+            {courts.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="fld">
+          <label htmlFor="bk-date">Day</label>
+          <input id="bk-date" name="date" type="date" defaultValue={date} required />
+        </div>
+      </div>
+      <div className="grid2">
+        <div className="fld">
+          <label htmlFor="bk-start">From</label>
+          <input id="bk-start" name="start_time" type="time" step={1800} defaultValue="09:00" required />
+        </div>
+        <div className="fld">
+          <label htmlFor="bk-end">To</label>
+          <input id="bk-end" name="end_time" type="time" step={1800} defaultValue="10:00" required />
+        </div>
+      </div>
+      <div className="fld">
+        <label htmlFor="bk-title">Class</label>
+        <input id="bk-title" name="title" placeholder="e.g. Kids padel" />
+      </div>
+    </Drawer>
+  );
+}
+
+function CourtsDrawer({
+  open,
+  onClose,
+  courts,
+  prices,
+  usdRate,
+  vatPercent,
+}: {
+  open: boolean;
+  onClose: () => void;
+  courts: Court[];
+  prices: Price[];
+  usdRate: number;
+  vatPercent: number;
+}) {
+  const [editing, setEditing] = useState<Court | "new" | "prices" | null>(null);
+  const c = editing && editing !== "new" && editing !== "prices" ? editing : null;
+  const title = editing === "prices" ? "Prices" : editing ? (c ? `Edit ${c.name}` : "Add a court") : "Courts & prices";
+  return (
+    <Drawer
+      title={title}
       open={open}
       onClose={() => {
         setEditing(null);
         onClose();
       }}
       action={async (prev, data) => {
-        const r = await saveCourt(prev, data);
+        const r = editing === "prices" ? await savePrices(prev, data) : await saveCourt(prev, data);
         if (r.ok) setEditing(null);
         return r;
       }}
@@ -391,6 +507,7 @@ function CourtsDrawer({ open, onClose, courts }: { open: boolean; onClose: () =>
           </>
         ) : (
           <>
+            <button type="button" className="btn" onClick={() => setEditing("prices")}>Prices</button>
             <span className="spacer" />
             <button type="button" className="btn primary" onClick={() => setEditing("new")}>Add a court</button>
           </>
@@ -406,12 +523,61 @@ function CourtsDrawer({ open, onClose, courts }: { open: boolean; onClose: () =>
                 {!x.active && <span className="ptype" style={{ marginLeft: 6 }}>Closed</span>}
               </span>
               <span className="muted">
-                {SPORTS.find(([k]) => k === x.sport)?.[1]} · {hhmm(x.open_time)}–{hhmm(x.close_time)} · {x.slot_minutes} min ·{" "}
-                {[x.price, x.price_90, x.price_120].map((p) => (p === null ? "—" : courtMoney(p, x.currency))).join(" / ")}
+                {SPORTS.find(([k]) => k === x.sport)?.[1]} · {hhmm(x.open_time)}–{hhmm(x.close_time)} · half-hour blocks
               </span>
             </button>
           ))}
           {!courts.length && <div className="row static"><span className="muted">No courts yet.</span></div>}
+          <p className="hint" style={{ marginTop: 12 }}>
+            Prices are the same for every court and live under Prices: court time by length, equipment, the dollar rate and VAT.
+          </p>
+        </div>
+      ) : editing === "prices" ? (
+        <div>
+          <p className="muted" style={{ marginTop: 0 }}>All prices are in colones and already include VAT. Old bookings keep the price they were made at.</p>
+          <h3 className="hint">Court time</h3>
+          {prices
+            .filter((p) => p.kind === "court")
+            .map((p) => (
+              <div key={p.key} className="grid2" style={{ gridTemplateColumns: "1fr 1fr auto" }}>
+                <div className="fld">
+                  <label htmlFor={`pr-${p.key}`}>{p.label}</label>
+                  <input id={`pr-${p.key}`} name={`price_${p.key}`} type="number" min={0} step="any" defaultValue={Number(p.price)} />
+                </div>
+                <span />
+                <label className="check" style={{ alignSelf: "end", minHeight: 42 }}>
+                  <input type="checkbox" name={`active_${p.key}`} defaultChecked={p.active} />
+                  Offered
+                </label>
+              </div>
+            ))}
+          <h3 className="hint">Equipment</h3>
+          {prices
+            .filter((p) => p.kind === "equipment")
+            .map((p) => (
+              <div key={p.key} className="grid2" style={{ gridTemplateColumns: "1fr 1fr auto" }}>
+                <div className="fld">
+                  <label htmlFor={`pr-${p.key}`}>{p.label}</label>
+                  <input id={`pr-${p.key}`} name={`price_${p.key}`} type="number" min={0} step="any" defaultValue={Number(p.price)} />
+                </div>
+                <span />
+                <label className="check" style={{ alignSelf: "end", minHeight: 42 }}>
+                  <input type="checkbox" name={`active_${p.key}`} defaultChecked={p.active} />
+                  Offered
+                </label>
+              </div>
+            ))}
+          <h3 className="hint">Cash and VAT</h3>
+          <div className="grid2">
+            <div className="fld">
+              <label htmlFor="pr-usd">Colones per US dollar</label>
+              <input id="pr-usd" name="usd_crc_rate" type="number" min={1} step="any" defaultValue={usdRate} />
+            </div>
+            <div className="fld">
+              <label htmlFor="pr-vat">VAT included (%)</label>
+              <input id="pr-vat" name="vat_percent" type="number" min={0} max={99} step="any" defaultValue={vatPercent} />
+            </div>
+          </div>
         </div>
       ) : (
         <div key={c?.id ?? "new"}>
@@ -430,53 +596,19 @@ function CourtsDrawer({ open, onClose, courts }: { open: boolean; onClose: () =>
               </select>
             </div>
           </div>
-          <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+          <div className="grid2">
             <div className="fld">
               <label htmlFor="ct-open">Opens</label>
-              <input id="ct-open" name="open_time" type="time" defaultValue={c ? hhmm(c.open_time) : "07:00"} />
+              <input id="ct-open" name="open_time" type="time" step={1800} defaultValue={c ? hhmm(c.open_time) : "08:00"} />
             </div>
             <div className="fld">
               <label htmlFor="ct-close">Closes</label>
-              <input id="ct-close" name="close_time" type="time" defaultValue={c ? hhmm(c.close_time) : "20:00"} />
-            </div>
-            <div className="fld">
-              <label htmlFor="ct-slot">Slot (minutes)</label>
-              <input id="ct-slot" name="slot_minutes" type="number" min={15} max={240} step={15} defaultValue={c?.slot_minutes ?? 60} />
-            </div>
-          </div>
-          <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
-            <div className="fld">
-              <label htmlFor="ct-price">1 hour</label>
-              <input id="ct-price" name="price" type="number" min={0} step="any" defaultValue={c?.price ?? ""} />
-            </div>
-            <div className="fld">
-              <label htmlFor="ct-p90">1½ hours</label>
-              <input id="ct-p90" name="price_90" type="number" min={0} step="any" defaultValue={c?.price_90 ?? ""} />
-            </div>
-            <div className="fld">
-              <label htmlFor="ct-p120">2 hours</label>
-              <input id="ct-p120" name="price_120" type="number" min={0} step="any" defaultValue={c?.price_120 ?? ""} />
-            </div>
-          </div>
-          <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr" }}>
-            <div className="fld">
-              <label htmlFor="ct-currency">Currency</label>
-              <select id="ct-currency" name="currency" defaultValue={c?.currency ?? "CRC"}>
-                <option value="CRC">₡ colones</option>
-                <option value="USD">$ dollars</option>
-              </select>
-            </div>
-            <div className="fld">
-              <label htmlFor="ct-max">Max players</label>
-              <input id="ct-max" name="max_players" type="number" min={2} max={8} defaultValue={c?.max_players ?? 4} />
+              <input id="ct-close" name="close_time" type="time" step={1800} defaultValue={c ? hhmm(c.close_time) : "20:00"} />
             </div>
           </div>
           <div className="fld">
             <label htmlFor="ct-desc">On the public page</label>
-            <input id="ct-desc" name="description" defaultValue={c?.description ?? ""} placeholder="Glass court, lights, rackets at reception" />
-            <span className="hint">
-              Prices are per booking length; leave 1½ or 2 hours empty to scale the 1 hour price. Members get their tier’s discount.
-            </span>
+            <input id="ct-desc" name="description" defaultValue={c?.description ?? ""} placeholder="Glass court, lights" />
           </div>
           <label className="check">
             <input type="checkbox" name="active" defaultChecked={c?.active ?? true} />

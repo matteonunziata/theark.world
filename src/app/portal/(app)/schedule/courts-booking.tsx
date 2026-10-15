@@ -12,15 +12,21 @@ import {
   courtPrice,
   durationLabel,
   durations,
+  type EquipmentPick,
+  equipmentTotal,
   hhmm,
   LEVELS,
+  MOVE_LIMIT,
   overlapsTime,
   PER_DAY,
+  type PriceItem,
   type PublicCourt,
-  share,
 } from "@/lib/courts";
 import { addDays, fmtDate } from "@/lib/dates";
-import { bookCourt, cancelCourt } from "../../actions";
+import { freeStarts } from "@/app/(public)/courts/actions";
+import { EquipmentPicker } from "@/app/(public)/courts/equipment-picker";
+import { MoveForm } from "@/app/(public)/courts/move-form";
+import { bookCourt, cancelCourt, moveMyCourt } from "../../actions";
 
 type Mine = {
   id: string;
@@ -34,6 +40,13 @@ type Mine = {
   currency: string;
   paid: boolean;
   open_match: boolean;
+  court_id: string;
+  minutes: number;
+  share_token: string;
+  private_pay: string | null;
+  spots: number;
+  movable: boolean;
+  due: number;
 };
 
 type Pick = { court: PublicCourt; start: string };
@@ -41,6 +54,7 @@ type Pick = { court: PublicCourt; start: string };
 export function CourtsBooking({
   courts,
   day,
+  prices,
   mine,
   date,
   today,
@@ -51,6 +65,7 @@ export function CourtsBooking({
 }: {
   courts: PublicCourt[];
   day: DayRow[];
+  prices: PriceItem[];
   mine: Mine[];
   date: string;
   today: string;
@@ -64,7 +79,9 @@ export function CourtsBooking({
   const toast = useToast();
   const [busy, setBusy] = useState<string | null>(null);
   const [pick, setPick] = useState<Pick | null>(null);
+  const [moving, setMoving] = useState<string | null>(null);
   const last = addDays(today, BOOKING_DAYS);
+  const courtPrices = Object.fromEntries(prices.filter((p) => p.kind === "court").map((p) => [p.minutes as number, Number(p.price)]));
   const href = (d: string) => `/portal/schedule?tab=courts${d !== today ? `&date=${d}` : ""}`;
 
   const run = async (key: string, fn: () => Promise<{ ok: boolean; message?: string; error?: string; payUrl?: string }>) => {
@@ -83,38 +100,77 @@ export function CourtsBooking({
     <>
       <p className="crt-note">
         {discount ? `${discount}% member discount. ` : ""}
-        {online ? "Pay by card to confirm; held 20 min." : "Pay at reception."} Up to {PER_DAY} bookings a day. Open match: others join and pay their share.
+        {online ? "Pay by card to confirm; held 20 min." : "Pay at reception."} Up to {PER_DAY} bookings a day. Open match: listed for anyone to join. Private match: friends join with your link.
       </p>
 
       {mine.length > 0 && (
         <section className="crt-mine">
           <h2>Your bookings</h2>
           {mine.map((m) => (
-            <div key={m.id} className="crt-mine-row">
-              <span>
-                <b>{m.court}</b>
-                <span className="muted">
-                  {" "}
-                  · {m.date === today ? "Today" : fmtDate(m.date, { weekday: "short", month: "short", day: "numeric" })},{" "}
-                  {hhmm(m.start_time)}–{hhmm(m.end_time)}
-                  {m.open_match ? " · open match" : ""}
-                  {m.amount && Number(m.amount) > 0 ? ` · ${courtMoney(Number(m.amount), m.currency)}${m.paid ? ", paid" : ""}` : ""}
+            <div key={m.id}>
+              <div className="crt-mine-row">
+                <span>
+                  <b>{m.court}</b>
+                  <span className="muted">
+                    {" "}
+                    · {m.date === today ? "Today" : fmtDate(m.date, { weekday: "short", month: "short", day: "numeric" })},{" "}
+                    {hhmm(m.start_time)}–{hhmm(m.end_time)}
+                    {m.open_match ? " · open match" : m.private_pay === "whole" ? " · private, you pay all" : " · private, split"}
+                    {Number(m.due) > 0 ? ` · ${courtMoney(Number(m.due), m.currency)} to pay` : " · paid"}
+                  </span>
                 </span>
-              </span>
-              <span style={{ display: "flex", gap: 6 }}>
-                {online && !m.paid && m.player_token && Number(m.amount) > 0 && (
-                  <a className="pv-btn sm" href={`/pay/court/${m.player_token}`}>Pay</a>
-                )}
-                <Link className="pv-btn ghost sm" href={`/courts/b/${m.token}`}>Details</Link>
-                <button
-                  type="button"
-                  className="pv-btn ghost sm"
-                  disabled={busy === m.id}
-                  onClick={() => confirm("Cancel this booking?") && run(m.id, () => cancelCourt(m.id))}
-                >
-                  Cancel
-                </button>
-              </span>
+                <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {online && Number(m.due) > 0 && m.player_token && (
+                    <a className="pv-btn sm" href={`/pay/court/${m.player_token}`}>Pay</a>
+                  )}
+                  <button
+                    type="button"
+                    className="pv-btn ghost sm"
+                    onClick={async () => {
+                      const url = `${window.location.origin}/courts/join/${m.share_token}`;
+                      try {
+                        await navigator.clipboard.writeText(url);
+                        toast("Join link copied. Send it to your friends.");
+                      } catch {
+                        window.prompt("Copy this link", url);
+                      }
+                    }}
+                  >
+                    Join link
+                  </button>
+                  {m.movable && (
+                    <button type="button" className="pv-btn ghost sm" onClick={() => setMoving(moving === m.id ? null : m.id)}>
+                      Move
+                    </button>
+                  )}
+                  <Link className="pv-btn ghost sm" href={`/courts/b/${m.token}`}>Details</Link>
+                  <button
+                    type="button"
+                    className="pv-btn ghost sm"
+                    disabled={busy === m.id}
+                    onClick={() => confirm("Cancel this booking?") && run(m.id, () => cancelCourt(m.id))}
+                  >
+                    Cancel
+                  </button>
+                </span>
+              </div>
+              {moving === m.id && (
+                <div className="crts" style={{ padding: "8px 0 14px" }}>
+                  <MoveForm
+                    current={{ date: m.date, start: hhmm(m.start_time), minutes: m.minutes }}
+                    today={today}
+                    last={last}
+                    prices={courtPrices}
+                    movesLeft={MOVE_LIMIT}
+                    loadStarts={(d, mins) => freeStarts(m.court_id, d, mins, m.id)}
+                    onMove={async (d, st, mins) => {
+                      const r = await moveMyCourt(m.id, d, st, mins);
+                      if (r.ok) window.location.reload();
+                      return r;
+                    }}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </section>
@@ -169,6 +225,7 @@ export function CourtsBooking({
           date={date}
           day={day}
           discount={discount}
+          equipment={prices}
           online={online}
           busy={!!busy}
           onClose={() => setPick(null)}
@@ -189,6 +246,7 @@ function BookDialog({
   date,
   day,
   discount,
+  equipment,
   online,
   busy,
   onClose,
@@ -198,10 +256,21 @@ function BookDialog({
   date: string;
   day: DayRow[];
   discount: number;
+  equipment: PriceItem[];
   online: boolean;
   busy: boolean;
   onClose: () => void;
-  onBook: (o: { minutes: number; openMatch: boolean; level?: number; spots?: number; levelMin?: number; levelMax?: number }) => void;
+  onBook: (o: {
+    minutes: number;
+    match: "open" | "private";
+    privatePay: "whole" | "split";
+    spots: 2 | 4;
+    level?: number;
+    levelMin?: number;
+    levelMax?: number;
+    equipment: EquipmentPick[];
+    friends: { name: string; email: string; phone: string }[];
+  }) => void;
 }) {
   const c = pick.court;
   const fits = (m: number) => {
@@ -211,17 +280,20 @@ function BookDialog({
       !day.some((t) => t.court_id === c.id && overlapsTime(win, { start: hhmm(t.start_time), end: hhmm(t.end_time) }))
     );
   };
-  const lengths = durations(c).filter(fits);
-  const [minutes, setMinutes] = useState(lengths[0] ?? c.slot_minutes);
-  const [open, setOpen] = useState(false);
+  const lengths = durations().filter(fits);
+  const [minutes, setMinutes] = useState(lengths[0] ?? 60);
+  const [match, setMatch] = useState<"open" | "private">("private");
+  const [privatePay, setPrivatePay] = useState<"whole" | "split">("split");
+  const [spots, setSpots] = useState<2 | 4>(4);
   const [level, setLevel] = useState(2.5);
-  const [spots, setSpots] = useState(Math.min(4, c.max_players));
-  const price = (m: number) => {
-    const n = courtPrice(c, m) * (1 - discount / 100);
-    return c.currency === "USD" ? Math.round(n * 100) / 100 : Math.round(n);
-  };
+  const [picks, setPicks] = useState<EquipmentPick[]>([]);
+  const [friends, setFriends] = useState<{ name: string; email: string; phone: string }[]>([]);
+  const price = (m: number) => Math.round(courtPrice(c, m) * (1 - discount / 100));
   const total = price(minutes);
-  const mine = open ? share(total, spots, c.currency) : total;
+  const each = Math.round(total / spots);
+  const hostCourt = match === "private" && privatePay === "whole" ? total : total - each * (spots - 1);
+  const equip = equipmentTotal(equipment, picks);
+  const due = hostCourt + equip;
 
   return (
     <div className="crt-dlg" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -231,21 +303,56 @@ function BookDialog({
           {fmtDate(date, { weekday: "short", month: "short", day: "numeric" })} · {pick.start}
         </p>
         <div className="crt-lens">
-          {durations(c).map((m) => (
+          {durations().map((m) => (
             <button key={m} type="button" disabled={!lengths.includes(m)} className={m === minutes ? "on" : ""} onClick={() => setMinutes(m)}>
               <b>{durationLabel(m)}</b>
               <span>{lengths.includes(m) ? courtMoney(price(m), c.currency) : "Not free"}</span>
             </button>
           ))}
         </div>
-        <label className="crt-open">
-          <input type="checkbox" checked={open} onChange={(e) => setOpen(e.target.checked)} />
-          <span>
-            <b>Open match</b>
-            <span>Others join and pay their share. You pay yours.</span>
-          </span>
-        </label>
-        {open && (
+        <div className="crt-two">
+          <label>
+            Players
+            <select className="pv-input" value={spots} onChange={(e) => setSpots(Number(e.target.value) as 2 | 4)}>
+              <option value={4}>4 · doubles</option>
+              <option value={2}>2 · singles</option>
+            </select>
+          </label>
+          <label>
+            Kind of match
+            <select className="pv-input" value={match} onChange={(e) => setMatch(e.target.value as "open" | "private")}>
+              <option value="private">Private · friends join by link</option>
+              <option value="open">Open · listed for anyone</option>
+            </select>
+          </label>
+        </div>
+        {match === "private" && (
+          <>
+            <div className="crt-two">
+              <label>
+                Who pays
+                <select className="pv-input" value={privatePay} onChange={(e) => setPrivatePay(e.target.value as "whole" | "split")}>
+                  <option value="split">Split · I pay my share</option>
+                  <option value="whole">I pay the whole court</option>
+                </select>
+              </label>
+            </div>
+            {friends.map((f, i) => (
+              <div key={i} className="crt-two" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+                <input className="pv-input" aria-label={`Friend ${i + 1} name`} placeholder="Name" value={f.name} onChange={(e) => setFriends((x) => x.map((y, j) => (j === i ? { ...y, name: e.target.value } : y)))} />
+                <input className="pv-input" aria-label={`Friend ${i + 1} email`} type="email" placeholder="Email" value={f.email} onChange={(e) => setFriends((x) => x.map((y, j) => (j === i ? { ...y, email: e.target.value } : y)))} />
+                <input className="pv-input" aria-label={`Friend ${i + 1} phone`} type="tel" placeholder="Phone" value={f.phone} onChange={(e) => setFriends((x) => x.map((y, j) => (j === i ? { ...y, phone: e.target.value } : y)))} />
+              </div>
+            ))}
+            {friends.length < spots - 1 && (
+              <button type="button" className="pv-btn ghost sm" onClick={() => setFriends((x) => [...x, { name: "", email: "", phone: "" }])}>
+                + Add a friend now
+              </button>
+            )}
+            <p className="muted" style={{ fontSize: 13 }}>Or send the join link after booking; each player needs a name, phone and email.</p>
+          </>
+        )}
+        {match === "open" && (
           <div className="crt-two">
             <label>
               Your level
@@ -257,25 +364,18 @@ function BookDialog({
                 ))}
               </select>
             </label>
-            <label>
-              Players
-              <select className="pv-input" value={spots} onChange={(e) => setSpots(Number(e.target.value))}>
-                {Array.from({ length: c.max_players - 1 }, (_, i) => i + 2).map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
         )}
+        <div className="crts">
+          <EquipmentPicker items={equipment} picks={picks} onChange={setPicks} label="Your equipment (you pay for what you take)" />
+        </div>
         <div className="crt-total">
           <span>
-            {open ? "Your share" : "Total"}
+            {hostCourt === total && !equip ? "Total" : "You pay"}
             {discount ? <small> · {discount}% off</small> : null}
-            {open ? <small> · court {courtMoney(total, c.currency)}</small> : null}
+            <small> · court {courtMoney(total, c.currency)}{equip ? ` + equipment ${courtMoney(equip, c.currency)}` : ""} · VAT included</small>
           </span>
-          <b>{courtMoney(mine, c.currency)}</b>
+          <b>{courtMoney(due, c.currency)}</b>
         </div>
         <div className="crt-acts">
           <button type="button" className="pv-btn ghost" onClick={onClose}>Close</button>
@@ -286,12 +386,16 @@ function BookDialog({
             onClick={() =>
               onBook({
                 minutes,
-                openMatch: open,
-                ...(open ? { level, spots, levelMin: Math.max(0, level - 1), levelMax: Math.min(7, level + 1) } : {}),
+                match,
+                privatePay,
+                spots,
+                equipment: picks,
+                friends: match === "private" ? friends.filter((f) => f.name || f.email || f.phone) : [],
+                ...(match === "open" ? { level, levelMin: Math.max(0, level - 1), levelMax: Math.min(7, level + 1) } : {}),
               })
             }
           >
-            {busy ? "Booking…" : online && mine > 0 ? "Pay" : "Book"}
+            {busy ? "Booking…" : online && due > 0 ? "Pay" : "Book"}
           </button>
         </div>
       </div>

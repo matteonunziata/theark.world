@@ -13,7 +13,7 @@ export type Court = {
 export type PublicCourt = Court & {
   price: number | null;
   price_90: number | null;
-  price_120: number | null;
+  price_180: number | null;
   currency: string;
   description: string | null;
   max_players: number;
@@ -30,8 +30,24 @@ export const BOOKING_DAYS = 14;
 export const PER_DAY = 2;
 /** Minutes a slot is held while someone pays. Mirrors hold_court(). */
 export const HOLD_MINUTES = 20;
-/** The longest booking, in minutes. Mirrors court_slot_end(). */
-export const MAX_MINUTES = 120;
+/** The lengths a court can be booked for, in minutes. The prices live in court_prices. */
+export const LENGTHS = [60, 90, 180] as const;
+/** A match is doubles (4) or singles (2). */
+export const MATCH_SIZES = [4, 2] as const;
+/** The refund and cancel window for the person who booked, in hours. */
+export const CANCEL_HOURS = 24;
+/** Bookings can be moved up to this many hours before the start, and this many times. */
+export const MOVE_HOURS = 3;
+export const MOVE_LIMIT = 2;
+
+/** A line of the price list (equipment, as the public page needs it). */
+export type PriceItem = { key: string; kind: string; label: string; minutes: number | null; price: number };
+/** What someone adds to a booking: an equipment key and how many. */
+export type EquipmentPick = { key: string; qty: number };
+
+/** The money for a list of equipment picks. */
+export const equipmentTotal = (items: PriceItem[], picks: EquipmentPick[]) =>
+  picks.reduce((sum, p) => sum + (items.find((i) => i.key === p.key)?.price ?? 0) * p.qty, 0);
 
 /**
  * Self-assessed playing level, on Playtomic's 0–7 scale so people can carry
@@ -72,13 +88,8 @@ export function slots(c: Pick<Court, "open_time" | "close_time" | "slot_minutes"
   return out;
 }
 
-/** The lengths a booking can have on this court, in minutes: half-hour steps from one slot up to two hours. */
-export function durations(c: Pick<Court, "slot_minutes">) {
-  const step = c.slot_minutes % 30 === 0 ? 30 : c.slot_minutes;
-  const out: number[] = [];
-  for (let m = c.slot_minutes; m <= MAX_MINUTES; m += step) out.push(m);
-  return out;
-}
+/** The lengths a booking can have: 1, 1½ or 3 hours. */
+export const durations = (): number[] => [...LENGTHS];
 
 /** "1 hour", "1½ hours", "2 hours", "45 min". */
 export const durationLabel = (minutes: number) => {
@@ -118,17 +129,13 @@ export function classAt(
 
 export const hhmm = (t: string) => t.slice(0, 5);
 
-/**
- * What a booking of this length costs (before any discount): the court's own
- * price for 1½ and 2 hours when set, otherwise the slot price scaled by length.
- */
+/** What a booking of this length costs (before any member discount), from the court's price list. */
 export function courtPrice(
-  c: Pick<PublicCourt, "price" | "slot_minutes" | "currency"> & Partial<Pick<PublicCourt, "price_90" | "price_120">>,
+  c: Pick<PublicCourt, "price" | "price_90" | "price_180">,
   minutes: number,
 ) {
-  const set = minutes === 90 ? c.price_90 : minutes === 120 ? c.price_120 : null;
-  const n = set !== null && set !== undefined ? Number(set) : Number(c.price ?? 0) * (minutes / c.slot_minutes);
-  return c.currency === "USD" ? Math.round(n * 100) / 100 : Math.round(n);
+  const n = minutes === 60 ? c.price : minutes === 90 ? c.price_90 : minutes === 180 ? c.price_180 : null;
+  return Math.round(Number(n ?? 0));
 }
 
 /** Each player's share of a court, split evenly. */
