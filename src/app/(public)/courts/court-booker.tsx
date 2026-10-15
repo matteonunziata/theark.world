@@ -20,6 +20,7 @@ import {
   type PriceItem,
   type PublicCourt,
   slots,
+  sportName,
 } from "@/lib/courts";
 import { fmtDate, fmtTime } from "@/lib/dates";
 import { type CourtResult, holdCourt } from "./actions";
@@ -118,6 +119,7 @@ export function CourtGrid({
     width: `${((toMin(end) - toMin(start)) / span) * 100}%`,
   });
   const gone = (start: string) => date < today || (date === today && start <= now);
+  const freeHours = (cells: number) => `${cells / 2} h`;
 
   return (
     <>
@@ -126,9 +128,15 @@ export function CourtGrid({
           <div className="crts-cal-row head">
             <div className="crts-cal-name" />
             <div className="crts-cal-hours">
-              {hours.map((h) => (
-                <span key={h}>{hourLabel(h)}</span>
-              ))}
+              {hours.map((h) => {
+                const isNow = date === today && toMin(now) >= h * 60 && toMin(now) < (h + 1) * 60;
+                return (
+                  <span key={h} className={isNow ? "now" : undefined}>
+                    {hourLabel(h)}
+                    {isNow ? " · now" : ""}
+                  </span>
+                );
+              })}
             </div>
           </div>
           {courts.map((c) => {
@@ -140,24 +148,29 @@ export function CourtGrid({
             );
             return (
               <div key={c.id} className="crts-cal-row">
-                <div className="crts-cal-name">{c.name}</div>
+                <div className="crts-cal-name">
+                  <b>{c.name}</b>
+                  <small>
+                    {sportName(c.sport)} · {freeHours(free.length)} free
+                  </small>
+                </div>
                 <div className="crts-cal-track">
                   {toMin(open) > from * 60 && <span className="blk off" style={place(`${String(from).padStart(2, "0")}:00`, open)} />}
                   {toMin(close) < to * 60 && <span className="blk off" style={place(close, `${String(to).padStart(2, "0")}:00`)} />}
-                  {date === today && toMin(now) > toMin(open) && (
-                    <span
-                      className="blk off"
-                      style={place(open, toMin(now) >= toMin(close) ? close : now)}
-                    />
-                  )}
-                  {date < today && <span className="blk off" style={place(open, close)} />}
+                  {slots(c)
+                    .filter((sl) => gone(sl.start) && !rows.some((r) => overlapsTime(sl, { start: hhmm(r.start_time), end: hhmm(r.end_time) })))
+                    .map((sl) => (
+                      <span key={`p${sl.start}`} className="blk past" style={place(sl.start, sl.end)} />
+                    ))}
                   {rows.map((r, i) => {
                     const st = hhmm(r.start_time);
                     const en = hhmm(r.end_time);
+                    const when = `${st}–${en}`;
                     if (r.kind === "class") {
                       return (
                         <span key={`c${i}`} className="blk class" style={place(st, en)} title={r.title ?? "Class"}>
-                          {r.title}
+                          <b>{r.title}</b>
+                          <small>{when}</small>
                         </span>
                       );
                     }
@@ -171,12 +184,19 @@ export function CourtGrid({
                           style={place(st, en)}
                           title={`Open match, level ${levelRange(r.level_min, r.level_max)}, ${left} spot${left === 1 ? "" : "s"} left, ${courtMoney(r.share, r.currency ?? c.currency)} each`}
                         >
-                          <b>Join</b>
-                          <small>{left} left</small>
+                          <b>Open match</b>
+                          <small>
+                            {when} · {left} left
+                          </small>
                         </Link>
                       );
                     }
-                    return <span key={`b${i}`} className="blk taken" style={place(st, en)} title="Booked" />;
+                    return (
+                      <span key={`b${i}`} className="blk taken" style={place(st, en)} title="Booked">
+                        <b>Booked</b>
+                        <small>{when}</small>
+                      </span>
+                    );
                   })}
                   {free.map((s) => (
                     <button
@@ -196,7 +216,8 @@ export function CourtGrid({
       </div>
       <ul className="crts-legend">
         <li><i className="free" />Available</li>
-        <li><i className="taken" />Not available</li>
+        <li><i className="past" />Past</li>
+        <li><i className="taken" />Booked</li>
         <li><i className="match" />Open match</li>
         <li><i className="class" />Class</li>
       </ul>

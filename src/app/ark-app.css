@@ -1257,3 +1257,32 @@ dialog.modal h2{margin:0 0 4px}
 .cd-owe.bad{color:var(--danger)}
 .cd-table{width:100%;border-collapse:collapse;font-size:13.5px}
 .cd-table td,.cd-table th{padding:4px 6px;text-align:left;border-top:1px solid var(--line)}
+
+/* Schedule redesign: a cell per half hour, past hatched, richer blocks */
+.ct-in{min-width:calc(190px + var(--cols) * 92px)}
+.ct-row{grid-template-columns:190px 1fr}
+.ct-name{font-family:var(--body);font-weight:600;font-size:16px;gap:2px}
+.ct-name small{font-weight:400;font-size:12.5px}
+.ct-hours{gap:0}
+.ct-hours span{text-align:left;padding-left:8px;border-left:1px solid var(--line);font-weight:600;font-size:12.5px;color:var(--muted)}
+.ct-hours span.now{color:var(--leaf)}
+.ct-track{height:72px}
+.ct-track .blk{top:4px;bottom:4px;border-radius:12px;border-width:0 3px}
+.ct-track .free{border-radius:12px}
+.ct-track .pastc,.ct-legend i.pastc{background-color:color-mix(in srgb,var(--surface-2) 60%,transparent);background-image:repeating-linear-gradient(135deg,transparent 0 5px,color-mix(in srgb,var(--ink) 12%,transparent) 5px 6px);box-shadow:inset 0 0 0 1px var(--line)}
+.ct-track .class,.ct-track .paid,.ct-track .owed,.ct-track .match{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:2px;padding:0 12px;text-align:left;font-style:normal;line-height:1.25;white-space:nowrap}
+.ct-track .blk b{font-size:13.5px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.ct-track .blk small{font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis;opacity:.9}
+.ct-track .paid{background:color-mix(in srgb,#2f8f57 16%,var(--surface));box-shadow:inset 0 0 0 1px #2f8f57;color:var(--ink)}
+.ct-track .paid small{color:#2f7d4f}
+.ct-track .owed{background:color-mix(in srgb,#c8402d 14%,var(--surface));box-shadow:inset 0 0 0 1px #c8402d;color:var(--ink)}
+.ct-track .owed small{color:#b3382c;font-weight:600}
+.ct-track .match{background:color-mix(in srgb,#e0b040 24%,var(--surface));box-shadow:inset 0 0 0 1px #c9a24b;color:var(--ink)}
+.ct-track .match small{color:#8a6a1a}
+.ct-track .class{background:color-mix(in srgb,var(--plum) 16%,var(--surface));box-shadow:inset 0 0 0 1px var(--plum);color:var(--ink)}
+.ct-track .class small{color:var(--plum)}
+.ct-track .class.blockc{line-height:1.25}
+.ct-legend i.paid{background:color-mix(in srgb,#2f8f57 16%,var(--surface));box-shadow:inset 0 0 0 1px #2f8f57}
+.ct-legend i.owed{background:color-mix(in srgb,#c8402d 14%,var(--surface));box-shadow:inset 0 0 0 1px #c8402d}
+.ct-legend i.match{background:color-mix(in srgb,#e0b040 24%,var(--surface));box-shadow:inset 0 0 0 1px #c9a24b}
+.ct-legend i.class{background:color-mix(in srgb,var(--plum) 16%,var(--surface));box-shadow:inset 0 0 0 1px var(--plum)}
