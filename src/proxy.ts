@@ -12,20 +12,15 @@ const GHL_PAGE_REDIRECTS: Record<string, string> = {
   "/ark-padel": "/courts",
   "/ark-farm": "/farm-shop",
   "/ark-pass": "/ark-membership",
-  "/webinar": "/home",
-  "/ark-rentals": "/home",
-  "/ark-ventures": "/home",
+  "/webinar": "/",
+  "/ark-rentals": "/",
+  "/ark-ventures": "/",
 };
 
-// join, members and courts .theark.world and theark-world.vercel.app are retired: they send everything to
-// theark.world with the same path and query. join's /events was the public events page,
+// join, members and courts .theark.world and theark-world.vercel.app are retired: every path goes to the same path on
+// theark.world (query kept; /home and / both go to the bare address). join's /events was the public events page,
 // which lives at /whats-on on theark.world (there /events is the staff area).
 const JOIN_HOST = "join.theark.world";
-// members' bare / was the portal, courts' bare / was court booking.
-const ROOT_BY_RETIRED_HOST: Record<string, string> = {
-  "members.theark.world": "/portal",
-  "courts.theark.world": "/courts",
-};
 const VERCEL_HOST = "theark-world.vercel.app";
 
 // Calls from other services can't follow a redirect, so the old vercel.app address keeps
@@ -43,7 +38,7 @@ const LEGACY_ROOT: Record<string, string> = {
 };
 
 function moveToApex(request: NextRequest, path: string) {
-  const to = new URL(path, `https://${APEX}`);
+  const to = new URL(path === "/home" ? "/" : path, `https://${APEX}`);
   to.search = request.nextUrl.search;
   return NextResponse.redirect(to, 301);
 }
@@ -58,17 +53,9 @@ export async function proxy(request: NextRequest) {
     return updateSession(request);
   }
 
-  if (host === JOIN_HOST) {
-    if (path === "/") return moveToApex(request, "/ark-membership");
-    if (path === "/events") return moveToApex(request, "/whats-on");
+  if (host === JOIN_HOST && path === "/events") return moveToApex(request, "/whats-on");
+  if (host in LEGACY_ROOT || (host === VERCEL_HOST && !VERCEL_HOST_KEEPS.some((p) => path.startsWith(p)))) {
     return moveToApex(request, path);
-  }
-  if (host === VERCEL_HOST && !VERCEL_HOST_KEEPS.some((p) => path.startsWith(p))) {
-    return moveToApex(request, path);
-  }
-
-  if (host in ROOT_BY_RETIRED_HOST) {
-    return moveToApex(request, path === "/" ? ROOT_BY_RETIRED_HOST[host] : path);
   }
   const ghlPage = host === APEX ? GHL_PAGE_REDIRECTS[path.replace(/\/$/, "")] : undefined;
   if (ghlPage) {
