@@ -116,7 +116,7 @@ export function EventDetails({
         <p className="muted" style={{ margin: 0 }}>{priceLabel(o, [])}</p>
       )}
       {o.access === "members" && tickets.length ? (
-        <p className="note" style={{ margin: "10px 0 0" }}>Members are included.</p>
+        <p className="note" style={{ margin: "10px 0 0" }}>Members reserve a ticket too, so we can plan for everyone.</p>
       ) : null}
     </section>
   );

@@ -73,6 +73,7 @@ export async function bookSession(input: {
   });
   const { data: org } = await supabase.rpc("public_org").maybeSingle();
 
+  const summary = lines.length ? lines.map((l) => `${l.qty} × ${l.tt.name}`).join(", ") : null;
   // A pay-first ticket is a hold: the ticket and the Slack note wait for the payment.
   const held = lines.some((l) => l.tt.pay_first);
   let emailed = false;
@@ -81,6 +82,7 @@ export async function bookSession(input: {
     // Members book with the email on their record.
     const { data: user } = await supabase.auth.getUser();
     emailed = await sendTicketEmail({
+      summary,
       to: user.user?.email ?? to,
       holder: t.holder,
       title: t.title,
@@ -103,7 +105,6 @@ export async function bookSession(input: {
         ? `$${total.toLocaleString("en-US")}`
         : `₡${total.toLocaleString("en-US")}`
       : null;
-  const summary = lines.length ? lines.map((l) => `${l.qty} × ${l.tt.name}`).join(", ") : null;
   if (t && !held) {
     const b = {
       holder: t.holder,

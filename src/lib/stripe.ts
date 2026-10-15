@@ -409,14 +409,16 @@ async function emailTicketAfterPayment(
   token: string,
   price: string,
 ) {
-  const [{ data: t }, { data: org }, { data: r }] = await Promise.all([
+  const [{ data: t }, { data: org }, { data: r }, { data: lines }] = await Promise.all([
     admin.rpc("ticket_by_token", { p_token: token }).maybeSingle(),
     admin.rpc("public_org").maybeSingle(),
     admin.from("registrations").select("email, offering_id").eq("qr_token", token).maybeSingle(),
+    admin.rpc("ticket_items_by_token", { p_token: token }),
   ]);
   if (!t || !r?.email) return;
   const orgName = org?.name ?? "The ARK";
   await sendTicketEmail({
+    summary: lines?.length ? lines.map((l) => `${l.qty} × ${l.name}`).join(", ") : null,
     to: r.email,
     holder: t.holder,
     title: t.title,

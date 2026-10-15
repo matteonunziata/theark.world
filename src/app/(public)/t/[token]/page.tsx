@@ -11,6 +11,8 @@ import { siteUrl, ticketCode, ticketUrl } from "@/lib/email";
 import { kindName, money } from "@/lib/schedule";
 import { stripeReady } from "@/lib/stripe";
 import { WalletButton } from "@/components/wallet-button";
+import { loadEvent } from "../../e/load";
+import { ManageBooking } from "./manage-booking";
 import { CheckInButton, CopyTicketLink } from "./ticket-actions";
 
 export const metadata: Metadata = { title: "Ticket", robots: { index: false } };
@@ -24,16 +26,22 @@ const STATE: Record<string, [string, string]> = {
   cancelled: ["bad", "Session cancelled"],
   unpaid: ["soon", "Awaiting payment"],
   lapsed: ["bad", "Not paid in time"],
+  voided: ["bad", "Booking cancelled"],
 };
 
 export default async function TicketPage({ params, searchParams }: PageProps<"/t/[token]">) {
   const { token } = await params;
   const { look, done } = await searchParams;
   const { supabase, staff } = await getViewer();
-  const [{ data: t }, { data: org }] = await Promise.all([
+  const [{ data: t }, { data: org }, { data: lines }] = await Promise.all([
     supabase.rpc("ticket_by_token", { p_token: token }).maybeSingle(),
     supabase.rpc("public_org").maybeSingle(),
+    supabase.rpc("ticket_items_by_token", { p_token: token }),
   ]);
+  const items = lines ?? [];
+  const itemsTotal = items.reduce((n, i) => n + Number(i.unit_price) * i.qty, 0);
+  const itemsCurrency = items[0]?.currency;
+  const mixedCurrency = new Set(items.map((i) => i.currency)).size > 1;
   // Security scans a ticket, sees green or red, and taps Check in (user
   // decision: nobody is let in on the scan alone). The button reopens the
   // page with ?done=1 so the screen reads "Checked in" rather than "Already
@@ -76,6 +84,12 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
     );
   }
 
+  const canManage = ["valid", "upcoming", "early", "unpaid"].includes(t.state);
+  const moveDates = canManage
+    ? ((await loadEvent(t.offering_id, null)).event?.sessions ?? [])
+        .filter((s) => !s.cancelled && !s.closed && s.date !== t.session_date)
+        .map((s) => ({ date: s.date, label: fmtDate(s.date, { weekday: "short", month: "short", day: "numeric" }) }))
+    : [];
   const url = ticketUrl(await siteUrl(), token);
   const svg = await QRCode.toString(url, { type: "svg", margin: 0 });
   const [cls, label] = STATE[t.state] ?? ["bad", "Not valid"];
@@ -95,6 +109,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
           cancelled: { title: "Cancelled", detail: `${t.title} was cancelled` },
           unpaid: { title: "Not paid", detail: "This booking is confirmed once it’s paid" },
           lapsed: { title: "Not paid in time", detail: "The hold lapsed; they need to book again" },
+          voided: { title: "Cancelled", detail: "This booking was cancelled" },
         }[t.state] ?? { title: "Not valid", detail: "" });
 
   return (
@@ -122,7 +137,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
             {t.facilitator ? `, with ${t.facilitator}` : ""}
           </p>
           {/* QR markup generated on the server from our own URL. A meal has no pass until it's paid. */}
-          {!(isMeal && awaiting) && (
+          {!(isMeal && awaiting) && t.state !== "voided" && (
             <>
               <div className="qr" dangerouslySetInnerHTML={{ __html: svg }} />
               <div className="code">{ticketCode(token)}</div>
@@ -130,13 +145,35 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
           )}
           <p style={{ margin: "10px 0 0" }}>
             <b>{t.holder}</b>
-            <br />
-            <span className="muted">
-              {t.ticket_name
-                ? `${t.ticket_name}, ${money(t.price, t.currency)}${Number(t.price) > 0 ? (t.paid ? ", paid" : ", unpaid") : ""}`
-                : "Member, included"}
-            </span>
+            {items.length === 0 && (
+              <>
+                <br />
+                <span className="muted">
+                  {t.ticket_name
+                    ? `${t.ticket_name}, ${money(t.price, t.currency)}${Number(t.price) > 0 ? (t.paid ? ", paid" : ", unpaid") : ""}`
+                    : "Reserved"}
+                </span>
+              </>
+            )}
           </p>
+          {items.length > 0 && (
+            <div style={{ margin: "8px 0 0", textAlign: "left" }} aria-label="What this booking includes">
+              {items.map((i) => (
+                <div key={i.name} style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 14.5 }}>
+                  <span>
+                    {i.qty} × {i.name}
+                  </span>
+                  <span className="muted">{Number(i.unit_price) > 0 ? money(Number(i.unit_price) * i.qty, i.currency) : "Free"}</span>
+                </div>
+              ))}
+              {itemsTotal > 0 && !mixedCurrency && itemsCurrency && (
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 14.5, marginTop: 4, paddingTop: 4, borderTop: "1px solid var(--line)" }}>
+                  <b>Total, {t.paid ? "paid" : "unpaid"}</b>
+                  <b>{money(itemsTotal, itemsCurrency)}</b>
+                </div>
+              )}
+            </div>
+          )}
           {t.state === "unpaid" && (
             <p className="muted" style={{ margin: "8px 0 0", fontSize: 14 }}>
               {isMeal
@@ -155,10 +192,14 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
               <Link href={`/e/${t.offering_id}`} style={{ color: "var(--sea)" }}>Book again</Link>.
             </p>
           )}
-          {stripeReady() && !t.paid && (Number(t.price) > 0 || t.state === "unpaid") && ["valid", "upcoming", "early", "unpaid"].includes(t.state) && (
+          {stripeReady() && !t.paid && (itemsTotal > 0 || Number(t.price) > 0 || t.state === "unpaid") && ["valid", "upcoming", "early", "unpaid"].includes(t.state) && (
             <p style={{ margin: "12px 0 0" }}>
               <a className="btn primary" href={`/pay/ticket/${token}`}>
-                {Number(t.price) > 0 ? `Pay ${money(t.price, t.currency)}` : "Pay now"}
+                {itemsTotal > 0 && !mixedCurrency && itemsCurrency
+                  ? `Pay ${money(itemsTotal, itemsCurrency)}`
+                  : Number(t.price) > 0
+                    ? `Pay ${money(t.price, t.currency)}`
+                    : "Pay now"}
               </a>
             </p>
           )}
@@ -198,6 +239,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
               }}
             />
           )}
+          {canManage && !staff && <ManageBooking token={token} paid={t.paid} dates={moveDates} />}
           <p className="gate-note" style={{ marginTop: 16 }}>
             Security scans the code with any phone camera. It works on the day
             of the session, from an hour before it starts.

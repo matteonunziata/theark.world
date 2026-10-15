@@ -72,6 +72,8 @@ export async function sendTicketEmail(t: {
   location: string | null;
   token: string;
   orgName: string;
+  /** What was bought, e.g. "1 × Free Entry, 1 × Lunch". */
+  summary?: string | null;
 }) {
   if (!emailConfigured()) return false;
   const origin = await siteUrl();
@@ -103,6 +105,7 @@ ${detailRows([
   ["When", `${esc(day)}<br>${esc(time)}`],
   ...(t.location ? ([["Where", esc(t.location)]] as [string, string][]) : []),
   ["Name", esc(t.holder)],
+  ...(t.summary ? ([["Booked", esc(t.summary)]] as [string, string][]) : []),
 ])}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 6px">
 <img src="cid:ticket-qr" width="200" height="200" alt="Ticket QR code" style="display:block;border:0">
@@ -110,9 +113,9 @@ ${detailRows([
 </td></tr></table>
 <p style="margin:16px 0 18px;font-size:14px;text-align:center">Add to <a href="${gcal}" style="${link}">Google Calendar</a> · <a href="${url}/calendar.ics" style="${link}">Apple or Outlook</a></p>`,
       cta: { label: "Open your ticket", href: url },
-      footnote: "Security lets you in from an hour before the start time.",
+      footnote: `Security lets you in from an hour before the start time. Plans changed? <a href="${url}#manage" style="${link}">Change the date or cancel</a> from your ticket.`,
     },
-    text: `Hi ${first},\n\nHere is your ticket for ${t.title}, ${day}, ${time}${t.location ? ` at ${t.location}` : ""}.\n\nOpen it here: ${url}\nCode: ${ticketCode(t.token)}\n\nSee you there.`,
+    text: `Hi ${first},\n\nHere is your ticket for ${t.title}, ${day}, ${time}${t.location ? ` at ${t.location}` : ""}.${t.summary ? `\nBooked: ${t.summary}` : ""}\n\nOpen it here: ${url}\nCode: ${ticketCode(t.token)}\n\nPlans changed? Change the date or cancel here: ${url}#manage\n\nSee you there.`,
     attachments: [{ filename: "ticket-qr.png", content: png, contentId: "ticket-qr" }],
   });
 }
