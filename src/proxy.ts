@@ -1,25 +1,67 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
-// join.theark.world opens on the membership page, members.theark.world on the portal,
-// courts.theark.world on court booking.
-const ROOT_BY_HOST: Record<string, string> = {
-  "join.theark.world": "/ark-membership",
+// theark.world is the one public address. Its bare / is the public home page for visitors; people signed in
+// still go to their own area from /.
+const APEX = "theark.world";
+
+// Old GHL pages with no page of their own yet go to the closest page. Temporary (302), so
+// a real page can take over the address later.
+const GHL_PAGE_REDIRECTS: Record<string, string> = {
+  "/ark-events": "/whats-on",
+  "/ark-padel": "/courts",
+  "/ark-farm": "/farm-shop",
+  "/ark-pass": "/ark-membership",
+  "/webinar": "/home",
+  "/ark-rentals": "/home",
+  "/ark-ventures": "/home",
+};
+
+// join, members and courts .theark.world and theark-world.vercel.app are retired: they send everything to
+// theark.world with the same path and query. join's /events was the public events page,
+// which lives at /whats-on on theark.world (there /events is the staff area).
+const JOIN_HOST = "join.theark.world";
+// members' bare / was the portal, courts' bare / was court booking.
+const ROOT_BY_RETIRED_HOST: Record<string, string> = {
   "members.theark.world": "/portal",
   "courts.theark.world": "/courts",
 };
+const VERCEL_HOST = "theark-world.vercel.app";
 
-// On join.theark.world the public events page answers at /events. The staff
-// events area (/events/...) is unchanged; staff reach its overview at /events/classes.
-const EVENTS_HOST = "join.theark.world";
+// Calls from other services can't follow a redirect, so the old vercel.app address keeps
+// answering these until the webhooks point at theark.world.
+const VERCEL_HOST_KEEPS = ["/api/webhooks/", "/api/cron/"];
+
+function moveToApex(request: NextRequest, path: string) {
+  const to = new URL(path, `https://${APEX}`);
+  to.search = request.nextUrl.search;
+  return NextResponse.redirect(to, 301);
+}
 
 export async function proxy(request: NextRequest) {
-  const root = ROOT_BY_HOST[request.nextUrl.hostname];
-  if (root && request.nextUrl.pathname === "/") {
-    return NextResponse.redirect(new URL(root, request.url));
+  const host = (request.headers.get("host") ?? request.nextUrl.hostname).split(":")[0];
+  const path = request.nextUrl.pathname;
+
+  if (host === JOIN_HOST) {
+    if (path === "/") return moveToApex(request, "/ark-membership");
+    if (path === "/events") return moveToApex(request, "/whats-on");
+    return moveToApex(request, path);
   }
-  if ((request.headers.get("host") ?? "").split(":")[0] === EVENTS_HOST && request.nextUrl.pathname === "/events") {
-    return updateSession(request, "/whats-on");
+  if (host === VERCEL_HOST && !VERCEL_HOST_KEEPS.some((p) => path.startsWith(p))) {
+    return moveToApex(request, path);
+  }
+
+  if (host in ROOT_BY_RETIRED_HOST) {
+    return moveToApex(request, path === "/" ? ROOT_BY_RETIRED_HOST[host] : path);
+  }
+  const ghlPage = host === APEX ? GHL_PAGE_REDIRECTS[path.replace(/\/$/, "")] : undefined;
+  if (ghlPage) {
+    const to = new URL(ghlPage, request.url);
+    to.search = request.nextUrl.search;
+    return NextResponse.redirect(to, 302);
+  }
+  if (host === APEX && path === "/") {
+    return updateSession(request, undefined, "/home");
   }
   return updateSession(request);
 }
